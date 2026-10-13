@@ -4,7 +4,7 @@ import hashlib
 import json
 import uuid
 import access
-import projects
+import lms_store as projects
 
 ROOT = 2026100601
 FORMAT = 'momos-item-collaboration-v1'
@@ -45,40 +45,8 @@ class Service:
             choices = [a for a in active if entry and service.admitted(root, a) and
                        (a['id'] in (person, entry['trainer'], entry['assessor']) or service.admin(a))]
         else:
-            if target['person']:
-                raise ValueError('프로젝트 항목에는 교육생 연결을 사용하지 않습니다.')
-            rooms = projects.Rooms(self.store)
-            directory = rooms.directory(db)
-            project = rooms.find(directory, room, user)
-            role = project['members'][user['id']]
-            if room == 'erp':
-                if kind != 'task':
-                    raise FileNotFoundError()
-                row = db.execute('SELECT body FROM state WHERE id=1').fetchone()
-                state = json.loads(row[0]) if row and row[0] else {}
-                effective = dict(user, role='viewer' if role == 'viewer' else 'lead' if role != 'owner' and user['role'] == 'admin' else user['role'])
-                state.setdefault('people', [])
-                for a in active:
-                    state['people'] = [p for p in state['people'] if p.get('name') != a['name']]
-                    state['people'].append(dict(name=a['name'], role=a['role'], org=access.company_name(a['company']), active=True, confirmed=True))
-                item = next((i for i in access.regular_visible_items(state, effective) if i['id'] == ident), None)
-                if not item:
-                    raise FileNotFoundError()
-                writable = role != 'viewer' and access.may_perform(item, effective, state)
-                choices = []
-                for a in active:
-                    r = project['members'].get(a['id'])
-                    identity = dict(a, role='lead' if r != 'owner' and a['role'] == 'admin' else a['role'])
-                    if r and r != 'viewer' and access.may_perform(item, identity, state):
-                        choices.append(a)
-            else:
-                data = rooms.read(db, project['storageId'])
-                field = 'tasks' if kind == 'task' else 'piCases' if kind == 'case' and project['kind'] == 'pi' else ''
-                item = next((i for i in (data or {}).get(field, []) if i['id'] == ident), None)
-                if not item:
-                    raise FileNotFoundError()
-                writable = role != 'viewer'
-                choices = [a for a in active if project['members'].get(a['id']) in ('owner', 'editor')]
+            # Only onboarding items exist in the LMS; former ERP and PI rooms are not served.
+            raise FileNotFoundError()
         return target, user, writable, [dict(id=a['id'], name=a['name']) for a in choices], item.get('title', ident)
 
     def summary(self, user, room, person=''):
@@ -95,8 +63,7 @@ class Service:
                 if not service.admitted(root, user) or not service.may_view(root, user, person):
                     raise PermissionError()
             else:
-                rooms = projects.Rooms(self.store)
-                rooms.find(rooms.directory(db), room, user)
+                raise FileNotFoundError()
             root = projects.Rooms.read(db, ROOT)
             if root is None:
                 return dict(items=[])

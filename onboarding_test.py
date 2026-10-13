@@ -11,7 +11,7 @@ from unittest.mock import patch
 import onboarding as ob
 import server
 import access
-import projects
+import lms_store as projects
 
 
 class EducationTests(unittest.TestCase):
@@ -21,7 +21,6 @@ class EducationTests(unittest.TestCase):
         self.auth=access.Access(self.store);self.service=ob.Service(self.store)
         self.admin=self.auth.create(dict(name='고성운',email='admin@example.test',password='TestOnlyPassword1!'),setup=True)
         self.learner=self.add('교육생');self.other=self.add('다른 직원');self.trainer=self.add('교육자');self.tech=self.add('기술 담당','viewcs');self.content=self.add('내용 담당')
-        self.store.put_state({'tasks':[{'id':'preserved','title':'원본 업무'}],'settings':{}},0)
         with self.store.connect() as db:
             projects.Rooms.write(db,1,{'format':'preserved-manifest'});projects.Rooms.write(db,2,{'format':'preserved-directory','rooms':[]})
         self.erp_before=self.erp_snapshot()
@@ -36,7 +35,7 @@ class EducationTests(unittest.TestCase):
 
     def erp_snapshot(self):
         with self.store.connect() as db:
-            return {t:[tuple(r) for r in db.execute('SELECT * FROM '+t).fetchall()] for t in ('state','revisions','files','sources','sourceversions','access_users','access_sessions','access_audit','notifications')}|{'metadata':[(i,projects.Rooms.read(db,i)) for i in (1,2)]}
+            return {t:[tuple(r) for r in db.execute('SELECT * FROM '+t).fetchall()] for t in ('files','access_users','access_sessions','access_audit')}|{'metadata':[(i,projects.Rooms.read(db,i)) for i in (1,2)]}
 
     def payload(self,user,action,data=None,target=None):
         c=self.service.get(user,target)
@@ -218,8 +217,10 @@ class EducationTests(unittest.TestCase):
             data=self.payload(self.learner,'step.self',dict(step=next(iter(ob.STEPS)),index=0,on=True))
             self.assertEqual(req('POST','/api/onboarding',data,csrf=False)[0],403)
             self.assertEqual(req('POST','/api/onboarding',data)[0],200)
-            with patch.object(httpd.rooms,'require_erp',side_effect=AssertionError('Education must not require or change ERP membership')):
-                self.assertEqual(req('GET','/api/onboarding')[0],200)
+            self.assertEqual(req('GET','/api/onboarding')[0],200)
+            code,h,b=req('GET','/',cookie=False);self.assertEqual(code,302);self.assertEqual(h['Location'],'/onboarding')
+            for removed in ('/api/state','/api/projects','/index.html','/app.js'):
+                self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()
 
     def test_calendar_end_of_month_and_course_preservation(self):

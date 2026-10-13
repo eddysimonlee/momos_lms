@@ -18,7 +18,7 @@ import secrets
 import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-import projects
+import lms_store as projects
 
 ROOT = 2026100201
 FORMAT = 'momos-education-v1'
@@ -251,7 +251,7 @@ class Service:
         if not raw or len(raw)>8*1024*1024:raise ValueError('첨부는 파일당 8MB 이하로 올려 주세요.')
         suffix=Path(name).suffix.lower();mime='application/octet-stream'
         if suffix in ('.png','.jpg','.jpeg'):
-            from pi_assets import image_info
+            from lms_store import image_info
             mime=image_info(raw,name)['mime']
         elif suffix=='.pdf':
             if not raw.startswith(b'%PDF-'):raise ValueError('PDF 파일 내용을 확인하세요.')

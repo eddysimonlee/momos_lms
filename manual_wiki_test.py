@@ -110,7 +110,7 @@ class WikiTests(unittest.TestCase):
         self.assertEqual(self.store.db.read_bytes(), before)
     def test_viewer_cannot_publish_or_access_erp(self):
         self.assertEqual(self.publish(token=READ)[0], 403)
-        for path in ("/api/state", "/api/projects", "/seed.json"):
+        for path in ("/api/onboarding", "/api/auth/users", "/api/item-collaboration"):
             self.assertEqual(self.req("GET", path, headers={"Authorization": "Bearer " + READ})[0], 401)
         self.assertEqual(self.view(WRITE)[0], 404)
     def test_missing_invalid_and_encoded_tokens_refused_without_storage(self):
