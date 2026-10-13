@@ -21,6 +21,15 @@ ERP_BOOTSTRAP_TOKEN=<32자 이상 임의 문자열> python3 server.py --data-dir
 
 브라우저에서 `http://127.0.0.1:8768/onboarding`을 열고, 최초 관리자를 만들 때 위 토큰을 입력합니다. 관리자 계정은 `access.py`의 `ADMINS` 목록에 있는 이름만 만들 수 있습니다(2주차에 WORKS 로그인으로 바꿀 예정).
 
+### 체험용 계정으로 바로 보기
+
+```bash
+python3 dev_seed.py --data-dir ./data
+python3 server.py --data-dir ./data
+```
+
+`dev_seed.py`가 관리자·교육자·교육생 체험 계정을 만들고 교육생을 배정합니다. 계정이 이미 있는 폴더에서는 실행되지 않습니다.
+
 ## 테스트
 
 ```bash
