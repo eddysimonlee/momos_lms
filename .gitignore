@@ -1,0 +1,14 @@
+# Never commit business data, accounts, caches or secrets.
+/data/
+*.sqlite3
+*.sqlite3-*
+.env
+.env.*
+*.pem
+*.key
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
+# Local copies of the original ERP files kept only for comparison while refactoring.
+/_reference/
