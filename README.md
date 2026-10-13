@@ -57,4 +57,4 @@ node workspace_items_test.cjs
 
 - `cloud.py`와 `deploy/001_workspace.sql`은 기존 ERP 스키마 기준입니다. 2주차에 새 Supabase 프로젝트를 만들면서 LMS 테이블만 남깁니다.
 - `access.py`에는 ERP 업무 권한 함수가 남아 있습니다. WORKS 로그인을 붙일 때 함께 정리합니다.
-- `onboarding.js`의 로컬 체험 모드, 관리자 이름·매장명 하드코딩은 1주차 남은 작업입니다.
+- 관리자 이름·매장명 하드코딩은 WORKS 로그인 작업(2주차)에서 바꿉니다.
