@@ -205,7 +205,7 @@ class EducationTests(unittest.TestCase):
                 for suffix in ('','?view=timeline&target=test'):
                     code,h,b=req('GET','/onboarding/'+suffix,cookie=cookie)
                     self.assertEqual(code,302)
-                    self.assertEqual(h['Location'],'/onboarding'+suffix)
+                    self.assertEqual(h['Location'],'/v1'+suffix)
                     self.assertEqual(h['Cache-Control'],'no-store')
                     self.assertEqual(b,b'');self.assertNotIn('Set-Cookie',h)
             self.assertEqual(req('POST','/onboarding/',{})[0],404)
@@ -218,7 +218,16 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('POST','/api/onboarding',data,csrf=False)[0],403)
             self.assertEqual(req('POST','/api/onboarding',data)[0],200)
             self.assertEqual(req('GET','/api/onboarding')[0],200)
-            code,h,b=req('GET','/',cookie=False);self.assertEqual(code,302);self.assertEqual(h['Location'],'/onboarding')
+            code,h,b=req('GET','/',cookie=False);self.assertEqual(code,302);self.assertEqual(h['Location'],'/v1')
+            # v1: the page and its script are public shells; the course slice needs a login.
+            code,h,b=req('GET','/v1',cookie=False);self.assertEqual(code,200);self.assertIn(b'authGate',b);self.assertNotIn('출근 준비'.encode(),b)
+            self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
+            self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
+            code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
+            slice_=json.loads(b);self.assertEqual([u['id'] for u in slice_['units']],['welcome'])
+            self.assertEqual(sum(len(u['steps']) for u in slice_['units']),6)
+            self.assertTrue(set(r for u in slice_['units'] for s in u['steps'] for r in s['refs'])<=set(slice_['guides']))
+            self.assertEqual(req('GET','/v1_build.py')[0],404)
             for removed in ('/api/state','/api/projects','/index.html','/app.js'):
                 self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()

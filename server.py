@@ -215,8 +215,8 @@ class Handler(BaseHTTPRequestHandler):
             parsed = urlsplit(self.path)
             path, query, store = unquote(parsed.path), parse_qs(parsed.query), self.server.store
             if method == 'GET' and path in ('/', '/onboarding/'):
-                # The LMS has no other home page; invite and reset fragments survive the redirect.
-                return self.redirect('/onboarding' + ('?' + parsed.query if parsed.query else ''))
+                # v1 is the home page; invite and reset fragments survive the redirect.
+                return self.redirect('/v1' + ('?' + parsed.query if parsed.query else ''))
             auth = self.server.access
             filename = path[1:]
             public_get = method == 'GET' and (path == '/api/health' or filename in STATIC)
@@ -292,6 +292,13 @@ class Handler(BaseHTTPRequestHandler):
                     value = self.body()
                     return self.send(200, collaboration.context(user, value.get('target'), value))
                 raise FileNotFoundError()
+            if path in ('/v1', '/v1.js') and method == 'GET':
+                # First-release learner screen: the page carries the login gate itself, the script waits for it.
+                return self.file(APP / ('v1.html' if path == '/v1' else 'v1.js'))
+            if path == '/v1_content.json' and method == 'GET':
+                if not user:
+                    raise access.LoginRequired()
+                return self.file(APP / 'v1_content.json')
             if path in ('/onboarding','/onboarding.js','/onboarding/wiki') and method == 'GET':
                 if not user:
                     if path == '/onboarding':

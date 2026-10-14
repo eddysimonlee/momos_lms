@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#152d40">
+<title>모모스 온보딩</title>
+<link rel="icon" href="/icons/momos-erp.svg">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/styles.css">
+<style>
+/* v1: one column, phone first. Everything below is scoped to the app shell. */
+.auth-pending #appShell{display:none}
+#appShell{min-height:100svh;background:#f5f6f7;color:#1b2733;font-size:15px;line-height:1.65}
+.v1-top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:12px 16px;background:#152d40;color:#edf7f4}
+.v1-top .v1-back{appearance:none;border:0;background:transparent;color:#edf7f4;font-size:22px;line-height:1;padding:4px 6px 4px 0;cursor:pointer}
+.v1-top .v1-back[hidden]{display:none}
+.v1-top h1{flex:1;margin:0;font-size:16px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v1-top .v1-who{appearance:none;border:1px solid #ffffff33;background:#ffffff14;color:#edf7f4;border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v1-main{max-width:600px;margin:0 auto;padding:16px 16px 48px}
+.v1-card{background:#fff;border:1px solid #e3e8eb;border-radius:14px;padding:16px;margin-bottom:12px}
+.v1-card h2{margin:0 0 6px;font-size:17px;letter-spacing:-.2px}
+.v1-muted{color:#5f6f7c;font-size:13px}
+.v1-note{background:#f0f4f7;border-radius:10px;padding:10px 12px;font-size:13px;color:#3f515f;margin:10px 0 0}
+.v1-note.warn{background:#fff6e8;color:#7a4b00}
+.v1-note.ok{background:#e9f6ee;color:#255a3f}
+.v1-progress{height:8px;border-radius:999px;background:#e3e8eb;overflow:hidden;margin:10px 0 4px}
+.v1-progress i{display:block;height:100%;background:#2c7a5b;border-radius:999px}
+.v1-list{display:flex;flex-direction:column;gap:10px;margin:14px 0 0;padding:0;list-style:none}
+.v1-item{appearance:none;width:100%;text-align:left;background:#fff;border:1px solid #e3e8eb;border-radius:14px;padding:14px 16px;display:flex;gap:12px;align-items:center;cursor:pointer;font:inherit;color:inherit}
+.v1-item:active{background:#f0f4f7}
+.v1-item .v1-num{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:600;background:#eef2f5;color:#3f515f}
+.v1-item.done .v1-num{background:#2c7a5b;color:#fff}
+.v1-item.practice .v1-num{background:#1f5fa8;color:#fff}
+.v1-item.review .v1-num{background:#c77a00;color:#fff}
+.v1-item .v1-body{flex:1;min-width:0}
+.v1-item .v1-body strong{display:block;font-size:15px;font-weight:600;line-height:1.4}
+.v1-item .v1-body small{color:#5f6f7c;font-size:12px}
+.v1-item .v1-chev{color:#9aa8b2;font-size:18px}
+.v1-pill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;background:#eef2f5;color:#3f515f;vertical-align:middle}
+.v1-pill.practice{background:#e4eefb;color:#1f5fa8}.v1-pill.review{background:#fff1dc;color:#9a5c00}.v1-pill.done{background:#e3f3ea;color:#255a3f}
+.v1-copy p{margin:0 0 10px}
+.v1-photo{margin:12px 0 0}.v1-photo img{width:100%;border-radius:10px;display:block}.v1-photo figcaption{font-size:12px;color:#5f6f7c;margin-top:6px}
+.v1-checks{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.v1-checks label{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid #e3e8eb;border-radius:12px;background:#fff;cursor:pointer;font-size:15px}
+.v1-checks label:has(input:checked){background:#e9f6ee;border-color:#bfe0cc}
+.v1-checks label:has(input:disabled){cursor:default;opacity:.85}
+.v1-checks input{flex:none;width:22px;height:22px;margin:2px 0 0;accent-color:#2c7a5b}
+.v1-checks .v1-by{display:block;font-size:11.5px;color:#5f6f7c;margin-top:2px}
+.v1-memo{width:100%;min-height:72px;border:1px solid #e3e8eb;border-radius:12px;padding:12px;font:inherit;font-size:15px;resize:vertical;background:#fff}
+.v1-memo:disabled{background:#f5f6f7;color:#5f6f7c}
+.v1-actions{position:sticky;bottom:0;background:linear-gradient(#f5f6f700,#f5f6f7 30%);padding:14px 0 calc(8px + env(safe-area-inset-bottom));display:flex;gap:10px}
+.v1-btn{appearance:none;border:1px solid #d6dde2;background:#fff;color:#1b2733;border-radius:12px;padding:13px 16px;font:inherit;font-size:15px;font-weight:600;flex:1;cursor:pointer}
+.v1-btn.primary{background:#152d40;border-color:#152d40;color:#fff}
+.v1-btn:disabled{opacity:.45;cursor:default}
+.v1-guide{margin-top:12px}
+.v1-guide summary{cursor:pointer;font-weight:600;padding:12px 14px;border:1px solid #e3e8eb;border-radius:12px;background:#fff;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.v1-guide summary::-webkit-details-marker{display:none}
+.v1-guide summary::after{content:'펼치기';font-size:12px;color:#5f6f7c;font-weight:400}
+.v1-guide[open] summary::after{content:'접기'}
+.v1-guide .v1-guide-body{padding:4px 14px 14px;background:#fff;border:1px solid #e3e8eb;border-top:0;border-radius:0 0 12px 12px;font-size:14.5px}
+.v1-guide-body h1{font-size:18px;margin:14px 0 6px}.v1-guide-body h2{font-size:16px;margin:16px 0 6px}.v1-guide-body h3{font-size:15px;margin:14px 0 4px;color:#1f5fa8}
+.v1-guide-body p{margin:0 0 8px}.v1-guide-body .table-wrap{overflow-x:auto;margin:8px 0}
+.v1-guide-body table{border-collapse:collapse;width:100%;font-size:13.5px}.v1-guide-body th,.v1-guide-body td{border:1px solid #e3e8eb;padding:6px 8px;text-align:left;vertical-align:top}.v1-guide-body th{background:#f0f4f7}
+.v1-guide-body td p,.v1-guide-body th p{margin:0}
+.v1-src{font-size:11.5px;color:#8090a0;margin:10px 0 0}
+.v1-people{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.v1-people button{appearance:none;border:1px solid #d6dde2;background:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+.v1-people button.on{background:#152d40;border-color:#152d40;color:#fff}
+.v1-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#1b2733;color:#fff;padding:10px 16px;border-radius:999px;font-size:13.5px;max-width:90vw;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
+.v1-toast.show{opacity:1}
+.v1-link{appearance:none;border:0;background:none;padding:0;color:#1f5fa8;font:inherit;text-decoration:underline;cursor:pointer}
+@media(min-width:720px){.v1-top{padding:14px 24px}.v1-top h1{font-size:17px}}
+</style>
+</head>
+<body class="auth-pending">
+<section id="authGate" class="auth-gate" aria-label="로그인"></section>
+<div id="appShell" inert aria-hidden="true">
+  <header class="v1-top">
+    <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
+    <h1 id="v1Title">모모스 온보딩</h1>
+    <button id="v1Who" class="v1-who" title="내 계정">…</button>
+  </header>
+  <main id="app" class="v1-main"></main>
+  <div id="v1Toast" class="v1-toast" role="status"></div>
+</div>
+<dialog id="accountDialog"></dialog>
+<span id="accountName" hidden></span><span id="accountInitial" hidden></span>
+<script src="/auth.js"></script>
+<script src="/v1.js"></script>
+</body>
+</html>
