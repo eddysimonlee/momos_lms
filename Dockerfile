@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-cert
     && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --create-home lms && mkdir -p /data && chown lms:lms /data
 WORKDIR /app
-COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py ./
+COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py ./
 COPY --chown=lms:lms auth.js workspace_items.js onboarding.js styles.css ./
 COPY --chown=lms:lms onboarding_course.json onboarding_reviews.json onboarding.html onboarding_login.html ./
 COPY --chown=lms:lms v1.html v1.js v1_content.json ./
