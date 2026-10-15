@@ -201,8 +201,24 @@
   $('v1Back').onclick = () => { view = 'home'; render(); };
   $('v1Who').onclick = () => ERPAuth.openAccount();
 
-  // --- start: wait for login, load the slice and the record, pick a sensible first target
-  ERPAuth.ensureSession().then(async () => {
+  // Local trial only: with no session yet, sign in as the first trial learner so nobody types a password.
+  // The server answers /api/dev/accounts only for a local sqlite store on this machine; elsewhere this is a no-op
+  // and the normal login gate appears. WORKS SSO replaces both later.
+  async function devAutoLogin() {
+    try {
+      const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
+      if (status.user) return;
+      const response = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
+      if (!response.ok) return;
+      const {accounts} = await response.json();
+      const pick = accounts.find(a => a.email === 'learner@local.test') || accounts[0];
+      if (!pick) return;
+      await fetch('/api/dev/accounts?id=' + encodeURIComponent(pick.id), {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json'}, body: '{}'});
+    } catch {}
+  }
+
+  // --- start: sign in (automatically on a local trial), load the slice and the record, pick a sensible first target
+  devAutoLogin().then(() => ERPAuth.ensureSession()).then(async () => {
     const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
