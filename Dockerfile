@@ -24,6 +24,6 @@ COPY --chown=lms:lms wds/ ./wds/
 COPY --chown=lms:lms assets/ ./assets/
 COPY --chown=lms:lms icons/ ./icons/
 USER lms
-VOLUME ["/data"]
+# No VOLUME instruction (company image rule DIA-3): the platform mounts /data itself — n3r Spec > Volume, Render > Disk.
 EXPOSE 8080
 CMD ["python3", "server.py"]
