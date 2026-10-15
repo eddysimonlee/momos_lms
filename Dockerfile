@@ -11,8 +11,9 @@ ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 
     LMS_DATA_DIR=/data LMS_HOST=0.0.0.0 PORT=8080
 # The n3r base image starts as a non-root user; package installation needs root, the server does not.
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends python3 ca-certificates \
-    && rm -rf /var/lib/apt/lists/* \
+# dist-upgrade pulls the base image's pending security patches; image scanners flag them otherwise.
+RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y --no-install-recommends python3 ca-certificates \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --create-home lms && mkdir -p /data && chown lms:lms /data
 WORKDIR /app
 COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py ./
