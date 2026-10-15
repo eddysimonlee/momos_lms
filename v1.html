@@ -99,6 +99,16 @@
 .v1-people{display:flex;gap:var(--spacing-8);flex-wrap:wrap;margin:var(--spacing-8) 0 0}
 .v1-people button{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer}
 .v1-people button.on{background:var(--component-tag-color-solid-surface);border-color:var(--component-tag-color-solid-surface);color:var(--component-tag-color-solid-text-color)}
+/* assignment form (담당자) */
+.v1-assign{margin-top:var(--spacing-12)}
+.v1-assign summary{cursor:pointer;font:var(--body-md-bold);padding:var(--spacing-12) var(--spacing-16);border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.v1-assign summary::-webkit-details-marker{display:none}
+.v1-assign summary::after{content:'펼치기';font:var(--label-sm);color:var(--text-muted)}
+.v1-assign[open] summary{border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.v1-assign[open] summary::after{content:'접기'}
+.v1-assign-body{display:flex;flex-direction:column;gap:var(--spacing-12);padding:var(--spacing-16);background:var(--surface-default);border:1px solid var(--border-default);border-top:0;border-radius:0 0 var(--radius-lg) var(--radius-lg)}
+.v1-field{display:flex;flex-direction:column;gap:var(--spacing-4);font:var(--label-sm);color:var(--text-muted)}
+.v1-select,.v1-input{width:100%;height:var(--component-input-type-square-size-lg-height);padding:0 var(--component-input-type-square-size-lg-padding-x);border:1px solid var(--component-input-type-square-state-default-border);border-radius:var(--component-input-type-square-size-lg-radius);background:var(--component-input-type-square-state-default-background);color:var(--text-default);font:var(--component-input-type-square-size-lg-typography)}
 /* toast */
 .v1-toast{position:fixed;left:50%;bottom:calc(var(--spacing-24) + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--component-toast-surface);color:var(--component-toast-text-color);padding:var(--spacing-12) var(--component-toast-padding);border-radius:var(--component-toast-border-radius);font:var(--component-toast-text-typography);max-width:90vw;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
 .v1-toast.show{opacity:1}
