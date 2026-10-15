@@ -159,6 +159,9 @@ class HostedSqliteTests(unittest.TestCase):
                 self.assertEqual(r.status, 404)
                 conn.request('GET', '/v1', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); body = r.read()
                 self.assertEqual(r.status, 200); self.assertIn(b'authGate', body)
+                httpd.trial = True  # internal staging with LMS_TRIAL=1: the switcher comes back
+                conn.request('GET', '/api/dev/accounts', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); r.read()
+                self.assertEqual(r.status, 200)
                 conn.close()
             finally:
                 httpd.shutdown(); httpd.server_close(); thread.join()

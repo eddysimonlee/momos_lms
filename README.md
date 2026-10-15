@@ -52,9 +52,10 @@ python3 server.py --data-dir ./data
 | 볼륨 | `/data` — 교육 기록·계정 sqlite가 여기 쌓임. 백업 대상 |
 | 환경변수 | `LMS_PUBLIC_URL=https://<인그레스 호스트>` (필수, 끝에 `/` 없이). Host·Origin 검사와 보안 쿠키가 이 값을 기준으로 동작 |
 | 헬스체크 | `GET /api/health` |
-| 첫 관리자 | `ERP_BOOTSTRAP_TOKEN`(32자 이상)을 넣고 `/onboarding`에서 최초 관리자 등록. 체험 계정·역할 전환 띠는 서버에서는 나타나지 않음 |
+| 사내 스테이징 | `LMS_TRIAL=1` — 빈 저장소에 체험 계정 3개를 만들고 역할 전환 띠를 켭니다. **사내망 전용 서버에서만** 씁니다 |
+| 외부 공개 서버 | `LMS_TRIAL`을 넣지 않고 `ERP_BOOTSTRAP_TOKEN`(32자 이상)으로 `/onboarding`에서 최초 관리자 등록 |
 
-외부(모모스 직원) 접근은 Ingress **Public 접근 허용** + nFront 경유가 필요하고, 그 전에 보안검수(NTREE)와 Security Review를 거칩니다. Env가 Dev인 Gateway는 외부 노출이 안 되므로 Stage/Prod Env에 만듭니다.
+n3r은 사내 테스트용입니다(사내망 전용, 보안검수 없음). 모모스 직원이 쓰는 외부 서버는 Render에 따로 올립니다. 같은 Dockerfile을 쓰되 `LMS_TRIAL`은 넣지 않습니다.
 
 ## 테스트
 

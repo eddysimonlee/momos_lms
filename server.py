@@ -277,7 +277,10 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/dev/accounts' and method in ('GET', 'POST'):
                 # Local trial only: switch between the dev_seed.py accounts without typing passwords.
                 # Refused unless the store is a local sqlite file and the request comes from this machine.
-                if store.database or self.server.public_url or self.client_address[0] not in ('127.0.0.1', '::1'):
+                # Allowed on a local run from this machine, or on an internal staging server that sets LMS_TRIAL=1.
+                # Never set LMS_TRIAL on anything reachable from outside the company network.
+                local_run = not self.server.public_url and self.client_address[0] in ('127.0.0.1', '::1')
+                if store.database or not (local_run or getattr(self.server, 'trial', False)):
                     raise FileNotFoundError()
                 with store.connect() as db:
                     rows = db.execute("SELECT id,name,email,role FROM access_users WHERE status='active' AND email LIKE '%@local.test' ORDER BY name").fetchall()
@@ -505,7 +508,13 @@ def main():
                         help='the HTTPS address users open, e.g. https://momos-lms.example.com (no trailing slash)')
     args = parser.parse_args()
     store = Store(args.data_dir)
+    trial = os.environ.get('LMS_TRIAL') == '1' and not store.database
+    if trial:
+        import dev_seed
+        if dev_seed.seed(store):
+            print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
     server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'))
+    server.trial = trial
     print('Momos LMS: %s/v1' % (args.public_url.rstrip('/') or 'http://127.0.0.1:%d' % args.port), flush=True)
     try:
         server.serve_forever()

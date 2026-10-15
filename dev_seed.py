@@ -23,17 +23,12 @@ ACCOUNTS = [('담당자', '체험 담당자', 'staff@local.test'),
             ('교육생2', '체험 신입', 'newbie@local.test')]
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=Path, default=server.APP / 'data')
-    args = parser.parse_args()
-    if os.environ.get('ERP_DATABASE_URL'):
-        raise SystemExit('클라우드 DB 설정이 있는 환경에서는 실행하지 않습니다.')
-    store = server.Store(args.data_dir)
+def seed(store):
+    """Create the trial accounts in an empty store. Returns False when accounts already exist."""
     auth = access.Access(store)
     with store.connect() as db:
         if db.execute('SELECT COUNT(*) FROM access_users').fetchone()[0]:
-            raise SystemExit('이미 계정이 있는 데이터 폴더입니다. 새 폴더를 지정하세요: --data-dir ./data-trial')
+            return False
     # The first administrator must be on the ADMINS list; allow the trial name for this process only.
     access.ADMINS = set(access.ADMINS) | {'체험 담당자'}
     admin = auth.create(dict(name='체험 담당자', email='staff@local.test', password=PASSWORD), setup=True)
@@ -47,6 +42,17 @@ def main():
                                rootRevision=context['rootRevision'], requestId=str(uuid.uuid4()),
                                data=dict(learner=users['교육생']['id'], trainer=admin['id'],
                                          assessor=admin['id'], join=ob.plus(ob.today(), -4))))
+    return True
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-dir', type=Path, default=server.APP / 'data')
+    args = parser.parse_args()
+    if os.environ.get('ERP_DATABASE_URL'):
+        raise SystemExit('클라우드 DB 설정이 있는 환경에서는 실행하지 않습니다.')
+    if not seed(server.Store(args.data_dir)):
+        raise SystemExit('이미 계정이 있는 데이터 폴더입니다. 새 폴더를 지정하세요: --data-dir ./data-trial')
     print('체험용 계정을 만들었습니다 (이 컴퓨터에서만 사용):')
     for role, name, email in ACCOUNTS:
         print(f'  {role:5} {name:8} {email:22} 비밀번호 {PASSWORD}')
