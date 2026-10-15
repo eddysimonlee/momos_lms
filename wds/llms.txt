@@ -1,0 +1,260 @@
+﻿# WDS — Works Design System 디자인 토큰 (v0.4.0)
+
+웍스(Works) 서비스 공통 디자인 토큰입니다. 컴포넌트 구현체(React 등)는 없습니다 —
+토큰(CSS 변수 · JSON · SVG)을 조합해 각 서비스가 자체 UI를 만듭니다.
+이 문서가 진입점이고, 필요한 모든 정보는 이 문서와 여기 링크된 파일 안에 있습니다.
+링크는 이 문서가 있는 버전 디렉토리 기준 상대 경로입니다. 링크되지 않은 경로를
+추측해서 접근하지 마세요 — 디렉토리 목록 조회는 지원되지 않습니다.
+버전은 URL 경로(예: `…/wds/0.2.0/`)가 고정합니다. 다른 버전으로 옮길 때는
+[CHANGELOG](CHANGELOG.md)를 먼저 확인하세요 — MAJOR 상승은 토큰 이름 변경·삭제를 뜻합니다.
+
+## 규칙 (위반 금지)
+
+1. **하드코딩 금지.** `#202124`, `14px` 같은 리터럴 값 대신 항상 토큰을 참조합니다.
+2. **참조 우선순위:** `component` → `semantic` → `primitive` 순으로 찾고, 위 계층에 있으면 아래 계층을 쓰지 않습니다.
+3. **primitive 직접 사용 금지.** `--blue-700`, `--gray-900`은 UI에 쓰지 않습니다 — 다크 모드가 깨집니다. (`--spacing-*` · `--radius-*`만 예외)
+4. **없는 토큰을 추측해서 만들지 않습니다.** 만들려는 플랫폼의 산출물에서 실존을 확인한 뒤 씁니다 — 웹은 [variables.css](web/variables.css), 앱은 [iOS](ios/tokens.json)·[Android](android/tokens.json) tokens.json. 웹은 CSS 변수명(`--surface-default`), 앱은 토큰 경로(`surface.default`)로 표기가 다르므로 서로의 이름으로 찾으면 "없는 토큰"으로 오판합니다.
+5. **포커스 표시는 지우지 않습니다.** 키보드 포커스 링은 브라우저 기본 `:focus-visible`이 그립니다 — `outline: none`으로 지우면 접근성이 깨집니다. 대신 그려야 하는 경우는 두 가지뿐입니다: ⑴ **네이티브 입력을 숨기고 시각 박스를 따로 그리는 커스텀 위젯**(checkbox·radio-button·toggle이 그 예) — `box-shadow: 0 0 0 2px {surface.default}, 0 0 0 4px {border.primary}`, 링 반경 = 컴포넌트 반경 + 2, 컴포넌트가 `surface.default` 위에 놓임을 전제하므로 다른 배경 위에서는 갭 색을 그 배경으로 오버라이드합니다. ⑵ **DOM 포커스가 이동하지 않는 가상 포커스**(`aria-activedescendant`) — 링이 아니라 활성 항목의 `hover`/`selected` 배경으로 표시합니다.
+
+⚠️ 이름 함정 2가지:
+- `--text-primary`는 **브랜드 블루**입니다. 본문 기본은 `--text-default`.
+- `--color-` 접두어는 존재하지 않습니다 (`--color-text-primary` ❌ → `--text-default` ✅).
+
+## 시작하기 — 웹
+
+[web/variables.css](web/variables.css) **한 파일이 전부입니다** — 전 계층 + gradient + 다크 내장.
+받아서 서비스 저장소에 넣고(vendor) import합니다.
+**받은 `variables.css`는 절대 편집하지 마세요** — 파일 맨 앞에 한 줄이라도 덧붙이면
+인코딩 선언(`@charset`)이 무효화됩니다. 출처와 버전은 아래 `.wds/status.gen.json`이 기록하며,
+주석이 필요하면 **import하는 쪽 파일(서비스 자기 CSS)** 상단에 남깁니다.
+**저장 위치** — 서비스 소스 트리 안의 `wds/` 폴더에 둡니다. 상위 경로는 서비스 구조에 맞게
+정하세요(`styles/wds/` · `src/styles/wds/` · `assets/wds/` 등). 실제 경로는 아래
+`.wds/status.gen.json`의 `files`에 적습니다. **점 붙은 `.wds/`는 중앙 수집용 메타데이터 전용입니다**
+— 자산을 그 안에 넣지 마세요. `cp -r *`·`tar`·`rsync --exclude='.*'`가 dot 폴더를 조용히
+건너뛰어 배포에서 CSS만 빠집니다.
+
+vendor한 파일은 생성 산출물입니다 — **서비스 저장소의 정적 분석·lint(SonarQube `sonar.exclusions`, ESLint/Stylelint ignore, 커버리지 등) 대상에서 제외**하세요. 신규 코드 품질 게이트에 걸립니다(첫 파일럿 실측). 폴더 이름이 `wds/`로 고정돼 있으므로 `**/wds/**` 한 패턴으로 처리됩니다.
+
+```css
+/* 아래는 서비스 자기 CSS입니다 — 예: styles/main.css (vendor한 variables.css는 편집하지 않습니다) */
+/* vendor: <이 문서가 있는 디렉토리 URL>/web/variables.css */
+@import "./wds/variables.css";
+
+body  { background: var(--surface-default); }  /* 페이지 기본 배경 */
+.card {
+  background: var(--surface-subtle);           /* 카드·컨테이너 */
+  color: var(--text-default);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-16);
+}
+.title { font: var(--title-md-bold); }  /* 타이포는 font 속기형 한 줄. size/weight 개별 지정 금지 */
+```
+
+- 폰트 파일은 산출물에 포함되지 않습니다 — Pretendard는 서비스가 자체 로드하고, `--font-family`가 폴백을 처리합니다.
+
+- **다크 모드는 자동입니다** — `prefers-color-scheme`로 OS 설정을 추종하며, 컴포넌트 토큰까지 함께 전환됩니다.
+- 서비스 자체 설정이 있으면 `<html data-theme="dark">` 또는 `"light"`로 강제할 수 있습니다 (OS 설정보다 우선).
+
+## 시작하기 — 앱 (iOS · Android)
+
+앱 산출물은 **JSON뿐입니다.** 각 서비스가 자기 포맷(SwiftUI·Compose)으로 직접 변환합니다.
+
+- [ios/tokens.json](ios/tokens.json) · [tokens.dark.json](ios/tokens.dark.json) — 치수 단위 `pt`
+- [android/tokens.json](android/tokens.json) · [tokens.dark.json](android/tokens.dark.json) — 치수 `dp`, 글자 크기·행간만 `sp`
+- 값은 primitive까지 해석된 리터럴이라 alias를 풀 필요가 없습니다. 다크 JSON은 색상만 담깁니다(치수·타이포는 테마 무관).
+- vendor한 JSON도 생성 산출물입니다 — **서비스 저장소의 정적 분석(SonarQube `sonar.exclusions` 등) 대상에서 제외**하세요. 모바일 웹처럼 JS/TS 저장소가 이 JSON을 직접 읽는 경우 lint·커버리지 게이트에도 웹과 동일하게 걸립니다.
+- 텍스트를 담는 컨테이너 높이는 고정하지 말고 하한으로 둡니다 — SwiftUI `.frame(minHeight:)` / Compose `Modifier.heightIn(min=)`.
+
+## 채택 마커 — vendor할 때마다 갱신
+
+서비스 저장소 루트의 `.wds/`를 에이전트가 직접 만들고 유지합니다. 중앙이 이 파일들을 읽어 채택 현황을 집계합니다.
+
+```json
+// .wds/status.gen.json — 자동 생성(.gen). vendor·버전 교체 때마다 다시 쓴다
+{
+  "version": "<이 문서 디렉토리의 버전>",
+  "base": "<이 문서가 있는 디렉토리 URL>",
+  "files": ["styles/wds/variables.css"],
+  "updatedAt": "<YYYY-MM-DD>"
+}
+```
+
+공통 컴포넌트로 해결되지 않는 서비스 고유 UI가 있으면 **서비스 컴포넌트 토큰**을 같은 폴더에 둡니다 — 파일이 곧 등록이며, 별도 목록(구 `registry.yml`)은 만들지 않습니다.
+
+```json
+// .wds/service-components/<name>.json — 컴포넌트 하나에 파일 하나, 파일명 = 이름(kebab-case). DTCG 형식.
+{
+  "service-component": {
+    "<name>": {
+      "$description": "<용도 — 해결하는 문제와 적용 화면>",
+      "height": { "$type": "dimension", "$value": "{component.input.size.md.height}" },
+      "background": { "$type": "color", "$value": "{surface.default}" }
+    }
+  }
+}
+```
+
+- `$value`는 이 스냅샷 [tokens.json](tokens.json)에 실존하는 경로의 alias만 — `component.*` → semantic → 치수 primitive(`spacing-*`·`radius-*`) 순. 색 primitive·색 리터럴 금지, 파운데이션·공통 컴포넌트 토큰 재정의 금지.
+- 이름은 공통 컴포넌트([components/web](components/web/)·[components/app](components/app/) 파일명)와 겹치지 않게. CSS로 빌드할 때 참조를 `var()`로 유지합니다(다크 모드).
+- 담당자·갱신일은 적지 않습니다 — 파일의 git 이력을 중앙이 읽습니다. 형식 원본: 공통 저장소 `docs/service-component-metadata.md`.
+
+## 사용 규칙 검사 — 서비스 CI 가드
+
+위 규칙을 서비스 저장소의 PR에서 기계로 확인하는 검사를 함께 배포합니다. 서비스 저장소 루트에서 한 번 설치하면 됩니다.
+
+```bash
+curl -fsSLO <이 문서가 있는 디렉토리 URL>/guard/install.mjs
+node install.mjs
+```
+
+워크플로 한 개와 설정 한 개가 생기고, PR에 결과 코멘트가 한 개만 유지됩니다. 판정 코드는 이 스냅샷의 [guard/](guard/)에 있으므로 서비스가 로직을 들고 있지 않습니다.
+
+- 잡는 것 — 없는 변수 참조(`var(--x)`가 이 버전에 실존하는가) · 파운데이션·공통 컴포넌트 토큰 재정의 · vendor한 파일 편집 · 서비스 컴포넌트 토큰의 형식·참조 · 채택 마커 형식.
+- 경고로 보는 것 — 서비스가 자체 토큰을 값까지 직접 적어 만든 경우(값이 `var(...)` 참조면 정상) · 그 밖의 색·수치 하드코딩(PR에서 추가된 줄만).
+- 대응 토큰이 없는 값은 같은 줄에 `wds-allow: <사유>`를 남기면 예외로 집계됩니다. 사유 없는 예외는 없고, 예외 건수와 사유는 중앙 현황에 남습니다.
+- 자세한 사용법은 [guard/README.md](guard/README.md).
+
+## Foundations — 카테고리별 열람용 (전체 목록은 각 파일이 원본)
+
+- [colors-semantic.css](web/colors-semantic.css): 색상 전체 — `text` · `surface` · `border` · `icon` · `action` · `status` · `brand`
+  - surface 용도: `default`=페이지 기본 배경 / `subtle`=카드·컨테이너 / `muted`=한 단계 낮은 배경 / `overlay`=팝오버 / `scrim`=모달 딤 / `primary`=브랜드 CTA / `inverse`=반전. 그 외 변형(`canvas` 등)은 파일에서 확인하되, 페이지 배경은 `default`가 기본입니다
+  - status 변형은 상태마다 다릅니다 — error: `subtle·strong·disabled`(+`inverse-error`) / info: `subtle·strong·soft` / success·warning: `subtle·strong·vivid`. **`--status-error-vivid`는 없습니다.**
+- [typography.css](web/typography.css): `--title-xxl…xs` · `--body-xl·lg·md·sm` · `--label-sm·xs`, 각각 `-bold` 짝. `--font-family`(Pretendard)
+- [spacing-radius.css](web/spacing-radius.css): `--spacing-*`(숫자=px) · `--radius-none(0)·sm(4)·md(6)·lg(8)·xl(12)·2xl(16)·full(9999)` — 용도 기반 radius는 없습니다
+- [elevation.css](web/elevation.css): `--shadow-sm` · `--shadow-sm-strong` · `--shadow-md`
+- [colors-gradient.css](web/colors-gradient.css): `--gradient-ai-*`
+
+## 컴포넌트 토큰
+
+같은 이름의 컴포넌트를 만들 때는 semantic으로 직접 조립하지 말고 **컴포넌트 토큰을 먼저** 참조합니다.
+**구현 전에 해당 컴포넌트의 JSON을 읽으세요.** `variables.css`로는 변수의 실존만 확인됩니다 —
+값·상태·사용 규칙은 JSON에 있습니다: 토큰 목록 · 값 · `$description`(한 줄 요약) ·
+`rules`(상태 전이·레이아웃·플랫폼 구현 매핑 — `$extensions`의 `design-system.meta` 또는
+`design-system.component` 아래).
+
+**이름 규칙 (평탄화):** JSON 경로의 키를 순서대로 이어붙입니다.
+`component.button.size.md.height` → 웹 `--component-button-size-md-height` / 앱은 경로 그대로 `component.button.size.md.height`
+
+⚠️ 파일명이 아니라 **JSON 루트 키**가 이름 기준입니다: `confirmdialog.json` → `--component-confirm-dialog-*` / `empty.json` → `--component-empty-state-*` / `modaldialog.json` → `--component-modal-dialog-*` / `customdialog.json` → 경로 `component.custom-dialog.*` / `listitem.json` → 경로 `component.list-item.*`
+
+### 웹 (`components/web/`, 40개)
+
+- [action-menu](components/web/action-menu.json): 메뉴/컨텍스트 리스트의 단일 액션 항목.
+- [badge](components/web/badge.json): 타입 count·new·red-dot
+- [banner](components/web/banner.json): 컬러 blue·gray·purple·red·yellow × 타입 round·square
+- [button](components/web/button.json): 버튼 컴포넌트. primary·secondary·primary-outline·destructive·static-light 5가지 타입.
+- [category-item](components/web/category-item.json): LNB Tree의 카테고리(그룹) 헤더 항목.
+- [checkbox](components/web/checkbox.json): 체크박스 컴포넌트. 단독 CheckBox(16px)와 라벨 포함 CheckBoxItem 2가지 형태로 사용.
+- [confirmdialog](components/web/confirmdialog.json): 타입 basic·caution·complete (변수 루트 키는 `confirm-dialog`)
+- [copyright](components/web/copyright.json): 저작권 표기. 문구는 텍스트 프로퍼티(기본값 'ⓒ NAVER Cloud Corp.')이며 TextButton(link/muted)으로 링크 동작한다.
+- [date-picker](components/web/date-picker.json): 날짜 선택 컴포넌트. DatepickerContainer + DatepickerCell로 구성.
+- [divider](components/web/divider.json): 구분선 컴포넌트. default·subtle·dot 3가지 타입.
+- [dropdown-button](components/web/dropdown-button.json): 드롭다운 트리거 버튼. primary·outlined·ghost 3가지 variant.
+- [edit-toolbar](components/web/edit-toolbar.json): EditToolbar는 default·more-features-collapsed·more-features-expanded·floating 4가지 타입을 제공한다.
+- [empty](components/web/empty.json): EmptyState 컴포넌트 공통 토큰. (변수 루트 키는 `empty-state`)
+- [filter-chip](components/web/filter-chip.json): 외형 outline·solid × 타입 pill·square
+- [gnb](components/web/gnb.json): 글로벌 내비게이션 바. type(default·light-theme·dark-theme) 3 variant, 높이 58px, 하단 shadow-sm.
+- [icon-button](components/web/icon-button.json): 아이콘 전용 버튼. ghost·outlined·filled 3가지 타입.
+- [icon-label-item](components/web/icon-label-item.json): 역할 기반 3타입 — navigation(LNB 접힘 rail·현재 페이지 위치 표시·selected 배경 O·2줄) / shortcut(LNB 상단 바로가기·중요·안읽음 등·selected 배경 X·1줄·너비 컨테이너 결정) / action(통화·일정쓰기 등 즉시 실행·selected 없음·primary 색·2줄).
+- [input-chip](components/web/input-chip.json): 상태 default·disabled·hover·selected·selected-disabled·selected-hover × 타입 pill·square
+- [input](components/web/input.json): 텍스트 입력 필드 컴포넌트.
+- [layout](components/web/layout.json): 서비스 공통 화면 셸.
+- [lnb](components/web/lnb.json): 좌측 내비게이션 셸. type(basic·mini) 2 variant.
+- [loading](components/web/loading.json): 로딩 스피너 컴포넌트. white-bg(카드형)와 icon(단독형) 두 가지 variant.
+- [member-chip](components/web/member-chip.json): 컬러 blue·gray·green·orange
+- [menu-item](components/web/menu-item.json): LNB Tree 메뉴의 단일 항목.
+- [modaldialog](components/web/modaldialog.json): 사이즈 xs·sm·md·lg·xl·xxl (변수 루트 키는 `modal-dialog`)
+- [pagination](components/web/pagination.json): 페이지네이션 컨테이너. 숫자 버튼과 방향 아이콘 버튼으로 구성.
+- [popover](components/web/popover.json): 타입 feature·info·upgrade
+- [profile-list](components/web/profile-list.json): 상태 default·disabled·hover·selected·selected-disabled
+- [profile](components/web/profile.json): 프로필 썸네일. initial·photo·empty 3가지 타입.
+- [radio-button](components/web/radio-button.json): 라디오 버튼 컴포넌트. 단독 RadioButton(16px)와 라벨 포함 RadioButtonItem 형태로 사용.
+- [search-layer](components/web/search-layer.json): 구성 container·control-bar·empty·highlight·item·layout·quicksearch
+- [segmented-control](components/web/segmented-control.json): 세그먼트 컨트롤 컴포넌트.
+- [select-menu](components/web/select-menu.json): 드롭다운 선택 컴포넌트. DropdownButton·IconButton으로 트리거.
+- [split-button](components/web/split-button.json): 두 영역을 나란히 배치하며 각 영역은 독립적 hover 상태를 가짐.
+- [tab](components/web/tab.json): 탭 셀 + 셀을 감싸는 container(Figma TabGroup).
+- [tag](components/web/tag.json): 사이즈 xxs·xs·sm × 타입 pill·square
+- [text-button](components/web/text-button.json): 텍스트 버튼 컴포넌트. ghost·link·underline 3가지 타입.
+- [toast](components/web/toast.json): 화면 하단에 잠깐 떠서 결과를 알리는 알림 바.
+- [toggle](components/web/toggle.json): 토글 스위치 컴포넌트. 컨트롤 사이즈 md·lg 2가지.
+- [tooltip](components/web/tooltip.json): 단순 텍스트 툴팁. 말줄임 처리된 텍스트 또는 Button 종류 컴포넌트에 hover 했을 때 노출되는 짧은 힌트.
+
+### 앱 (`components/app/`, 39개)
+
+지원 채널(모웹/모앱)은 각 JSON의 `$extensions."design-system.meta".channels`로 판정합니다.
+
+- [badge](components/app/badge.json): 앱 배지 컴포넌트(iOS/Android 공통).
+- [banner](components/app/banner.json): 구성 base·close-icon·icon·message
+- [bottom-sheet](components/app/bottom-sheet.json): 구성 button·container·divider·header·menu-item
+- [bottom-tab-bar](components/app/bottom-tab-bar.json): 앱 하단 탭 네비게이션 바.
+- [bottom-tab](components/app/bottom-tab.json): 스타일 default·liquid-glass
+- [button](components/app/button.json): 사이즈 xxs·xs·sm·md·lg·xl × 타입 ghost·primary·primary-outline·secondary·static-light
+- [checkbox](components/app/checkbox.json): 사이즈 md·lg × 상태 checked·default·disabled·selected
+- [checkmark](components/app/checkmark.json): 구성 icon·placement-margin·state
+- [chip](components/app/chip.json): 컬러 blue·gray
+- [context-menu](components/app/context-menu.json): 구성 account·container·divider·item·title·toggle
+- [countingbox](components/app/countingbox.json): 상태 counted·default
+- [customdialog](components/app/customdialog.json): 모웹(모바일 웹) 전용 커스텀 다이얼로그. (변수 루트 키는 `custom-dialog`)
+- [divider](components/app/divider.json): 타입 full·inset
+- [drawer](components/app/drawer.json): 화면 좌/우에서 슬라이드로 등장하는 패널 컴포넌트 세트(Native 전용).
+- [editor-toolbar-2depth-detail](components/app/editor-toolbar-2depth-detail.json): 에디터 폰트 스타일 상세 설정 패널.
+- [editor-toolbar-2depth](components/app/editor-toolbar-2depth.json): 에디터 툴바 2depth 레이어.
+- [editor-toolbar](components/app/editor-toolbar.json): 앱 에디터 기본 툴바. 텍스트 서식 아이콘(볼드·이탤릭·링크 등)을 가로 스크롤로 나열.
+- [empty-state](components/app/empty-state.json): 구성 actions·container·content·description·graphic·title
+- [file-thumbnail](components/app/file-thumbnail.json): 파일·이미지 썸네일 컴포넌트.
+- [floating-action-button](components/app/floating-action-button.json): 사이즈 sm·md
+- [icon-button](components/app/icon-button.json): 사이즈 sm·md·lg × 외형 outline·solid
+- [input](components/app/input.json): 타입 basic·label-multiline·singleline
+- [list-edit-button](components/app/list-edit-button.json): 타입 add·remove
+- [listitem](components/app/listitem.json): 구성 drawer·file·profile·setting·setting-stacked·trailing (변수 루트 키는 `list-item`)
+- [loading](components/app/loading.json): 구성 base·icon·with-label
+- [picker](components/app/picker.json): 구성 calendar·header·slot
+- [popover](components/app/popover.json): 타입 feature·info
+- [profile-thumbnail](components/app/profile-thumbnail.json): 구성 badge·group·icon-base·initial-base·one-to-n·single
+- [search-input](components/app/search-input.json): 구성 contextual-search-icon·detailed-search·top-search-bar
+- [sheet-modal](components/app/sheet-modal.json): 구성 container·contents·header
+- [tab](components/app/tab.json): 앱 탭 셀(iOS/Android 공통).
+- [tag-chip](components/app/tag-chip.json): 태그 토글 칩. 태그를 켜고 끄는 화면(연락처의 태그 관리 · 주소록의 태그별 보기)에서 default → on 토글로 사용.
+- [tag](components/app/tag.json): 모바일 웹·네이티브 공용 Tag.
+- [text-button](components/app/text-button.json): 사이즈 xs·sm·md·lg·xl·lg-bold × 컬러 default·error·inverse-error·inverse-primary·muted·primary·subtle
+- [toast](components/app/toast.json): 타입 inform·suggest-button·undo-button
+- [toggle-chip](components/app/toggle-chip.json): 필터·카테고리 토글 칩. primary(on 시 배경 채움) · outline(항상 테두리) 2가지 타입 × default · on 2가지 상태.
+- [toggle](components/app/toggle.json): 모바일 네이티브 앱은 iOS·Android OS 네이티브 스위치를 쓰고 모바일 웹은 이 토큰으로 그린다.
+- [toolbar](components/app/toolbar.json): 앱 하단 툴바 컴포넌트 세트.
+- [top-navigation](components/app/top-navigation.json): 앱 상단 내비게이션 바. Regular·Emphasis·SheetModal·edit 4개 타입.
+
+## 시각 자산
+
+필요한 파일만 받아 서비스 저장소에 넣습니다(vendor). 출처 URL을 기록해 두세요.
+vendor한 SVG·JSON도 웹 절과 동일하게 **정적 분석 제외 대상**입니다(`sonar.exclusions` 등).
+
+- 단색 UI 아이콘: `foundations/iconography/mono/{12,16,20,24,32}/<이름>.svg`
+  - **이름은 추측하지 말고 [mono/inventory.json](foundations/iconography/mono/inventory.json)에서 검색**하세요 (`aliases` 기능 키워드 → 파일명). 파일명은 form-first(형태 명사): `x.svg` ✅ / `close.svg` ❌
+  - **vendor 전 인벤토리 최상위 `deprecated`를 확인하세요** — Figma에서 삭제된 아이콘은 곧바로 지우지 않고 먼저 제거 예고 표식이 붙고, 다음 마이너에서 실제로 사라집니다. 예고된 것은 다음 vendor 전에 대체하세요 (현재 예고된 아이콘 없음)
+  - **SVG에 `fill` 색이 리터럴로 박혀 있습니다** — CSS `color`만으로는 색이 안 바뀌므로, 인라인 삽입 시 `fill`을 `currentColor`로 치환한 뒤 `color: var(--icon-default)`로 칠하거나 CSS mask를 쓰세요
+  - 사이즈별 파일이 따로 있습니다. 16px 자리에 24px을 축소해 쓰지 않습니다
+- 다색 아이콘: [color/badges](foundations/iconography/color/badges/inventory.json) · [color/file-types](foundations/iconography/color/file-types/inventory.json) — 각 버킷의 inventory.json에서 이름 확인
+- 일러스트: `foundations/illustrations/{character,symbol}/<이름>.svg` — [inventory.json](foundations/illustrations/inventory.json)
+- 브랜드(CI·BI·서비스 로고): [brand/inventory.json](foundations/brand/inventory.json)에서 확인
+  - 서비스 로고는 변종이 둘입니다 — `service-logo/color/`(브랜드 원본 색) · `service-logo/solid/`(단색). **`solid`만 잉크가 `currentColor`**이고 나머지 자산은 위 단색 아이콘처럼 색이 리터럴입니다
+  - `solid`는 **인라인 SVG로 넣어야** 합니다 — `<img>`·CSS `background`로는 `currentColor`가 문서 색을 받지 못해 검정으로 그려집니다. 색은 감싼 요소의 `color`로 정합니다
+  - GNB 서비스 아이콘이 그 소비처입니다. 색은 GNB 테마가 정합니다 — `--component-gnb-type-light-theme-service-icon-color` / `--component-gnb-type-dark-theme-service-icon-color`를 `color`에 지정하고, 기본(흰 배경) 테마(`type.default`)는 서비스 아이콘 색 오버라이드가 없어 `color/` 변종을 씁니다
+- Lottie: [ic-loading.json](foundations/motion/ic-loading.json)
+- 필요한 자산이 없으면 임의로 만들지 말고, **WDS에 자산 요청이 필요하다고 개발자에게 보고**하세요
+
+## 빌드 산출물 요약
+
+- [web/variables.css](web/variables.css): **웹 단일 산출물이자 전체 변수 인벤토리** — 실존 확인 기준
+- web/ 의 조각 CSS(colors-semantic 등)는 카테고리별 열람용 — 로드는 variables.css 하나면 됩니다
+- [tokens.json](tokens.json) · [tokens.dark.json](tokens.dark.json): 평탄화 JSON — CSS를 쓰지 않는 자체 파이프라인용
+- 앱: 위 "시작하기 — 앱"의 iOS·Android tokens.json
+
+## 토큰이 없을 때
+
+필요한 값에 맞는 토큰이 없으면 **임의로 값을 정하지 마세요.**
+
+1. 상위 계층(semantic → primitive)에 정말 없는지 확인
+2. 없으면 서비스 코드에서 국소 처리하고(그 사실을 코드 주석에 남김), **WDS에 토큰 추가 요청이 필요하다고 개발자에게 보고**합니다
+3. 서비스 고유 UI는 서비스 컴포넌트 토큰(`.wds/service-components/<name>.json`, 위 "채택 마커" 절)으로 시작합니다 — 중앙이 여러 서비스에서 유사 구조를 확인하면 공통 승격을 논의합니다

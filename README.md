@@ -16,6 +16,7 @@
 `/v1`이 첫 화면입니다. 교육 과정 중 **입사·근무 준비** 단원(6항목)만 보여 주고, 교육생은 교재를 읽고 체크·메모한 뒤 교육자 확인을 요청하고, 교육자는 확인합니다. 휴대폰 화면 기준으로 만들었습니다.
 
 - 파일: `v1.html`(화면·스타일), `v1.js`(동작), `v1_content.json`(교재 조각), `v1_build.py`(조각 생성기)
+- 디자인 토큰은 WDS 0.4.0을 따릅니다. `wds/web/variables.css`를 받은 그대로 두고(vendor) `v1.html`이 import하며, 규칙은 `wds/llms.txt`와 `AGENTS.md`에 있습니다. 채택 마커는 `.wds/status.gen.json`입니다. 정적 분석을 붙일 때는 `**/wds/**`를 제외하세요.
 - 기록은 기존 `/api/onboarding`에 그대로 저장되므로 `/onboarding`(전체 화면)과 같은 데이터를 봅니다.
 - 범위를 넓히려면 `v1_build.py`의 `UNITS`에 단원 id를 추가하고 `python3 v1_build.py`를 실행합니다.
 - 교육 배정과 계정 관리는 아직 `/onboarding?view=account`(기존 화면)에서 합니다. `/onboarding`은 원래 요구 사항 전체를 담은 비교·참고용 화면으로 남겨 둡니다.

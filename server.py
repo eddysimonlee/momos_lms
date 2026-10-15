@@ -28,7 +28,7 @@ import invitations
 import lms_store
 
 APP = Path(__file__).resolve().parent
-STATIC = {"styles.css", "auth.js", "workspace_items.js", "assets/momos-white.png", "assets/momos-black.png",
+STATIC = {"styles.css", "auth.js", "workspace_items.js", "wds/web/variables.css", "assets/momos-white.png", "assets/momos-black.png",
           "assets/PretendardVariable.woff2", "assets/Pretendard-LICENSE.txt", "icons/momos-erp.svg",
           "icons/momos-erp-192.png", "icons/momos-erp-512.png", "icons/apple-touch-icon.png"}
 mimetypes.add_type('font/woff2', '.woff2')

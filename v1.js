@@ -111,10 +111,10 @@
     const editTeacher = who === 'trainer' && canWrite() && st === 'review';
     const checks = '<ul class="v1-checks">' + s.checks.map((c, k) => {
       if (who === 'trainer') {
-        return `<li><label><input type="checkbox" data-teacher="${k}" ${r.teacher[k] ? 'checked' : ''} ${editTeacher && !busy ? '' : 'disabled'}><span>${esc(c)}` +
+        return `<li><label><input type="checkbox" data-teacher="${k}" ${r.teacher[k] ? 'checked' : ''} ${editTeacher && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
           `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 교육자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span></span></label></li>`;
       }
-      return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span>${esc(c)}` +
+      return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
         (r.teacher[k] ? `<span class="v1-by">교육자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + '</span></label></li>';
     }).join('') + '</ul>';
     const photos = s.photos.map(p => content.photos[p]).filter(Boolean).map(p =>

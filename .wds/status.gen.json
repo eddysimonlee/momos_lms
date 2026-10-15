@@ -1,0 +1,6 @@
+{
+  "version": "0.4.0",
+  "base": "https://pages.navercorp.com/saas-product-design/wds/0.4.0/",
+  "files": ["wds/llms.txt", "wds/web/variables.css"],
+  "updatedAt": "2026-10-15"
+}
