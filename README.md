@@ -50,7 +50,7 @@ python3 server.py --data-dir ./data
 | 빌드 | 저장소 루트 `Dockerfile` (ubuntu:24.04 + python3). n3r은 Docker Hub에 못 나가므로 Build arguments에 `BASE_IMAGE=base.n3r.reg.navercorp.com/base/ubuntu:24.04` |
 | 포트 | 8080 (`PORT`로 변경 가능) |
 | 볼륨 | `/data` — 교육 기록·계정 sqlite가 여기 쌓임. 백업 대상 |
-| 환경변수 | `LMS_PUBLIC_URL=https://<인그레스 호스트>` (필수, 끝에 `/` 없이). Host·Origin 검사와 보안 쿠키가 이 값을 기준으로 동작 |
+| 환경변수 | `LMS_PUBLIC_URL=https://<인그레스 호스트>` (끝에 `/` 없이). Host·Origin 검사와 보안 쿠키가 이 값을 기준으로 동작. `LMS_TRIAL=1`인 사내 테스트에서는 생략 가능 |
 | 헬스체크 | `GET /api/health` |
 | 사내 스테이징 | `LMS_TRIAL=1` — 빈 저장소에 체험 계정 3개를 만들고 역할 전환 띠를 켭니다. **사내망 전용 서버에서만** 씁니다 |
 | 외부 공개 서버 | `LMS_TRIAL`을 넣지 않고 `ERP_BOOTSTRAP_TOKEN`(32자 이상)으로 `/onboarding`에서 최초 관리자 등록 |

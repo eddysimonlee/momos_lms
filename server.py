@@ -131,6 +131,12 @@ class Handler(BaseHTTPRequestHandler):
             if mutation and self.headers.get('Sec-Fetch-Site') == 'cross-site':
                 raise PermissionError('Cross-site request refused')
             return
+        if getattr(self.server, 'trial', False):
+            # Internal staging without a fixed public URL: accept the ingress host, but still refuse
+            # cross-site writes by requiring the Origin host to match the Host header.
+            if mutation and urlsplit(self.headers.get('Origin', '')).netloc != self.headers.get('Host', ''):
+                raise PermissionError('Same-origin browser request required')
+            return
         hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
         if self.headers.get('Host') not in hosts:
             raise PermissionError('Invalid Host')
@@ -484,11 +490,12 @@ class CloudHTTPServer(LocalHTTPServer):
 
 
 
-def make_server(store, port=8768, *, host='127.0.0.1', public_url=''):
-    if host != '127.0.0.1' and not public_url.startswith('https://'):
-        raise ValueError('외부 바인딩에는 HTTPS 공개 주소(--public-url)가 필요합니다. 리버스 프록시가 TLS를 맡습니다.')
+def make_server(store, port=8768, *, host='127.0.0.1', public_url='', trial=False):
+    if host != '127.0.0.1' and not public_url.startswith('https://') and not trial:
+        raise ValueError('외부 바인딩에는 HTTPS 공개 주소(--public-url)가 필요합니다. 리버스 프록시가 TLS를 맡습니다. (사내 테스트는 LMS_TRIAL=1)')
     server = (CloudHTTPServer if public_url else LocalHTTPServer)((host, port), Handler)
     server.public_url = public_url
+    server.trial = trial
     server.store = store
     server.access = access.Access(store)
     server.invitations = invitations.Invitations(server.access)
@@ -513,8 +520,7 @@ def main():
         import dev_seed
         if dev_seed.seed(store):
             print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
-    server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'))
-    server.trial = trial
+    server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'), trial=trial)
     print('Momos LMS: %s/v1' % (args.public_url.rstrip('/') or 'http://127.0.0.1:%d' % args.port), flush=True)
     try:
         server.serve_forever()

@@ -149,6 +149,17 @@ class HostedSqliteTests(unittest.TestCase):
             store = server.Store(Path(tmp.name) / 'data')
             with self.assertRaises(ValueError):
                 server.make_server(store, 0, host='0.0.0.0')
+            # trial staging: wide bind with no public URL, any Host accepted, cross-site writes still refused
+            trial = server.make_server(store, 0, host='127.0.0.1', trial=True)
+            t = threading.Thread(target=trial.serve_forever, daemon=True); t.start()
+            try:
+                c = http.client.HTTPConnection('127.0.0.1', trial.server_port, timeout=10)
+                c.request('GET', '/v1', headers={'Host': 'momos.internal.test'}); r = c.getresponse(); r.read(); self.assertEqual(r.status, 200)
+                c.request('GET', '/api/dev/accounts', headers={'Host': 'momos.internal.test'}); r = c.getresponse(); r.read(); self.assertEqual(r.status, 200)
+                c.request('POST', '/api/auth/logout', b'{}', headers={'Host': 'momos.internal.test', 'Origin': 'http://evil.test', 'Content-Type': 'application/json'}); r = c.getresponse(); r.read(); self.assertEqual(r.status, 403)
+                c.close()
+            finally:
+                trial.shutdown(); trial.server_close(); t.join()
             httpd = server.make_server(store, 0, host='127.0.0.1', public_url='https://lms.example.test')
             thread = threading.Thread(target=httpd.serve_forever, daemon=True); thread.start()
             try:
