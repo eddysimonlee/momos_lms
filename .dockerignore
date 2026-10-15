@@ -1,6 +1,6 @@
 **
 !Dockerfile
-!requirements.txt
+
 !server.py
 !lms_store.py
 !access.py
