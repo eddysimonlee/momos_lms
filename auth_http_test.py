@@ -166,6 +166,12 @@ class HostedSqliteTests(unittest.TestCase):
                 conn = http.client.HTTPConnection('127.0.0.1', httpd.server_port, timeout=10)
                 conn.request('GET', '/api/health', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); r.read()
                 self.assertEqual(r.status, 200)
+                # platform liveness probes hit the pod directly (Host localhost / pod IP), not through the public host
+                for probe_host in ('localhost:8080', '10.0.0.7:8080'):
+                    conn.request('GET', '/api/health', headers={'Host': probe_host}); r = conn.getresponse(); r.read()
+                    self.assertEqual(r.status, 200, probe_host)
+                conn.request('GET', '/v1', headers={'Host': 'localhost:8080'}); r = conn.getresponse(); r.read()
+                self.assertEqual(r.status, 403)  # everything else still needs the public host
                 conn.request('GET', '/api/dev/accounts', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); r.read()
                 self.assertEqual(r.status, 404)
                 conn.request('GET', '/v1', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); body = r.read()

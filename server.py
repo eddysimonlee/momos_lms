@@ -123,6 +123,8 @@ class Handler(BaseHTTPRequestHandler):
     def guard(self, mutation=False):
         port = self.server.server_port
         public = getattr(self.server, 'public_url', '')
+        if not mutation and urlsplit(self.path).path == '/api/health':
+            return  # platform probes call this with their own Host (localhost, pod IP); it reveals nothing private
         if public:
             if self.headers.get('Host') != urlsplit(public).netloc:
                 raise PermissionError('Invalid Host')
@@ -455,7 +457,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 class LocalHTTPServer(ThreadingHTTPServer):
-    allow_reuse_address = False
+    # Linux containers restart in place: reuse the port so lingering TIME_WAIT connections from probes
+    # do not block the new process for a minute. Windows keeps exclusive binding (server_bind below).
+    allow_reuse_address = sys.platform != 'win32'
 
     def server_bind(self):
         # Windows must not silently share a port with an older preview server.
