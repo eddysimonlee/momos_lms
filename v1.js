@@ -84,12 +84,13 @@
     if (!cloud.permissions.admin) return '';
     const people = unassigned();
     const today = cloud.today;
-    return `<details class="v1-assign" ${others().length ? '' : 'open'}><summary>교육생 배정</summary><div class="v1-assign-body">` +
+    return `<details class="v1-assign" ${others().length || !people.length ? '' : 'open'}><summary>교육생 배정${people.length ? ` · ${people.length}명 대기` : ''}</summary><div class="v1-assign-body">` +
       (people.length ? `<label class="v1-field"><span>교육생</span><select class="v1-select" id="assignLearner">${people.map(u => `<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('')}</select></label>` +
         `<label class="v1-field"><span>교육 시작일</span><input class="v1-input" id="assignStart" type="date" value="${today}" max="${today}"></label>` +
         `<div class="v1-muted">배정하는 분이 이 교육생의 확인 담당자가 됩니다.</div>` +
         `<button class="v1-btn primary" id="assignSave" ${busy ? 'disabled' : ''}>배정하기</button>`
-        : '<div class="v1-muted">배정할 수 있는 계정이 없어요. 교육생이 먼저 가입하고 승인돼야 해요.</div>') +
+        : (others().length ? '<div class="v1-muted">승인된 계정은 모두 배정돼 있어요. 새 교육생이 가입하고 승인되면 여기에 나타나요.</div>'
+                           : '<div class="v1-muted">아직 배정할 계정이 없어요. 교육생이 가입하고 승인되면 여기에 나타나요.</div>')) +
       '</div></details>';
   }
 
