@@ -277,7 +277,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/api/dev/accounts' and method in ('GET', 'POST'):
                 # Local trial only: switch between the dev_seed.py accounts without typing passwords.
                 # Refused unless the store is a local sqlite file and the request comes from this machine.
-                if store.database or self.client_address[0] not in ('127.0.0.1', '::1'):
+                if store.database or self.server.public_url or self.client_address[0] not in ('127.0.0.1', '::1'):
                     raise FileNotFoundError()
                 with store.connect() as db:
                     rows = db.execute("SELECT id,name,email,role FROM access_users WHERE status='active' AND email LIKE '%@local.test' ORDER BY name").fetchall()
@@ -482,8 +482,8 @@ class CloudHTTPServer(LocalHTTPServer):
 
 
 def make_server(store, port=8768, *, host='127.0.0.1', public_url=''):
-    if host != '127.0.0.1' and (not public_url or not store.database):
-        raise ValueError('외부 바인딩에는 검증된 클라우드 DB와 HTTPS 주소가 필요합니다.')
+    if host != '127.0.0.1' and not public_url.startswith('https://'):
+        raise ValueError('외부 바인딩에는 HTTPS 공개 주소(--public-url)가 필요합니다. 리버스 프록시가 TLS를 맡습니다.')
     server = (CloudHTTPServer if public_url else LocalHTTPServer)((host, port), Handler)
     server.public_url = public_url
     server.store = store
@@ -497,12 +497,16 @@ def make_server(store, port=8768, *, host='127.0.0.1', public_url=''):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=Path, default=APP / 'data')
-    parser.add_argument('--port', type=int, default=8768)
+    parser.add_argument('--data-dir', type=Path, default=Path(os.environ.get('LMS_DATA_DIR') or APP / 'data'))
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT') or 8768))
+    parser.add_argument('--host', default=os.environ.get('LMS_HOST') or '127.0.0.1',
+                        help='0.0.0.0 to serve inside a container; needs --public-url')
+    parser.add_argument('--public-url', default=os.environ.get('LMS_PUBLIC_URL') or '',
+                        help='the HTTPS address users open, e.g. https://momos-lms.example.com (no trailing slash)')
     args = parser.parse_args()
     store = Store(args.data_dir)
-    server = make_server(store, args.port)
-    print('Momos LMS: http://127.0.0.1:%d/onboarding' % args.port, flush=True)
+    server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'))
+    print('Momos LMS: %s/v1' % (args.public_url.rstrip('/') or 'http://127.0.0.1:%d' % args.port), flush=True)
     try:
         server.serve_forever()
     finally:

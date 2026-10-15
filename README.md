@@ -41,6 +41,21 @@ python3 server.py --data-dir ./data
 
 `dev_seed.py`가 담당자 1명과 교육생 2명(한 명은 배정됨, 한 명은 미배정)을 만듭니다. 계정이 이미 있는 폴더에서는 실행되지 않습니다.
 
+## 서버에 올리기 (n3r)
+
+컨테이너 하나에 sqlite 파일로 동작합니다. 외부 DB가 없으니 **Stateful 앱, replicas 1**, 영구 볼륨(CephRBD)을 `/data`에 마운트합니다. 볼륨은 앱 생성 뒤 추가할 수 없으니 처음 만들 때 넣습니다.
+
+| 항목 | 값 |
+| --- | --- |
+| 빌드 | 저장소 루트 `Dockerfile` (python:3.12-slim) |
+| 포트 | 8080 (`PORT`로 변경 가능) |
+| 볼륨 | `/data` — 교육 기록·계정 sqlite가 여기 쌓임. 백업 대상 |
+| 환경변수 | `LMS_PUBLIC_URL=https://<인그레스 호스트>` (필수, 끝에 `/` 없이). Host·Origin 검사와 보안 쿠키가 이 값을 기준으로 동작 |
+| 헬스체크 | `GET /api/health` |
+| 첫 관리자 | `ERP_BOOTSTRAP_TOKEN`(32자 이상)을 넣고 `/onboarding`에서 최초 관리자 등록. 체험 계정·역할 전환 띠는 서버에서는 나타나지 않음 |
+
+외부(모모스 직원) 접근은 Ingress **Public 접근 허용** + nFront 경유가 필요하고, 그 전에 보안검수(NTREE)와 Security Review를 거칩니다. Env가 Dev인 Gateway는 외부 노출이 안 되므로 Stage/Prod Env에 만듭니다.
+
 ## 테스트
 
 ```bash

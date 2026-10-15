@@ -17,6 +17,11 @@
 !onboarding_reviews.json
 !onboarding.html
 !onboarding_login.html
+!v1.html
+!v1.js
+!v1_content.json
+!wds/
+!wds/**
 !assets/
 !assets/momos-white.png
 !assets/momos-black.png

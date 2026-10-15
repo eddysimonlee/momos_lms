@@ -138,3 +138,29 @@ class DevAccountTests(unittest.TestCase):
             self.assertEqual(self.req('GET', '/api/dev/accounts')[0], 404)
         finally:
             self.httpd.store.database = None
+
+
+class HostedSqliteTests(unittest.TestCase):
+    """A container bind (0.0.0.0 + https public URL) works on sqlite; the local switcher stays off there."""
+
+    def test_public_url_allows_wide_bind_and_hides_dev_routes(self):
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            store = server.Store(Path(tmp.name) / 'data')
+            with self.assertRaises(ValueError):
+                server.make_server(store, 0, host='0.0.0.0')
+            httpd = server.make_server(store, 0, host='127.0.0.1', public_url='https://lms.example.test')
+            thread = threading.Thread(target=httpd.serve_forever, daemon=True); thread.start()
+            try:
+                conn = http.client.HTTPConnection('127.0.0.1', httpd.server_port, timeout=10)
+                conn.request('GET', '/api/health', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); r.read()
+                self.assertEqual(r.status, 200)
+                conn.request('GET', '/api/dev/accounts', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); r.read()
+                self.assertEqual(r.status, 404)
+                conn.request('GET', '/v1', headers={'Host': 'lms.example.test'}); r = conn.getresponse(); body = r.read()
+                self.assertEqual(r.status, 200); self.assertIn(b'authGate', body)
+                conn.close()
+            finally:
+                httpd.shutdown(); httpd.server_close(); thread.join()
+        finally:
+            tmp.cleanup()
