@@ -47,7 +47,7 @@ python3 server.py --data-dir ./data
 
 | 항목 | 값 |
 | --- | --- |
-| 빌드 | 저장소 루트 `Dockerfile` (python:3.12-slim) |
+| 빌드 | 저장소 루트 `Dockerfile` (python:3.12-slim). 빌드 서버가 Docker Hub에 못 나가면 Build arguments에 `BASE_IMAGE=<사내 미러>/library/python:3.12-slim-bookworm` |
 | 포트 | 8080 (`PORT`로 변경 가능) |
 | 볼륨 | `/data` — 교육 기록·계정 sqlite가 여기 쌓임. 백업 대상 |
 | 환경변수 | `LMS_PUBLIC_URL=https://<인그레스 호스트>` (필수, 끝에 `/` 없이). Host·Origin 검사와 보안 쿠키가 이 값을 기준으로 동작 |

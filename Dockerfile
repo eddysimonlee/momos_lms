@@ -2,7 +2,10 @@
 # n3r: Stateful app, replicas 1 (sqlite has one writer), CephRBD volume mounted at /data,
 # env LMS_PUBLIC_URL=https://<ingress host>. Health check: GET /api/health.
 # Internal staging only: LMS_TRIAL=1 seeds the trial accounts and turns on the role switcher.
-FROM python:3.12-slim-bookworm
+# Build argument so a build server can point at a company mirror instead of Docker Hub,
+# e.g. n3r Build arguments: BASE_IMAGE=<mirror host>/library/python:3.12-slim-bookworm
+ARG BASE_IMAGE=python:3.12-slim-bookworm
+FROM ${BASE_IMAGE}
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 ERP_CACHE_DIR=/tmp/momos-lms \
     LMS_DATA_DIR=/data LMS_HOST=0.0.0.0 PORT=8080
