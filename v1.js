@@ -187,7 +187,7 @@
       if (!response.ok) return;
       const data = await response.json();
       if (!data.accounts.length) return;
-      bar.innerHTML = '<span>체험 계정 전환</span>' + data.accounts.map(a =>
+      bar.innerHTML = '<span>역할 전환</span>' + data.accounts.map(a =>
         `<button data-dev="${esc(a.id)}" class="${a.id === data.current ? 'on' : ''}">${esc(a.name)}</button>`).join('');
       bar.hidden = false;
       bar.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => {
