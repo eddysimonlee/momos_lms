@@ -18,7 +18,8 @@
 - 파일: `v1.html`(화면·스타일), `v1.js`(동작), `v1_content.json`(교재 조각), `v1_build.py`(조각 생성기)
 - 기록은 기존 `/api/onboarding`에 그대로 저장되므로 `/onboarding`(전체 화면)과 같은 데이터를 봅니다.
 - 범위를 넓히려면 `v1_build.py`의 `UNITS`에 단원 id를 추가하고 `python3 v1_build.py`를 실행합니다.
-- 교육 배정과 계정 관리는 아직 `/onboarding?view=account`(기존 화면)에서 합니다.
+- 교육 배정과 계정 관리는 아직 `/onboarding?view=account`(기존 화면)에서 합니다. `/onboarding`은 원래 요구 사항 전체를 담은 비교·참고용 화면으로 남겨 둡니다.
+- 로컬 체험 중에는 `/v1` 위쪽에 **체험 계정 전환** 띠가 나타나 로그아웃 없이 관리자·교육자·교육생을 오갈 수 있습니다. 로컬 sqlite 저장소에, 같은 컴퓨터에서 접속할 때, `@local.test` 계정에만 동작하고 그 밖에서는 띠도 API도 없습니다.
 
 ## 로컬 실행
 

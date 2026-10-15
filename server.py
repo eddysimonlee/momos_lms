@@ -274,6 +274,25 @@ class Handler(BaseHTTPRequestHandler):
                     result, cookie = auth.new_session(account)
                     return self.send(201, result, cookie)
                 return self.send(201, {'status': 'pending', 'message': '가입 신청을 받았습니다. 관리자 승인 후 로그인할 수 있습니다.'})
+            if path == '/api/dev/accounts' and method in ('GET', 'POST'):
+                # Local trial only: switch between the dev_seed.py accounts without typing passwords.
+                # Refused unless the store is a local sqlite file and the request comes from this machine.
+                if store.database or self.client_address[0] not in ('127.0.0.1', '::1'):
+                    raise FileNotFoundError()
+                with store.connect() as db:
+                    rows = db.execute("SELECT id,name,email,role FROM access_users WHERE status='active' AND email LIKE '%@local.test' ORDER BY name").fetchall()
+                accounts = [dict(r) for r in rows]
+                if method == 'GET':
+                    return self.send(200, {'accounts': accounts, 'current': user['id'] if user else None})
+                self.body()
+                wanted = next((a for a in accounts if a['id'] == query.get('id', [''])[0]), None)
+                if not wanted:
+                    raise FileNotFoundError()
+                auth.logout(self.headers.get('Cookie'))
+                with store.connect() as db:
+                    row = db.execute('SELECT * FROM access_users WHERE id=?', (wanted['id'],)).fetchone()
+                result, cookie = auth.new_session(access.public_user(row))
+                return self.send(200, result, cookie)
             private = path.startswith('/api/') and path != '/api/health'
             if private and not user:
                 raise access.LoginRequired()

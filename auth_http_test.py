@@ -110,3 +110,31 @@ class AccountRouteTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class DevAccountTests(unittest.TestCase):
+    """The local account switcher: only seed accounts, only on a local sqlite store."""
+    setUp, tearDown, req = AccountRouteTests.setUp, AccountRouteTests.tearDown, AccountRouteTests.req
+
+    def test_switcher_lists_and_switches_local_test_accounts_only(self):
+        self.assertEqual(self.req('GET', '/api/dev/accounts')[2]['accounts'], [])
+        trial = self.auth.create(dict(name='체험 교육생', email='learner@local.test', password=PASSWORD, company='momos'))
+        with self.store.connect() as db:
+            db.execute("UPDATE access_users SET status='active' WHERE id=?", (trial['id'],))
+        code, _, body = self.req('GET', '/api/dev/accounts')
+        self.assertEqual(code, 200)
+        self.assertEqual([a['email'] for a in body['accounts']], ['learner@local.test'])
+        self.assertIsNone(body['current'])
+        code, headers, body = self.req('POST', '/api/dev/accounts?id=' + trial['id'], {})
+        self.assertEqual((code, body['user']['email']), (200, 'learner@local.test'))
+        cookie = headers['Set-Cookie'].split(';')[0].split('=', 1)[1]
+        self.assertEqual(self.req('GET', '/api/dev/accounts', cookie=cookie)[2]['current'], trial['id'])
+        self.assertEqual(self.req('POST', '/api/dev/accounts?id=' + self.admin['id'], {}, cookie=cookie)[0], 404)
+        self.assertEqual(self.req('POST', '/api/dev/accounts?id=' + trial['id'], {}, origin=False)[0], 403)
+
+    def test_switcher_is_absent_with_a_database_store(self):
+        self.httpd.store.database = 'postgresql://example'
+        try:
+            self.assertEqual(self.req('GET', '/api/dev/accounts')[0], 404)
+        finally:
+            self.httpd.store.database = None

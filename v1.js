@@ -157,6 +157,25 @@
     if (complete) complete.onclick = () => act('step.complete', {step: step.id}).then(ok => ok && toast('확인 완료로 기록했어요.'));
   }
 
+  // Local trial only: the server answers /api/dev/accounts just for a local sqlite store on this machine.
+  async function devSwitcher() {
+    const bar = $('v1Dev');
+    try {
+      const response = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
+      if (!response.ok) return;
+      const data = await response.json();
+      if (!data.accounts.length) return;
+      bar.innerHTML = '<span>체험 계정 전환</span>' + data.accounts.map(a =>
+        `<button data-dev="${esc(a.id)}" class="${a.id === data.current ? 'on' : ''}">${esc(a.name)}</button>`).join('');
+      bar.hidden = false;
+      bar.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => {
+        const r = await fetch('/api/dev/accounts?id=' + encodeURIComponent(b.dataset.dev), {method: 'POST', credentials: 'same-origin',
+          headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''}, body: '{}'});
+        if (r.ok) location.reload(); else toast('계정을 바꾸지 못했어요.');
+      });
+    } catch {}
+  }
+
   $('v1Back').onclick = () => { view = 'home'; render(); };
   $('v1Who').onclick = () => ERPAuth.openAccount();
 
@@ -168,5 +187,6 @@
     cloud = await api('GET');
     if (!cloud.enrolled && (cloud.workspaceRoles.trainer || cloud.workspaceRoles.admin) && others().length) cloud = await api('GET', null, others()[0].id);
     render();
+    devSwitcher();
   }).catch(e => { $('app').innerHTML = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(e.message)}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button></div>`; });
 })();
