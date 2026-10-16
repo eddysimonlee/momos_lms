@@ -226,7 +226,12 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual([u['id'] for u in slice_['units']],['welcome'])
             self.assertEqual(sum(len(u['steps']) for u in slice_['units']),6)
-            self.assertTrue(set(r for u in slice_['units'] for s in u['steps'] for r in s['refs'])<=set(slice_['guides']))
+            steps=[s for u in slice_['units'] for s in u['steps']]
+            self.assertTrue(all(s['purpose'] and s['keyPoints'] and s['sources'] for s in steps))  # 교육 목적·교육 내용·원본 보기
+            cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
+            self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))
+            self.assertNotIn('guides',slice_)  # 매뉴얼 전문은 더 이상 싣지 않는다
+            self.assertEqual(req('GET','/v1_lessons.json')[0],404);self.assertEqual(req('GET','/source_index.json')[0],404)
             self.assertEqual(req('GET','/v1_build.py')[0],404)
             for removed in ('/api/state','/api/projects','/index.html','/app.js'):
                 self.assertEqual(req('GET',removed)[0],404,removed)

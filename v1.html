@@ -96,6 +96,21 @@
 .v1-guide-body table{border-collapse:collapse;width:100%;font:var(--body-sm)}.v1-guide-body th,.v1-guide-body td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top}.v1-guide-body th{background:var(--surface-subtle)}
 .v1-guide-body td p,.v1-guide-body th p{margin:0}
 .v1-src{color:var(--text-muted);font:var(--label-xs);margin:var(--spacing-12) 0 0}
+.v1-purpose{margin:0;font:var(--body-lg);padding:var(--spacing-12) var(--spacing-16);background:var(--surface-secondary);border-left:3px solid var(--border-primary);border-radius:0 var(--radius-md) var(--radius-md) 0}
+.v1-kp{margin:var(--spacing-12) 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:var(--spacing-12);counter-reset:kp}
+.v1-kp li{display:grid;grid-template-columns:24px 1fr;gap:var(--spacing-8);counter-increment:kp;font:var(--body-lg)}
+.v1-kp li::before{content:counter(kp);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:var(--label-sm-bold);color:var(--text-primary);background:var(--action-selected);margin-top:2px}
+.v1-kp .v1-cites{grid-column:2;display:flex;flex-wrap:wrap;gap:var(--spacing-4)}
+.v1-cite{font:var(--label-xs);color:var(--text-muted);background:var(--surface-secondary);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:1px var(--spacing-6);cursor:pointer}
+.v1-cite:hover{color:var(--text-primary);border-color:var(--border-primary)}
+.v1-sources{display:flex;flex-direction:column;gap:var(--spacing-8);margin-top:var(--spacing-8)}
+.v1-sources .v1-guide{margin-top:0}
+.v1-sources .v1-guide summary::after{display:none}
+.v1-sources .v1-guide summary{gap:var(--spacing-8);align-items:center}
+.v1-guide summary>span:first-child{flex:1}
+.v1-tag{font:var(--label-xs);color:var(--text-muted);white-space:nowrap}
+.v1-guide.flash summary{box-shadow:var(--component-checkbox-state-selected-focus-focus-ring)}
+.v1-guide-body td.v1-grp{background:var(--surface-secondary);font:var(--body-sm-bold)}
 .v1-people{display:flex;gap:var(--spacing-8);flex-wrap:wrap;margin:var(--spacing-8) 0 0}
 .v1-people button{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer}
 .v1-people button.on{background:var(--component-tag-color-solid-surface);border-color:var(--component-tag-color-solid-surface);color:var(--component-tag-color-solid-text-color)}
