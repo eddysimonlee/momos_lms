@@ -95,6 +95,18 @@ def month(d, n):
     return date(y, m + 1, min(x.day, calendar.monthrange(y, m + 1)[1])).isoformat()
 
 
+def fit(learner):
+    """Pad or trim per-check arrays when a step's check list changed length after records were saved."""
+    for ident, r in learner.get('records', {}).items():
+        s = STEPS.get(ident)
+        if not s: continue
+        n = len(s['checks'])
+        for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None)):
+            if key in r and len(r[key]) != n:
+                r[key] = (list(r[key]) + [empty] * n)[:n]
+    return learner
+
+
 def blank(join):
     records = {}
     plans = {}
@@ -164,7 +176,7 @@ class Service:
             raise PermissionError('본인 또는 배정된 교육생의 기록만 열 수 있습니다.')
         users = {r['id']:dict(r) for r in db.execute("SELECT id,name,company,role FROM access_users WHERE status='active'").fetchall()}
         entry = root['learners'].get(target)
-        learner = projects.Rooms.read(db,entry['key']) if entry else blank(today())
+        learner = fit(projects.Rooms.read(db,entry['key'])) if entry else blank(today())
         learner = copy.deepcopy(learner)
         learner['startDate']=entry.get('startDate',entry['join']) if entry else None
         for exam in [learner['exam'], *learner['examArchive']]:
@@ -384,7 +396,7 @@ class Service:
             else:
                 entry = root['learners'].get(target)
                 if not entry: raise ValueError('관리자가 교육생·입사일·교육자를 먼저 배정해야 합니다.')
-                learner = projects.Rooms.read(db,entry['key'])
+                learner = fit(projects.Rooms.read(db,entry['key']))
                 if v['revision']!=learner['revision']:
                     raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
                 self.education(db,root,user,p,learner,action,data)
@@ -517,7 +529,7 @@ class Service:
             learner['startDate']=start_date
             if start_date:learner['planDates']=blank(start_date)['planDates']
         else:
-            learner=projects.Rooms.read(db,entry['key'])
+            learner=fit(projects.Rooms.read(db,entry['key']))
             learner.setdefault('startDate',entry.get('startDate',learner['join']))
             if join!=learner['join']:
                 self.join_change(learner,join,user,rebase=learner['startDate'] is None and start_date is None)

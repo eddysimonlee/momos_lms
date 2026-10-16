@@ -234,7 +234,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),82);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),264)
+        self.assertEqual(len(ob.STEPS),82);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),270)  # 첫날 OJT 11→17 (FRM v0.5)
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 
