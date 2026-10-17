@@ -164,7 +164,7 @@
     return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(cloud.name)}</span>` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
-      `<section class="v1-card"><h2>교육 내용</h2><div class="v1-muted">출처를 누르면 아래 ‘원본 보기’에서 그 절이 펼쳐져요.</div>${keyPoints}</section>` +
+      `<section class="v1-card"><h2>교육 내용</h2>${keyPoints}</section>` +
       `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 항목을 현장에서 확인하고 체크하세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
       memo + (sources ? `<section class="v1-card"><h2>원본 보기</h2><div class="v1-muted">이 항목이 인용한 매뉴얼의 절. 문서 전체는 Works Drive의 원본 파일에서 봅니다.</div><div class="v1-sources">${sources}</div></section>` : '') +
       (actions ? `<div class="v1-actions">${actions}</div>` : '');

@@ -19,7 +19,7 @@ WORKDIR /app
 COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py ./
 COPY --chown=lms:lms auth.js workspace_items.js onboarding.js styles.css ./
 COPY --chown=lms:lms onboarding_course.json onboarding_reviews.json onboarding.html onboarding_login.html ./
-COPY --chown=lms:lms v1.html v1.js v1_content.json ./
+COPY --chown=lms:lms v1.html v1.js v1_content.json v1_lessons.json ./
 COPY --chown=lms:lms wds/ ./wds/
 COPY --chown=lms:lms assets/ ./assets/
 COPY --chown=lms:lms icons/ ./icons/

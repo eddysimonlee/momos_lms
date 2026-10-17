@@ -328,7 +328,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/v1_content.json' and method == 'GET':
                 if not user:
                     raise access.LoginRequired()
-                return self.file(APP / 'v1_content.json')
+                return self.send(200, v1_content())
             if path in ('/onboarding','/onboarding.js','/onboarding/wiki') and method == 'GET':
                 if not user:
                     if path == '/onboarding':
@@ -492,6 +492,25 @@ class CloudHTTPServer(LocalHTTPServer):
         try:super().process_request_thread(request,address)
         finally:self.request_slots.release()
 
+
+
+def v1_content():
+    """v1_content.json (빌드 산출물: 절·사진) 위에 v1_lessons.json (교육 목적·교육 내용·인용 글)을 덮어 돌려준다.
+    글만 고칠 때는 v1_lessons.json 을 수정·커밋하면 되고, 새 절을 인용할 때만 v1_build.py 를 다시 돌린다."""
+    content = json.loads((APP / 'v1_content.json').read_text(encoding='utf-8'))
+    lessons_path = APP / 'v1_lessons.json'
+    if lessons_path.exists():
+        lessons = json.loads(lessons_path.read_text(encoding='utf-8')).get('lessons', {})
+        for unit in content.get('units', []):
+            for step in unit['steps']:
+                l = lessons.get(step['id'])
+                if not l:
+                    continue
+                if l.get('title'): step['title'] = l['title']
+                if 'purpose' in l: step['purpose'] = l['purpose']
+                if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
+                if 'sources' in l: step['sources'] = ['|'.join(c) for c in l['sources']]
+    return content
 
 
 def make_server(store, port=8768, *, host='127.0.0.1', public_url='', trial=False):
