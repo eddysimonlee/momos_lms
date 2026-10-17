@@ -115,7 +115,10 @@ class EducationTests(unittest.TestCase):
 
     def test_cross_employee_admin_self_and_revoked_educator_are_blocked(self):
         with self.assertRaises(PermissionError):self.service.get(self.other,self.learner['id'])
-        with self.assertRaises(PermissionError):self.act(self.admin,'step.teacher',dict(step=next(iter(ob.STEPS)),index=0,on=True),self.learner['id'])
+        # 1차: 관리자는 배정 없이도 확인 담당이다. 권한은 통과하고 단계 상태 검사(ValueError)만 남는다. 자기 기록은 확인 못 한다.
+        with self.assertRaises(ValueError):self.act(self.admin,'step.teacher',dict(step=next(iter(ob.STEPS)),index=0,on=True),self.learner['id'])
+        self.act(self.admin,'config.selfEnrol',{})
+        with self.assertRaises(PermissionError):self.act(self.admin,'step.teacher',dict(step=next(iter(ob.STEPS)),index=0,on=True))
         d=dict(learner=self.learner['id'],trainer=self.learner['id'],assessor=self.trainer['id'],join=ob.today())
         with self.assertRaises(ValueError):self.act(self.admin,'config.enrol',d)
         with self.store.connect() as db:db.execute("UPDATE access_users SET status='revoked' WHERE id=?",(self.trainer['id'],))
@@ -236,6 +239,16 @@ class EducationTests(unittest.TestCase):
             for removed in ('/api/state','/api/projects','/index.html','/app.js'):
                 self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()
+
+    def test_first_entry_enrols_the_learner_with_today_as_start(self):
+        c=self.service.get(self.other);self.assertFalse(c['enrolled'])
+        c=self.act(self.other,'config.selfEnrol',{})
+        self.assertTrue(c['enrolled']);self.assertEqual(c['learner']['startDate'],ob.today());self.assertEqual(c['learner']['join'],ob.today())
+        ident=next(iter(ob.STEPS))
+        c=self.act(self.other,'step.self',dict(step=ident,index=0,on=True));self.assertEqual(c['learner']['records'][ident]['status'],'practice')
+        self.act(self.other,'config.selfEnrol',{})  # 두 번 불러도 그대로
+        self.assertEqual(self.service.get(self.other)['learner']['startDate'],ob.today())
+        with self.assertRaises(PermissionError):self.act(self.tech,'config.selfEnrol',{})  # 모모스 계정만
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')

@@ -157,9 +157,11 @@ class Service:
     def roles(self, root, user, target):
         entry = root['learners'].get(target)
         own = user['id'] == target and bool(entry)
-        return dict(own=own, trainer=bool(entry and user['id']==entry['trainer'] and not own),
-                    assessor=bool(entry and user['id']==entry['assessor'] and not own),
-                    admin=self.admin(user),technical=user['id'] in root['technical'],content=user['id'] in root['content'])
+        # 1차: 배정 없이 운영한다. 관리자는 누구의 교육이든 확인할 수 있다(본인 것은 제외). 배정된 교육자·평가자도 그대로 인정.
+        admin=self.admin(user)
+        return dict(own=own, trainer=bool(entry and not own and (admin or user['id']==entry['trainer'])),
+                    assessor=bool(entry and not own and (admin or user['id']==entry['assessor'])),
+                    admin=admin,technical=user['id'] in root['technical'],content=user['id'] in root['content'])
 
     def may_view(self, root, user, target):
         p = self.roles(root,user,target)
@@ -386,6 +388,8 @@ class Service:
                     raise PermissionError('본인에게 보이는 알림만 읽음 처리할 수 있습니다.')
                 readers=root.setdefault('noticeReads',{})
                 readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))[-500:]
+            elif action=='config.selfEnrol':
+                self.self_enrol(db,root,user,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -483,6 +487,21 @@ class Service:
             add('material:'+doc['id']+':'+doc['hash'],'교육 참고자료 반영 · '+doc['title'],
                 doc['status']+' · 반영일 '+doc['reflectedAt'],doc['reflectedAt'],target=user['id'],view='materials',material=doc['id'])
         return sorted(items,key=lambda n:(n.get('date') or '',n['id']),reverse=True)[:200]
+
+    def self_enrol(self, db, root, user, d):
+        """처음 들어온 교육생을 바로 등록한다: 입사일·교육 시작일 = 오늘, 담당자 미배정(관리자 누구나 확인)."""
+        if d not in ({}, None): raise ValueError('자동 등록에는 입력 항목이 없습니다.')
+        if user['company']!='momos': raise PermissionError('모모스 계정만 교육을 시작할 수 있습니다.')
+        if user['id'] in root['learners']: return
+        key=-int(uuid.uuid4().hex[:7],16)-10000
+        while db.execute('SELECT 1 FROM metadata WHERE id=?',(key,)).fetchone():key-=1
+        start=today()
+        root['learners'][user['id']]=dict(key=key,join=start,startDate=start,trainer=None,assessor=None)
+        learner=blank(start); learner['startDate']=start
+        learner['events'].append(dict(person='A',date=start,at=stamp(),actor=user['name'],actorId=user['id'],id=None,
+                                     text='교육 시작 (처음 접속한 날)',attempt=None,lessonVersion=COURSE['version'],sourceVersion=COURSE['sourceVersion']))
+        projects.Rooms.write(db,key,learner)
+        root['audit'].append(dict(at=stamp(),actor=user['id'],action='교육 자동 등록',learner=user['id'],previous=None,next=copy.deepcopy(root['learners'][user['id']])))
 
     def configure(self, db, root, user, action, d):
         active = {r['id']:dict(r) for r in db.execute("SELECT id,name,company FROM access_users WHERE status='active'").fetchall()}

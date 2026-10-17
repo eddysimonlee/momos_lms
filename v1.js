@@ -49,13 +49,12 @@
   const record = id => cloud.learner.records[id];
   const stepIndex = id => steps().findIndex(s => s.id === id);
   const canWrite = () => cloud.enrolled && cloud.scheduled;
-  // Two roles on screen: 교육생 (own record) and 담당자 (store staff: assigns learners and confirms).
+  // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
   // The record still stores who confirmed each check, so trainers can be split out later.
   const isStaff = () => Boolean(cloud.workspaceRoles.admin || cloud.workspaceRoles.trainer || cloud.workspaceRoles.assessor);
   const role = () => cloud.permissions.own ? 'learner' : isStaff() ? 'staff' : 'viewer';
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
-  const unassigned = () => (cloud.configuration?.users || []).filter(u => u.company === 'momos' && u.admitted !== false && !cloud.configuration.learners[u.id] && u.id !== cloud.user.id);
 
   // --- rendering
   function render() {
@@ -72,32 +71,16 @@
   function peopleBar() {
     if (!isStaff()) return '';
     const list = others();
-    return '<section class="v1-card"><h2>담당 교육생</h2>' +
+    return '<section class="v1-card"><h2>교육생</h2>' +
       (list.length ? '<div class="v1-muted">이름을 누르면 그 교육생의 기록이 열려요.</div><div class="v1-people">' +
         list.map(r => `<button data-person="${esc(r.id)}" class="${r.id === cloud.target ? 'on' : ''}">${esc(r.name)}</button>`).join('') + '</div>'
-        : '<div class="v1-muted">아직 배정한 교육생이 없어요.</div>') +
-      assignForm() + '</section>';
-  }
-
-  // 담당자 only: pick an approved staff account and a start date; the assigner becomes the trainer.
-  function assignForm() {
-    if (!cloud.permissions.admin) return '';
-    const people = unassigned();
-    const today = cloud.today;
-    return `<details class="v1-assign" ${others().length || !people.length ? '' : 'open'}><summary>교육생 배정${people.length ? ` · ${people.length}명 대기` : ''}</summary><div class="v1-assign-body">` +
-      (people.length ? `<label class="v1-field"><span>교육생</span><select class="v1-select" id="assignLearner">${people.map(u => `<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('')}</select></label>` +
-        `<label class="v1-field"><span>교육 시작일</span><input class="v1-input" id="assignStart" type="date" value="${today}" max="${today}"></label>` +
-        `<div class="v1-muted">배정하는 분이 이 교육생의 확인 담당자가 됩니다.</div>` +
-        `<button class="v1-btn primary" id="assignSave" ${busy ? 'disabled' : ''}>배정하기</button>`
-        : (others().length ? '<div class="v1-muted">승인된 계정은 모두 배정돼 있어요. 새 교육생이 가입하고 승인되면 여기에 나타나요.</div>'
-                           : '<div class="v1-muted">아직 배정할 계정이 없어요. 교육생이 가입하고 승인되면 여기에 나타나요.</div>')) +
-      '</div></details>';
+        : '<div class="v1-muted">아직 교육을 시작한 교육생이 없어요. 교육생이 처음 접속하면 여기에 나타나요.</div>') +
+      '</section>';
   }
 
   function enrolNotice() {
     if (canWrite() || isStaff()) return '';
-    const why = !cloud.enrolled ? '아직 담당자가 배정하기 전이에요.' : '교육 시작일이 아직 정해지지 않았어요.';
-    return `<div class="v1-note warn">${why} 교재는 볼 수 있고, 체크와 확인 요청은 배정 후에 할 수 있어요.</div>`;
+    return `<div class="v1-note warn">교육 기록을 아직 시작하지 못했어요. 새로고침해 보세요.</div>`;
   }
 
   function homeView() {
@@ -116,7 +99,7 @@
           `확인 ${r.self.filter(Boolean).length}/${s.checks.length}`;
         return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${i + 1}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${esc(STATUS[st])} · ${sub}</small></span><span class="v1-chev">›</span></button></li>`;
       }).join('') + '</ul>' +
-      `<p class="v1-src">교재 ${esc(content.sourceVersion)} · 교육안 ${esc(content.courseVersion)} · 기록은 서버에 저장됩니다</p>`;
+      `<p class="v1-src">원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 교육안 ${esc(content.courseVersion)} · 기록은 서버에 저장됩니다</p>`;
   }
 
   function stepView(s) {
@@ -178,13 +161,6 @@
       const el = document.getElementById('src-' + b.dataset.cite.replace(/[^0-9A-Za-z.-]/g, '_'));
       if (!el) return; el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
     });
-    const save = $('assignSave');
-    if (save) save.onclick = async () => {
-      const learner = $('assignLearner').value, start = $('assignStart').value;
-      if (!learner || !start) return toast('교육생과 시작일을 고르세요.');
-      const ok = await act('config.enrol', {learner, trainer: cloud.user.id, assessor: cloud.user.id, join: start, startDate: start});
-      if (ok) { toast('배정했어요. 이제 이 교육생이 체크를 시작할 수 있어요.'); await load(learner).catch(() => {}); }
-    };
     if (!step) return;
     app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked}));
     app.querySelectorAll('[data-teacher]').forEach(c => c.onchange = () => act('step.teacher', {step: step.id, index: Number(c.dataset.teacher), on: c.checked}));
@@ -240,6 +216,7 @@
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
     cloud = await api('GET');
+    if (!cloud.enrolled && !isStaff()) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
     if (!cloud.enrolled && isStaff() && others().length) cloud = await api('GET', null, others()[0].id);
     render();
     devSwitcher();
