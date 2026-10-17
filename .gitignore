@@ -13,3 +13,4 @@ node_modules/
 # Local copies of the original ERP files kept only for comparison while refactoring.
 /_reference/
 source_index*.json
+v1_preview.html
