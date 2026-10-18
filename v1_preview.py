@@ -1,11 +1,13 @@
-"""v1 화면 미리보기 HTML 한 장 만들기 — 서버·로그인·VPN 없이 글만 확인할 때.
+"""v1 화면 미리보기 HTML 한 장 만들기 — 서버·로그인·VPN 없이, 실제 화면 그대로.
 
     python3 v1_preview.py            → v1_preview.html 생성 (브라우저로 열기)
 
-v1_lessons.json(교육 목적·교육 내용·인용)과 v1_content.json(절·사진)을 읽어
-실제 /v1 과 같은 스타일(v1.html의 CSS + WDS 토큰)로 6개 항목을 그린다.
-체크·요청·저장 같은 서버 기능은 없고, 글과 배치만 본다.
-v1_lessons.json 을 고친 뒤 이 스크립트를 다시 돌리면 바로 반영된다.
+실제 v1.html·v1.js·CSS 를 그대로 쓰고, 서버(/api/onboarding, /api/dev/accounts, 로그인)만
+브라우저 안의 가짜 서버로 바꾼다. 그래서 역할 전환 바, 체크, 확인 요청, 담당자 확인 완료까지
+서버 배포본과 같게 동작한다. 기록은 이 브라우저(localStorage)에만 남고, 체험 계정은
+staff / learner / newbie 셋이다(dev_seed 와 같음). 미리보기 상단 띠에서 '기록 초기화'로 지운다.
+
+v1_lessons.json 을 고친 뒤 다시 돌리면 바로 반영된다.
 """
 import base64
 import json
@@ -13,6 +15,10 @@ import re
 from pathlib import Path
 
 APP = Path(__file__).parent
+
+
+def inline_file(path):
+    return path.read_text(encoding='utf-8') if path.exists() else ''
 
 
 def main():
@@ -27,75 +33,133 @@ def main():
             step['purpose'] = l.get('purpose', step.get('purpose', ''))
             step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l.get('keyPoints', [])]
             step['sources'] = ['|'.join(c) for c in l.get('sources', [])]
-    # 사진은 data URI 로 심어 파일 하나로 만든다
-    for p in content.get('photos', {}).values():
-        src = p.get('src', '')
-        if src.startswith('data:') or not src:
-            continue
-        f = APP / src.lstrip('/')
-        if f.exists():
-            p['src'] = 'data:image/' + f.suffix.lstrip('.').replace('jpg', 'jpeg') + ';base64,' + base64.b64encode(f.read_bytes()).decode()
-    v1 = (APP / 'v1.html').read_text(encoding='utf-8')
-    style = re.search(r'<style>(.*?)</style>', v1, re.S).group(1)
-    wds = (APP / 'wds/web/variables.css').read_text(encoding='utf-8')
+    page = (APP / 'v1.html').read_text(encoding='utf-8')
+    # 외부 파일을 전부 안에 넣는다
     font = APP / 'assets/PretendardVariable.woff2'
     font_css = ''
     if font.exists():
-        font_css = ("@font-face{font-family:'Pretendard';font-weight:45 920;src:url(data:font/woff2;base64,%s) format('woff2')}"
-                    "html,body,button,input,textarea{font-family:Pretendard,-apple-system,BlinkMacSystemFont,sans-serif}") % base64.b64encode(font.read_bytes()).decode()
+        font_css = "<style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;src:url(data:font/woff2;base64,%s) format('woff2')}</style>" % base64.b64encode(font.read_bytes()).decode()
+    styles = re.sub(r"url\('assets/PretendardVariable.woff2'\)", "url(data:,)", inline_file(APP / 'styles.css'))
+    page = page.replace('<link rel="stylesheet" href="/styles.css">', font_css + '<style>' + styles + '</style>')
+    page = page.replace('<link rel="stylesheet" href="/wds/web/variables.css">', '<style>' + inline_file(APP / 'wds/web/variables.css') + '</style>')
+    page = re.sub(r'<link rel="icon"[^>]*>\s*', '', page)
+    page = re.sub(r'<link rel="apple-touch-icon"[^>]*>\s*', '', page)
     data = json.dumps(content, ensure_ascii=False).replace('</', '<\\/')
-    html = TEMPLATE.replace('/*WDS*/', wds).replace('/*V1*/', style).replace('/*FONT*/', font_css).replace('/*DATA*/', 'const content=' + data + ';')
-    (APP / 'v1_preview.html').write_text(html, encoding='utf-8')
+    mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';')
+    page = page.replace('<script src="/auth.js"></script>', '<script>' + mock + '</script>')
+    page = page.replace('<script src="/v1.js"></script>', '<script>' + (APP / 'v1.js').read_text(encoding='utf-8').replace('</script', '<\\/script') + '</script>')
+    page = page.replace('<body class="auth-pending">', '<body class="auth-pending">' + BANNER, 1)
+    page = page.replace('</head>', '<style>' + BANNER_CSS + '</style></head>', 1)
+    (APP / 'v1_preview.html').write_text(page, encoding='utf-8')
     print('v1_preview.html:', sum(len(u['steps']) for u in content['units']), 'steps —', (APP / 'v1_preview.html').resolve())
 
 
-TEMPLATE = r'''<!doctype html>
-<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>v1 미리보기 · 입사·근무 준비</title>
-<style>/*FONT*/</style>
-<style>/*WDS*/</style>
-<style>/*V1*/</style>
-<style>
-body{margin:0;background:var(--surface-secondary,#f4f5f7)}
-.pv-bar{position:sticky;top:0;z-index:5;background:#FFF4CC;color:#5A4A00;font:var(--label-sm);padding:6px 16px;text-align:center}
-.pv-frame{max-width:430px;margin:0 auto;min-height:100vh;background:var(--surface-default,#fff);box-shadow:0 0 0 1px var(--border-default)}
-</style></head>
-<body>
-<div class="pv-bar">미리보기 · 글과 배치만 확인 (체크·저장 안 됨)</div>
-<div class="pv-frame">
-  <header class="v1-top"><button id="v1Back" class="v1-back" aria-label="뒤로" hidden>‹</button><h1 id="v1Title">입사·근무 준비</h1><span class="v1-who">미리보기</span></header>
-  <main id="app" class="v1-main"></main>
-</div>
-<script>
-/*DATA*/
-const $=id=>document.getElementById(id);
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const br=s=>esc(s).replace(/\n/g,'<br>');
-const unit=content.units[0], steps=unit.steps;
-let view=location.hash.slice(1)||'home';
-function srcLabel(key){const sec=content.sections[key],doc=sec&&content.documents[sec.doc];return sec?`${doc?doc.title:''} ${sec.no} ${sec.title}`.trim():key}
-const table=t=>`<div class="table-wrap"><table><thead><tr>${t.header.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r=>r.length===1&&t.header.length>1?`<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>`:`<tr>${r.map(c=>`<td>${br(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-function home(){return `<section class="v1-card"><h2>${esc(unit.title)}</h2><div class="v1-muted">${esc(unit.summary)} · 교육 시작 후 ${unit.plan[0]}~${unit.plan[1]}일차</div><div class="v1-progress"><i style="width:0%"></i></div><div class="v1-muted">0/${steps.length} 완료</div></section><ul class="v1-list">${steps.map((s,i)=>`<li><button class="v1-item ready" data-step="${esc(s.id)}"><span class="v1-num">${i+1}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>시작 전 · 확인 0/${s.checks.length}</small></span><span class="v1-chev">›</span></button></li>`).join('')}</ul><p class="v1-src">원본 색인 ${esc((content.sourceIndexedAt||'').slice(0,10))} · 교육안 ${esc(content.courseVersion)} · 미리보기</p>`}
-function step(s){const i=steps.indexOf(s),next=steps[i+1];
- const purpose=s.purpose?`<p class="v1-purpose">${br(s.purpose)}</p>`:`<div class="v1-copy">${(s.copy||[]).map(p=>`<p>${esc(p)}</p>`).join('')}</div>`;
- const photos=(s.photos||[]).map(p=>content.photos[p]).filter(Boolean).map(p=>`<figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('');
- const cite=k=>`<button type="button" class="v1-cite" data-cite="${esc(k)}">${esc(srcLabel(k))}</button>`;
- const kp=s.keyPoints&&s.keyPoints.length?`<ol class="v1-kp">${s.keyPoints.map(k=>`<li><div>${br(k.text)}</div><div class="v1-cites">${k.cites.map(cite).join('')}</div></li>`).join('')}</ol>`:`<div class="v1-copy">${(s.copy||[]).map(p=>`<p>${esc(p)}</p>`).join('')}</div>`;
- const checks=`<ul class="v1-checks">${s.checks.map((c,k)=>`<li><label><input type="checkbox" data-self="${k}"><span class="v1-box"></span><span>${esc(c)}</span></label></li>`).join('')}</ul>`;
- const sources=(s.sources||[]).map(key=>{const sec=content.sections[key];if(!sec)return `<div class="v1-note warn">색인에 없는 절: ${esc(key)} — v1_build.py 를 다시 돌려야 합니다</div>`;const doc=content.documents[sec.doc]||{};
-  return `<details class="v1-guide" id="src-${esc(key).replace(/[^0-9A-Za-z.-]/g,'_')}"><summary><span>${esc(doc.title||'')} <b>${esc(sec.no)} ${esc(sec.title)}</b></span><span class="v1-tag">${esc(doc.type||'')} ${esc(doc.version||'')}</span></summary><div class="v1-guide-body"><p class="v1-src">${esc(doc.title||'')} · ${esc(doc.type||'')} ${esc(doc.version||'')} (${esc(doc.revised||'')}) · ${esc(sec.kind)}${sec.images?` · 사진 ${sec.images}장은 원본 파일에서`:''}</p>${sec.paragraphs.map(p=>`<p>${esc(p)}</p>`).join('')}${sec.tables.map(table).join('')}<p class="v1-src">파일: ${esc(doc.file||'')}</p></div></details>`}).join('');
- return `<section class="v1-card"><span class="v1-pill ready">시작 전</span> <span class="v1-muted">${i+1}/${steps.length} · 미리보기</span><h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}${s.note?`<div class="v1-note warn">${esc(s.note)}</div>`:''}</section>`+
-  `<section class="v1-card"><h2>교육 내용</h2>${kp}</section>`+
-  `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.</div>${checks}</section>`+
-  `<section class="v1-card"><h2>메모</h2><div class="v1-muted">어려웠던 점, 담당자에게 확인할 내용</div><textarea class="v1-memo" placeholder="적어 두면 담당자가 확인할 때 함께 봅니다"></textarea></section>`+
-  (sources?`<section class="v1-card"><h2>원본 보기</h2><div class="v1-muted">이 항목이 인용한 매뉴얼의 절. 문서 전체는 Works Drive의 원본 파일에서 봅니다.</div><div class="v1-sources">${sources}</div></section>`:'')+
-  `<div class="v1-actions"><button class="v1-btn primary" disabled>담당자 확인 요청</button>${next?`<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`:''}</div>`}
-function render(){const s=steps.find(x=>x.id===view);$('app').innerHTML=s?step(s):home();$('v1Title').textContent=s?s.title:unit.title;$('v1Back').hidden=!s;try{history.replaceState(null,'','#'+(s?s.id:''))}catch(e){}
- document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{view=b.dataset.step;render();scrollTo(0,0)});
- document.querySelectorAll('[data-cite]').forEach(b=>b.onclick=()=>{const el=document.getElementById('src-'+b.dataset.cite.replace(/[^0-9A-Za-z.-]/g,'_'));if(!el)return;el.open=true;el.scrollIntoView({behavior:'smooth',block:'start'});el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),1600)});}
-$('v1Back').onclick=()=>{view='home';render()};
-render();
-</script></body></html>'''
+BANNER = '<div class="pv-bar">미리보기 · 실제 화면과 같이 동작하지만 기록은 이 브라우저에만 남아요 <button id="pvReset" type="button">기록 초기화</button></div>'
+BANNER_CSS = '.pv-bar{background:#FFF4CC;color:#5A4A00;font:500 12px/1.4 -apple-system,sans-serif;padding:6px 12px;text-align:center}.pv-bar button{margin-left:8px;font:inherit;border:1px solid #C9B86A;background:#fff;border-radius:6px;padding:1px 8px;cursor:pointer}'
+
+MOCK = r'''
+/*CONTENT*/
+// ---- 브라우저 안의 가짜 서버: onboarding.py 의 v1 관련 동작만 흉내 낸다 ----
+(function(){
+  const today = () => new Date().toISOString().slice(0, 10);
+  const plus = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+  const STEPS = {}; for (const u of CONTENT.units) for (const s of u.steps) STEPS[s.id] = s;
+  const ACCOUNTS = [
+    {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
+    {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
+    {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
+  const KEY = 'momos-v1-preview';
+  function blank(join) {
+    const records = {};
+    for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: s.checks.map(() => false), teacher: s.checks.map(() => false),
+      selfAt: s.checks.map(() => null), teacherAt: s.checks.map(() => null), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
+    return {revision: 0, join, startDate: join, records};
+  }
+  function fresh() {
+    const st = {current: 'u-learner', rootRevision: 0, learners: {}, rooms: {}};
+    st.learners['u-learner'] = {join: plus(today(), -4), startDate: plus(today(), -4), trainer: 'u-staff', assessor: 'u-staff'};
+    st.rooms['u-learner'] = blank(plus(today(), -4));
+    return st;
+  }
+  let state; try { state = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!state || !state.rooms) state = fresh();
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  const user = () => ACCOUNTS.find(a => a.id === state.current);
+  const isAdmin = u => u.role === 'admin';
+  function roles(u, target) {
+    const entry = state.learners[target]; const own = u.id === target && !!entry; const admin = isAdmin(u);
+    return {own, trainer: !!entry && !own && (admin || entry.trainer === u.id), assessor: !!entry && !own && (admin || entry.assessor === u.id), admin};
+  }
+  function context(u, target) {
+    target = target || u.id;
+    const p = roles(u, target);
+    if (!(target === u.id || p.trainer || p.assessor || p.admin)) throw {status: 403, error: '본인 또는 배정된 교육생의 기록만 열 수 있습니다.'};
+    const entry = state.learners[target];
+    const learner = entry ? state.rooms[target] : blank(today());
+    const roster = Object.entries(state.learners).filter(([i]) => { const q = roles(u, i); return i === u.id || q.trainer || q.assessor || q.admin; })
+      .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate,
+        trainer: ACCOUNTS.find(a => a.id === x.trainer)?.name || '미배정', assessor: ACCOUNTS.find(a => a.id === x.assessor)?.name || '미배정'}));
+    if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null, trainer: '미배정', assessor: '미배정'});
+    const workspaceRoles = {admin: isAdmin(u), learner: !!state.learners[u.id],
+      trainer: Object.values(state.learners).some(x => x.trainer === u.id), assessor: Object.values(state.learners).some(x => x.assessor === u.id)};
+    return {user: {id: u.id, name: u.name}, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p, workspaceRoles, roster,
+      enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
+  }
+  function update(u, v) {
+    const target = v.target || u.id, p = roles(u, target), d = v.data || {};
+    if (v.action === 'config.selfEnrol') {
+      if (!state.learners[u.id]) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
+      save(); return context(u, target);
+    }
+    const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
+    const teacher = ['step.teacher', 'step.complete'].includes(v.action);
+    if (teacher && !p.trainer) throw {status: 403, error: '배정된 교육자·평가자만 확인합니다. 자기 승인은 허용하지 않습니다.'};
+    if (!teacher && !p.own) throw {status: 403, error: '직원 실습·답안은 해당 직원만 기록합니다.'};
+    const r = l.records[d.step]; if (!r) throw {status: 400, error: '배정된 교육 단계를 선택하세요.'};
+    const t = today();
+    if (v.action === 'step.self' || v.action === 'step.teacher') {
+      const k = v.action === 'step.teacher' ? 'teacher' : 'self';
+      if ((k === 'teacher' && r.status !== 'review') || (k === 'self' && !['ready', 'practice'].includes(r.status))) throw {status: 400, error: '현재 단계 상태에서 이 체크를 변경할 수 없습니다.'};
+      r[k][d.index] = !!d.on; r[k + 'At'][d.index] = d.on ? t : null;
+      if (k === 'self') { r.status = 'practice'; r.start = r.start || t; }
+    } else if (v.action === 'step.memo') { r.memo = String(d.memo || '').slice(0, 4000); }
+    else if (v.action === 'step.request') { if (r.status !== 'practice' || !r.self.every(Boolean)) throw {status: 400, error: '직원 실습 체크를 모두 완료하세요.'}; r.status = 'review'; r.request = t; }
+    else if (v.action === 'step.complete') { if (r.status !== 'review' || !r.teacher.every(Boolean)) throw {status: 400, error: '교육자 확인 항목을 모두 체크하세요.'}; r.status = 'done'; r.done = t; r.completedBy = u.id; }
+    else throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
+    l.revision++; save(); return context(u, target);
+  }
+  const json = (obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: {'Content-Type': 'application/json'}});
+  const realFetch = window.fetch.bind(window);
+  window.fetch = async function (input, init = {}) {
+    const url = new URL(typeof input === 'string' ? input : input.url, 'http://preview.local');
+    const method = (init.method || 'GET').toUpperCase();
+    try {
+      if (url.pathname === '/v1_content.json') return json(CONTENT);
+      if (url.pathname === '/api/auth/status') return json({user: user()});
+      if (url.pathname === '/api/dev/accounts') {
+        if (method === 'POST') { const id = url.searchParams.get('id'); if (ACCOUNTS.some(a => a.id === id)) { state.current = id; save(); return json({ok: true}); } return json({error: '없는 계정'}, 404); }
+        return json({accounts: ACCOUNTS.map(a => ({id: a.id, name: a.name, email: a.email})), current: state.current});
+      }
+      if (url.pathname === '/api/onboarding') {
+        const target = url.searchParams.get('target') || undefined;
+        if (method === 'GET') return json(context(user(), target));
+        return json(update(user(), JSON.parse(init.body || '{}')));
+      }
+    } catch (e) { if (e && e.status) return json({error: e.error}, e.status); throw e; }
+    return realFetch(input, init);
+  };
+  window.ERPAuth = {csrfToken: 'preview', openAccount: () => alert('미리보기에서는 계정 메뉴가 없어요. 상단 ‘역할 전환’으로 바꾸세요.'),
+    ensureSession: async () => {  // auth.js 의 activate() 가 하던 일: 게이트를 닫고 화면을 연다
+      const u = user(); const gate = document.getElementById('authGate'); if (gate) gate.hidden = true;
+      document.body.classList.remove('auth-pending');
+      const shell = document.getElementById('appShell'); if (shell) { shell.inert = false; shell.removeAttribute('aria-hidden'); }
+      const who = document.getElementById('v1Who'); if (who) who.textContent = u.name;
+      const an = document.getElementById('accountName'); if (an) an.textContent = u.name;
+      return {user: u};
+    }};
+  document.addEventListener('DOMContentLoaded', () => { const b = document.getElementById('pvReset'); if (b) b.onclick = () => { state = fresh(); save(); location.reload(); }; });
+})();
+'''
 
 
 if __name__ == '__main__':
