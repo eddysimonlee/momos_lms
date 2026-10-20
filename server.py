@@ -537,6 +537,10 @@ def main():
     parser.add_argument('--public-url', default=os.environ.get('LMS_PUBLIC_URL') or '',
                         help='the HTTPS address users open, e.g. https://momos-lms.example.com (no trailing slash)')
     args = parser.parse_args()
+    if os.environ.get('LMS_DATABASE_URL'):
+        # Supabase mode (Render): rows in PostgreSQL, photos in a private bucket, HTTPS public URL required.
+        import cloud
+        return cloud.run()
     store = Store(args.data_dir)
     trial = os.environ.get('LMS_TRIAL') == '1' and not store.database
     if trial:

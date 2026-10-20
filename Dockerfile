@@ -1,5 +1,5 @@
 # Momos LMS — one container, Python stdlib server, sqlite on a mounted volume.
-# Needs only python3 from the OS; the pip packages in requirements.txt belong to the old Supabase path.
+# python3 from the OS plus the PostgreSQL driver (python3-psycopg, python3-psycopg-pool) for Supabase mode; no pip.
 #
 # n3r: Build argument BASE_IMAGE=base.n3r.reg.navercorp.com/base/ubuntu:24.04 (Docker Hub is not reachable there),
 #      replicas 1 (sqlite has one writer), volume at /data, env LMS_PUBLIC_URL=https://<ingress host>,
@@ -12,7 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 
 # The n3r base image starts as a non-root user; package installation needs root, the server does not.
 USER root
 # dist-upgrade pulls the base image's pending security patches; image scanners flag them otherwise.
-RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y --no-install-recommends python3 ca-certificates \
+RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y --no-install-recommends python3 python3-psycopg python3-psycopg-pool ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --create-home lms && mkdir -p /data && chown lms:lms /data
 WORKDIR /app
