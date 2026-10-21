@@ -172,7 +172,7 @@
     if (complete) complete.onclick = () => act('step.complete', {step: step.id}).then(ok => ok && toast('확인 완료로 기록했어요.'));
   }
 
-  // Local trial only: the server answers /api/dev/accounts just for a local sqlite store on this machine.
+  // Trial only: the server answers /api/dev/accounts on a local run or when started with LMS_TRIAL=1.
   async function devSwitcher() {
     const bar = $('v1Dev');
     try {
@@ -195,7 +195,7 @@
   $('v1Who').onclick = () => ERPAuth.openAccount();
 
   // Local trial only: with no session yet, sign in as the first trial learner so nobody types a password.
-  // The server answers /api/dev/accounts only for a local sqlite store on this machine; elsewhere this is a no-op
+  // The server answers /api/dev/accounts only on a local run or with LMS_TRIAL=1; elsewhere this is a no-op
   // and the normal login gate appears. WORKS SSO replaces both later.
   async function devAutoLogin() {
     try {

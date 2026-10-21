@@ -283,12 +283,12 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(201, result, cookie)
                 return self.send(201, {'status': 'pending', 'message': '가입 신청을 받았습니다. 관리자 승인 후 로그인할 수 있습니다.'})
             if path == '/api/dev/accounts' and method in ('GET', 'POST'):
-                # Local trial only: switch between the dev_seed.py accounts without typing passwords.
-                # Refused unless the store is a local sqlite file and the request comes from this machine.
-                # Allowed on a local run from this machine, or on an internal staging server that sets LMS_TRIAL=1.
-                # Never set LMS_TRIAL on anything reachable from outside the company network.
-                local_run = not self.server.public_url and self.client_address[0] in ('127.0.0.1', '::1')
-                if store.database or not (local_run or getattr(self.server, 'trial', False)):
+                # Trial only: switch between the dev_seed.py accounts without typing passwords (the 역할 전환 bar).
+                # Allowed on a local sqlite run from this machine, or on a server started with LMS_TRIAL=1
+                # (n3r staging, and for now the Render PoC). Anyone who can open the address can then act as any
+                # trial account, including the trial administrator, so unset LMS_TRIAL once real accounts are used.
+                local_run = not store.database and not self.server.public_url and self.client_address[0] in ('127.0.0.1', '::1')
+                if not (local_run or getattr(self.server, 'trial', False)):
                     raise FileNotFoundError()
                 with store.connect() as db:
                     rows = db.execute("SELECT id,name,email,role FROM access_users WHERE status='active' AND email LIKE '%@local.test' ORDER BY name").fetchall()

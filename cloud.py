@@ -269,7 +269,14 @@ def run():
     os.environ.setdefault('ERP_INVITE_BASE_URL',config.public_url)
     os.environ['ERP_CLOUD_MODE']='1'  # invitations: no local-only mail fallbacks
     store = server.Store(root/'data',root,database=database,objects=objects)
-    httpd = server.make_server(store,config.port,host='0.0.0.0',public_url=config.public_url)
+    # LMS_TRIAL=1 (PoC only): seed the trial accounts into an empty database and turn on the 역할 전환 bar,
+    # so visitors land on the lessons without signing in. Seeding never runs once any account exists.
+    trial = os.environ.get('LMS_TRIAL') == '1'
+    if trial:
+        import dev_seed
+        if dev_seed.seed(store):
+            print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
+    httpd = server.make_server(store,config.port,host='0.0.0.0',public_url=config.public_url,trial=trial)
     httpd.daemon_threads=False
     stop = threading.Event()
     def terminate(signum,frame):
