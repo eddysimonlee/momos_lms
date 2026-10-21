@@ -227,10 +227,12 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
-            slice_=json.loads(b);self.assertEqual([u['id'] for u in slice_['units']],['welcome'])
-            self.assertEqual(sum(len(u['steps']) for u in slice_['units']),6)
+            slice_=json.loads(b);self.assertEqual([u['id'] for u in slice_['units']],['welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer'])
+            self.assertEqual(sum(len(u['steps']) for u in slice_['units']),55)  # 교육과정 1~2단계
             steps=[s for u in slice_['units'] for s in u['steps']]
-            self.assertTrue(all(s['purpose'] and s['keyPoints'] and s['sources'] for s in steps))  # 교육 목적·교육 내용·원본 보기
+            self.assertTrue(all(s['purpose'] for s in steps))  # 교육 목적은 55개 모두
+            self.assertEqual(sum(1 for s in steps if s['keyPoints'] and s['sources']),6)  # 새 원본 절을 인용한 항목(입사·근무 준비)
+            self.assertTrue(all(s['refDocs'] and s['copy'] for s in steps if not s['sources']))  # 나머지: 기존 설명 + U코드 원고 문서
             cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
             self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))
             self.assertNotIn('guides',slice_)  # 매뉴얼 전문은 더 이상 싣지 않는다

@@ -58,6 +58,7 @@
 .v1-pill.done{background:var(--component-tag-color-success-surface);color:var(--component-tag-color-success-text-color)}
 .v1-copy p{margin:0 0 var(--spacing-8);font:var(--body-lg)}
 .v1-photo{margin:var(--spacing-12) 0 0}.v1-photo img{width:100%;border-radius:var(--radius-lg);display:block}.v1-photo figcaption{color:var(--text-muted);font:var(--label-sm);margin-top:var(--spacing-4)}
+.v1-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--spacing-12);margin:var(--spacing-12) 0 0}.v1-photos .v1-photo{margin:0;min-width:0}.v1-photos .v1-photo img{height:160px;object-fit:contain;background:var(--surface-secondary)}
 /* checks = checkbox item (16px control + md label); the whole row is the tap target */
 .v1-checks{list-style:none;margin:var(--spacing-8) 0 0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-8)}
 .v1-checks label{position:relative;display:flex;gap:var(--spacing-12);align-items:flex-start;padding:var(--spacing-12) var(--spacing-16);border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);cursor:pointer;font:var(--component-checkbox-label-md-typography);color:var(--component-checkbox-state-default-label-text)}
@@ -96,6 +97,10 @@
 .v1-guide-body table{border-collapse:collapse;width:100%;font:var(--body-sm)}.v1-guide-body th,.v1-guide-body td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top}.v1-guide-body th{background:var(--surface-subtle)}
 .v1-guide-body td p,.v1-guide-body th p{margin:0}
 .v1-src{color:var(--text-muted);font:var(--label-xs);margin:var(--spacing-12) 0 0}
+.v1-stage{margin:var(--spacing-24) 0 0;font:var(--title-sm-bold)}
+.v1-unit{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--spacing-8);margin:var(--spacing-16) 0 0;font:var(--body-md-bold)}
+.v1-unit small{color:var(--text-muted);font:var(--label-xs)}
+.v1-refdoc{display:flex;justify-content:space-between;gap:var(--spacing-8);padding:var(--spacing-12) 0 0;font:var(--body-sm-bold)}
 .v1-purpose{margin:0;font:var(--body-lg);padding:var(--spacing-12) var(--spacing-16);background:var(--surface-secondary);border-left:3px solid var(--border-primary);border-radius:0 var(--radius-md) var(--radius-md) 0}
 .v1-kp{margin:var(--spacing-12) 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:var(--spacing-12);counter-reset:kp}
 .v1-kp li{display:grid;grid-template-columns:24px 1fr;gap:var(--spacing-8);counter-increment:kp;font:var(--body-lg)}

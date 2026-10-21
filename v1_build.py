@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 APP = Path(__file__).parent
-UNITS = ['welcome']  # 입사·근무 준비. Add unit ids here to widen the slice.
+STAGES = [1, 2]  # 교육과정 journey 순서: 1 입사·현장 적응, 2 기본 운영·고객 응대·POS (55개 항목). 넓히려면 번호 추가.
 
 
 def section_key(doc, no):
@@ -42,10 +42,10 @@ def main():
                 return s
         raise KeyError(f'{doc} {no}')
 
+    stage_of = {uid: dict(order=j['order'], title=j['title']) for j in course['journey'] if j['order'] in STAGES for uid in j['units']}
+    order = [uid for j in sorted(course['journey'], key=lambda j: j['order']) if j['order'] in STAGES for uid in j['units']]
     units, photos, used_sections, used_docs = [], set(), {}, set()
-    for unit in course['units']:
-        if unit['id'] not in UNITS:
-            continue
+    for unit in sorted((u for u in course['units'] if u['id'] in stage_of), key=lambda u: order.index(u['id'])):
         steps = []
         for s in unit['steps']:
             l = lessons.get(s['id'], {})
@@ -62,9 +62,12 @@ def main():
                               purpose=l.get('purpose', ''),
                               keyPoints=[dict(text=kp['text'], cites=[section_key(*c) for c in kp['cites']]) for kp in l.get('keyPoints', [])],
                               sources=[section_key(*c) for c in l.get('sources', [])],
+                              # 새 원본(색인된 docx 절)이 아직 없는 항목: 기존 교육과정의 U코드 원고 문서 이름만 싣는다(전문 없음).
+                              refDocs=[] if l.get('sources') else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
+                                                                     for r in (s.get('refs') or [s['ref']]) if r in course['refs']],
                               lessonStatus=l.get('status', 'none')))
             photos.update(steps[-1]['photos'])
-        units.append(dict(id=unit['id'], title=unit['title'], summary=unit['summary'], plan=unit['plan'], steps=steps))
+        units.append(dict(id=unit['id'], title=unit['title'], summary=unit['summary'], plan=unit['plan'], stage=stage_of[unit['id']], steps=steps))
     out = dict(
         format='momos-lms-v1-content',
         courseVersion=course['version'], sourceIndexedAt=index['generated_at'],

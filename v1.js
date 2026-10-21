@@ -44,8 +44,8 @@
   }
 
   // --- helpers over the course slice and the learner record
-  const unit = () => content.units[0];
-  const steps = () => unit().steps;
+  // 1차: 교육과정 1~2단계(12개 단원, 55개 항목)를 한 목록으로 이어서 보여 준다.
+  const steps = () => content.units.flatMap(u => u.steps);
   const record = id => cloud.learner.records[id];
   const stepIndex = id => steps().findIndex(s => s.id === id);
   const canWrite = () => cloud.enrolled && cloud.scheduled;
@@ -61,7 +61,7 @@
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
     $('v1Back').hidden = !step;
-    $('v1Title').textContent = step ? step.title : unit().title;
+    $('v1Title').textContent = step ? step.title : '모모스 온보딩';
     $('v1Who').textContent = cloud.user.name;
     $('app').innerHTML = step ? stepView(step) : homeView();
     bind(step);
@@ -84,21 +84,28 @@
   }
 
   function homeView() {
-    const u = unit(), list = steps();
-    const done = list.filter(s => record(s.id).status === 'done').length;
+    const list = steps();
+    const isDone = s => record(s.id).status === 'done';
+    const done = list.filter(isDone).length;
     const mine = cloud.target === cloud.user.id;
     if (isStaff() && mine) return peopleBar();
     const who = mine ? '' : `<div class="v1-muted">${esc(cloud.name)}님의 교육 기록</div>`;
+    const item = s => {
+      const r = record(s.id), st = r.status, n = stepIndex(s.id) + 1;
+      const sub = st === 'done' ? '확인 완료 · ' + dateLabel(r.done) : st === 'review' ? '확인 요청 ' + dateLabel(r.request) :
+        `확인 ${r.self.filter(Boolean).length}/${s.checks.length}`;
+      return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${esc(STATUS[st])} · ${sub}</small></span><span class="v1-chev">›</span></button></li>`;
+    };
+    let stage = null, groups = '';
+    for (const u of content.units) {
+      if (!stage || stage !== u.stage.order) { stage = u.stage.order; groups += `<h2 class="v1-stage">${u.stage.order}. ${esc(u.stage.title)}</h2>`; }
+      groups += `<h3 class="v1-unit">${esc(u.title)}<small>${u.steps.filter(isDone).length}/${u.steps.length} · 교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차</small></h3>` +
+        '<ul class="v1-list">' + u.steps.map(item).join('') + '</ul>';
+    }
     return peopleBar() +
-      `<section class="v1-card">${who}<h2>${esc(u.title)}</h2><div class="v1-muted">${esc(u.summary)} · 교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차</div>` +
+      `<section class="v1-card">${who}` +
       `<div class="v1-progress"><i style="width:${list.length ? Math.round(done / list.length * 100) : 0}%"></i></div>` +
-      `<div class="v1-muted">${done}/${list.length} 완료</div>${enrolNotice()}</section>` +
-      '<ul class="v1-list">' + list.map((s, i) => {
-        const r = record(s.id), st = r.status;
-        const sub = st === 'done' ? '확인 완료 · ' + dateLabel(r.done) : st === 'review' ? '확인 요청 ' + dateLabel(r.request) :
-          `확인 ${r.self.filter(Boolean).length}/${s.checks.length}`;
-        return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${i + 1}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${esc(STATUS[st])} · ${sub}</small></span><span class="v1-chev">›</span></button></li>`;
-      }).join('') + '</ul>' +
+      `<div class="v1-muted">${done}/${list.length} 완료</div>${enrolNotice()}</section>` + groups +
       `<p class="v1-src">원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 교육안 ${esc(content.courseVersion)} · 기록은 서버에 저장됩니다</p>`;
   }
 
@@ -115,8 +122,9 @@
       return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
         (r.teacher[k] ? `<span class="v1-by">담당자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + '</span></label></li>';
     }).join('') + '</ul>';
-    const photos = s.photos.map(p => content.photos[p]).filter(Boolean).map(p =>
-      `<figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('');
+    const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
+    const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map(p =>
+      `<figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}`.trim() : key; };
     const cite = key => `<button type="button" class="v1-cite" data-cite="${esc(key)}">${esc(srcLabel(key))}</button>`;
     const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map(k => `<li><div>${esc(k.text).replace(/\n/g, '<br>')}</div><div class="v1-cites">${k.cites.map(cite).join('')}</div></li>`).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
@@ -128,7 +136,8 @@
       return `<details class="v1-guide" id="src-${esc(key).replace(/[^0-9A-Za-z.-]/g, '_')}"><summary><span>${esc(doc.title || '')} <b>${esc(sec.no)} ${esc(sec.title)}</b></span><span class="v1-tag">${esc(doc.type || '')} ${esc(doc.version || '')}</span></summary>` +
         `<div class="v1-guide-body"><p class="v1-src">${esc(doc.title || '')} · ${esc(doc.type || '')} ${esc(doc.version || '')} (${esc(doc.revised || '')}) · ${esc(sec.kind)}${sec.images ? ` · 사진 ${sec.images}장은 원본 파일에서` : ''}</p>` +
         sec.paragraphs.map(p => `<p>${esc(p)}</p>`).join('') + sec.tables.map(table).join('') + `<p class="v1-src">파일: ${esc(doc.file || '')}</p></div></details>`;
-    }).join('');
+    }).join('') + (s.refDocs || []).map(d =>
+      `<div class="v1-guide"><div class="v1-refdoc"><span>${esc(d.title)}</span><span class="v1-tag">${esc(d.ref)}</span></div><p class="v1-src">파일: ${esc(d.file)}</p></div>`).join('');
     let status = '';
     if (st === 'review') status = `<div class="v1-note">${dateLabel(r.request)}에 담당자 확인을 요청했어요. 담당자가 확인하면 완료됩니다.</div>`;
     if (st === 'done') status = `<div class="v1-note ok">${dateLabel(r.done)} 담당자 확인 완료</div>`;
@@ -149,7 +158,7 @@
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2>${keyPoints}</section>` +
       `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 항목을 현장에서 확인하고 체크하세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
-      memo + (sources ? `<section class="v1-card"><h2>원본 보기</h2><div class="v1-muted">이 항목이 인용한 매뉴얼의 절. 문서 전체는 Works Drive의 원본 파일에서 봅니다.</div><div class="v1-sources">${sources}</div></section>` : '') +
+      memo + (sources ? `<section class="v1-card"><h2>원본 보기</h2><div class="v1-muted">${s.sources && s.sources.length ? '이 항목이 인용한 매뉴얼의 절. 문서 전체는 Works Drive의 원본 파일에서 봅니다.' : '이 항목의 원고 문서. 내용은 원본 파일에서 봅니다.'}</div><div class="v1-sources">${sources}</div></section>` : '') +
       (actions ? `<div class="v1-actions">${actions}</div>` : '');
   }
 
