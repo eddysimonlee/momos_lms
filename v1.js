@@ -142,19 +142,21 @@
     const i = stepIndex(s.id), next = steps()[i + 1];
     const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
     const editTeacher = staff && mayConfirm() && canWrite() && st === 'review';
+    const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}`.trim() : key; };
+    const cite = key => `<button type="button" class="v1-cite" data-cite="${esc(key)}">${esc(srcLabel(key))}</button>`;
+    // 수행 확인 문항마다 근거 절(교육 내용과 같은 출처 칩). 칩을 누르면 원본 보기의 해당 절로 이동한다.
+    const checkCites = k => (s.checkCites && s.checkCites[k] && s.checkCites[k].length) ? `<span class="v1-cites">${s.checkCites[k].map(cite).join('')}</span>` : '';
     const checks = '<ul class="v1-checks">' + s.checks.map((c, k) => {
       if (staff) {
         return `<li><label><input type="checkbox" data-teacher="${k}" ${r.teacher[k] ? 'checked' : ''} ${editTeacher && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
-          `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 담당자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span></span></label></li>`;
+          `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 담당자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span>${checkCites(k)}</span></label></li>`;
       }
       return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
-        (r.teacher[k] ? `<span class="v1-by">담당자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + '</span></label></li>';
+        (r.teacher[k] ? `<span class="v1-by">담당자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + checkCites(k) + '</span></label></li>';
     }).join('') + '</ul>';
     const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
     const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map(p =>
       `<figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('') + (shots.length > 1 ? '</div>' : '');
-    const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}`.trim() : key; };
-    const cite = key => `<button type="button" class="v1-cite" data-cite="${esc(key)}">${esc(srcLabel(key))}</button>`;
     const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map(k => `<li><div>${esc(k.text).replace(/\n/g, '<br>')}</div><div class="v1-cites">${k.cites.map(cite).join('')}</div></li>`).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
       r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
