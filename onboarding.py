@@ -33,6 +33,19 @@ if _LESSONS.exists():
             STEPS[_id]['checks'] = [c['text'] if isinstance(c, dict) else c for c in _l['checks']]
         if _id in STEPS and _l.get('title'):
             STEPS[_id]['title'] = _l['title']
+    # 6단계 교육과정(curriculum.json)에서 새로 생긴 세션: 교육과정 파일에는 없고 교육안에만 있다. 기록 칸을 만들 수 있도록 단계 항목으로 등록한다.
+    # 권장 일차는 아직 정해지지 않아(교육과정 메모) 입사 후 1~180일로 둔다.
+    _CURRICULUM = Path(__file__).with_name('curriculum.json')
+    if _CURRICULUM.exists():
+        _all = json.loads(_LESSONS.read_text(encoding='utf-8')).get('lessons', {})
+        for _st in json.loads(_CURRICULUM.read_text(encoding='utf-8')).get('stages', []):
+            for _u in _st['units']:
+                for _s in _u['sessions']:
+                    _l = _all.get(_s['id'], {})
+                    if _s['id'] not in STEPS and _l.get('checks'):
+                        STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
+                                               checks=[c['text'] if isinstance(c, dict) else c for c in _l['checks']],
+                                               unit='curriculum-' + _u['no'], plan=[1, 180])
 TESTS = {t['id']: t for t in COURSE['tests']}
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
@@ -105,7 +118,18 @@ def month(d, n):
 
 
 def fit(learner):
-    """Pad or trim per-check arrays when a step's check list changed length after records were saved."""
+    """Pad or trim per-check arrays when a step's check list changed length after records were saved.
+    교육과정에 새로 생긴 항목은 기존 기록에 빈 기록 칸과 일정을 더한다."""
+    records = learner.setdefault('records', {})
+    plans = learner.setdefault('planDates', {})
+    join = learner.get('join') or today()
+    for ident, s in STEPS.items():
+        if ident not in records:
+            n = len(s['checks'])
+            records[ident] = dict(status='ready', self=[False]*n, teacher=[False]*n, selfAt=[None]*n, teacherAt=[None]*n, start=None,
+                                  done=None, request=None, attempt=1, memo='', feedback='', history=[], lessonVersion=COURSE['version'])
+        if ident not in plans:
+            plans[ident] = dict(start=plus(join, s['plan'][0]-1), end=plus(join, s['plan'][1]-1), edited=False)
     for ident, r in learner.get('records', {}).items():
         s = STEPS.get(ident)
         if not s: continue

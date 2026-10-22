@@ -232,7 +232,8 @@ class EducationTests(unittest.TestCase):
             course_ids=[s['id'] for u in ob.COURSE['units'] if u['id'] in ('welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer') for s in u['steps']]
             self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 55개 항목이 한 번씩
             planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
-            self.assertEqual(len(planned),29);self.assertTrue(all(not s['checks'] for s in planned))  # 준비 중 세션: 수행 확인 없음
+            self.assertEqual(len(planned),0)  # 83개 세션 모두 교육안이 있다(6단계 교육과정 기준)
+            self.assertFalse(any(s.get('reworkPending') for s in steps))
             self.assertTrue(all(s['purpose'] and s['keyPoints'] and s['sources'] for s in live))
             self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in live))
             self.assertTrue(set(c for s in live for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
@@ -257,9 +258,19 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(self.service.get(self.other)['learner']['startDate'],ob.today())
         with self.assertRaises(PermissionError):self.act(self.tech,'config.selfEnrol',{})  # 모모스 계정만
 
+    def test_new_curriculum_session_records_and_confirmation(self):
+        # 6단계 교육과정의 새 세션(교육과정 파일에 없음)도 기록 칸이 생기고, 체크·요청·담당자 확인이 된다.
+        self.enrol(self.learner);ident='ice-machine';self.assertIn(ident,ob.STEPS)
+        c=self.service.get(self.learner);self.assertIn(ident,c['learner']['records']);self.assertIn(ident,c['learner']['planDates'])
+        for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.learner,'step.self',dict(step=ident,index=i,on=True))
+        self.act(self.learner,'step.request',dict(step=ident))
+        for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.admin,'step.teacher',dict(step=ident,index=i,on=True),self.learner['id'])
+        c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
+        old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
+
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),82);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),263)  # 첫날 OJT 17(FRM v0.5) · 1~2단계 49개는 업무문서(10.22) 기준 수행 확인
+        self.assertEqual(len(ob.STEPS),110);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),353)  # 기존 82 + 6단계 교육과정 새 세션 28
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

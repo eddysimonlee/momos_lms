@@ -83,7 +83,7 @@ def main():
                     sources=[section_key(*c) for c in sources],
                     # 원본 절 인용이 하나도 없는 항목만: 기존 교육과정의 U코드 원고 문서 이름을 싣는다(전문 없음).
                     refDocs=[] if sources else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
-                                                   for r in (s.get('refs') or [s['ref']]) if r in course['refs']],
+                                                   for r in (s.get('refs') or [s.get('ref')]) if r in course['refs']],
                     lessonStatus=l.get('status', 'none'))
         photos.update(step['photos'])
         return step
@@ -104,14 +104,20 @@ def main():
             for u in st['units']:
                 steps = []
                 for sess in u['sessions']:
-                    if sess['kind'] == '교체' or sess['id'] not in course_steps:
-                        step = planned_step(sess)
-                    else:
+                    l = lessons.get(sess['id'], {})
+                    fresh = l.get('curriculum') == curriculum['version']  # 이 교육과정 기준으로 다시 쓴 교육안
+                    if sess['id'] in course_steps and (sess['kind'] != '교체' or fresh):
                         step = lesson_step(course_steps[sess['id']][1])
-                        if sess.get('title'):
-                            step['title'] = sess['title']
-                            step['curriculumTitle'] = True  # 교육과정의 세션 제목이 교육안 제목보다 우선
-                    step.update(kind=sess['kind'], sessionNote=sess.get('note', ''), fromItems=sess.get('from', []))
+                    elif fresh and l.get('checks'):
+                        # 새 세션: 교육과정(onboarding_course.json)에는 없고 교육안만 있다
+                        step = lesson_step(dict(id=sess['id'], title=sess['title'], copy=[], checks=[], photos=[], refs=[], ref=''))
+                    else:
+                        step = planned_step(sess)
+                    if sess.get('title'):
+                        step['title'] = sess['title']
+                        step['curriculumTitle'] = True  # 교육과정의 세션 제목이 교육안 제목보다 우선
+                    step.update(kind=sess['kind'], sessionNote=sess.get('note', ''), fromItems=sess.get('from', []),
+                                reworkPending=sess['kind'] in ('보완', '교체') and not fresh)
                     steps.append(step)
                 plans = [course_steps[x['id']][0]['plan'] for x in steps if x['id'] in course_steps]
                 units.append(dict(id=u['no'], no=u['no'], title=u['title'], summary=u.get('note', ''),
