@@ -504,9 +504,9 @@ def v1_content():
         for unit in content.get('units', []):
             for step in unit['steps']:
                 l = lessons.get(step['id'])
-                if not l:
+                if not l or step.get('lessonStatus') == 'planned':  # 준비 중(추가·교체) 세션에는 이전 교육안을 덮지 않는다
                     continue
-                if l.get('title'): step['title'] = l['title']
+                if l.get('title') and not step.get('curriculumTitle'): step['title'] = l['title']
                 if 'purpose' in l: step['purpose'] = l['purpose']
                 if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
                 if 'sources' in l: step['sources'] = ['|'.join(c) for c in l['sources']]

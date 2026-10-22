@@ -60,7 +60,7 @@ MOCK = r'''
     {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
     {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
     {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
-  const KEY = 'momos-v1-preview';
+  const KEY = 'momos-v1-preview-6';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: s.checks.map(() => false), teacher: s.checks.map(() => false),

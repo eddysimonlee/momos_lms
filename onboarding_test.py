@@ -227,14 +227,17 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
-            slice_=json.loads(b);self.assertEqual([u['id'] for u in slice_['units']],['welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer'])
-            self.assertEqual(sum(len(u['steps']) for u in slice_['units']),55)  # 교육과정 1~2단계
-            steps=[s for u in slice_['units'] for s in u['steps']]
-            self.assertTrue(all(s['purpose'] for s in steps))  # 교육 목적은 55개 모두
-            self.assertTrue(all(s['keyPoints'] and s['sources'] for s in steps))  # 55개 모두 원본 절을 인용
-            self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in steps))  # 수행 확인도 문항마다 근거 절
-            self.assertTrue(set(c for s in steps for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
-            self.assertFalse(any(s['refDocs'] for s in steps))  # U코드 원고(9/30 사본)로 대신하는 항목 없음
+            slice_=json.loads(b);self.assertEqual(len(slice_['units']),54)  # curriculum.json: 6단계 54단원
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),83)
+            course_ids=[s['id'] for u in ob.COURSE['units'] if u['id'] in ('welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer') for s in u['steps']]
+            self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 55개 항목이 한 번씩
+            planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
+            self.assertEqual(len(planned),29);self.assertTrue(all(not s['checks'] for s in planned))  # 준비 중 세션: 수행 확인 없음
+            self.assertTrue(all(s['purpose'] and s['keyPoints'] and s['sources'] for s in live))
+            self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in live))
+            self.assertTrue(set(c for s in live for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
+            self.assertFalse(any(s['refDocs'] for s in steps))
+            steps=live
             cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
             self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))
             self.assertNotIn('guides',slice_)  # 매뉴얼 전문은 더 이상 싣지 않는다

@@ -1,0 +1,1041 @@
+{
+  "format": "momos-lms-curriculum",
+  "version": "2026-10-22",
+  "source": "LMS_6단계_교육과정.html (모모스 2026.10.22 정리본)",
+  "stages": [
+    {
+      "no": 1,
+      "title": "입사·현장 적응",
+      "summary": "매장에 적응하고 기본 규칙과 업무 흐름을 이해합니다.",
+      "units": [
+        {
+          "no": "1.1",
+          "title": "입사·근무 준비",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-prep",
+              "from": [
+                1
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.2",
+          "title": "공간·동선",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "space-walk",
+              "from": [
+                7
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "space-storage",
+              "from": [
+                8
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.3",
+          "title": "매뉴얼 이용",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-manual",
+              "from": [
+                3
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.4",
+          "title": "메뉴·상품 첫 소개",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-tasting",
+              "from": [
+                6
+              ],
+              "note": "첫 소개 범위"
+            }
+          ]
+        },
+        {
+          "no": "1.5",
+          "title": "일하는 방식",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-culture",
+              "from": [
+                4
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.6",
+          "title": "서비스·안전·협업",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "safety-greet",
+              "from": [
+                9
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "safety-call",
+              "from": [
+                10
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "safety-report",
+              "from": [
+                11
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.7",
+          "title": "첫날 OJT",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-ojt",
+              "from": [
+                5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "no": 2,
+      "title": "홀 케어 & 백존 준비",
+      "summary": "홀·백존을 정돈하고 재료와 베이커리를 준비합니다.",
+      "units": [
+        {
+          "no": "2.1",
+          "title": "홀 라운딩",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "floor-round",
+              "from": [
+                30
+              ]
+            }
+          ]
+        },
+        {
+          "no": "2.2",
+          "title": "잔 취급 위생·반납 식기 정리",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "welcome-hygiene",
+              "from": [
+                2
+              ]
+            },
+            {
+              "kind": "보완",
+              "id": "floor-tools",
+              "from": [
+                31
+              ]
+            }
+          ],
+          "note": "잔을 다루기 전 위생 확인 → 행주·린넨 구분 → 반납물 회수·분류 → 세척·건조 → 오염·파손 확인 → 원위치. 같은 단원에서 연속 학습"
+        },
+        {
+          "no": "2.3",
+          "title": "재료 제조·보관 기본",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "materials-common",
+              "from": [
+                42
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-label",
+              "from": [
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "no": "2.4",
+          "title": "베이스 제조 실습",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "materials-product-0",
+              "from": [
+                43
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-1",
+              "from": [
+                44
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-2",
+              "from": [
+                45
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-3",
+              "from": [
+                46
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-4",
+              "from": [
+                47
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-5",
+              "from": [
+                48
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "materials-product-6",
+              "from": [
+                49
+              ]
+            }
+          ]
+        },
+        {
+          "no": "2.5",
+          "title": "베이커리 준비·빵포장",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "pickup-bakery",
+              "from": [
+                16
+              ],
+              "note": "3단계에서 이동"
+            },
+            {
+              "kind": "보완",
+              "id": "bakery-prep",
+              "title": "작업 위생·베이커리 준비·컷팅·포장·주문서 표시·인계",
+              "topics": [
+                "작업 위생",
+                "베이커리 준비·컷팅",
+                "포장·주문서 표시·인계"
+              ],
+              "sources": "픽업·빵포장 GUI 6.1~6.4",
+              "note": "16번 보완"
+            },
+            {
+              "kind": "추가",
+              "id": "bakery-showcase",
+              "title": "쇼케이스·베이커리 재고 확인 / 빵 서포트 운영",
+              "topics": [
+                "쇼케이스·베이커리 재고 확인",
+                "빵 서포트 운영"
+              ],
+              "sources": "픽업·빵포장 GUI 6.5~6.6"
+            }
+          ]
+        },
+        {
+          "no": "2.6",
+          "title": "비품·재료 보충",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "supplies-location",
+              "from": [
+                17
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "supplies-shortage",
+              "from": [
+                18
+              ]
+            }
+          ]
+        },
+        {
+          "no": "2.7",
+          "title": "실물 재고 확인·부족 보고",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "stock-count",
+              "from": [
+                51
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "stock-order",
+              "from": [
+                52
+              ]
+            }
+          ],
+          "note": "실물 확인·기록·담당자 전달 범위"
+        },
+        {
+          "no": "2.8",
+          "title": "청소·시설 기본 관리",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "floor-weekly",
+              "from": [
+                32
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "floor-cleaning",
+              "from": [
+                33
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "floor-facility",
+              "from": [
+                34
+              ]
+            }
+          ],
+          "note": "일상 관리·보고 범위"
+        },
+        {
+          "no": "2.9",
+          "title": "바 지원·보충",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "bar-supply",
+              "title": "얼음·일회용품·향미카드 보충",
+              "sources": "라운딩·정리 GUI 7.4~7.5"
+            }
+          ]
+        },
+        {
+          "no": "2.10",
+          "title": "OP2·OP3 홀·백존 운영 실습",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "daily-role",
+              "from": [
+                19
+              ],
+              "title": "OP2·OP3 담당 구역과 오픈 준비"
+            },
+            {
+              "kind": "보완",
+              "id": "daily-handover",
+              "from": [
+                20
+              ],
+              "title": "담당 구역 점검 이상 확인·OP1 전달"
+            },
+            {
+              "kind": "보완",
+              "id": "daily-handover-full",
+              "from": [
+                21
+              ],
+              "title": "OP2·OP3 업무 인계와 미완료 사항 전달"
+            },
+            {
+              "kind": "교체",
+              "id": "daily-closing",
+              "from": [
+                22
+              ],
+              "title": "OP2·OP3 퇴근 전 점검·보충·인계",
+              "sources": "오픈조 퇴근 준비 SOP",
+              "note": "기존 CL 마감 자료는 별도 보존"
+            },
+            {
+              "kind": "보완",
+              "id": "daily-open-form",
+              "from": [
+                23
+              ],
+              "title": "OP2·OP3 오픈 점검 실습—홀·야외·백존",
+              "note": "담당 범위에 맞게 체크 재구성"
+            }
+          ],
+          "note": "홀·야외·백존 담당 업무로 한정합니다."
+        },
+        {
+          "no": "2.11",
+          "title": "제빙기 주간 청소",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "ice-machine",
+              "title": "제빙기 주간 청소",
+              "topics": [
+                "청소 준비·장비 확인",
+                "세척·건조·재조립",
+                "청소 후 상태 확인"
+              ],
+              "sources": "제빙기 주간 청소 SOP",
+              "note": "지정 담당자 추가 과정에서 이동"
+            }
+          ]
+        },
+        {
+          "no": "2.12",
+          "title": "정수기 관리·필터 교체",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "water-filter",
+              "title": "정수기 관리·필터 교체",
+              "topics": [
+                "정수기 일상 관리",
+                "필터 교체 절차",
+                "교체 후 상태 확인"
+              ],
+              "sources": "정수기 관리 및 필터 교체 절차 SOP",
+              "note": "지정 담당자 추가 과정에서 이동"
+            }
+          ]
+        },
+        {
+          "no": "2.13",
+          "title": "QA 보고·처리 관리",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "qa-report",
+              "title": "QA 보고·처리 관리",
+              "topics": [
+                "이상 발견·안전 확보",
+                "바 메인 보고·QA 인계",
+                "처리 경과·교대 인계·완료 확인"
+              ],
+              "sources": "매장 시설·기물 이상 및 QA 보고 절차 SOP",
+              "note": "지정 담당자 추가 과정에서 이동"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "no": 3,
+      "title": "POS 주문 & 픽업 서비스",
+      "summary": "메뉴와 제공 조건을 확인하고 주문부터 픽업까지 연결합니다.",
+      "units": [
+        {
+          "no": "3.1",
+          "title": "메뉴·제공 조건 이해",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "menu-recipe",
+              "from": [
+                24
+              ]
+            },
+            {
+              "kind": "보완",
+              "id": "menu-glass",
+              "from": [
+                25
+              ]
+            }
+          ],
+          "note": "계량·온도·폼 등 제조 실습은 4단계"
+        },
+        {
+          "no": "3.2",
+          "title": "픽업·트레이 세팅",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "pickup-tools",
+              "from": [
+                12
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "pickup-layout",
+              "from": [
+                13
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "pickup-cup",
+              "from": [
+                14
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "pickup-final",
+              "from": [
+                15
+              ]
+            }
+          ]
+        },
+        {
+          "no": "3.3",
+          "title": "픽업 최종 확인·전달",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "pickup-check",
+              "title": "제공 전 최종 검수·메뉴 설명·주문 오류 대응",
+              "sources": "픽업·빵포장 GUI 7.4~7.5"
+            }
+          ]
+        },
+        {
+          "no": "3.4",
+          "title": "고객 응대·호스피탈리티",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "customer-complaint",
+              "from": [
+                54
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "customer-story",
+              "from": [
+                55
+              ]
+            }
+          ],
+          "note": "사실 확인·초기 응대·담당 인계 중심"
+        },
+        {
+          "no": "3.5",
+          "title": "POS 주문·결제",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "orders-pos",
+              "from": [
+                36
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "orders-payment",
+              "from": [
+                38
+              ]
+            }
+          ]
+        },
+        {
+          "no": "3.6",
+          "title": "주문 채널·예약 처리",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "orders-smart",
+              "from": [
+                39
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "orders-courier",
+              "from": [
+                40
+              ]
+            },
+            {
+              "kind": "기존",
+              "id": "orders-cake",
+              "from": [
+                41
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "no": 4,
+      "title": "그리터 & 메이킹(스팀)",
+      "summary": "고객 흐름을 안내하고 음료를 기준에 맞게 완성합니다.",
+      "units": [
+        {
+          "no": "4.1",
+          "title": "그리터·대기 안내",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "orders-greeter",
+              "from": [
+                35
+              ]
+            }
+          ]
+        },
+        {
+          "no": "4.2",
+          "title": "제조 기본",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "making-basic",
+              "title": "주문·레시피 확인 / 투입 순서와 제조 협업 / 메뉴별 계량·잔·제공 전 확인",
+              "topics": [
+                "주문·레시피 확인",
+                "투입 순서와 제조 협업",
+                "메뉴별 계량·잔·제공 전 확인"
+              ],
+              "sources": "24~26 제조 부분"
+            }
+          ]
+        },
+        {
+          "no": "4.3",
+          "title": "제조 협업·KDS",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "menu-sequence",
+              "from": [
+                26
+              ],
+              "title": "제조 순서 신호와 포지션 간 협업 / 주문 유형별 KDS 완료 처리",
+              "sources": "메이킹·브루잉·에스프레소 GUI 6.1·6.3"
+            }
+          ]
+        },
+        {
+          "no": "4.4",
+          "title": "논커피 제조",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "menu-noncoffee",
+              "from": [
+                29
+              ]
+            }
+          ]
+        },
+        {
+          "no": "4.5",
+          "title": "시그니처 제조",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "menu-signature",
+              "from": [
+                28
+              ]
+            }
+          ]
+        },
+        {
+          "no": "4.6",
+          "title": "커피 음료 메이킹",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "menu-coffee",
+              "from": [
+                27
+              ],
+              "title": "준비된 샷을 활용한 커피 음료 조합·스티밍·완성",
+              "note": "27에서 분리: 샷 추출은 6.2"
+            }
+          ]
+        },
+        {
+          "no": "4.7",
+          "title": "메이킹 실습·평가",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "making-test",
+              "title": "메이킹 실습·평가",
+              "topics": [
+                "평가 안내·연습 일정 조율",
+                "연습 일지",
+                "실기 확인"
+              ],
+              "sources": "평가 신청·결과 확인 SOP"
+            }
+          ]
+        },
+        {
+          "no": "4.8",
+          "title": "스티밍",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "steaming",
+              "title": "스티밍과 메뉴별 밀크폼 이해",
+              "sources": "포지션 학습·실습·고객 경험 GUI, 음료 레시피·제공 기준 GUI"
+            }
+          ]
+        },
+        {
+          "no": "4.9",
+          "title": "라떼아트",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "latte-art",
+              "title": "라떼아트",
+              "topics": [
+                "안정화·낙차",
+                "면하트",
+                "밀어넣기",
+                "핸들링",
+                "결하트 연습"
+              ],
+              "sources": "포지션 학습·실습·고객 경험 GUI"
+            }
+          ]
+        },
+        {
+          "no": "4.10",
+          "title": "요청 대응·스테이션 관리",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "making-station",
+              "title": "메뉴 변경·누락 확인 / 픽업 지원 / 행주 관리·얼음 보충 요청",
+              "sources": "메이킹·브루잉·에스프레소 GUI 6.2·6.4"
+            }
+          ]
+        }
+      ],
+      "note": "4단계는 준비된 샷을 활용한 음료 조합·스티밍·완성. 샷 추출·분쇄도·수율·칼리브레이션은 6단계."
+    },
+    {
+      "no": 5,
+      "title": "브루잉 & 리테일",
+      "summary": "리테일 안내·운영을 익힌 뒤 브루잉 이론과 실습으로 이어갑니다.",
+      "units": [
+        {
+          "no": "5.1",
+          "title": "리테일 안내·추천",
+          "sessions": [
+            {
+              "kind": "보완",
+              "id": "orders-retail",
+              "from": [
+                37
+              ],
+              "note": "고객 취향 확인·추천 보완"
+            }
+          ]
+        },
+        {
+          "no": "5.2",
+          "title": "리테일 진열·보충",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "retail-display",
+              "title": "상품 진열·재고 보충·상태 확인",
+              "sources": "그리터·포스·리테일 GUI 6.3"
+            }
+          ]
+        },
+        {
+          "no": "5.3",
+          "title": "시음 커피",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "tasting-coffee",
+              "title": "시음 커피",
+              "topics": [
+                "시음용 배치브루·인스턴트 커피 제조",
+                "제공 전 맛 확인·이상 보고",
+                "제공·종료 후 정리"
+              ],
+              "sources": "시음 커피 제조 SOP"
+            }
+          ]
+        },
+        {
+          "no": "5.4",
+          "title": "원두 관리 흐름",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "stock-beans",
+              "from": [
+                53
+              ],
+              "note": "담당자·처리 흐름 이해"
+            }
+          ]
+        },
+        {
+          "no": "5.5",
+          "title": "원두·향미 이해",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "bean-flavor",
+              "title": "원두별 특징·향미·레시피·브루잉 방향성",
+              "sources": "포지션 학습·실습·고객 경험 GUI"
+            }
+          ]
+        },
+        {
+          "no": "5.6",
+          "title": "브루잉 이론·실습",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "brewing-theory",
+              "title": "브루잉 이론·실습",
+              "topics": [
+                "추출 변수·레시피 확인",
+                "추출·맛 확인",
+                "반복 실습·일관성"
+              ],
+              "sources": "포지션 학습·실습·고객 경험 GUI 및 별도 참조 교재(연결 필요)"
+            }
+          ]
+        },
+        {
+          "no": "5.7",
+          "title": "측정 도구",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "refractometer",
+              "title": "굴절계 측정·영점 교정·세척·보관",
+              "sources": "VST 커피 굴절계 관리 SOP",
+              "note": "6단계에서도 재참조"
+            }
+          ]
+        },
+        {
+          "no": "5.8",
+          "title": "브루잉 협업",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "brewing-team",
+              "title": "메인·보조 브루어 역할 / 제조·제공 순서 조율 / 고객 요청·픽업 지원",
+              "sources": "메이킹·브루잉·에스프레소 GUI 7.1~7.3"
+            }
+          ]
+        },
+        {
+          "no": "5.9",
+          "title": "브루잉 실습·평가",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "brewing-test",
+              "title": "브루잉 실습·평가",
+              "topics": [
+                "연습 일정·일지",
+                "이론·실습 준비",
+                "평가 진행"
+              ],
+              "sources": "평가 신청·결과 확인 SOP"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "no": 6,
+      "title": "에스프레소",
+      "summary": "추출 상태를 판단·조정하고 일관된 품질을 유지합니다.",
+      "units": [
+        {
+          "no": "6.1",
+          "title": "추출 이론",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-theory",
+              "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
+              "sources": "포지션 학습·실습·고객 경험 GUI 및 별도 참조 교재"
+            }
+          ]
+        },
+        {
+          "no": "6.2",
+          "title": "샷 추출·제조 전달",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-shot",
+              "title": "에스프레소 추출과 메이킹 전달",
+              "sources": "27에서 분리: 샷 추출·추출 상태 판단·완성 시점 조율"
+            }
+          ]
+        },
+        {
+          "no": "6.3",
+          "title": "품질 조정",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-calibration",
+              "title": "칼리브레이션·반복 추출·일관성 확인",
+              "sources": "포지션 학습·실습·고객 경험 GUI"
+            }
+          ]
+        },
+        {
+          "no": "6.4",
+          "title": "원두·기물 관리",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-tools",
+              "title": "호퍼 원두 수위 확인 / 샷 글라스·포터필터 세척",
+              "sources": "메이킹·브루잉·에스프레소 GUI 8.2"
+            }
+          ]
+        },
+        {
+          "no": "6.5",
+          "title": "포지션 협업",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-team",
+              "title": "메이킹·브루잉 제조 순서 조율 / 운영 상황 확인·지원 요청",
+              "sources": "메이킹·브루잉·에스프레소 GUI 8.1·8.3"
+            }
+          ]
+        },
+        {
+          "no": "6.6",
+          "title": "오픈·교대·마감",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-shift",
+              "title": "오픈 세팅·Daily Chart 기록 / 추출 상태 인계·칼리브레이션 / 머신·스테이션 마감",
+              "sources": "메이킹·브루잉·에스프레소 GUI 8.4, 근무조별 SOP"
+            }
+          ]
+        },
+        {
+          "no": "6.7",
+          "title": "에스프레소 실습·평가",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "esp-test",
+              "title": "에스프레소 실습·평가",
+              "topics": [
+                "연습 일정·일지",
+                "이론·실습 준비",
+                "평가 진행"
+              ],
+              "sources": "평가 신청·결과 확인 SOP"
+            }
+          ]
+        },
+        {
+          "no": "6.8",
+          "title": "그라인더 날 분해·청소",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "grinder-blade",
+              "title": "그라인더 날 분해·청소",
+              "topics": [
+                "작업 준비",
+                "날 분해·청소·재조립",
+                "조립 후 상태 확인"
+              ],
+              "sources": "그라인더 날 분해 및 청소 SOP",
+              "note": "지정 담당자 추가 과정에서 이동"
+            }
+          ]
+        },
+        {
+          "no": "6.9",
+          "title": "재고 전산 처리",
+          "sessions": [
+            {
+              "kind": "추가",
+              "id": "stock-ecount",
+              "title": "재고 전산 처리",
+              "topics": [
+                "실물 수량·인계 내역 확인",
+                "재고·원두 전환·자가사용 전산 처리",
+                "오류·미처리 내역 확인·인계"
+              ],
+              "sources": "재고조사·원두 전환·전산 처리 SOP 및 MD 근무·교대 절차 SOP",
+              "note": "지정 담당자 추가 과정에서 이동"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "extra": [
+    {
+      "title": "지정 담당자 추가 과정",
+      "sessions": [
+        {
+          "kind": "추가",
+          "id": "manual-edit",
+          "title": "매뉴얼 수정·공유",
+          "sources": "매뉴얼 수정·공유 SOP"
+        }
+      ],
+      "note": "단계 수료와 해당 업무 담당 지정은 별도로 관리합니다."
+    }
+  ]
+}

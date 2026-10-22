@@ -1,13 +1,13 @@
-// Momos onboarding · v1: one unit, read → check → trainer confirm. Phone first.
+// Momos onboarding · v1: 단계 → 단원 → 세션. read → check → trainer confirm. Phone first.
 // Data: /v1_content.json (the course slice) and /api/onboarding (records). No local-only state.
 (function () {
   'use strict';
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료'};
+  const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
-  let content = null, cloud = null, view = 'home', busy = false, toastTimer = null;
+  let content = null, cloud = null, view = 'home', busy = false, toastTimer = null, stageSel = null;
 
   function toast(message) {
     const el = $('v1Toast'); el.textContent = message; el.classList.add('show');
@@ -44,9 +44,15 @@
   }
 
   // --- helpers over the course slice and the learner record
-  // 1차: 교육과정 1~2단계(12개 단원, 55개 항목)를 한 목록으로 이어서 보여 준다.
+  // 교육과정(curriculum.json): 단계 → 단원 → 세션. 세션이 기록 단위(항목)다.
   const steps = () => content.units.flatMap(u => u.steps);
-  const record = id => cloud.learner.records[id];
+  const planned = s => s.lessonStatus === 'planned';  // 교육안 준비 중(추가·교체 세션): 수행 확인 없음
+  // 서버에 아직 기록 칸이 없는 새 세션도 화면이 깨지지 않도록 빈 기록을 돌려준다.
+  const EMPTY = {status: 'ready', self: [], teacher: [], selfAt: [], teacherAt: [], memo: '', feedback: ''};
+  const record = id => cloud.learner.records[id] || EMPTY;
+  const statusOf = s => planned(s) ? 'planned' : record(s.id).status;
+  const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
+  const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
   const stepIndex = id => steps().findIndex(s => s.id === id);
   const canWrite = () => cloud.enrolled && cloud.scheduled;
   // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
@@ -84,32 +90,54 @@
   }
 
   function homeView() {
-    const list = steps();
-    const isDone = s => record(s.id).status === 'done';
-    const done = list.filter(isDone).length;
+    const list = steps(), live = list.filter(s => !planned(s));
+    const isDone = s => !planned(s) && record(s.id).status === 'done';
+    const done = live.filter(isDone).length;
     const mine = cloud.target === cloud.user.id;
     if (isStaff() && mine) return peopleBar();
     const who = mine ? '' : `<div class="v1-muted">${esc(cloud.name)}님의 교육 기록</div>`;
+    const all = stages();
+    // 처음 열면: 끝나지 않은 첫 세션이 있는 단계
+    if (!all.some(g => g.order === stageSel)) stageSel = (all.find(g => g.units.some(u => u.steps.some(s => !planned(s) && !isDone(s)))) || all[0]).order;
+    const g = all.find(x => x.order === stageSel);
     const item = s => {
-      const r = record(s.id), st = r.status, n = stepIndex(s.id) + 1;
-      const sub = st === 'done' ? '확인 완료 · ' + dateLabel(r.done) : st === 'review' ? '확인 요청 ' + dateLabel(r.request) :
+      const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
+      const sub = st === 'planned' ? '교육안 준비 중' : st === 'done' ? '확인 완료 · ' + dateLabel(r.done) : st === 'review' ? '확인 요청 ' + dateLabel(r.request) :
         `확인 ${r.self.filter(Boolean).length}/${s.checks.length}`;
-      return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${esc(STATUS[st])} · ${sub}</small></span><span class="v1-chev">›</span></button></li>`;
+      return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${st === 'planned' ? '교육안 준비 중' : esc(STATUS[st]) + ' · ' + sub}</small></span><span class="v1-chev">›</span></button></li>`;
     };
-    let stage = null, groups = '';
-    for (const u of content.units) {
-      if (!stage || stage !== u.stage.order) { stage = u.stage.order; groups += `<h2 class="v1-stage">${u.stage.order}. ${esc(u.stage.title)}</h2>`; }
-      groups += `<h3 class="v1-unit">${esc(u.title)}<small>${u.steps.filter(isDone).length}/${u.steps.length} · 교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차</small></h3>` +
-        '<ul class="v1-list">' + u.steps.map(item).join('') + '</ul>';
-    }
+    const tabs = '<nav class="v1-stages" aria-label="교육 단계">' + all.map(x => {
+      const xs = x.units.flatMap(u => u.steps).filter(s => !planned(s));
+      return `<button data-stage="${x.order}" class="${x.order === stageSel ? 'on' : ''}" aria-pressed="${x.order === stageSel}"><b>${x.order}</b><span>${esc(x.title)}</span><small>${xs.filter(isDone).length}/${xs.length}</small></button>`;
+    }).join('') + '</nav>';
+    const units = g.units.map(u => {
+      const us = u.steps.filter(s => !planned(s));
+      const meta = [us.length ? `${us.filter(isDone).length}/${us.length}` : '준비 중', u.plan ? `교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차` : ''].filter(Boolean).join(' · ');
+      return `<h3 class="v1-unit"><span class="v1-uno">${esc(u.no || '')}</span>${esc(u.title)}<small>${meta}</small></h3>` +
+        (u.summary ? `<p class="v1-unote">${esc(u.summary)}</p>` : '') + '<ul class="v1-list">' + u.steps.map(item).join('') + '</ul>';
+    }).join('');
+    const extra = (content.extra || []).map(e => `<section class="v1-card v1-extra"><h2>${esc(e.title)}</h2><div class="v1-muted">${e.sessions.map(x => esc(x.title)).join(' · ')}${e.note ? ' — ' + esc(e.note) : ''}</div></section>`).join('');
     return peopleBar() +
       `<section class="v1-card">${who}` +
-      `<div class="v1-progress"><i style="width:${list.length ? Math.round(done / list.length * 100) : 0}%"></i></div>` +
-      `<div class="v1-muted">${done}/${list.length} 완료</div>${enrolNotice()}</section>` + groups +
-      `<p class="v1-src">원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 교육안 ${esc(content.courseVersion)} · 기록은 서버에 저장됩니다</p>`;
+      `<div class="v1-progress"><i style="width:${live.length ? Math.round(done / live.length * 100) : 0}%"></i></div>` +
+      `<div class="v1-muted">${done}/${live.length} 완료${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>${enrolNotice()}</section>` +
+      tabs + `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>${g.summary ? `<p class="v1-unote">${esc(g.summary)}</p>` : ''}` + units +
+      (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (g.order === all[all.length - 1].order ? extra : '') +
+      `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다</p>`;
+  }
+
+  function plannedView(s) {
+    const i = stepIndex(s.id), next = steps()[i + 1], u = unitOf(s.id);
+    return `<section class="v1-card"><span class="v1-pill planned">${STATUS.planned}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(u.no || '')} ${esc(u.title)}</span>` +
+      `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2><p class="v1-muted">이 세션의 교육 목적·교육 내용·수행 확인은 원본 문서를 바탕으로 준비 중이에요.</p>` +
+      (s.topics && s.topics.length ? `<h2 style="margin-top:var(--spacing-16)">다룰 내용</h2><ol class="v1-kp">${s.topics.map(t => `<li><div>${esc(t)}</div></li>`).join('')}</ol>` : '') +
+      (s.plannedSources ? `<h2 style="margin-top:var(--spacing-16)">근거 문서</h2><p class="v1-muted">${esc(s.plannedSources)}</p>` : '') +
+      (s.sessionNote ? `<div class="v1-note">${esc(s.sessionNote)}</div>` : '') + '</section>' +
+      (next ? `<div class="v1-actions"><button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button></div>` : '');
   }
 
   function stepView(s) {
+    if (planned(s)) return plannedView(s);
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
     const i = stepIndex(s.id), next = steps()[i + 1];
     const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
@@ -153,7 +181,9 @@
     const memo = own || r.memo ? `<section class="v1-card"><h2>메모</h2><div class="v1-muted">어려웠던 점, 담당자에게 확인할 내용</div>` +
       `<textarea class="v1-memo" data-memo ${editSelf && !busy ? '' : 'disabled'} placeholder="${own ? '적어 두면 담당자가 확인할 때 함께 봅니다' : ''}">${esc(r.memo)}</textarea></section>` : '';
     const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
-    return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(cloud.name)}</span>` +
+    const u = unitOf(s.id);
+    const rework = s.kind === '보완' ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
+    return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2>${keyPoints}</section>` +
@@ -164,7 +194,8 @@
 
   function bind(step) {
     const app = $('app');
-    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; render(); });
+    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
+    app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
     app.querySelectorAll('[data-cite]').forEach(b => b.onclick = () => {
       const el = document.getElementById('src-' + b.dataset.cite.replace(/[^0-9A-Za-z.-]/g, '_'));
