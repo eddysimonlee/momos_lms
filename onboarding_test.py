@@ -231,8 +231,10 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(sum(len(u['steps']) for u in slice_['units']),55)  # 교육과정 1~2단계
             steps=[s for u in slice_['units'] for s in u['steps']]
             self.assertTrue(all(s['purpose'] for s in steps))  # 교육 목적은 55개 모두
-            self.assertEqual(sum(1 for s in steps if s['keyPoints'] and s['sources']),6)  # 새 원본 절을 인용한 항목(입사·근무 준비)
-            self.assertTrue(all(s['refDocs'] and s['copy'] for s in steps if not s['sources']))  # 나머지: 기존 설명 + U코드 원고 문서
+            self.assertTrue(all(s['keyPoints'] and s['sources'] for s in steps))  # 55개 모두 원본 절을 인용
+            self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in steps))  # 수행 확인도 문항마다 근거 절
+            self.assertTrue(set(c for s in steps for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
+            self.assertFalse(any(s['refDocs'] for s in steps))  # U코드 원고(9/30 사본)로 대신하는 항목 없음
             cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
             self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))
             self.assertNotIn('guides',slice_)  # 매뉴얼 전문은 더 이상 싣지 않는다
@@ -254,7 +256,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),82);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),270)  # 첫날 OJT 11→17 (FRM v0.5)
+        self.assertEqual(len(ob.STEPS),82);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),263)  # 첫날 OJT 17(FRM v0.5) · 1~2단계 49개는 업무문서(10.22) 기준 수행 확인
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

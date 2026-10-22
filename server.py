@@ -510,6 +510,9 @@ def v1_content():
                 if 'purpose' in l: step['purpose'] = l['purpose']
                 if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
                 if 'sources' in l: step['sources'] = ['|'.join(c) for c in l['sources']]
+                if l.get('checks'):
+                    step['checks'] = [c['text'] for c in l['checks']]
+                    step['checkCites'] = [['|'.join(x) for x in c.get('cites', [])] for c in l['checks']]
     return content
 
 

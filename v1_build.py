@@ -21,8 +21,30 @@ APP = Path(__file__).parent
 STAGES = [1, 2]  # 교육과정 journey 순서: 1 입사·현장 적응, 2 기본 운영·고객 응대·POS (55개 항목). 넓히려면 번호 추가.
 
 
-def section_key(doc, no):
-    return f'{doc}|{no}'
+SEP = ' › '
+
+
+def section_key(doc, ref):
+    return f'{doc}|{ref}'
+
+
+def find_section(doc, ref):
+    """ref = 절 번호, 번호 없는 절의 제목, 또는 'A › B'(A 뒤에 나오는 첫 B). 한 곳으로만 풀려야 한다."""
+    secs = doc['sections']
+    match = lambda s, r: (r and s['no'] == r) or (not s['no'] and s['title'] == r)
+    if SEP in ref:
+        a, b = ref.split(SEP, 1)
+        hits = [i for i, s in enumerate(secs) if match(s, a)]
+        if len(hits) != 1:
+            raise KeyError(f'{doc["id"]}: "{a}" 가 {len(hits)}곳')
+        for s in secs[hits[0] + 1:]:
+            if match(s, b):
+                return s
+        raise KeyError(f'{doc["id"]}: "{a}" 뒤에 "{b}" 없음')
+    hits = [s for s in secs if match(s, ref)]
+    if len(hits) != 1:
+        raise KeyError(f'{doc["id"]}: "{ref}" 가 {len(hits)}곳 — "상위 절 › {ref}" 로 적으세요')
+    return hits[0]
 
 
 def main():
@@ -34,13 +56,7 @@ def main():
     if not index_path.exists():
         sys.exit(f'원본 색인이 없습니다: {index_path}\n  python3 source_parse.py <원본 docx 폴더> -o source_index.json  로 먼저 만드세요.')
     index = json.loads(index_path.read_text(encoding='utf-8'))
-    docs = {d['id'][0]: d for d in index['documents']}  # 파일명 앞 숫자가 문서 키
-
-    def find_section(doc, no):
-        for s in docs[doc]['sections']:
-            if (no and s['no'] == no) or (not s['no'] and s['title'] == no):
-                return s
-        raise KeyError(f'{doc} {no}')
+    docs = {d['id']: d for d in index['documents']}  # 문서 키 = source_parse.py 의 id (파일명에서 날짜·유형을 뺀 이름)
 
     stage_of = {uid: dict(order=j['order'], title=j['title']) for j in course['journey'] if j['order'] in STAGES for uid in j['units']}
     order = [uid for j in sorted(course['journey'], key=lambda j: j['order']) if j['order'] in STAGES for uid in j['units']]
@@ -49,21 +65,25 @@ def main():
         steps = []
         for s in unit['steps']:
             l = lessons.get(s['id'], {})
-            cites = [tuple(c) for kp in l.get('keyPoints', []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])]
+            checks = l.get('checks')  # [{text, cites}] — 없으면 교육과정의 체크 문구
+            cites = [tuple(c) for kp in l.get('keyPoints', []) + (checks or []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])]
+            sources = [list(c) for c in l['sources']] if l.get('sources') else list(dict.fromkeys(cites))
             for doc, no in cites:
                 key = section_key(doc, no)
                 if key not in used_sections:
-                    sec = find_section(doc, no)
+                    sec = find_section(docs[doc], no)
                     used_sections[key] = dict(doc=doc, no=sec['no'], title=sec['title'], kind=sec['kind'], chars=sec['chars'],
                                               images=sec['images'], paragraphs=sec['paragraphs'], tables=sec['tables'], hash=sec['hash'])
                     used_docs.add(doc)
-            steps.append(dict(id=s['id'], title=l.get('title') or s['title'], copy=s['copy'], checks=s['checks'],
+            steps.append(dict(id=s['id'], title=l.get('title') or s['title'], copy=s['copy'],
+                              checks=[c['text'] for c in checks] if checks else s['checks'],
+                              checkCites=[[section_key(*c) for c in k['cites']] for k in checks] if checks else [],
                               note=s.get('note') or '', photos=[str(p) for p in s.get('photos') or []],
                               purpose=l.get('purpose', ''),
                               keyPoints=[dict(text=kp['text'], cites=[section_key(*c) for c in kp['cites']]) for kp in l.get('keyPoints', [])],
-                              sources=[section_key(*c) for c in l.get('sources', [])],
-                              # 새 원본(색인된 docx 절)이 아직 없는 항목: 기존 교육과정의 U코드 원고 문서 이름만 싣는다(전문 없음).
-                              refDocs=[] if l.get('sources') else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
+                              sources=[section_key(*c) for c in sources],
+                              # 원본 절 인용이 하나도 없는 항목만: 기존 교육과정의 U코드 원고 문서 이름을 싣는다(전문 없음).
+                              refDocs=[] if sources else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
                                                                      for r in (s.get('refs') or [s['ref']]) if r in course['refs']],
                               lessonStatus=l.get('status', 'none')))
             photos.update(steps[-1]['photos'])
@@ -72,7 +92,7 @@ def main():
         format='momos-lms-v1-content',
         courseVersion=course['version'], sourceIndexedAt=index['generated_at'],
         units=units,
-        documents={k: dict(title=d['title'], type=d['type'], version=d['version'], revised=d['revised_at'], status=d['status'], file=d['file'])
+        documents={k: dict(title=d['title'], type=d['type'], version=d['version'], revised=d['revised_at'], status=d['status'], file=d['file'], folder=d.get('folder', ''))
                    for k, d in docs.items() if k in used_docs},
         sections=used_sections,
         photos={p: dict(src=source['photos'][p]['src'], caption=source['photos'][p]['caption']) for p in sorted(photos) if p in source['photos']},

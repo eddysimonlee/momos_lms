@@ -25,7 +25,8 @@ try:
 except ImportError:  # pragma: no cover
     sys.exit('python-docx 가 필요합니다:  pip install python-docx')
 
-HEADING_STYLES = {'SOP 주제목', 'SOP 하위절', 'SOP STEP'}
+HEADING_STYLES = {'SOP 주제목', 'SOP 하위절', 'SOP STEP',
+                  'Heading 1', 'Heading 2', 'Heading 3', 'GUI 장 제목', 'GUI 소제목'}  # 261021~ 문서는 워드 기본 제목·GUI 서식을 쓴다
 NUMBERED = re.compile(r'^(\d+(?:\.\d+)*)\.?\s+(.+)$')
 BLIP = './/{http://schemas.openxmlformats.org/drawingml/2006/main}blip'
 TYPE_WORDS = {'SOP': '작업 절차서', 'GUI': '업무 가이드', 'FRM': '기록 양식'}
@@ -82,7 +83,8 @@ def classify(doc_type, title, paragraphs, tables):
 def parse(path):
     document = docx.Document(path)
     fn = nfc(os.path.basename(path))
-    doc = {'file': fn, 'title': None, 'type': None, 'cover': {}, 'metadata': {}, 'revisions': [], 'sections': []}
+    doc = {'file': fn, 'folder': nfc(os.path.basename(os.path.dirname(os.path.abspath(path)))),  # 원본 폴더(업무 분류)
+           'title': None, 'type': None, 'cover': {}, 'metadata': {}, 'revisions': [], 'sections': []}
     m = re.search(r'_(SOP|GUI|FRM)', fn)
     doc['type'] = m.group(1) if m else None
 
@@ -163,6 +165,11 @@ def parse(path):
         cur['images'] += imgs
 
     md = doc['metadata']
+    if not doc['title']:
+        # 261020~ 표지: 'MOMOS COFFEE' 브랜드 줄 바로 다음 줄이 문서명이다.
+        brand = next((i for i, t in enumerate(paras[:body_start]) if t.upper() == 'MOMOS COFFEE'), None)
+        if brand is not None:
+            doc['title'] = next((t for t in paras[brand + 1:body_start] if t), '')
     doc['title'] = doc['title'] or fn
     tw = md.get('문서 유형', '')
     for k, v in TYPE_WORDS.items():

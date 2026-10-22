@@ -22,17 +22,9 @@ def inline_file(path):
 
 
 def main():
-    content = json.loads((APP / 'v1_content.json').read_text(encoding='utf-8'))
-    lessons = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8')).get('lessons', {})
-    for unit in content['units']:
-        for step in unit['steps']:
-            l = lessons.get(step['id'])
-            if not l:
-                continue
-            if l.get('title'): step['title'] = l['title']
-            step['purpose'] = l.get('purpose', step.get('purpose', ''))
-            step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l.get('keyPoints', [])]
-            step['sources'] = ['|'.join(c) for c in l.get('sources', [])]
+    # 서버와 똑같은 내용: 빌드 산출물(v1_content.json) 위에 v1_lessons.json 을 덮는 것은 server.v1_content() 하나로만 한다.
+    import server
+    content = server.v1_content()
     page = (APP / 'v1.html').read_text(encoding='utf-8')
     # 외부 파일을 전부 안에 넣는다
     font = APP / 'assets/PretendardVariable.woff2'

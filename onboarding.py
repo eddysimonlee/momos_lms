@@ -24,6 +24,15 @@ ROOT = 2026100201
 FORMAT = 'momos-education-v1'
 COURSE = json.loads(Path(__file__).with_name('onboarding_course.json').read_text(encoding='utf-8'))
 STEPS = {s['id']: dict(s, unit=u['id'], plan=s.get('defaultDays', u['plan'])) for u in COURSE['units'] for s in u['steps']}
+# v1 교육안(v1_lessons.json)이 원본 문서 기준으로 다시 쓴 항목은 제목·수행 확인 문구를 그쪽으로 맞춘다.
+# 기록의 체크 배열 길이는 fit()이 맞추므로, 문구가 바뀐 항목의 이전 체크는 앞에서부터 이어진다.
+_LESSONS = Path(__file__).with_name('v1_lessons.json')
+if _LESSONS.exists():
+    for _id, _l in json.loads(_LESSONS.read_text(encoding='utf-8')).get('lessons', {}).items():
+        if _id in STEPS and _l.get('checks'):
+            STEPS[_id]['checks'] = [c['text'] if isinstance(c, dict) else c for c in _l['checks']]
+        if _id in STEPS and _l.get('title'):
+            STEPS[_id]['title'] = _l['title']
 TESTS = {t['id']: t for t in COURSE['tests']}
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
