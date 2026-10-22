@@ -120,6 +120,8 @@ def month(d, n):
 def fit(learner):
     """Pad or trim per-check arrays when a step's check list changed length after records were saved.
     교육과정에 새로 생긴 항목은 기존 기록에 빈 기록 칸과 일정을 더한다."""
+    if not learner:
+        return learner
     records = learner.setdefault('records', {})
     plans = learner.setdefault('planDates', {})
     join = learner.get('join') or today()
@@ -236,7 +238,7 @@ class Service:
         for r in roster:
             item=root['learners'].get(r['id'])
             if not item: continue
-            l=projects.Rooms.read(db,item['key']);records=l['records']
+            l=fit(projects.Rooms.read(db,item['key']));records=l['records']
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
             summaries.append(dict(**r,total=len(STEPS),done=done,waiting=waiting,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
@@ -469,7 +471,7 @@ class Service:
             own=target==user['id'];trainer=entry['trainer']==user['id'] and not own
             assessor=entry['assessor']==user['id'] and not own
             if not (own or trainer or assessor):continue
-            l=projects.Rooms.read(db,entry['key'])
+            l=fit(projects.Rooms.read(db,entry['key']))
             name=users[target]['name']
             assigned=next((e for e in reversed(l['events']) if e.get('text')=='교육 배정·담당·입사일 확인'),None)
             if assigned:
@@ -747,7 +749,7 @@ class Service:
             others=[]
             for entry in root['learners'].values():
                 if len(others)>200:break
-                other=projects.Rooms.read(db,entry['key'])
+                other=fit(projects.Rooms.read(db,entry['key']))
                 if other and other['exam']:others.extend(other['exam']['questions'])
             for kind in ('choice','photo','match','order'):
                 pool=[q for q in QUESTIONS.values() if q['type']==kind]

@@ -268,6 +268,19 @@ class EducationTests(unittest.TestCase):
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
 
+    def test_records_saved_before_new_sessions_still_load(self):
+        # 배포 전에 저장된 기록(새 세션 칸 없음)도 교육생·담당자 화면과 요약에서 그대로 읽혀야 한다.
+        self.enrol(self.learner);self.service.get(self.learner)
+        new=[k for k,s in ob.STEPS.items() if str(s.get('unit','')).startswith('curriculum-')];self.assertTrue(new)
+        with self.store.connect() as db:
+            key=projects.Rooms.read(db,ob.ROOT)['learners'][self.learner['id']]['key'];l=projects.Rooms.read(db,key)
+            for k in new:l['records'].pop(k,None);l['planDates'].pop(k,None)
+            projects.Rooms.write(db,key,l)
+        for u,target in ((self.learner,None),(self.admin,None),(self.admin,self.learner['id']),(self.trainer,self.learner['id'])):
+            c=self.service.get(u,target) if target else self.service.get(u)
+            self.assertTrue(c['roster'])
+        c=self.service.get(self.learner);self.assertTrue(set(new)<=set(c['learner']['records']))
+
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
         self.assertEqual(len(ob.STEPS),110);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),353)  # 기존 82 + 6단계 교육과정 새 세션 28
