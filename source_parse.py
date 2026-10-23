@@ -29,11 +29,53 @@ HEADING_STYLES = {'SOP 주제목', 'SOP 하위절', 'SOP STEP',
                   'Heading 1', 'Heading 2', 'Heading 3', 'GUI 장 제목', 'GUI 소제목'}  # 261021~ 문서는 워드 기본 제목·GUI 서식을 쓴다
 NUMBERED = re.compile(r'^(\d+(?:\.\d+)*)\.?\s+(.+)$')
 BLIP = './/{http://schemas.openxmlformats.org/drawingml/2006/main}blip'
+EMBED = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed'
+DOCPR = '{http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing}docPr'
+IMAGES_DIR = None  # --images 로 지정하면 절마다 사진을 꺼내 <id>.jpg 로 저장한다(교육 화면의 사진 출처)
 TYPE_WORDS = {'SOP': '작업 절차서', 'GUI': '업무 가이드', 'FRM': '기록 양식'}
 
 
 def nfc(s):
     return unicodedata.normalize('NFC', s or '')
+
+
+def photos_in(element, document):
+    """요소 안의 사진을 문서 순서대로 꺼낸다. id = 원본 이미지 바이트의 sha1 앞 12자리(같은 사진이면 같은 id)."""
+    out = []
+    for blip in element.findall(BLIP):
+        part = document.part.related_parts.get(blip.get(EMBED))
+        if part is None:
+            continue
+        blob = part.blob
+        pid = hashlib.sha1(blob).hexdigest()[:12]
+        anc, alt = blip.getparent(), ''
+        while anc is not None and not alt:
+            pr = anc.find(DOCPR)
+            if pr is not None:
+                alt = nfc(pr.get('descr') or pr.get('title') or '').strip()
+                break
+            anc = anc.getparent()
+        w = h = None
+        try:
+            from PIL import Image
+            import io
+            im = Image.open(io.BytesIO(blob))
+            w, h = im.size
+            if IMAGES_DIR:
+                dest = os.path.join(IMAGES_DIR, pid + '.jpg')
+                if not os.path.exists(dest):
+                    if im.mode in ('RGBA', 'LA', 'P'):
+                        im = im.convert('RGBA')
+                        bg = Image.new('RGB', im.size, 'white')
+                        bg.paste(im, mask=im.split()[-1])
+                        im = bg
+                    im = im.convert('RGB')
+                    im.thumbnail((960, 960))
+                    im.save(dest, 'JPEG', quality=80, optimize=True)
+        except Exception:  # 그림이 아닌 개체(EMF 등)는 크기 없이 기록만
+            pass
+        out.append({'id': pid, 'w': w, 'h': h, 'alt': alt})
+    return out
 
 
 def blocks(document):
@@ -83,6 +125,8 @@ def classify(doc_type, title, paragraphs, tables):
 def parse(path):
     document = docx.Document(path)
     fn = nfc(os.path.basename(path))
+    if not fn.lower().endswith('.docx'):
+        fn += '.docx'  # 확장자 없이 받은 원본(내용은 docx)
     doc = {'file': fn, 'folder': nfc(os.path.basename(os.path.dirname(os.path.abspath(path)))),  # 원본 폴더(업무 분류)
            'title': None, 'type': None, 'cover': {}, 'metadata': {}, 'revisions': [], 'sections': []}
     m = re.search(r'_(SOP|GUI|FRM)', fn)
@@ -91,7 +135,7 @@ def parse(path):
     sections, cur = [], None
 
     def new_section(no, title, level):
-        return {'no': no, 'title': title, 'level': level, 'paragraphs': [], 'tables': [], 'images': 0}
+        return {'no': no, 'title': title, 'level': level, 'paragraphs': [], 'tables': [], 'images': 0, 'photos': []}
 
     # 본문 시작점: '목차' 뒤에는 목차 항목(번호 줄)이 이어지고, 그 다음에 문서명과 본문 절이 다시 나온다.
     # 첫 '문장'(번호 없고 마침표/'~다'로 끝나는 줄) 바로 앞의 마지막 '1. 목적' 줄부터가 본문이다.
@@ -137,6 +181,7 @@ def parse(path):
                 sections.append(cur)
             cur['tables'].append({'header': rows[0], 'rows': rows[1:]})
             cur['images'] += len(b._tbl.findall(BLIP))
+            cur['photos'] += photos_in(b._tbl, document)
             continue
 
         text = nfc(b.text).strip()
@@ -163,6 +208,7 @@ def parse(path):
         if text:
             cur['paragraphs'].append(text)
         cur['images'] += imgs
+        cur['photos'] += photos_in(b._p, document)
 
     md = doc['metadata']
     if not doc['title']:
@@ -212,11 +258,18 @@ def main():
     ap.add_argument('paths', nargs='+')
     ap.add_argument('-o', '--out', default='source_index.json')
     ap.add_argument('--summary', action='store_true')
+    ap.add_argument('--images', help='절별 사진을 <id>.jpg 로 꺼낼 폴더 (v1_build.py 가 교육 화면에 싣는다)')
     a = ap.parse_args()
+    global IMAGES_DIR
+    if a.images:
+        os.makedirs(a.images, exist_ok=True)
+        IMAGES_DIR = a.images
     files = []
     for p in a.paths:
         if os.path.isdir(p):
-            files += sorted(os.path.join(p, f) for f in os.listdir(p) if f.lower().endswith('.docx') and not f.startswith('~$'))
+            import zipfile  # 확장자가 빠진 docx 도 읽는다
+            files += sorted(os.path.join(p, f) for f in os.listdir(p) if not f.startswith(('~$', '.')) and os.path.isfile(os.path.join(p, f))
+                            and (f.lower().endswith('.docx') or ('.' not in f and zipfile.is_zipfile(os.path.join(p, f)))))
         else:
             files.append(p)
     docs = [parse(f) for f in files]

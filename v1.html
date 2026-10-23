@@ -58,7 +58,9 @@
 .v1-pill.done{background:var(--component-tag-color-success-surface);color:var(--component-tag-color-success-text-color)}
 .v1-copy p{margin:0 0 var(--spacing-8);font:var(--body-lg)}
 .v1-photo{margin:var(--spacing-12) 0 0}.v1-photo img{width:100%;border-radius:var(--radius-lg);display:block}.v1-photo figcaption{color:var(--text-muted);font:var(--label-sm);margin-top:var(--spacing-4)}
-.v1-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--spacing-12);margin:var(--spacing-12) 0 0}.v1-photos .v1-photo{margin:0;min-width:0}.v1-photos .v1-photo img{height:160px;object-fit:contain;background:var(--surface-secondary)}
+.v1-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--spacing-12);margin:var(--spacing-12) 0 0}.v1-photos .v1-photo{margin:0;min-width:0}.v1-photos .v1-photo img{height:auto;max-height:420px;object-fit:contain;background:var(--surface-secondary)}
+.v1-photos .v1-photo-wide{grid-column:1/-1}.v1-photos .v1-photo-wide img{max-height:none}
+.v1-photo .v1-cites{display:flex;flex-wrap:wrap;gap:var(--spacing-4);margin-top:var(--spacing-6)}
 /* checks = checkbox item (16px control + md label); the whole row is the tap target */
 .v1-checks{list-style:none;margin:var(--spacing-8) 0 0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-8)}
 .v1-checks label{position:relative;display:flex;gap:var(--spacing-12);align-items:flex-start;padding:var(--spacing-12) var(--spacing-16);border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);cursor:pointer;font:var(--component-checkbox-label-md-typography);color:var(--component-checkbox-state-default-label-text)}

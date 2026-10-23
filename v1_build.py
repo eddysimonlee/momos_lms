@@ -2,7 +2,8 @@
 
 Inputs
   onboarding_course.json  항목(제목·체크·사진·일정)과 단원 — 교육과정 구조
-  onboarding.html         사진 데이터(source-data)
+  source_images/          원본 docx 에서 꺼낸 절별 사진(source_parse.py --images). 교육안이 [문서, 절, n번째] 로
+                          고른 사진만 v1_content.json 에 싣는다 — 원본에 없는 사진은 싣지 않는다.
   v1_lessons.json         항목별 교육 목적·교육 내용·원본 인용 (초안, 사람이 검토)
   source_index.json       원본 매뉴얼(docx) 색인 — source_parse.py 의 출력. 저장소에 없으면
                           LMS_SOURCE_INDEX 환경변수로 경로를 준다.
@@ -11,6 +12,7 @@ Output: v1_content.json — 화면이 그대로 읽는 파일. 인용된 절만 
 
     python3 v1_build.py
 """
+import base64
 import json
 import os
 import re
@@ -49,8 +51,6 @@ def find_section(doc, ref):
 
 def main():
     course = json.loads((APP / 'onboarding_course.json').read_text(encoding='utf-8'))
-    html = (APP / 'onboarding.html').read_text(encoding='utf-8')
-    source = json.loads(re.search(r'<script id="source-data" type="application/json">(.*?)</script>', html, re.S).group(1))
     lessons = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']
     index_path = Path(os.environ.get('LMS_SOURCE_INDEX', APP / 'source_index.json'))
     if not index_path.exists():
@@ -58,14 +58,36 @@ def main():
     index = json.loads(index_path.read_text(encoding='utf-8'))
     docs = {d['id']: d for d in index['documents']}  # 문서 키 = source_parse.py 의 id (파일명에서 날짜·유형을 뺀 이름)
 
-    photos, used_sections, used_docs = set(), {}, set()
+    photos, used_sections, used_docs = {}, {}, set()
+    images_dir = Path(os.environ.get('LMS_SOURCE_IMAGES', APP / 'source_images'))
+
+    def lesson_photos(l):
+        """교육안의 photos: [{cite: [문서, 절], n: 절 안의 몇 번째 사진(1부터), caption}] → 사진 키 목록.
+        사진은 원본 절에서만 가져오고, 키는 원본 이미지의 sha1 이라 같은 사진은 한 번만 싣는다."""
+        keys = []
+        for ph in l.get('photos', []):
+            doc, no = ph['cite']
+            sec = find_section(docs[doc], no)
+            items = sec.get('photos') or []
+            if not 1 <= ph['n'] <= len(items):
+                raise KeyError(f'{doc} {no}: 사진 {ph["n"]}번째가 없음 (이 절의 사진 {len(items)}장)')
+            pid = items[ph['n'] - 1]['id']
+            f = images_dir / f'{pid}.jpg'
+            if not f.exists():
+                sys.exit(f'사진 파일이 없습니다: {f}\n  python3 source_parse.py <원본 폴더> --images source_images  로 먼저 꺼내세요.')
+            photos[pid] = dict(src='data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode(),
+                               caption=ph.get('caption') or sec['title'], cite=section_key(doc, no), n=ph['n'],
+                               wide=bool(items[ph['n'] - 1].get('w') and items[ph['n'] - 1]['w'] > 1.2 * items[ph['n'] - 1]['h']))  # 글씨 있는 가로 그림은 한 줄 전체
+            keys.append(pid)
+        return keys
     course_steps = {s['id']: (u, s) for u in course['units'] for s in u['steps']}
 
     def lesson_step(s):
         """교육과정의 항목 1개 + v1_lessons.json 의 교육안 → 화면용 항목."""
         l = lessons.get(s['id'], {})
         checks = l.get('checks')  # [{text, cites}] — 없으면 교육과정의 체크 문구
-        cites = [tuple(c) for kp in l.get('keyPoints', []) + (checks or []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])]
+        cites = [tuple(c) for kp in l.get('keyPoints', []) + (checks or []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])] \
+            + [tuple(ph['cite']) for ph in l.get('photos', [])]
         sources = [list(c) for c in l['sources']] if l.get('sources') else list(dict.fromkeys(cites))
         for doc, no in cites:
             key = section_key(doc, no)
@@ -77,7 +99,7 @@ def main():
         step = dict(id=s['id'], title=l.get('title') or s['title'], copy=s['copy'],
                     checks=[c['text'] for c in checks] if checks else s['checks'],
                     checkCites=[[section_key(*c) for c in k['cites']] for k in checks] if checks else [],
-                    note=s.get('note') or '', photos=[str(p) for p in s.get('photos') or []],
+                    note=s.get('note') or '', photos=lesson_photos(l),  # 원본 docx 의 사진만(예전 원고 사진은 쓰지 않음)
                     purpose=l.get('purpose', ''),
                     keyPoints=[dict(text=kp['text'], cites=[section_key(*c) for c in kp['cites']]) for kp in l.get('keyPoints', [])],
                     sources=[section_key(*c) for c in sources],
@@ -85,7 +107,6 @@ def main():
                     refDocs=[] if sources else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
                                                    for r in (s.get('refs') or [s.get('ref')]) if r in course['refs']],
                     lessonStatus=l.get('status', 'none'))
-        photos.update(step['photos'])
         return step
 
     def planned_step(sess):
@@ -139,7 +160,7 @@ def main():
         documents={k: dict(title=d['title'], type=d['type'], version=d['version'], revised=d['revised_at'], status=d['status'], file=d['file'], folder=d.get('folder', ''))
                    for k, d in docs.items() if k in used_docs},
         sections=used_sections,
-        photos={p: dict(src=source['photos'][p]['src'], caption=source['photos'][p]['caption']) for p in sorted(photos) if p in source['photos']},
+        photos=dict(sorted(photos.items())),
     )
     (APP / 'v1_content.json').write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
     print('v1_content.json:', sum(len(u['steps']) for u in units), 'steps,', len(out['documents']), 'documents,', len(out['sections']), 'sections,', len(out['photos']), 'photos')

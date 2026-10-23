@@ -7,6 +7,7 @@
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
+  let shownView = null, keepFocus = null;  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'home', busy = false, toastTimer = null, stageSel = null;
 
   function toast(message) {
@@ -53,6 +54,8 @@
   const statusOf = s => planned(s) ? 'planned' : record(s.id).status;
   const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
   const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
+  // 원본 보기 절의 DOM id: 한글을 '_' 로 바꾸면 같은 문서의 다른 절끼리 겹쳐(예: '요청 방법'·'관련 시트') 칩이 엉뚱한 절을 열었다 → 절 목록의 순번을 쓴다.
+  const srcId = key => 'src-' + Object.keys(content.sections).indexOf(key);
   const stepIndex = id => steps().findIndex(s => s.id === id);
   const canWrite = () => cloud.enrolled && cloud.scheduled;
   // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
@@ -69,9 +72,28 @@
     $('v1Back').hidden = !step;
     $('v1Title').textContent = step ? step.title : '모모스 온보딩';
     $('v1Who').textContent = cloud.user.name;
-    $('app').innerHTML = step ? stepView(step) : homeView();
+    // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
+    const app = $('app'), same = view === shownView, y = window.scrollY;
+    const opened = same ? [...app.querySelectorAll('details[open][id]')].map(d => d.id) : [];
+    const f = same && app.contains(document.activeElement) ? document.activeElement : null;
+    const focusSel = f && ['data-self', 'data-teacher', 'data-cite', 'data-step'].map(a => f.hasAttribute(a) ? `[${a}="${CSS.escape(f.getAttribute(a))}"]` : '').find(Boolean);
+    // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
+    const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
+    const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
+    app.innerHTML = step ? stepView(step) : homeView();
     bind(step);
-    if (step) window.scrollTo(0, 0);
+    if (same) {
+      opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
+      // 저장 중에는 체크박스가 잠깐 disabled 라 포커스를 못 받는다 → 기억해 두었다가 저장 후 다시 그릴 때 돌려준다
+      keepFocus = focusSel || keepFocus;
+      const nf = keepFocus && app.querySelector(keepFocus);
+      if (nf && !nf.disabled) { nf.focus({preventScroll: true}); if (!busy) keepFocus = null; }
+      // styles.css 의 html{scroll-behavior:smooth} 때문에 그냥 scrollTo 는 애니메이션이 된다 → 'instant' 로 바로 제자리
+      window.scrollTo({top: y, behavior: 'instant'});
+      const after = anchorTop !== null && app.querySelector(anchorSel);
+      if (after) window.scrollTo({top: window.scrollY + after.getBoundingClientRect().top - anchorTop, behavior: 'instant'});
+    } else { keepFocus = null; if (step) window.scrollTo({top: 0, behavior: 'instant'}); }
+    shownView = view;
   }
 
   function peopleBar() {
@@ -156,14 +178,15 @@
     }).join('') + '</ul>';
     const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
     const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map(p =>
-      `<figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('') + (shots.length > 1 ? '</div>' : '');
+      // 사진도 원본 docx 의 절에서만 가져온다. 칩 = 그 사진이 들어 있는 절(누르면 원본 보기의 해당 절).
+      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}${p.cite ? `<span class="v1-cites">${cite(p.cite)}</span>` : ''}</figcaption></figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map(k => `<li><div>${esc(k.text).replace(/\n/g, '<br>')}</div><div class="v1-cites">${k.cites.map(cite).join('')}</div></li>`).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
       r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     const sources = (s.sources || []).map(key => {
       const sec = content.sections[key]; if (!sec) return '';
       const doc = content.documents[sec.doc] || {};
-      return `<details class="v1-guide" id="src-${esc(key).replace(/[^0-9A-Za-z.-]/g, '_')}"><summary><span>${esc(doc.title || '')} <b>${esc(sec.no)} ${esc(sec.title)}</b></span><span class="v1-tag">${esc(doc.type || '')} ${esc(doc.version || '')}</span></summary>` +
+      return `<details class="v1-guide" id="${srcId(key)}"><summary><span>${esc(doc.title || '')} <b>${esc(sec.no)} ${esc(sec.title)}</b></span><span class="v1-tag">${esc(doc.type || '')} ${esc(doc.version || '')}</span></summary>` +
         `<div class="v1-guide-body"><p class="v1-src">${esc(doc.title || '')} · ${esc(doc.type || '')} ${esc(doc.version || '')} (${esc(doc.revised || '')}) · ${esc(sec.kind)}${sec.images ? ` · 사진 ${sec.images}장은 원본 파일에서` : ''}</p>` +
         sec.paragraphs.map(p => `<p>${esc(p)}</p>`).join('') + sec.tables.map(table).join('') + `<p class="v1-src">파일: ${esc(doc.file || '')}</p></div></details>`;
     }).join('') + (s.refDocs || []).map(d =>
@@ -200,12 +223,12 @@
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
     app.querySelectorAll('[data-cite]').forEach(b => b.onclick = () => {
-      const el = document.getElementById('src-' + b.dataset.cite.replace(/[^0-9A-Za-z.-]/g, '_'));
+      const el = document.getElementById(srcId(b.dataset.cite));
       if (!el) return; el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
     });
     if (!step) return;
-    app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked}));
-    app.querySelectorAll('[data-teacher]').forEach(c => c.onchange = () => act('step.teacher', {step: step.id, index: Number(c.dataset.teacher), on: c.checked}));
+    app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => (keepFocus = `[data-self="${c.dataset.self}"]`, act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked})));
+    app.querySelectorAll('[data-teacher]').forEach(c => c.onchange = () => (keepFocus = `[data-teacher="${c.dataset.teacher}"]`, act('step.teacher', {step: step.id, index: Number(c.dataset.teacher), on: c.checked})));  // 누른 체크박스 = 다시 그릴 때의 기준점·포커스(Safari 는 클릭해도 포커스를 안 준다)
     const memo = app.querySelector('[data-memo]');
     if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('메모를 저장했어요.')); };
     const request = app.querySelector('[data-request]');

@@ -238,6 +238,10 @@ class EducationTests(unittest.TestCase):
             self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in live))
             self.assertTrue(set(c for s in live for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
             self.assertFalse(any(s['refDocs'] for s in steps))
+            # 사진은 원본 docx 절에서 꺼낸 것만: 모든 사진에 근거 절이 있고, 그 절이 항목의 원본 보기에 있다
+            shots=[(s,slice_['photos'][p]) for s in live for p in s['photos']]
+            self.assertTrue(shots and all(ph['cite'] in slice_['sections'] and ph['cite'] in s['sources'] and ph['src'].startswith('data:image/jpeg') for s,ph in shots))
+            self.assertEqual(set(slice_['photos']),{p for s in live for p in s['photos']})
             steps=live
             cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
             self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))
