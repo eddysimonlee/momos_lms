@@ -25,6 +25,10 @@ def main():
     # 서버와 똑같은 내용: 빌드 산출물(v1_content.json) 위에 v1_lessons.json 을 덮는 것은 server.v1_content() 하나로만 한다.
     import server
     content = server.v1_content()
+    for ph in content.get('photos', {}).values():  # 미리보기는 한 파일이므로 사진을 안에 넣는다
+        f = APP / ph['src']
+        if f.exists():
+            ph['src'] = 'data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode()
     page = (APP / 'v1.html').read_text(encoding='utf-8')
     # 외부 파일을 전부 안에 넣는다
     font = APP / 'assets/PretendardVariable.woff2'

@@ -39,8 +39,16 @@ def nfc(s):
     return unicodedata.normalize('NFC', s or '')
 
 
-def photos_in(element, document):
-    """요소 안의 사진을 문서 순서대로 꺼낸다. id = 원본 이미지 바이트의 sha1 앞 12자리(같은 사진이면 같은 id)."""
+W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
+
+
+def _text(el):
+    return nfc(''.join(t.text or '' for t in el.iter(W + 't'))).strip()
+
+
+def photos_in(element, document, near=''):
+    """요소 안의 사진을 문서 순서대로 꺼낸다. id = 원본 이미지 바이트의 sha1 앞 12자리(같은 사진이면 같은 id).
+    near = 사진 설명 후보: 사진이 든 표 행의 글자 → 사진이 든 단락의 글자 → 바로 앞 단락(near 인자) 순."""
     out = []
     for blip in element.findall(BLIP):
         part = document.part.related_parts.get(blip.get(EMBED))
@@ -74,7 +82,14 @@ def photos_in(element, document):
                     im.save(dest, 'JPEG', quality=80, optimize=True)
         except Exception:  # 그림이 아닌 개체(EMF 등)는 크기 없이 기록만
             pass
-        out.append({'id': pid, 'w': w, 'h': h, 'alt': alt})
+        row, text = blip.getparent(), ''
+        while row is not None and row.tag not in (W + 'tr', W + 'p'):
+            row = row.getparent()
+        if row is not None and row.tag == W + 'tr':
+            text = ' / '.join(t for t in (_text(tc) for tc in row.findall(W + 'tc')) if t)
+        elif row is not None:
+            text = _text(row)
+        out.append({'id': pid, 'w': w, 'h': h, 'alt': alt, 'near': (text or near)[:120]})
     return out
 
 
@@ -150,6 +165,7 @@ def parse(path):
             body_start = ones[-1]
     phase = 'front'
     pidx = -1
+    last_text = ''  # 사진 바로 앞의 본문 단락(사진 설명 후보)
 
     for kind, b in blocks(document):
         if kind == 'p':
@@ -181,7 +197,7 @@ def parse(path):
                 sections.append(cur)
             cur['tables'].append({'header': rows[0], 'rows': rows[1:]})
             cur['images'] += len(b._tbl.findall(BLIP))
-            cur['photos'] += photos_in(b._tbl, document)
+            cur['photos'] += photos_in(b._tbl, document, last_text)
             continue
 
         text = nfc(b.text).strip()
@@ -201,6 +217,7 @@ def parse(path):
                 no, title = '', text
             cur = new_section(no, title, no.count('.') + 1 if no else 1)
             sections.append(cur)
+            last_text = text
             continue
         if cur is None:
             cur = new_section('0', '(머리말)', 0)
@@ -208,7 +225,9 @@ def parse(path):
         if text:
             cur['paragraphs'].append(text)
         cur['images'] += imgs
-        cur['photos'] += photos_in(b._p, document)
+        cur['photos'] += photos_in(b._p, document, last_text)
+        if text:
+            last_text = text
 
     md = doc['metadata']
     if not doc['title']:

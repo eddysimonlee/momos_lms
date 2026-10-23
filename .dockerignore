@@ -25,6 +25,8 @@
 !curriculum.json
 !wds/
 !wds/**
+!v1_photos/
+!v1_photos/**
 !assets/
 !assets/momos-white.png
 !assets/momos-black.png

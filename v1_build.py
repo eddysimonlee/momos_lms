@@ -3,7 +3,8 @@
 Inputs
   onboarding_course.json  항목(제목·체크·사진·일정)과 단원 — 교육과정 구조
   source_images/          원본 docx 에서 꺼낸 절별 사진(source_parse.py --images). 교육안이 [문서, 절, n번째] 로
-                          고른 사진만 v1_content.json 에 싣는다 — 원본에 없는 사진은 싣지 않는다.
+                          고른 사진만 v1_photos/ 로 복사하고 v1_content.json 에는 경로·근거 절만 싣는다
+                          — 원본에 없는 사진은 실을 수 없다.
   v1_lessons.json         항목별 교육 목적·교육 내용·원본 인용 (초안, 사람이 검토)
   source_index.json       원본 매뉴얼(docx) 색인 — source_parse.py 의 출력. 저장소에 없으면
                           LMS_SOURCE_INDEX 환경변수로 경로를 준다.
@@ -75,7 +76,7 @@ def main():
             f = images_dir / f'{pid}.jpg'
             if not f.exists():
                 sys.exit(f'사진 파일이 없습니다: {f}\n  python3 source_parse.py <원본 폴더> --images source_images  로 먼저 꺼내세요.')
-            photos[pid] = dict(src='data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode(),
+            photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
                                caption=ph.get('caption') or sec['title'], cite=section_key(doc, no), n=ph['n'],
                                wide=bool(items[ph['n'] - 1].get('w') and items[ph['n'] - 1]['w'] > 1.2 * items[ph['n'] - 1]['h']))  # 글씨 있는 가로 그림은 한 줄 전체
             keys.append(pid)
@@ -162,6 +163,16 @@ def main():
         sections=used_sections,
         photos=dict(sorted(photos.items())),
     )
+    # 고른 사진만 v1_photos/ 에 둔다(저장소·이미지에 포함). 더 이상 쓰지 않는 사진 파일은 지운다.
+    out_dir = APP / 'v1_photos'
+    out_dir.mkdir(exist_ok=True)
+    for old in out_dir.glob('*.jpg'):
+        if old.stem not in photos:
+            old.unlink()
+    for pid in photos:
+        dest = out_dir / f'{pid}.jpg'
+        if not dest.exists():
+            dest.write_bytes((images_dir / f'{pid}.jpg').read_bytes())
     (APP / 'v1_content.json').write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
     print('v1_content.json:', sum(len(u['steps']) for u in units), 'steps,', len(out['documents']), 'documents,', len(out['sections']), 'sections,', len(out['photos']), 'photos')
 

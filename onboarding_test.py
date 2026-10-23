@@ -240,8 +240,12 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(any(s['refDocs'] for s in steps))
             # 사진은 원본 docx 절에서 꺼낸 것만: 모든 사진에 근거 절이 있고, 그 절이 항목의 원본 보기에 있다
             shots=[(s,slice_['photos'][p]) for s in live for p in s['photos']]
-            self.assertTrue(shots and all(ph['cite'] in slice_['sections'] and ph['cite'] in s['sources'] and ph['src'].startswith('data:image/jpeg') for s,ph in shots))
+            self.assertTrue(shots and all(ph['cite'] in slice_['sections'] and ph['cite'] in s['sources'] and ph['src'].startswith('v1_photos/') and (Path(__file__).parent/ph['src']).exists() for s,ph in shots))
             self.assertEqual(set(slice_['photos']),{p for s in live for p in s['photos']})
+            one=next(iter(slice_['photos'].values()))['src']
+            self.assertEqual(req('GET','/'+one,cookie=False)[0],401)  # 사진도 교육 내용과 같은 로그인 기준
+            code,h,b=req('GET','/'+one);self.assertEqual(code,200);self.assertTrue(b.startswith(b'\xff\xd8'))
+            self.assertEqual(req('GET','/v1_photos/000000000000.jpg')[0],404)
             steps=live
             cited=set(c for s in steps for k in s['keyPoints'] for c in k['cites'])|set(c for s in steps for c in s['sources'])
             self.assertTrue(cited<=set(slice_['sections']));self.assertTrue(set(sec['doc'] for sec in slice_['sections'].values())<=set(slice_['documents']))

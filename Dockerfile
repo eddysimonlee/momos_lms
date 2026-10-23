@@ -22,6 +22,7 @@ COPY --chown=lms:lms onboarding_course.json onboarding_reviews.json onboarding.h
 COPY --chown=lms:lms v1.html v1.js v1_content.json v1_lessons.json curriculum.json ./
 COPY --chown=lms:lms wds/ ./wds/
 COPY --chown=lms:lms assets/ ./assets/
+COPY --chown=lms:lms v1_photos/ ./v1_photos/
 COPY --chown=lms:lms icons/ ./icons/
 USER lms
 # No VOLUME instruction (company image rule DIA-3): the platform mounts /data itself — n3r Spec > Volume, Render > Disk.

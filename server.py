@@ -325,6 +325,14 @@ class Handler(BaseHTTPRequestHandler):
             if path in ('/v1', '/v1.js') and method == 'GET':
                 # First-release learner screen: the page carries the login gate itself, the script waits for it.
                 return self.file(APP / ('v1.html' if path == '/v1' else 'v1.js'))
+            m = re.fullmatch(r'/v1_photos/([0-9a-f]{12})\.jpg', path)
+            if m and method == 'GET':  # 교육 화면의 원본 사진(v1_build.py 가 고른 것만). 교육 내용과 같은 로그인 기준
+                if not user:
+                    raise access.LoginRequired()
+                f = APP / 'v1_photos' / f'{m.group(1)}.jpg'
+                if not f.exists():
+                    raise FileNotFoundError()
+                return self.file(f, cacheable=True)
             if path == '/v1_content.json' and method == 'GET':
                 if not user:
                     raise access.LoginRequired()
