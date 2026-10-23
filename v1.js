@@ -7,7 +7,9 @@
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
-  let shownView = null, keepFocus = null;  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
+  let shownView = null, keepFocus = null;
+  let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
+  let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'home', busy = false, toastTimer = null, stageSel = null;
 
   function toast(message) {
@@ -72,6 +74,7 @@
     $('v1Who').textContent = cloud.user.name;
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
     const app = $('app'), same = view === shownView, y = window.scrollY;
+    if (!same && shownView === 'home') homeScroll = {stage: stageSel, y};  // 항목을 누른 직후라 stageSel 은 보던 탭(= 그 항목의 단계)
     const opened = same ? [...app.querySelectorAll('details[open][id]')].map(d => d.id) : [];
     const f = same && app.contains(document.activeElement) ? document.activeElement : null;
     const focusSel = f && ['data-self', 'data-teacher', 'data-step'].map(a => f.hasAttribute(a) ? `[${a}="${CSS.escape(f.getAttribute(a))}"]` : '').find(Boolean);
@@ -90,7 +93,17 @@
       window.scrollTo({top: y, behavior: 'instant'});
       const after = anchorTop !== null && app.querySelector(anchorSel);
       if (after) window.scrollTo({top: window.scrollY + after.getBoundingClientRect().top - anchorTop, behavior: 'instant'});
-    } else { keepFocus = null; if (step) window.scrollTo({top: 0, behavior: 'instant'}); }
+    } else if (step) {
+      keepFocus = null; lastStep = step.id;
+      window.scrollTo({top: 0, behavior: 'instant'});
+    } else {
+      keepFocus = null;
+      if (homeScroll && homeScroll.stage === stageSel) window.scrollTo({top: homeScroll.y, behavior: 'instant'});
+      else {  // '다음 항목'으로 넘어가다 다른 단계까지 온 경우: 그 단계 목록에서 마지막으로 본 항목을 화면 가운데에
+        const it = lastStep && app.querySelector(`[data-step="${CSS.escape(lastStep)}"]`);
+        if (it) it.scrollIntoView({block: 'center', behavior: 'instant'}); else window.scrollTo({top: 0, behavior: 'instant'});
+      }
+    }
     shownView = view;
   }
 
