@@ -60,11 +60,11 @@
 .v1-photo{margin:var(--spacing-12) 0 0}.v1-photo img{width:100%;border-radius:var(--radius-lg);display:block}.v1-photo figcaption{color:var(--text-muted);font:var(--label-sm);margin-top:var(--spacing-4)}
 .v1-photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:var(--spacing-12);margin:var(--spacing-12) 0 0}.v1-photos .v1-photo{margin:0;min-width:0}.v1-photos .v1-photo img{height:auto;max-height:420px;object-fit:contain;background:var(--surface-secondary)}
 .v1-photos .v1-photo-wide{grid-column:1/-1}.v1-photos .v1-photo-wide img{max-height:none}
-.v1-photo .v1-cites{display:flex;flex-wrap:wrap;gap:var(--spacing-4);margin-top:var(--spacing-6)}
 /* checks = checkbox item (16px control + md label); the whole row is the tap target */
 .v1-checks{list-style:none;margin:var(--spacing-8) 0 0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-8)}
-.v1-checks label{position:relative;display:flex;gap:var(--spacing-12);align-items:flex-start;padding:var(--spacing-12) var(--spacing-16);border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);cursor:pointer;font:var(--component-checkbox-label-md-typography);color:var(--component-checkbox-state-default-label-text)}
-.v1-checks label:has(input:checked){background:var(--action-selected);border-color:var(--border-primary)}
+.v1-checks>li{border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);overflow:hidden}
+.v1-checks>li:has(input:checked){background:var(--action-selected);border-color:var(--border-primary)}
+.v1-checks label{position:relative;display:flex;gap:var(--spacing-12);align-items:flex-start;padding:var(--spacing-12) var(--spacing-16);cursor:pointer;font:var(--component-checkbox-label-md-typography);color:var(--component-checkbox-state-default-label-text)}
 .v1-checks label:has(input:disabled){cursor:default;color:var(--component-checkbox-state-disabled-label-text)}
 .v1-checks input{position:absolute;opacity:0;width:1px;height:1px;margin:0}
 .v1-checks .v1-box{flex:none;width:var(--component-checkbox-size);height:var(--component-checkbox-size);margin-top:2px;border-radius:var(--component-checkbox-radius);border:var(--component-checkbox-border-width) solid var(--component-checkbox-state-default-border);background:var(--component-checkbox-state-default-background);display:grid;place-items:center}
@@ -87,17 +87,6 @@
 .v1-btn.primary:hover{background:var(--component-button-type-primary-state-hover-background)}
 .v1-btn.primary:disabled{background:var(--component-button-type-primary-state-disabled-background);color:var(--component-button-type-primary-state-disabled-text)}
 /* guide = collapsible card */
-.v1-guide{margin-top:var(--spacing-12)}
-.v1-guide summary{cursor:pointer;font:var(--body-md-bold);padding:var(--spacing-12) var(--spacing-16);border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);list-style:none;display:flex;justify-content:space-between;align-items:center}
-.v1-guide summary::-webkit-details-marker{display:none}
-.v1-guide summary::after{content:'펼치기';font:var(--label-sm);color:var(--text-muted)}
-.v1-guide[open] summary{border-radius:var(--radius-lg) var(--radius-lg) 0 0}
-.v1-guide[open] summary::after{content:'접기'}
-.v1-guide .v1-guide-body{padding:var(--spacing-4) var(--spacing-16) var(--spacing-16);background:var(--surface-default);border:1px solid var(--border-default);border-top:0;border-radius:0 0 var(--radius-lg) var(--radius-lg);font:var(--body-md)}
-.v1-guide-body h1{font:var(--title-xs-bold);margin:var(--spacing-16) 0 var(--spacing-8)}.v1-guide-body h2{font:var(--body-lg-bold);margin:var(--spacing-16) 0 var(--spacing-4)}.v1-guide-body h3{font:var(--body-md-bold);color:var(--text-primary);margin:var(--spacing-12) 0 var(--spacing-4)}
-.v1-guide-body p{margin:0 0 var(--spacing-8)}.v1-guide-body .table-wrap{overflow-x:auto;margin:var(--spacing-8) 0}
-.v1-guide-body table{border-collapse:collapse;width:100%;font:var(--body-sm)}.v1-guide-body th,.v1-guide-body td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top}.v1-guide-body th{background:var(--surface-subtle)}
-.v1-guide-body td p,.v1-guide-body th p{margin:0}
 .v1-src{color:var(--text-muted);font:var(--label-xs);margin:var(--spacing-12) 0 0}
 .v1-stage{margin:var(--spacing-24) 0 0;font:var(--title-sm-bold)}
 .v1-stages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--spacing-8);margin:var(--spacing-16) 0 0}
@@ -114,22 +103,52 @@
 .v1-extra{margin-top:var(--spacing-16)}
 .v1-unit{display:flex;flex-wrap:wrap;align-items:baseline;gap:var(--spacing-8);margin:var(--spacing-16) 0 0;font:var(--body-md-bold)}
 .v1-unit small{color:var(--text-muted);font:var(--label-xs)}
-.v1-refdoc{display:flex;justify-content:space-between;gap:var(--spacing-8);padding:var(--spacing-12) 0 0;font:var(--body-sm-bold)}
 .v1-purpose{margin:0;font:var(--body-lg);padding:var(--spacing-12) var(--spacing-16);background:var(--surface-secondary);border-left:3px solid var(--border-primary);border-radius:0 var(--radius-md) var(--radius-md) 0}
 .v1-kp{margin:var(--spacing-12) 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:var(--spacing-12);counter-reset:kp}
-.v1-kp li{display:grid;grid-template-columns:24px 1fr;gap:var(--spacing-8);counter-increment:kp;font:var(--body-lg)}
-.v1-kp li::before{content:counter(kp);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:var(--label-sm-bold);color:var(--text-primary);background:var(--action-selected);margin-top:2px}
-.v1-kp .v1-cites{grid-column:2;display:flex;flex-wrap:wrap;gap:var(--spacing-4)}
-.v1-cite{font:var(--label-xs);color:var(--text-muted);background:var(--surface-secondary);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:1px var(--spacing-6);cursor:pointer}
-.v1-cite:hover{color:var(--text-primary);border-color:var(--border-primary)}
-.v1-sources{display:flex;flex-direction:column;gap:var(--spacing-8);margin-top:var(--spacing-8)}
-.v1-sources .v1-guide{margin-top:0}
-.v1-sources .v1-guide summary::after{display:none}
-.v1-sources .v1-guide summary{gap:var(--spacing-8);align-items:center}
-.v1-guide summary>span:first-child{flex:1}
-.v1-tag{font:var(--label-xs);color:var(--text-muted);white-space:nowrap}
-.v1-guide.flash summary{box-shadow:var(--component-checkbox-state-selected-focus-focus-ring)}
-.v1-guide-body td.v1-grp{background:var(--surface-secondary);font:var(--body-sm-bold)}
+.v1-kp li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:var(--spacing-8);counter-increment:kp;font:var(--body-lg)}
+.v1-kp li::before{content:counter(kp);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:var(--label-sm-bold);color:var(--text-primary);background:var(--action-selected);margin-top:var(--spacing-12)}
+/* 교육 내용 = 아코디언 카드: 요약 전체가 토글, 펼치면 카드 안에 근거 원본 본문 */
+.v1-topic{min-width:0;border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);overflow:hidden}
+div.v1-topic{padding:var(--spacing-12) var(--spacing-16)}
+.v1-topic>summary{display:flex;flex-direction:column;gap:var(--spacing-8);padding:var(--spacing-12) var(--spacing-16);cursor:pointer;list-style:none}
+.v1-topic>summary:hover{background:var(--action-hover)}
+.v1-topic[open]{border-color:var(--border-primary)}
+.v1-topic[open]>summary{background:var(--action-selected)}
+.v1-topic-text{font:var(--body-lg);color:var(--text-default)}
+.v1-topic-foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8)}
+/* 근거 절 라벨 + 본문 펼치기 (수행 확인·사진에서도 같은 부품) */
+.v1-srcbox{border-top:1px solid var(--border-subtle)}
+.v1-srcbox>summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8);padding:var(--spacing-8) var(--spacing-16);cursor:pointer;list-style:none}
+.v1-srcbox>summary:hover{background:var(--action-hover)}
+.v1-photo .v1-srcbox{border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-top:var(--spacing-6);background:var(--surface-default)}
+.v1-photo .v1-srcbox>summary{padding:var(--spacing-6) var(--spacing-8)}
+.v1-photos .v1-photo:has(.v1-srcbox[open]){grid-column:1/-1}
+.v1-topic>summary::-webkit-details-marker,.v1-srcbox>summary::-webkit-details-marker{display:none}
+.v1-topic>summary:focus-visible,.v1-srcbox>summary:focus-visible{outline:none;box-shadow:inset var(--component-checkbox-state-selected-focus-focus-ring)}
+.v1-srcs{display:flex;flex-wrap:wrap;gap:var(--spacing-4);flex:1 1 200px;min-width:0} /* wds-allow: 라벨 줄 최소 폭(줄바꿈 기준) */
+.v1-srcl{font:var(--label-xs);color:var(--text-muted);background:var(--surface-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:1px var(--spacing-6);overflow-wrap:anywhere}
+.v1-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:var(--component-text-button-size-xs-content-gap);height:var(--component-text-button-size-xs-height);padding:0 var(--component-text-button-size-xs-padding-x);border-radius:var(--component-text-button-size-xs-radius);font:var(--component-text-button-type-ghost-typography-xs);color:var(--component-text-button-type-ghost-color-primary-text);white-space:nowrap}
+summary:hover .v1-toggle{background:var(--component-text-button-type-ghost-color-primary-hover-background);color:var(--component-text-button-type-ghost-color-primary-hover-text)}
+.v1-toggle .when-open,details[open]>summary .v1-toggle .when-closed{display:none}
+details[open]>summary .v1-toggle .when-open{display:inline}
+.v1-chev{flex:none;width:16px;height:16px;transition:transform .15s} /* wds-allow: 아래 꺽쇠(16px) 인라인 SVG, 아이콘 자산은 mono/16 chevron 으로 교체 예정 */
+details[open]>summary .v1-chev{transform:rotate(180deg)}
+@media(prefers-reduced-motion:reduce){.v1-chev{transition:none}}
+.v1-src-body{padding:var(--spacing-12) var(--spacing-16);border-top:1px solid var(--border-subtle);background:var(--surface-default);font:var(--body-md);color:var(--text-default);overflow-wrap:anywhere}
+.v1-inline+.v1-inline{border-top:1px solid var(--border-subtle);margin-top:var(--spacing-16);padding-top:var(--spacing-16)}
+.v1-inline-meta{margin:0;font:var(--label-xs);color:var(--text-muted)}
+.v1-inline h3{margin:var(--spacing-4) 0 var(--spacing-8);font:var(--body-md-bold);color:var(--text-default)}
+.v1-inline p{margin:0 0 var(--spacing-8)}
+.v1-inline .table-wrap{overflow-x:auto;margin:var(--spacing-8) 0;-webkit-overflow-scrolling:touch}
+.v1-inline table{border-collapse:collapse;width:100%;min-width:max-content;font:var(--body-sm)} /* wds-allow: 넓은 표는 가로 스크롤 */
+.v1-inline th,.v1-inline td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top;max-width:280px} /* wds-allow: 셀 최대 폭(모바일 가독) */
+.v1-inline th{background:var(--surface-subtle)}
+.v1-inline td.v1-grp{background:var(--surface-subtle);font:var(--body-sm-bold)}
+.v1-inline-file{margin:var(--spacing-8) 0 0;font:var(--label-xs);color:var(--text-muted)}
+.v1-src-end{display:flex;justify-content:flex-end;margin-top:var(--spacing-12)}
+.v1-tbtn{appearance:none;border:0;background:transparent;cursor:pointer;height:var(--component-text-button-size-sm-height);padding:0 var(--component-text-button-size-sm-padding-x);border-radius:var(--component-text-button-size-sm-radius);font:var(--component-text-button-type-ghost-typography);color:var(--component-text-button-type-ghost-color-primary-text)}
+.v1-tbtn:hover{background:var(--component-text-button-type-ghost-color-primary-hover-background);color:var(--component-text-button-type-ghost-color-primary-hover-text)}
+@media(max-width:480px){ /* wds-allow: 브레이크포인트 토큰 없음 */.v1-topic>summary,.v1-src-body{padding-left:var(--spacing-12);padding-right:var(--spacing-12)}.v1-kp li{grid-template-columns:20px minmax(0,1fr);gap:var(--spacing-6)}.v1-kp li::before{width:20px;height:20px}}
 .v1-people{display:flex;gap:var(--spacing-8);flex-wrap:wrap;margin:var(--spacing-8) 0 0}
 .v1-people button{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer}
 .v1-people button.on{background:var(--component-tag-color-solid-surface);border-color:var(--component-tag-color-solid-surface);color:var(--component-tag-color-solid-text-color)}
@@ -139,7 +158,6 @@
 .v1-toast.show{opacity:1}
 .v1-link{appearance:none;border:0;background:none;padding:0;color:var(--component-text-button-type-link-color-default-text);font:var(--component-text-button-type-link-typography);text-decoration:underline;cursor:pointer}
 @media(min-width:720px){ /* wds-allow: 브레이크포인트 토큰 없음 */.v1-top{padding:0 var(--component-layout-content-padding-x)}}
-.v1-checks .v1-cites{display:flex;flex-wrap:wrap;gap:var(--spacing-4);margin-top:var(--spacing-6)}
 </style>
 </head>
 <body class="auth-pending">

@@ -54,8 +54,6 @@
   const statusOf = s => planned(s) ? 'planned' : record(s.id).status;
   const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
   const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
-  // 원본 보기 절의 DOM id: 한글을 '_' 로 바꾸면 같은 문서의 다른 절끼리 겹쳐(예: '요청 방법'·'관련 시트') 칩이 엉뚱한 절을 열었다 → 절 목록의 순번을 쓴다.
-  const srcId = key => 'src-' + Object.keys(content.sections).indexOf(key);
   const stepIndex = id => steps().findIndex(s => s.id === id);
   const canWrite = () => cloud.enrolled && cloud.scheduled;
   // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
@@ -76,7 +74,7 @@
     const app = $('app'), same = view === shownView, y = window.scrollY;
     const opened = same ? [...app.querySelectorAll('details[open][id]')].map(d => d.id) : [];
     const f = same && app.contains(document.activeElement) ? document.activeElement : null;
-    const focusSel = f && ['data-self', 'data-teacher', 'data-cite', 'data-step'].map(a => f.hasAttribute(a) ? `[${a}="${CSS.escape(f.getAttribute(a))}"]` : '').find(Boolean);
+    const focusSel = f && ['data-self', 'data-teacher', 'data-step'].map(a => f.hasAttribute(a) ? `[${a}="${CSS.escape(f.getAttribute(a))}"]` : '').find(Boolean);
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
@@ -165,32 +163,43 @@
     const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
     const editTeacher = staff && mayConfirm() && canWrite() && st === 'review';
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}`.trim() : key; };
-    const cite = key => `<button type="button" class="v1-cite" data-cite="${esc(key)}">${esc(srcLabel(key))}</button>`;
-    // 수행 확인 문항마다 근거 절(교육 내용과 같은 출처 칩). 칩을 누르면 원본 보기의 해당 절로 이동한다.
-    const checkCites = k => (s.checkCites && s.checkCites[k] && s.checkCites[k].length) ? `<span class="v1-cites">${s.checkCites[k].map(cite).join('')}</span>` : '';
+    const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
+      r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    // 원본 절 하나의 본문(문서·판본·파일 + 단락·표). 예전 '원본 보기' 카드 대신 읽던 자리에서 펼친다.
+    const inlineSource = key => {
+      const sec = content.sections[key];
+      if (!sec) return '<p class="v1-muted">연결된 본문을 찾지 못했어요. 교육 담당자에게 확인해 주세요.</p>';
+      const doc = content.documents[sec.doc] || {};
+      return `<section class="v1-inline"><p class="v1-inline-meta">${esc(doc.title || '')} · ${esc(doc.type || '')} ${esc(doc.version || '')}${doc.revised ? ` (${esc(doc.revised)})` : ''}</p>` +
+        `<h3>${esc(sec.no)} ${esc(sec.title)}</h3>${sec.paragraphs.map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}${sec.tables.map(table).join('')}` +
+        `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}</p></section>`;
+    };
+    const hint = '<span class="v1-toggle"><span class="when-closed">본문 펼치기</span><span class="when-open">본문 접기</span><svg class="v1-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+    const labels = keys => `<span class="v1-srcs">${keys.map(k => `<span class="v1-srcl">${esc(srcLabel(k))}</span>`).join('')}</span>`;
+    const body = keys => `<div class="v1-src-body" role="region">${keys.map(inlineSource).join('')}<div class="v1-src-end"><button type="button" class="v1-tbtn" data-close-src>본문 접기</button></div></div>`;
+    // 근거 절 매핑(어느 문서의 몇 절인지)은 접힌 상태에서도 보이고, 누르면 그 자리에서 본문이 펼쳐진다. id 가 있어 다시 그려도 펼친 상태가 유지된다.
+    const srcToggle = (keys, id) => keys && keys.length ? `<details class="v1-srcbox" id="${id}"><summary>${labels(keys)}${hint}</summary>${body(keys)}</details>` : '';
+    // 수행 확인에는 근거 본문을 달지 않는다(근거 문서는 교육 내용에서 본다). checkCites 데이터·매핑은 그대로 둔다.
+    const checkCites = () => '';
     const checks = '<ul class="v1-checks">' + s.checks.map((c, k) => {
       if (staff) {
         return `<li><label><input type="checkbox" data-teacher="${k}" ${r.teacher[k] ? 'checked' : ''} ${editTeacher && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
-          `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 담당자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span>${checkCites(k)}</span></label></li>`;
+          `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 담당자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span></span></label>${checkCites(k)}</li>`;
       }
       return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
-        (r.teacher[k] ? `<span class="v1-by">담당자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + checkCites(k) + '</span></label></li>';
+        (r.teacher[k] ? `<span class="v1-by">담당자 확인 ${dateLabel(r.teacherAt[k])}</span>` : '') + '</span></label>' + checkCites(k) + '</li>';
     }).join('') + '</ul>';
     const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
-    const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map(p =>
-      // 사진도 원본 docx 의 절에서만 가져온다. 칩 = 그 사진이 들어 있는 절(누르면 원본 보기의 해당 절).
-      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}${p.cite ? `<span class="v1-cites">${cite(p.cite)}</span>` : ''}</figcaption></figure>`).join('') + (shots.length > 1 ? '</div>' : '');
-    const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map(k => `<li><div>${esc(k.text).replace(/\n/g, '<br>')}</div><div class="v1-cites">${k.cites.map(cite).join('')}</div></li>`).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
-    const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
-      r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-    const sources = (s.sources || []).map(key => {
-      const sec = content.sections[key]; if (!sec) return '';
-      const doc = content.documents[sec.doc] || {};
-      return `<details class="v1-guide" id="${srcId(key)}"><summary><span>${esc(doc.title || '')} <b>${esc(sec.no)} ${esc(sec.title)}</b></span><span class="v1-tag">${esc(doc.type || '')} ${esc(doc.version || '')}</span></summary>` +
-        `<div class="v1-guide-body"><p class="v1-src">${esc(doc.title || '')} · ${esc(doc.type || '')} ${esc(doc.version || '')} (${esc(doc.revised || '')}) · ${esc(sec.kind)}${sec.images ? ` · 사진 ${sec.images}장은 원본 파일에서` : ''}</p>` +
-        sec.paragraphs.map(p => `<p>${esc(p)}</p>`).join('') + sec.tables.map(table).join('') + `<p class="v1-src">파일: ${esc(doc.file || '')}</p></div></details>`;
-    }).join('') + (s.refDocs || []).map(d =>
-      `<div class="v1-guide"><div class="v1-refdoc"><span>${esc(d.title)}</span><span class="v1-tag">${esc(d.ref)}</span></div><p class="v1-src">파일: ${esc(d.file)}</p></div>`).join('');
+    const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map((p, n) =>
+      // 사진도 원본 docx 의 절에서만 가져온다. 아래 토글 = 그 사진이 들어 있는 절(펼치면 사진 칸이 한 줄 전체로 넓어진다).
+      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}</figcaption>${p.cite ? srcToggle([p.cite], `ph-${n}`) : ''}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
+    // 교육 내용: 요약 카드 전체가 토글. 접힌 상태에서도 근거 절(문서·절)이 보이고, 펼치면 카드 안에 본문이 나온다.
+    const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map((k, n) => {
+      const keys = [...new Set(k.cites || [])];
+      return `<li>${keys.length ? `<details class="v1-topic" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${labels(keys)}${hint}</span></summary>${body(keys)}</details>`
+        : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span></div>`}</li>`;
+    }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+    const refDocs = (s.refDocs || []).map(d => `<p class="v1-inline-file">원고 문서: ${esc(d.title)} (${esc(d.ref)}) · ${esc(d.file)}</p>`).join('');
     let status = '';
     if (st === 'review') status = `<div class="v1-note">${dateLabel(r.request)}에 담당자 확인을 요청했어요. 담당자가 확인하면 완료됩니다.</div>`;
     if (st === 'done') status = `<div class="v1-note ok">${dateLabel(r.done)} 담당자 확인 완료</div>`;
@@ -211,9 +220,9 @@
     return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
-      `<section class="v1-card"><h2>교육 내용</h2>${keyPoints}</section>` +
+      `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">항목을 누르면 근거가 된 원본 본문이 그 자리에서 펼쳐져요.</p>${keyPoints}${refDocs}</section>` +
       `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 항목을 현장에서 확인하고 체크하세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
-      memo + (sources ? `<section class="v1-card"><h2>원본 보기</h2><div class="v1-muted">${s.sources && s.sources.length ? '이 항목이 인용한 매뉴얼의 절. 문서 전체는 Works Drive의 원본 파일에서 봅니다.' : '이 항목의 원고 문서. 내용은 원본 파일에서 봅니다.'}</div><div class="v1-sources">${sources}</div></section>` : '') +
+      memo +
       (actions ? `<div class="v1-actions">${actions}</div>` : '');
   }
 
@@ -222,9 +231,11 @@
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
-    app.querySelectorAll('[data-cite]').forEach(b => b.onclick = () => {
-      const el = document.getElementById(srcId(b.dataset.cite));
-      if (!el) return; el.open = true; el.scrollIntoView({ behavior: 'smooth', block: 'start' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1600);
+    // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동
+    app.querySelectorAll('[data-close-src]').forEach(b => b.onclick = () => {
+      const d = b.closest('details'); d.open = false;
+      const sum = d.querySelector('summary'); sum.focus({preventScroll: true});
+      sum.scrollIntoView({block: 'nearest', behavior: 'instant'});
     });
     if (!step) return;
     app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => (keepFocus = `[data-self="${c.dataset.self}"]`, act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked})));
