@@ -115,12 +115,13 @@
 /* 교육 내용 = 아코디언 카드: 요약 전체가 토글, 펼치면 카드 안에 근거 원본 본문 */
 .v1-topic{min-width:0;border:1px solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);overflow:hidden}
 div.v1-topic{padding:var(--spacing-12) var(--spacing-16)}
-.v1-topic>summary{display:flex;flex-direction:column;gap:var(--spacing-8);padding:var(--spacing-12) var(--spacing-16);cursor:pointer;list-style:none}
+.v1-topic>summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8);padding:var(--spacing-12) var(--spacing-16);cursor:pointer;list-style:none}
 .v1-topic>summary:hover{background:var(--action-hover)}
 .v1-topic[open]{border-color:var(--border-primary)}
 .v1-topic[open]>summary{background:var(--action-selected)}
-.v1-topic-text{font:var(--body-lg);color:var(--text-default)}
-.v1-topic-foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8)}
+.v1-topic-text{flex:1 1 100%;min-width:0;font:var(--body-lg);color:var(--text-default)}
+.v1-topic.short>summary{flex-wrap:nowrap}.v1-topic.short .v1-topic-text{flex:1 1 auto}  /* 짧은 요약(예: 월요일 업무)은 펼치기 버튼과 한 줄 */
+.v1-topic-foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8);margin-left:auto}
 .v1-topic>summary::-webkit-details-marker{display:none}
 .v1-topic>summary:focus-visible{outline:none;box-shadow:inset var(--component-checkbox-state-selected-focus-focus-ring)}
 .v1-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:var(--component-text-button-size-xs-content-gap);height:var(--component-text-button-size-xs-height);padding:0 var(--component-text-button-size-xs-padding-x);border-radius:var(--component-text-button-size-xs-radius);font:var(--component-text-button-type-ghost-typography-xs);color:var(--component-text-button-type-ghost-color-primary-text);white-space:nowrap}
@@ -135,8 +136,8 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-inline h3{margin:0 0 var(--spacing-8);font:var(--body-md-bold);color:var(--text-default)}
 .v1-inline p{margin:0 0 var(--spacing-8)}
 .v1-inline .table-wrap{overflow-x:auto;margin:var(--spacing-8) 0;-webkit-overflow-scrolling:touch}
-.v1-inline table{border-collapse:collapse;width:100%;min-width:max-content;font:var(--body-sm)} /* wds-allow: 넓은 표는 가로 스크롤 */
-.v1-inline th,.v1-inline td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top;max-width:280px} /* wds-allow: 셀 최대 폭(모바일 가독) */
+.v1-inline table{border-collapse:collapse;width:100%;font:var(--body-sm)}
+.v1-inline th,.v1-inline td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top;min-width:6em;word-break:keep-all;overflow-wrap:anywhere} /* wds-allow: 셀 최소 폭 — 칸이 화면에 맞춰 줄바꿈되고, 칸이 많은 표만 가로 스크롤 */
 .v1-inline th{background:var(--surface-subtle)}
 .v1-inline td.v1-grp{background:var(--surface-subtle);font:var(--body-sm-bold)}
 .v1-inline-file{margin:var(--spacing-8) 0 0;font:var(--label-xs);color:var(--text-muted)}
