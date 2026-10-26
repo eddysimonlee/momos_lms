@@ -66,6 +66,12 @@ svg .node:focus{outline:none}svg .node:focus-visible circle{stroke:var(--accent)
 .rank .v{font:12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 svg text{fill:var(--fg);font-family:var(--sans)}
 svg .grp{font-size:11px;font-weight:600;fill:var(--muted);letter-spacing:.04em}
+h1 .asof{font-weight:500;color:var(--muted);font-size:.8em}
+/* 열 제목: 왼쪽 = 고객사 knowledge base(원본 문서), 오른쪽 = 그것으로 만든 LMS content(교육항목) */
+svg .colh{font-size:15px;font-weight:700;fill:var(--fg)}
+svg .cols{font-size:11px;fill:var(--muted)}
+svg .colrule{stroke:var(--line);stroke-width:1}
+svg .flow{font-size:11px;fill:var(--muted);letter-spacing:.04em}
 svg .node{cursor:pointer}
 svg .node text{font-size:12px}
 svg .node .cnt{font:10px var(--mono);fill:var(--muted)}
@@ -85,7 +91,7 @@ svg .node.hit text{fill:var(--accent);font-weight:700}
 <div class="wrap">
   <header>
     <div class="top"><a href="/v1">← 교육 화면으로</a></div>
-    <h1>교육항목 ↔ 원본 문서 연결도</h1>
+    <h1>교육항목 ↔ 원본 문서 연결도 <span class="asof">(10/22)</span></h1>
     <p>교육 내용·수행 확인·사진이 인용한 원본 절을 문서 단위로 묶었습니다. 문서나 교육항목을 누르면 연결된 쪽과 인용한 절이 오른쪽에 나옵니다. 선이 굵을수록 인용 횟수가 많습니다.</p>
     <div class="stats" id="stats"></div>
   </header>
@@ -162,7 +168,7 @@ $('legend').innerHTML = stages.map(([n, t]) => `<span><i style="background:${sta
 $('foot').textContent = `기준: 교육과정 ${G.meta.curriculum} · 원본 색인 ${G.meta.generated}. 인용 = 교육 내용 요약·수행 확인 문항·사진 각각이 근거로 단 절의 수.`;
 
 // --- SVG 그리기
-const ROW = 17, TOP = 24;
+const ROW = 17, TOP = 74;  // 위쪽 50px 는 열 제목
 const W = 980, LX = 330, RX = W - 330;
 let y = TOP; const docPos = new Map(), docRows = [];
 const itemRows = []; let yi = TOP; const itemPos = new Map();
@@ -175,6 +181,12 @@ for (const g of folders) { docRows.push({type: 'g', y, label: g.f}); y += ROW + 
 
 const svgNS = 'http://www.w3.org/2000/svg';
 let svg = `<svg id="svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="원본 문서와 교육항목 연결도">`;
+svg += `<text class="colh" x="${LX + 8}" y="24" text-anchor="end">Knowledge base · 모모스 원본 문서</text>` +
+  `<text class="cols" x="${LX + 8}" y="42" text-anchor="end">고객사 업무문서(10/22) ${G.docs.length}편 · 폴더별</text>` +
+  `<text class="colh" x="${RX - 8}" y="24">LMS content · 교육항목</text>` +
+  `<text class="cols" x="${RX - 8}" y="42">원본을 근거로 만든 6단계 교육 ${G.items.length}개 · 단계별</text>` +
+  `<text class="flow" x="${(LX + RX) / 2}" y="33" text-anchor="middle">근거로 인용 →</text>` +
+  `<line class="colrule" x1="16" x2="${W - 16}" y1="54" y2="54"/>`;
 for (const e of G.edges) {
   const y1 = docPos.get(e.doc), y2 = itemPos.get(e.item), x1 = LX + 8, x2 = RX - 8, mx = (x1 + x2) / 2;
   svg += `<path class="e" data-d="${esc(e.doc)}" data-i="${esc(e.item)}" stroke-width="${Math.min(6, 0.8 + w(e) * 0.45).toFixed(2)}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`;
