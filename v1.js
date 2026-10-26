@@ -7,10 +7,10 @@
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
-  let shownView = null, keepFocus = null;
+  let shownView = null, keepFocus = null, devBar = false;
   let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
-  let content = null, cloud = null, view = 'home', busy = false, toastTimer = null, stageSel = null;
+  let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
 
   function toast(message) {
     const el = $('v1Toast'); el.textContent = message; el.classList.add('show');
@@ -69,9 +69,14 @@
   function render() {
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
-    $('v1Back').hidden = !step;
+    const branch = view === 'branch';
+    // 지점 선택(첫 화면) ← 홈(교육 목록) ← 항목. 꺽쇠는 한 단계 위로. 역할 전환·계정 칩은 지점을 고른 뒤에만.
+    $('v1Back').hidden = branch;
+    $('v1Back').setAttribute('aria-label', step ? '교육 목록으로' : '지점 선택으로');
     $('v1Title').textContent = step ? step.title : '모모스 온보딩';
     $('v1Who').textContent = cloud.user.name;
+    $('v1Who').hidden = branch;
+    if (devBar) $('v1Dev').hidden = branch;
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
     const app = $('app'), same = view === shownView, y = window.scrollY;
     if (!same && shownView === 'home') homeScroll = {stage: stageSel, y};  // 항목을 누른 직후라 stageSel 은 보던 탭(= 그 항목의 단계)
@@ -81,7 +86,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = step ? stepView(step) : homeView();
+    app.innerHTML = branch ? branchView() : step ? stepView(step) : homeView();
     bind(step);
     if (same) {
       opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
@@ -93,6 +98,8 @@
       window.scrollTo({top: y, behavior: 'instant'});
       const after = anchorTop !== null && app.querySelector(anchorSel);
       if (after) window.scrollTo({top: window.scrollY + after.getBoundingClientRect().top - anchorTop, behavior: 'instant'});
+    } else if (branch) {
+      keepFocus = null; window.scrollTo({top: 0, behavior: 'instant'});
     } else if (step) {
       keepFocus = null; lastStep = step.id;
       window.scrollTo({top: 0, behavior: 'instant'});
@@ -105,6 +112,16 @@
       }
     }
     shownView = view;
+  }
+
+  // 첫 화면: 교육을 진행할 지점 선택. 지금은 온천 본점만 교육과정이 있고, 나머지는 준비 중(선택 불가).
+  const BRANCHES = [{id: 'oncheon', name: '온천 본점', ready: true}, {id: 'yeongdo', name: '영도점'}, {id: 'marine', name: '마린시티점'}, {id: 'domoheon', name: '도모헌점'}];
+  const STORE_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M3 9l1.6-4.3A1 1 0 0 1 5.5 4h13a1 1 0 0 1 .9.7L21 9a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 12 11a2.5 2.5 0 0 1-4.5-.5A2.5 2.5 0 0 1 3 9ZM10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';  // wds-allow: 상점 아이콘(mono/24 store 자산 반입 전 임시 인라인 SVG)
+  function branchView() {
+    return `<section class="v1-branch"><h2>교육을 진행할 지점을 선택해 주세요.</h2><p class="v1-muted">선택한 지점의 교육 과정으로 이동합니다.</p>` +
+      `<div class="v1-branches">${BRANCHES.map(b => b.ready
+        ? `<button type="button" class="v1-branch-card" data-branch="${b.id}"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span></button>`
+        : `<button type="button" class="v1-branch-card" disabled aria-disabled="true" title="교육 과정 준비 중"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span><span class="v1-branch-soon">준비 중</span></button>`).join('')}</div></section>`;
   }
 
   function peopleBar() {
@@ -241,6 +258,7 @@
 
   function bind(step) {
     const app = $('app');
+    app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { view = 'home'; render(); });
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
@@ -271,16 +289,16 @@
       if (!data.accounts.length) return;
       bar.innerHTML = '<span>역할 전환</span>' + data.accounts.map(a =>
         `<button data-dev="${esc(a.id)}" class="${a.id === data.current ? 'on' : ''}">${esc(a.name)}</button>`).join('');
-      bar.hidden = false;
+      devBar = true; bar.hidden = view === 'branch';
       bar.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => {
         const r = await fetch('/api/dev/accounts?id=' + encodeURIComponent(b.dataset.dev), {method: 'POST', credentials: 'same-origin',
           headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''}, body: '{}'});
-        if (r.ok) location.reload(); else toast('계정을 바꾸지 못했어요.');
+        if (r.ok) { try { sessionStorage.setItem('v1.skipBranch', '1'); } catch {} location.reload(); } else toast('계정을 바꾸지 못했어요.');
       });
     } catch {}
   }
 
-  $('v1Back').onclick = () => { view = 'home'; render(); };
+  $('v1Back').onclick = () => { view = view.startsWith('step:') ? 'home' : 'branch'; render(); };
   $('v1Who').onclick = () => ERPAuth.openAccount();
 
   // Local trial only: with no session yet, sign in as the first trial learner so nobody types a password.
@@ -304,6 +322,7 @@
     const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
+    try { if (sessionStorage.getItem('v1.skipBranch')) { sessionStorage.removeItem('v1.skipBranch'); view = 'home'; } } catch {}  // 역할 전환 직후의 새로고침
     cloud = await api('GET');
     if (!cloud.enrolled && !isStaff()) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
     if (!cloud.enrolled && isStaff() && others().length) cloud = await api('GET', null, others()[0].id);

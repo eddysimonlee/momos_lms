@@ -157,6 +157,18 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-toast{position:fixed;left:50%;bottom:calc(var(--spacing-24) + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--component-toast-surface);color:var(--component-toast-text-color);padding:var(--spacing-12) var(--component-toast-padding);border-radius:var(--component-toast-border-radius);font:var(--component-toast-text-typography);max-width:90vw;z-index:9;opacity:0;transition:opacity .2s;pointer-events:none}
 .v1-toast.show{opacity:1}
 .v1-link{appearance:none;border:0;background:none;padding:0;color:var(--component-text-button-type-link-color-default-text);font:var(--component-text-button-type-link-typography);text-decoration:underline;cursor:pointer}
+/* 지점 선택(첫 화면) */
+.v1-branch h2{margin:var(--spacing-8) 0 var(--spacing-4);font:var(--title-sm-bold);color:var(--text-default)}
+.v1-branches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--spacing-12);margin-top:var(--spacing-20)}
+.v1-branch-card{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--spacing-12);min-height:160px;padding:var(--spacing-20) var(--spacing-12);border:1px solid var(--border-default);border-radius:var(--radius-xl);background:var(--surface-default);color:var(--text-default);cursor:pointer;font:inherit} /* wds-allow: 카드 최소 높이 */
+.v1-branch-card:not(:disabled):hover{border-color:var(--border-primary);background:var(--action-hover)}
+.v1-branch-card:focus-visible{outline:none;box-shadow:var(--component-checkbox-state-selected-focus-focus-ring)}
+.v1-branch-icon{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--action-selected);color:var(--icon-primary)} /* wds-allow: 아이콘 원 크기 */
+.v1-branch-icon svg{width:28px;height:28px} /* wds-allow: 아이콘 크기 */
+.v1-branch-name{font:var(--body-lg-bold)}
+.v1-branch-soon{font:var(--label-xs);color:var(--text-default-disabled)}
+.v1-branch-card:disabled{cursor:not-allowed;background:var(--surface-default-disabled);border-color:var(--border-default-disabled);color:var(--text-default-disabled)}
+.v1-branch-card:disabled .v1-branch-icon{background:var(--surface-fill-disabled);color:var(--icon-default-disabled)}
 @media(min-width:720px){ /* wds-allow: 브레이크포인트 토큰 없음 */.v1-top{padding:0 var(--component-layout-content-padding-x)}}
 </style>
 </head>
