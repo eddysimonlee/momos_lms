@@ -82,14 +82,25 @@ def photos_in(element, document, near=''):
                     im.save(dest, 'JPEG', quality=80, optimize=True)
         except Exception:  # 그림이 아닌 개체(EMF 등)는 크기 없이 기록만
             pass
-        row, text = blip.getparent(), ''
-        while row is not None and row.tag not in (W + 'tr', W + 'p'):
-            row = row.getparent()
-        if row is not None and row.tag == W + 'tr':
-            text = ' / '.join(t for t in (_text(tc) for tc in row.findall(W + 'tc')) if t)
-        elif row is not None:
-            text = _text(row)
-        out.append({'id': pid, 'w': w, 'h': h, 'alt': alt, 'near': (text or near)[:120]})
+        # 사진 설명 후보: 사진이 표 안에 있으면 그 행(예: '킨토 (흰색·다크그레이) / 제과류 1~2개'),
+        # 아니면 사진이 든 단락의 글자, 그것도 없으면 바로 앞 단락(near 인자).
+        # (예전에는 셀 안의 빈 단락을 먼저 집어 표 사진의 설명이 비고 절 제목으로 채워졌다)
+        item = {'id': pid, 'w': w, 'h': h, 'alt': alt}
+        tr = next((a for a in blip.iterancestors() if a.tag == W + 'tr'), None)
+        para = next((a for a in blip.iterancestors() if a.tag == W + 'p'), None)
+        if tr is not None:
+            tcs = tr.findall(W + 'tc')
+            cells = [_text(tc) for tc in tcs]
+            tc = next((a for a in blip.iterancestors() if a.tag == W + 'tc'), None)
+            tbl = tr.getparent()
+            head = tbl.find(W + 'tr') if tbl is not None else None
+            item['row'] = {'header': [_text(h) for h in head.findall(W + 'tc')] if head is not None and head is not tr else [],
+                           'cells': cells, 'col': tcs.index(tc) if tc in tcs else None}
+            text = ' / '.join(t for t in cells if t)
+        else:
+            text = _text(para) if para is not None else ''
+        item['near'] = (text or near)[:120]
+        out.append(item)
     return out
 
 

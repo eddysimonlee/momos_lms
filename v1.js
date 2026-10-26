@@ -203,7 +203,7 @@
       const sec = content.sections[key];
       if (!sec) return '<p class="v1-muted">연결된 본문을 찾지 못했어요. 교육 담당자에게 확인해 주세요.</p>';
       const doc = content.documents[sec.doc] || {};
-      return `<section class="v1-inline"><p class="v1-inline-meta">${esc(doc.title || '')} · ${esc(doc.type || '')} ${esc(doc.version || '')}${doc.revised ? ` (${esc(doc.revised)})` : ''}</p>` +
+      return `<section class="v1-inline">` +
         `<h3>${esc(sec.no)} ${esc(sec.title)}</h3>${sec.paragraphs.map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}${sec.tables.map(table).join('')}` +
         `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}</p></section>`;
     };
@@ -212,6 +212,17 @@
     const body = keys => `<div class="v1-src-body" role="region">${keys.map(inlineSource).join('')}<div class="v1-src-end"><button type="button" class="v1-tbtn" data-close-src>본문 접기</button></div></div>`;
     // 근거 절 매핑(어느 문서의 몇 절인지)은 접힌 상태에서도 보이고, 누르면 그 자리에서 본문이 펼쳐진다. id 가 있어 다시 그려도 펼친 상태가 유지된다.
     const srcToggle = (keys, id) => keys && keys.length ? `<details class="v1-srcbox" id="${id}"><summary>${labels(keys)}${hint}</summary>${body(keys)}</details>` : '';
+    // 원본 표의 한 행에 든 사진: 본문에는 그 표의 머리글 + 이 사진의 행만(원문 그대로), '표 전체 보기'로 절 전체를 펼친다.
+    const rowSource = (key, row, id) => {
+      const sec = content.sections[key]; if (!sec) return srcToggle([key], id);
+      const doc = content.documents[sec.doc] || {};
+      return `<details class="v1-srcbox" id="${id}"><summary>${labels([key])}${hint}</summary><div class="v1-src-body" role="region">` +
+        `<section class="v1-inline">` +
+        `<h3>${esc(sec.no)} ${esc(sec.title)}</h3><p class="v1-row-note">이 사진에 해당하는 행</p>${table({header: row.header, rows: [row.cells]})}` +
+        `<details class="v1-fulltable" id="${id}-all"><summary>표 전체 보기</summary>${sec.tables.map(table).join('')}</details>` +
+        `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}</p></section>` +
+        `<div class="v1-src-end"><button type="button" class="v1-tbtn" data-close-src>본문 접기</button></div></div></details>`;
+    };
     // 수행 확인에는 근거 본문을 달지 않는다(근거 문서는 교육 내용에서 본다). checkCites 데이터·매핑은 그대로 둔다.
     const checkCites = () => '';
     const checks = '<ul class="v1-checks">' + s.checks.map((c, k) => {
@@ -225,7 +236,7 @@
     const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
     const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map((p, n) =>
       // 사진도 원본 docx 의 절에서만 가져온다. 아래 토글 = 그 사진이 들어 있는 절(펼치면 사진 칸이 한 줄 전체로 넓어진다).
-      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}</figcaption>${p.cite ? srcToggle([p.cite], `ph-${n}`) : ''}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
+      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>${esc(p.caption)}</figcaption>${p.cite ? (p.row ? rowSource(p.cite, p.row, `ph-${n}`) : srcToggle([p.cite], `ph-${n}`)) : ''}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     // 교육 내용: 요약 카드 전체가 토글. 접힌 상태에서도 근거 절(문서·절)이 보이고, 펼치면 카드 안에 본문이 나온다.
     const keyPoints = s.keyPoints && s.keyPoints.length ? `<ol class="v1-kp">${s.keyPoints.map((k, n) => {
       const keys = [...new Set(k.cites || [])];

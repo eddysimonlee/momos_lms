@@ -76,8 +76,19 @@ def main():
             f = images_dir / f'{pid}.jpg'
             if not f.exists():
                 sys.exit(f'사진 파일이 없습니다: {f}\n  python3 source_parse.py <원본 폴더> --images source_images  로 먼저 꺼내세요.')
+            item = items[ph['n'] - 1]
+            caption = ph.get('caption') or sec['title']
+            # 원본 표의 '사진' 열에 든 사진(예: 베이커리 접시 매칭표): 그 행이 곧 사진의 설명이다.
+            # 자동 캡션(절 제목 그대로)이면 행의 첫 칸(접시 이름 등)으로 바꾸고, 본문 펼치기에는 머리글+그 행만 싣는다.
+            row = item.get('row') or {}
+            data_row = bool(row.get('header')) and row.get('col') is not None and row['col'] < len(row['header']) \
+                and '사진' in row['header'][row['col']] and any(c for c in row['cells'])
+            if data_row and (not ph.get('caption') or ph['caption'].startswith(sec['title']) or ph['caption'].startswith(f"{sec['no']} {sec['title']}")):
+                name = next(c for c in row['cells'] if c)
+                caption = f"{name} ({ph['n']}/{len(items)})" if len(items) > 1 else name
             photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
-                               caption=ph.get('caption') or sec['title'], cite=section_key(doc, no), n=ph['n'],
+                               caption=caption, cite=section_key(doc, no), n=ph['n'],
+                               row=dict(header=row['header'], cells=row['cells']) if data_row else None,
                                wide=bool(items[ph['n'] - 1].get('w') and items[ph['n'] - 1]['w'] > 1.2 * items[ph['n'] - 1]['h']))  # 글씨 있는 가로 그림은 한 줄 전체
             keys.append(pid)
         return keys
