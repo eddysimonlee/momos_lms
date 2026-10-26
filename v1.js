@@ -74,6 +74,9 @@
     $('v1Back').hidden = branch;
     $('v1Back').setAttribute('aria-label', step ? '교육 목록으로' : '지점 선택으로');
     $('v1Title').textContent = step ? step.title : '모모스 온보딩';
+    const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
+    $('v1Stage').hidden = !stg;
+    $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
     $('v1Who').textContent = cloud.user.name;
     $('v1Who').hidden = branch;
     if (devBar) $('v1Dev').hidden = branch;

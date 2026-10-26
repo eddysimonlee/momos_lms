@@ -21,7 +21,12 @@
 .v1-top{position:sticky;top:0;z-index:var(--component-layout-z-index-gnb);display:flex;align-items:center;gap:var(--spacing-8);height:var(--component-gnb-height);padding:0 var(--spacing-16);background:var(--component-gnb-type-default-surface);color:var(--component-gnb-type-default-label-color);box-shadow:var(--shadow-sm)}
 .v1-top .v1-back{appearance:none;border:0;background:transparent;color:var(--icon-default);font:var(--title-md);padding:0 var(--spacing-8) 0 0;cursor:pointer}
 .v1-top .v1-back[hidden]{display:none}
-.v1-top h1{flex:1;margin:0;font:var(--title-xs-bold);color:var(--text-default);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 항목 화면: 제목 위에 현재 단계(WDS Tag · info · square · xs). 단계가 붙으면 상단 바가 두 줄 높이로 늘어난다 */
+.v1-titlebox{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:var(--spacing-2)}
+.v1-top:has(.v1-stage-tag:not([hidden])){height:auto;min-height:var(--component-gnb-height);padding-top:var(--spacing-8);padding-bottom:var(--spacing-8)}
+.v1-stage-tag{display:inline-flex;align-items:center;max-width:100%;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border-radius:var(--component-tag-type-square-border-radius);background:var(--component-tag-color-info-surface);color:var(--component-tag-color-info-text-color);font:var(--component-tag-size-xs-text-typography);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v1-stage-tag[hidden]{display:none}
+.v1-top h1{max-width:100%;margin:0;font:var(--title-xs-bold);color:var(--text-default);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* account button = tag outline xs pill */
 .v1-top .v1-who{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* dev switcher = banner yellow, round */
@@ -177,7 +182,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 <div id="appShell" inert aria-hidden="true">
   <header class="v1-top">
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
-    <h1 id="v1Title">모모스 온보딩</h1>
+    <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
     <button id="v1Who" class="v1-who" title="내 계정">…</button>
   </header>
   <div id="v1Dev" class="v1-dev" hidden></div>
