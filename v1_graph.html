@@ -28,7 +28,7 @@ body{margin:0}
 body{background:var(--bg);color:var(--fg);font:14px/1.55 var(--sans);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
 .wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 header h1{font-size:22px;font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.3px}
-header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+header p{margin:4px 0 0;color:var(--muted);word-break:keep-all}  /* 넓은 화면에서 한 줄, 좁으면 단어 단위로 줄바꿈 */
 .stats{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:13px;color:var(--muted)}
 .stats b{font:500 18px var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
@@ -92,7 +92,7 @@ svg .node.hit text{fill:var(--accent);font-weight:700}
   <header>
     <div class="top"><a href="/v1">← 교육 화면으로</a></div>
     <h1>교육항목 ↔ 원본 문서 연결도 <span class="asof">(10/22)</span></h1>
-    <p>교육 내용·수행 확인·사진이 인용한 원본 절을 문서 단위로 묶었습니다. 문서나 교육항목을 누르면 연결된 쪽과 인용한 절이 오른쪽에 나옵니다. 선이 굵을수록 인용 횟수가 많습니다.</p>
+    <p>문서나 교육항목을 누르면 연결된 쪽과 인용한 절이 오른쪽에 나옵니다. 선이 굵을수록 인용 횟수가 많습니다.</p>
     <div class="stats" id="stats"></div>
   </header>
   <div class="bar">
