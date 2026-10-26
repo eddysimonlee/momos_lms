@@ -45,7 +45,9 @@ if _LESSONS.exists():
                     if _s['id'] not in STEPS and _l.get('checks'):
                         STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
                                                checks=[c['text'] if isinstance(c, dict) else c for c in _l['checks']],
-                                               unit='curriculum-' + _u['no'], plan=[1, 180])
+                                               unit='curriculum-' + _u['no'], plan=_u.get('plan') or [1, 180])
+                    elif _s['id'] in STEPS and _u.get('plan'):
+                        STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
 TESTS = {t['id']: t for t in COURSE['tests']}
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))

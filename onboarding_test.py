@@ -228,12 +228,12 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/v1/graph',cookie=False);self.assertEqual(code,200);self.assertIn('원본 문서 연결도'.encode(),b)  # 연결도 껍데기, 데이터는 로그인 후
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
-            slice_=json.loads(b);self.assertEqual(len(slice_['units']),54)  # curriculum.json: 6단계 54단원
-            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),83)
+            slice_=json.loads(b);self.assertEqual(len(slice_['units']),55)  # curriculum.json: 6단계 55단원(2.10 OP2 / 2.11 OP3 분리)
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),84)
             course_ids=[s['id'] for u in ob.COURSE['units'] if u['id'] in ('welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer') for s in u['steps']]
             self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 55개 항목이 한 번씩
             planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
-            self.assertEqual(len(planned),0)  # 83개 세션 모두 교육안이 있다(6단계 교육과정 기준)
+            self.assertEqual(len(planned),0)  # 84개 세션 모두 교육안이 있다(6단계 교육과정 기준)
             self.assertFalse(any(s.get('reworkPending') for s in steps))
             self.assertTrue(all(s['purpose'] and (s['keyPoints'] or s['contentOmitted']) and s['sources'] for s in live))
             self.assertEqual([s['id'] for s in live if s['contentOmitted']],['welcome-ojt'])  # 수행 확인만 두는 세션(모모스 피드백)
@@ -293,7 +293,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),110);self.assertEqual(sum(len(s['checks']) for s in ob.STEPS.values()),353)  # 기존 82 + 6단계 교육과정 새 세션 28
+        self.assertEqual(len(ob.STEPS),111)  # 기존 82 + 6단계 교육과정 새 세션 29(2026-10-26 OP3 담당 구역과 오픈 준비 추가)
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

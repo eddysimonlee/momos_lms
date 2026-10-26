@@ -156,7 +156,7 @@ def main():
                     steps.append(step)
                 plans = [course_steps[x['id']][0]['plan'] for x in steps if x['id'] in course_steps]
                 units.append(dict(id=u['no'], no=u['no'], title=u['title'], summary=u.get('note', ''),
-                                  plan=[min(p[0] for p in plans), max(p[1] for p in plans)] if plans else None,
+                                  plan=u.get('plan') or ([min(p[0] for p in plans), max(p[1] for p in plans)] if plans else None),  # 교육과정이 정한 단원 일정이 있으면 그것
                                   stage=stage, steps=steps))
         extra = [dict(title=e['title'], note=e.get('note', ''), sessions=[dict(id=x['id'], title=x['title']) for x in e['sessions']])
                  for e in curriculum.get('extra', [])]
