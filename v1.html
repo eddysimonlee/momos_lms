@@ -121,17 +121,8 @@ div.v1-topic{padding:var(--spacing-12) var(--spacing-16)}
 .v1-topic[open]>summary{background:var(--action-selected)}
 .v1-topic-text{font:var(--body-lg);color:var(--text-default)}
 .v1-topic-foot{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8)}
-/* 근거 절 라벨 + 본문 펼치기 (수행 확인·사진에서도 같은 부품) */
-.v1-srcbox{border-top:1px solid var(--border-subtle)}
-.v1-srcbox>summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-8);padding:var(--spacing-8) var(--spacing-16);cursor:pointer;list-style:none}
-.v1-srcbox>summary:hover{background:var(--action-hover)}
-.v1-photo .v1-srcbox{border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-top:var(--spacing-6);background:var(--surface-default)}
-.v1-photo .v1-srcbox>summary{padding:var(--spacing-6) var(--spacing-8)}
-.v1-photos .v1-photo:has(.v1-srcbox[open]){grid-column:1/-1}
-.v1-topic>summary::-webkit-details-marker,.v1-srcbox>summary::-webkit-details-marker{display:none}
-.v1-topic>summary:focus-visible,.v1-srcbox>summary:focus-visible{outline:none;box-shadow:inset var(--component-checkbox-state-selected-focus-focus-ring)}
-.v1-srcs{display:flex;flex-wrap:wrap;gap:var(--spacing-4);flex:1 1 200px;min-width:0} /* wds-allow: 라벨 줄 최소 폭(줄바꿈 기준) */
-.v1-srcl{font:var(--label-xs);color:var(--text-muted);background:var(--surface-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:1px var(--spacing-6);overflow-wrap:anywhere}
+.v1-topic>summary::-webkit-details-marker{display:none}
+.v1-topic>summary:focus-visible{outline:none;box-shadow:inset var(--component-checkbox-state-selected-focus-focus-ring)}
 .v1-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:var(--component-text-button-size-xs-content-gap);height:var(--component-text-button-size-xs-height);padding:0 var(--component-text-button-size-xs-padding-x);border-radius:var(--component-text-button-size-xs-radius);font:var(--component-text-button-type-ghost-typography-xs);color:var(--component-text-button-type-ghost-color-primary-text);white-space:nowrap}
 summary:hover .v1-toggle{background:var(--component-text-button-type-ghost-color-primary-hover-background);color:var(--component-text-button-type-ghost-color-primary-hover-text)}
 .v1-toggle .when-open,details[open]>summary .v1-toggle .when-closed{display:none}
@@ -148,12 +139,6 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-inline th,.v1-inline td{border:1px solid var(--border-default);padding:var(--spacing-6) var(--spacing-8);text-align:left;vertical-align:top;max-width:280px} /* wds-allow: 셀 최대 폭(모바일 가독) */
 .v1-inline th{background:var(--surface-subtle)}
 .v1-inline td.v1-grp{background:var(--surface-subtle);font:var(--body-sm-bold)}
-.v1-row-note{margin:0 0 var(--spacing-4);font:var(--label-xs);color:var(--text-muted)}
-.v1-fulltable{margin-top:var(--spacing-8)}
-.v1-fulltable>summary{display:inline-flex;align-items:center;height:var(--component-text-button-size-sm-height);padding:0 var(--component-text-button-size-sm-padding-x);border-radius:var(--component-text-button-size-sm-radius);font:var(--component-text-button-type-ghost-typography);color:var(--component-text-button-type-ghost-color-primary-text);cursor:pointer;list-style:none}
-.v1-fulltable>summary::-webkit-details-marker{display:none}
-.v1-fulltable>summary:hover{background:var(--component-text-button-type-ghost-color-primary-hover-background)}
-.v1-fulltable[open]>summary{font-size:0}.v1-fulltable[open]>summary::after{content:'표 전체 접기';font:var(--component-text-button-type-ghost-typography)}
 .v1-inline-file{margin:var(--spacing-8) 0 0;font:var(--label-xs);color:var(--text-muted)}
 .v1-src-end{display:flex;justify-content:flex-end;margin-top:var(--spacing-12)}
 .v1-tbtn{appearance:none;border:0;background:transparent;cursor:pointer;height:var(--component-text-button-size-sm-height);padding:0 var(--component-text-button-size-sm-padding-x);border-radius:var(--component-text-button-size-sm-radius);font:var(--component-text-button-type-ghost-typography);color:var(--component-text-button-type-ghost-color-primary-text)}
