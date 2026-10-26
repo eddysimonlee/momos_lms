@@ -107,7 +107,9 @@ def main():
                     # 원본 절 인용이 하나도 없는 항목만: 기존 교육과정의 U코드 원고 문서 이름을 싣는다(전문 없음).
                     refDocs=[] if sources else [dict(ref=r, title=course['refs'][r]['title'], file=course['refs'][r]['file'])
                                                    for r in (s.get('refs') or [s.get('ref')]) if r in course['refs']],
-                    lessonStatus=l.get('status', 'none'))
+                    lessonStatus=l.get('status', 'none'),
+                    # 교육안이 keyPoints 를 일부러 비워 둔 세션(예: 첫날 OJT 체크 — 수행 확인만): 화면에서 '교육 내용' 카드를 숨긴다
+                    contentOmitted='keyPoints' in l and not l['keyPoints'])
         return step
 
     def planned_step(sess):

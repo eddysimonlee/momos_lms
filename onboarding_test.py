@@ -234,7 +234,8 @@ class EducationTests(unittest.TestCase):
             planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
             self.assertEqual(len(planned),0)  # 83개 세션 모두 교육안이 있다(6단계 교육과정 기준)
             self.assertFalse(any(s.get('reworkPending') for s in steps))
-            self.assertTrue(all(s['purpose'] and s['keyPoints'] and s['sources'] for s in live))
+            self.assertTrue(all(s['purpose'] and (s['keyPoints'] or s['contentOmitted']) and s['sources'] for s in live))
+            self.assertEqual([s['id'] for s in live if s['contentOmitted']],['welcome-ojt'])  # 수행 확인만 두는 세션(모모스 피드백)
             self.assertTrue(all(len(s['checkCites'])==len(s['checks']) and all(s['checkCites']) for s in live))
             self.assertTrue(set(c for s in live for cs in s['checkCites'] for c in cs)<=set(slice_['sections']))
             self.assertFalse(any(s['refDocs'] for s in steps))

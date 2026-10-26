@@ -233,7 +233,7 @@
     return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
-      `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">항목을 누르면 근거가 된 원본 본문이 그 자리에서 펼쳐져요.</p>${keyPoints}${refDocs}</section>` +
+      (s.contentOmitted ? '' : `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">항목을 누르면 근거가 된 원본 본문이 그 자리에서 펼쳐져요.</p>${keyPoints}${refDocs}</section>`) +
       `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 항목을 현장에서 확인하고 체크하세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
       memo +
       (actions ? `<div class="v1-actions">${actions}</div>` : '');
