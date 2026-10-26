@@ -225,6 +225,7 @@ class EducationTests(unittest.TestCase):
             # v1: the page and its script are public shells; the course slice needs a login.
             code,h,b=req('GET','/v1',cookie=False);self.assertEqual(code,200);self.assertIn(b'authGate',b);self.assertNotIn('출근 준비'.encode(),b)
             self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
+            code,h,b=req('GET','/v1/graph',cookie=False);self.assertEqual(code,200);self.assertIn('원본 문서 연결도'.encode(),b)  # 연결도 껍데기, 데이터는 로그인 후
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),54)  # curriculum.json: 6단계 54단원

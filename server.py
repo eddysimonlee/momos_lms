@@ -322,9 +322,10 @@ class Handler(BaseHTTPRequestHandler):
                     value = self.body()
                     return self.send(200, collaboration.context(user, value.get('target'), value))
                 raise FileNotFoundError()
-            if path in ('/v1', '/v1.js') and method == 'GET':
+            if path in ('/v1', '/v1.js', '/v1/graph') and method == 'GET':
                 # First-release learner screen: the page carries the login gate itself, the script waits for it.
-                return self.file(APP / ('v1.html' if path == '/v1' else 'v1.js'))
+                # /v1/graph: 교육항목 ↔ 원본 문서 연결도. 빈 껍데기이고, 데이터는 로그인 후 /v1_content.json 에서 계산한다.
+                return self.file(APP / {'/v1': 'v1.html', '/v1.js': 'v1.js', '/v1/graph': 'v1_graph.html'}[path])
             m = re.fullmatch(r'/v1_photos/([0-9a-f]{12})\.jpg', path)
             if m and method == 'GET':  # 교육 화면의 원본 사진(v1_build.py 가 고른 것만). 교육 내용과 같은 로그인 기준
                 if not user:

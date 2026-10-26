@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>모모스 교육·원본 연결도</title>
+<link rel="icon" href="/icons/momos-erp.svg">
+<link rel="stylesheet" href="/wds/web/variables.css">
+<style>
+/* /v1/graph — 교육항목 ↔ 원본 문서 연결도. 데이터는 화면과 같은 /v1_content.json 에서 매번 계산한다(항상 최신).
+   색은 WDS 의미 토큰으로 매핑, 단계 구분색만 wds-allow. */
+@font-face{font-family:Pretendard;font-style:normal;font-weight:45 920;font-display:swap;src:url('/assets/PretendardVariable.woff2') format('woff2')}
+body{margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.top a{color:var(--accent);font-size:13px;text-decoration:none}
+.top a:hover{text-decoration:underline}
+.msg{padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+/* Layout: 왼쪽 원본 문서(폴더별) ↔ 오른쪽 교육항목(단계별) 이분 연결도 + 오른쪽 상세 패널. 폭이 좁으면 패널이 아래로. */
+:root{
+  --bg:var(--surface-subtle); --panel:var(--surface-default); --fg:var(--text-default); --muted:var(--text-muted); --line:var(--border-default);
+  --edge:var(--border-strong); --accent:var(--text-primary); --accent-soft:var(--action-selected); --warn:var(--text-warning); --warn-soft:var(--surface-warning-subtle);
+  /* wds-allow: 단계 구분색 6개는 대응 토큰이 없다(연결도 범례 전용) */
+  --stage1:#4a7c8c; --stage2:#6b7f3a; --stage3:#a0622c; --stage4:#7a5a93; --stage5:#9b4a5a; --stage6:#3f5f9a;
+  --sans:Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+  --mono:ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:14px/1.55 var(--sans);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+header h1{font-size:22px;font-weight:700;margin:0;text-wrap:balance;letter-spacing:-.3px}
+header p{margin:4px 0 0;color:var(--muted);max-width:70ch}
+.stats{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:10px;font-size:13px;color:var(--muted)}
+.stats b{font:500 18px var(--mono);color:var(--fg);margin-right:4px;font-variant-numeric:tabular-nums}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.bar input{flex:1 1 220px;min-width:0;font:inherit;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg)}
+.bar input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.btn{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:8px;padding:7px 12px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+@media (max-width:900px){.main{grid-template-columns:minmax(0,1fr)}}
+.graph{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto;min-width:0}
+.graph svg{display:block}
+.side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:sticky;top:max(12px,env(safe-area-inset-top,0px));max-height:calc(100vh - 24px);overflow:auto;min-width:0}
+@media (max-width:900px){.side{position:static;max-height:none;order:-1}}
+svg .node:focus{outline:none}svg .node:focus-visible circle{stroke:var(--accent);stroke-width:3}
+.side h2{font-size:16px;margin:0 0 4px;text-wrap:balance}
+.side .meta{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.side h3{font-size:12px;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px;font-weight:600}
+.chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:4px}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.rel{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rel li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
+.rel li:hover{border-color:var(--accent)}
+.rel .t{font-weight:600;font-size:13px}
+.rel .n{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.rel .s{font-size:12px;color:var(--muted);margin-top:2px}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.rank li{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:8px;align-items:center;cursor:pointer;padding:3px 4px;border-radius:6px;font-size:12px}
+.rank li:hover{background:var(--accent-soft)}
+.rank .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank .track{grid-column:1/-1;height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:-2px}
+.rank .track i{display:block;height:100%;background:var(--accent)}
+.rank .v{font:12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+svg text{fill:var(--fg);font-family:var(--sans)}
+svg .grp{font-size:11px;font-weight:600;fill:var(--muted);letter-spacing:.04em}
+svg .node{cursor:pointer}
+svg .node text{font-size:12px}
+svg .node .cnt{font:10px var(--mono);fill:var(--muted)}
+svg path.e{fill:none;stroke:var(--edge);stroke-opacity:.28}
+svg.focus path.e{stroke-opacity:.05}
+svg.focus path.e.on{stroke:var(--accent);stroke-opacity:.85}
+svg.focus .node{opacity:.28}
+svg.focus .node.on{opacity:1}
+svg .node.sel text{font-weight:700}
+svg .node.hit text{fill:var(--accent);font-weight:700}
+.foot{font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){svg path.e,svg .node{transition:opacity .15s,stroke-opacity .15s}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top"><a href="/v1">← 교육 화면으로</a></div>
+    <h1>교육항목 ↔ 원본 문서 연결도</h1>
+    <p>교육 내용·수행 확인·사진이 인용한 원본 절을 문서 단위로 묶었습니다. 문서나 교육항목을 누르면 연결된 쪽과 인용한 절이 오른쪽에 나옵니다. 선이 굵을수록 인용 횟수가 많습니다.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+  <div class="bar">
+    <input id="q" type="search" placeholder="문서·교육항목 이름 검색 (예: 제빙기, 레시피)" aria-label="문서·교육항목 검색">
+    <button class="btn" id="reset" type="button">선택 해제</button>
+  </div>
+  <div class="legend" id="legend"></div>
+  <div class="main">
+    <div class="graph" id="graph"></div>
+    <aside class="side" id="side" aria-live="polite"></aside>
+  </div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script>
+// 화면(/v1)과 같은 체험 자동 로그인: LMS_TRIAL 서버에서만 /api/dev/accounts 가 응답한다. 그 밖에는 /v1 에서 로그인 후 다시 연다.
+async function autoLogin() {
+  try {
+    const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
+    if (status.user) return;
+    const r = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
+    if (!r.ok) return;
+    const {accounts} = await r.json();
+    const pick = accounts.find(a => a.email === 'learner@local.test') || accounts[0];
+    if (pick) await fetch('/api/dev/accounts?id=' + encodeURIComponent(pick.id), {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json'}, body: '{}'});
+  } catch {}
+}
+// 교육 화면 데이터 → 연결도: 교육 내용 요약·수행 확인 문항·사진이 단 근거 절을 문서 단위로 합친다.
+function buildGraph(c) {
+  const items = [], edges = new Map(); let no = 0;
+  for (const u of c.units) for (const s of u.steps) {
+    no++;
+    items.push({id: s.id, no, title: s.title, unit: `${u.no} ${u.title}`, stage: u.stage.order, stageTitle: u.stage.title});
+    const add = (key, kind) => {
+      const sec = c.sections[key]; if (!sec) return;
+      const k = s.id + '|' + sec.doc;
+      if (!edges.has(k)) edges.set(k, {item: s.id, doc: sec.doc, kp: 0, check: 0, photo: 0, secs: new Set()});
+      const e = edges.get(k); e[kind]++; e.secs.add((sec.no ? sec.no + ' ' : '') + sec.title);
+    };
+    (s.keyPoints || []).forEach(k => k.cites.forEach(x => add(x, 'kp')));
+    (s.checkCites || []).forEach(cs => cs.forEach(x => add(x, 'check')));
+    (s.photos || []).forEach(p => { const ph = c.photos[p]; if (ph && ph.cite) add(ph.cite, 'photo'); });
+  }
+  const used = new Set([...edges.values()].map(e => e.doc));
+  const docs = Object.entries(c.documents).filter(([k]) => used.has(k)).map(([id, d]) => ({id, title: d.title, type: d.type, folder: d.folder || '', file: d.file, version: d.version}));
+  return {docs, items, edges: [...edges.values()].map(e => ({...e, secs: [...e.secs].sort()})),
+    meta: {curriculum: c.curriculumVersion || c.courseVersion, generated: (c.sourceIndexedAt || '').slice(0, 10)}};
+}
+(async () => {
+await autoLogin();
+const res = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
+if (!res.ok) { document.querySelector('.main').innerHTML = '<div class="msg">로그인이 필요해요. <a href="/v1">교육 화면</a>에서 로그인한 뒤 다시 열어 주세요.</div>'; return; }
+const G = buildGraph(await res.json());
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const docs = new Map(G.docs.map(d => [d.id, d])), items = new Map(G.items.map(i => [i.id, i]));
+const w = e => e.kp + e.check + e.photo;
+const byDoc = new Map(), byItem = new Map();
+for (const e of G.edges) { (byDoc.get(e.doc) || byDoc.set(e.doc, []).get(e.doc)).push(e); (byItem.get(e.item) || byItem.set(e.item, []).get(e.item)).push(e); }
+const stages = [...new Map(G.items.map(i => [i.stage, i.stageTitle]))].sort((a, b) => a[0] - b[0]);
+const stageColor = n => `var(--stage${n})`;
+const folderState = f => /수정중|생성중/.test(f) ? (f.match(/수정중|생성중/)[0]) : (/1차완료/.test(f) ? '1차완료' : '');
+const shortDoc = d => d.title.replace(/ · 검토본.*$/, '').replace(/^본점\s*/, '');
+
+// 문서 순서: 폴더별로 묶고, 연결된 교육항목 번호의 평균(무게중심)으로 정렬해 선 교차를 줄인다.
+const bary = id => { const es = byDoc.get(id) || []; return es.reduce((s, e) => s + items.get(e.item).no * w(e), 0) / Math.max(1, es.reduce((s, e) => s + w(e), 0)); };
+const folders = [...new Set(G.docs.map(d => d.folder))].map(f => ({f, docs: G.docs.filter(d => d.folder === f).sort((a, b) => bary(a.id) - bary(b.id))}));
+folders.forEach(g => g.b = g.docs.reduce((s, d) => s + bary(d.id), 0) / g.docs.length);
+folders.sort((a, b) => a.b - b.b);
+
+$('stats').innerHTML = `<span><b>${G.docs.length}</b>원본 문서</span><span><b>${G.items.length}</b>교육항목</span><span><b>${G.edges.length}</b>연결(문서×항목)</span><span><b>${G.edges.reduce((s, e) => s + w(e), 0)}</b>인용</span>`;
+$('legend').innerHTML = stages.map(([n, t]) => `<span><i style="background:${stageColor(n)}"></i>${n}단계 ${esc(t)}</span>`).join('') + '<span><span class="chip warn">수정중·생성중</span>폴더가 아직 확정 전인 문서</span>';
+$('foot').textContent = `기준: 교육과정 ${G.meta.curriculum} · 원본 색인 ${G.meta.generated}. 인용 = 교육 내용 요약·수행 확인 문항·사진 각각이 근거로 단 절의 수.`;
+
+// --- SVG 그리기
+const ROW = 17, TOP = 24;
+const W = 980, LX = 330, RX = W - 330;
+let y = TOP; const docPos = new Map(), docRows = [];
+const itemRows = []; let yi = TOP; const itemPos = new Map();
+for (const [n, t] of stages) { itemRows.push({type: 'g', y: yi, label: `${n}단계 ${t}`, n}); yi += ROW + 4; for (const it of G.items.filter(i => i.stage === n)) { itemPos.set(it.id, yi); itemRows.push({type: 'i', y: yi, it}); yi += ROW; } yi += 8; }
+const H = yi + 10;
+// 문서는 같은 높이에 고르게 퍼뜨린다
+const docCount = G.docs.length, gaps = folders.length;
+const dstep = (H - TOP - 10 - gaps * (ROW + 10)) / docCount;
+for (const g of folders) { docRows.push({type: 'g', y, label: g.f}); y += ROW + 4; for (const d of g.docs) { docPos.set(d.id, y); docRows.push({type: 'd', y, d}); y += dstep; } y += 6; }
+
+const svgNS = 'http://www.w3.org/2000/svg';
+let svg = `<svg id="svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="원본 문서와 교육항목 연결도">`;
+for (const e of G.edges) {
+  const y1 = docPos.get(e.doc), y2 = itemPos.get(e.item), x1 = LX + 8, x2 = RX - 8, mx = (x1 + x2) / 2;
+  svg += `<path class="e" data-d="${esc(e.doc)}" data-i="${esc(e.item)}" stroke-width="${Math.min(6, 0.8 + w(e) * 0.45).toFixed(2)}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`;
+}
+for (const r of docRows) {
+  if (r.type === 'g') { const st = folderState(r.label); svg += `<text class="grp" x="${LX + 8}" y="${r.y + 4}" text-anchor="end">${esc(r.label)}</text>`; continue; }
+  const d = r.d, n = (byDoc.get(d.id) || []).length, warn = /수정중|생성중/.test(d.folder);
+  svg += `<g class="node" data-kind="d" data-id="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(shortDoc(d))}, 교육항목 ${n}개"><text x="${LX - 34}" y="${r.y + 4}" text-anchor="end">${esc(shortDoc(d).length > 26 ? shortDoc(d).slice(0, 25) + '…' : shortDoc(d))}</text>` +
+    `<text class="cnt" x="${LX - 8}" y="${r.y + 4}" text-anchor="end">${n}</text><circle cx="${LX + 4}" cy="${r.y}" r="${3 + Math.sqrt(n)}" fill="${warn ? 'var(--warn)' : 'var(--accent)'}"/></g>`;
+}
+for (const r of itemRows) {
+  if (r.type === 'g') { svg += `<text class="grp" x="${RX - 8}" y="${r.y + 4}" style="fill:${stageColor(r.n)}">${esc(r.label)}</text>`; continue; }
+  const it = r.it, n = (byItem.get(it.id) || []).length;
+  svg += `<g class="node" data-kind="i" data-id="${esc(it.id)}" tabindex="0" role="button" aria-label="${it.no} ${esc(it.title)}, 문서 ${n}개"><circle cx="${RX - 4}" cy="${r.y}" r="4" fill="${stageColor(it.stage)}"/>` +
+    `<text class="cnt" x="${RX + 6}" y="${r.y + 4}">${it.no}</text><text x="${RX + 30}" y="${r.y + 4}">${esc(it.title.length > 30 ? it.title.slice(0, 29) + '…' : it.title)}</text></g>`;
+}
+svg += '</svg>';
+$('graph').innerHTML = svg;
+const S = $('svg');
+
+// --- 선택·강조
+let sel = null;
+function highlight(kind, id) {
+  S.classList.toggle('focus', !!id);
+  S.querySelectorAll('.on,.sel').forEach(el => el.classList.remove('on', 'sel'));
+  if (!id) return;
+  const es = (kind === 'd' ? byDoc : byItem).get(id) || [];
+  S.querySelector(`.node[data-kind="${kind}"][data-id="${CSS.escape(id)}"]`)?.classList.add('on', 'sel');
+  for (const e of es) {
+    S.querySelectorAll(`path.e[data-d="${CSS.escape(e.doc)}"][data-i="${CSS.escape(e.item)}"]`).forEach(p => p.classList.add('on'));
+    S.querySelector(`.node[data-kind="${kind === 'd' ? 'i' : 'd'}"][data-id="${CSS.escape(kind === 'd' ? e.item : e.doc)}"]`)?.classList.add('on');
+  }
+}
+const counts = e => [e.kp && `내용 ${e.kp}`, e.check && `확인 ${e.check}`, e.photo && `사진 ${e.photo}`].filter(Boolean).join(' · ');
+function panel() {
+  const side = $('side');
+  if (!sel) {
+    const rows = G.docs.map(d => ({d, n: (byDoc.get(d.id) || []).length})).sort((a, b) => b.n - a.n);
+    const max = rows[0].n;
+    side.innerHTML = `<h2>문서별 영향 범위</h2><p class="meta">각 문서를 인용하는 교육항목 수. 누르면 연결된 항목을 봅니다.</p><h3>${G.docs.length}개 문서</h3><ul class="rank">${rows.map(r =>
+      `<li data-pick="d:${esc(r.d.id)}"><span class="lbl">${/수정중|생성중/.test(r.d.folder) ? '<span class="chip warn">' + esc(folderState(r.d.folder)) + '</span>' : ''}${esc(shortDoc(r.d))}</span><span class="v">${r.n}</span><span class="track"><i style="width:${r.n / max * 100}%"></i></span></li>`).join('')}</ul>`;
+  } else if (sel.kind === 'd') {
+    const d = docs.get(sel.id), es = (byDoc.get(d.id) || []).slice().sort((a, b) => items.get(a.item).no - items.get(b.item).no);
+    const st = folderState(d.folder);
+    side.innerHTML = `<h2>${esc(shortDoc(d))}</h2><div class="meta"><span class="chip ${/수정중|생성중/.test(st) ? 'warn' : ''}">${esc(d.type || '')} ${esc(d.version || '')}</span>${esc(d.folder)} / ${esc(d.file)}</div>` +
+      `<h3>이 문서를 인용하는 교육항목 ${es.length}개 · 인용 ${es.reduce((s, e) => s + w(e), 0)}</h3><ul class="rel">${es.map(e => { const it = items.get(e.item);
+        return `<li data-pick="i:${esc(it.id)}"><div class="t"><span style="color:${stageColor(it.stage)}">●</span> ${it.no}. ${esc(it.title)}</div><div class="n">${esc(it.unit)} · ${counts(e)}</div><div class="s">${e.secs.map(esc).join(' / ')}</div></li>`; }).join('')}</ul>`;
+  } else {
+    const it = items.get(sel.id), es = (byItem.get(it.id) || []).slice().sort((a, b) => w(b) - w(a));
+    side.innerHTML = `<h2>${it.no}. ${esc(it.title)}</h2><div class="meta"><span class="chip" style="color:${stageColor(it.stage)}">${it.stage}단계</span>${esc(it.unit)}</div>` +
+      `<h3>근거 문서 ${es.length}개 · 인용 ${es.reduce((s, e) => s + w(e), 0)}</h3><ul class="rel">${es.map(e => { const d = docs.get(e.doc);
+        return `<li data-pick="d:${esc(d.id)}"><div class="t">${/수정중|생성중/.test(d.folder) ? '<span class="chip warn">' + esc(folderState(d.folder)) + '</span>' : ''}${esc(shortDoc(d))}</div><div class="n">${counts(e)}</div><div class="s">${e.secs.map(esc).join(' / ')}</div></li>`; }).join('')}</ul>`;
+  }
+  side.querySelectorAll('[data-pick]').forEach(li => li.onclick = () => { const [k, ...rest] = li.dataset.pick.split(':'); pick(k, rest.join(':')); });
+}
+function pick(kind, id) {
+  sel = id ? {kind, id} : null; highlight(kind, id); panel();
+  if (id) { const n = S.querySelector(`.node[data-kind="${kind}"][data-id="${CSS.escape(id)}"]`); if (n) { const r = n.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) n.scrollIntoView({block: 'center'}); } }
+}
+S.querySelectorAll('.node').forEach(n => {
+  n.onclick = () => pick(n.dataset.kind, sel && sel.id === n.dataset.id ? null : n.dataset.id);
+  n.onkeydown = ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); n.onclick(); } };
+  n.onmouseenter = () => { if (!sel) highlight(n.dataset.kind, n.dataset.id); };
+  n.onmouseleave = () => { if (!sel) highlight(null, null); };
+});
+$('reset').onclick = () => { $('q').value = ''; S.querySelectorAll('.hit').forEach(x => x.classList.remove('hit')); pick(null, null); };
+$('q').oninput = () => {
+  const q = $('q').value.trim();
+  S.querySelectorAll('.node').forEach(n => {
+    const name = n.dataset.kind === 'd' ? docs.get(n.dataset.id).title + docs.get(n.dataset.id).file : items.get(n.dataset.id).title + items.get(n.dataset.id).unit;
+    n.classList.toggle('hit', !!q && name.includes(q));
+  });
+  const first = q && S.querySelector('.node.hit'); if (first) first.scrollIntoView({block: 'center', inline: 'nearest'});
+};
+panel();
+})();
+</script>
+</body>
+</html>
