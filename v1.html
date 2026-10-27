@@ -175,9 +175,8 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 /* 메뉴 = popover 표면 + menu item */
 .v1-menu{position:absolute;right:0;top:calc(100% + var(--spacing-4));min-width:168px; /* wds-allow: 메뉴 최소 폭 */padding:var(--spacing-4);background:var(--surface-default);border-radius:var(--component-popover-base-border-radius);box-shadow:var(--component-popover-base-shadow);z-index:var(--component-layout-z-index-gnb)}
 .v1-menu[hidden]{display:none}
-.v1-menu button,.v1-menu a{text-decoration:none;appearance:none;border:0;display:flex;align-items:center;gap:var(--component-menu-item-base-content-gap);width:100%;height:var(--component-menu-item-base-height);padding:0 var(--component-menu-item-base-padding-x);border-radius:var(--component-menu-item-base-radius);background:transparent;color:var(--component-menu-item-state-default-label-text-color);font:var(--component-menu-item-state-default-label-typography);white-space:nowrap;cursor:pointer;text-align:left}
-.v1-menu a[hidden]{display:none}
-.v1-menu button:hover,.v1-menu a:hover{background:var(--component-menu-item-state-hover-background);color:var(--component-menu-item-state-hover-label-text-color)}
+.v1-menu button{appearance:none;border:0;display:flex;align-items:center;gap:var(--component-menu-item-base-content-gap);width:100%;height:var(--component-menu-item-base-height);padding:0 var(--component-menu-item-base-padding-x);border-radius:var(--component-menu-item-base-radius);background:transparent;color:var(--component-menu-item-state-default-label-text-color);font:var(--component-menu-item-state-default-label-typography);white-space:nowrap;cursor:pointer;text-align:left}
+.v1-menu button:hover{background:var(--component-menu-item-state-hover-background);color:var(--component-menu-item-state-hover-label-text-color)}
 /* PDF 내보내기: 화면에는 숨기고, 인쇄할 때만 이 영역만 찍는다. 종이는 항상 밝은 배경이라 인쇄 색은 고정값 */
 .v1-print{display:none}
 @media print{
@@ -218,7 +217,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Who" class="v1-who" title="내 계정">…</button>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
-      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button><a role="menuitem" id="v1PdfDownload" hidden>PDF 다운로드 (테스트①)</a><a role="menuitem" id="v1PdfChrome" hidden>Chrome으로 열기 (테스트②)</a></div>
+      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>
     </div>
   </header>
   <div id="v1Dev" class="v1-dev" hidden></div>

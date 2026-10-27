@@ -325,7 +325,9 @@
       `<div class="p-foot">콘텐츠 기준 ${esc(dateLabel(content.curriculumVersion))} · 출력 ${printed}</div>`;
   }
 
-  // 모바일: 서버가 만든 PDF 를 쓴다. iOS(WORKS 포함)는 공유 시트로, 공유가 없는 안드로이드 WebView 는 임시로 두 방식을 띄워 본다.
+  // 모바일: 서버가 만든 PDF 를 쓴다. iOS(WORKS 포함)는 공유 시트로.
+  // 안드로이드 WebView(WORKS)는 공유가 없고, 앱 다운로드는 미디어 권한을 모두 요구한다 → 폰의 기본 브라우저로 넘겨 거기서 받는다.
+  // 넘기는 주소에 5분 토큰이 붙어 있어 브라우저에서 따로 로그인하지 않는다.
   // iOS 는 '누른 직후'에만 공유 시트를 허용하므로 ⋮ 를 여는 순간 PDF 를 미리 받아 둔다.
   const androidWebView = /Android/.test(navigator.userAgent) && /; wv\)/.test(navigator.userAgent);
   // PC 브라우저도 파일 공유를 지원하지만 PC 는 인쇄 창이 낫다 → 휴대폰·태블릿에서만 공유 시트
@@ -343,18 +345,11 @@
     link.catch(() => {});
     pdfPrep = {id: s.id, at: Date.now(), link, file, done: null};
     if (file) file.then(f => { if (pdfPrep && pdfPrep.id === s.id) pdfPrep.done = f; }, () => {});
-    if (androidWebView) link.then(u => {
-      const abs = location.origin + u;
-      $('v1PdfDownload').href = u;  // 파일명은 서버의 Content-Disposition
-      $('v1PdfChrome').href = `intent://${location.host}${u}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(abs)};end`;
-    }, () => toast('PDF 주소를 받지 못했어요. 잠시 후 다시 시도해 주세요.'));
     return pdfPrep;
   }
   function onMenuOpen() {
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
     if (!s || planned(s)) return;
-    $('v1ExportPdf').hidden = androidWebView;
-    $('v1PdfDownload').hidden = $('v1PdfChrome').hidden = !androidWebView;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
   function sharePdf(s) {
@@ -365,11 +360,19 @@
     prep.file.then(go, e => toast(e.message));
   }
 
+  // 패키지를 정하지 않은 VIEW intent → 기본 브라우저(Chrome·삼성 인터넷 등). 받을 앱이 없으면 fallback 주소로.
+  const browserIntent = u => `intent://${location.host}${u}#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;S.browser_fallback_url=${encodeURIComponent(location.origin + u)};end`;
+  function openInBrowser(s) {
+    toast('브라우저에서 PDF를 엽니다');
+    prepPdf(s).link.then(u => { location.href = browserIntent(u); }, () => toast('PDF 주소를 받지 못했어요. 잠시 후 다시 시도해 주세요.'));
+  }
+
   async function exportPdf() {
     closeMenu();
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
     if (!s) return;
-    if (canShareFiles()) return sharePdf(s);  // iOS 등: 공유 시트. PC 는 아래 인쇄 창
+    if (canShareFiles()) return sharePdf(s);  // iOS 등: 공유 시트
+    if (androidWebView) return openInBrowser(s);  // 안드로이드 WORKS: 기본 브라우저. PC 는 아래 인쇄 창
     const box = $('v1Print');
     box.innerHTML = printView(s);
     // 사진을 다 받은 뒤에 인쇄 창을 연다(늦게 오면 빈 칸으로 찍힌다)
@@ -386,7 +389,6 @@
   $('v1Who').onclick = () => ERPAuth.openAccount();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
-  $('v1PdfDownload').onclick = $('v1PdfChrome').onclick = () => setTimeout(closeMenu, 0);
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
