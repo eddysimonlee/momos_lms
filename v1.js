@@ -79,6 +79,8 @@
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
     $('v1Who').textContent = cloud.user.name;
     $('v1Who').hidden = branch;
+    $('v1More').hidden = !step || planned(step);
+    closeMenu();
     if (devBar) $('v1Dev').hidden = branch;
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
     const app = $('app'), same = view === shownView, y = window.scrollY;
@@ -298,8 +300,52 @@
     } catch {}
   }
 
+
+  // --- 더보기 메뉴 · PDF 내보내기(항목 하나). 브라우저 인쇄 → 'PDF로 저장'.
+  // 원문 본문·상태 안내·메모·버튼은 빼고, 수행 확인은 빈 체크박스로 찍는다.
+  function closeMenu() { $('v1Menu').hidden = true; $('v1MoreBtn').setAttribute('aria-expanded', 'false'); }
+  function printView(s) {
+    const i = stepIndex(s.id), u = unitOf(s.id), stg = u.stage;
+    const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}`.replace(/\s+/g, ' ').trim() : key; };
+    const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
+    const today = new Date(), pad = n => String(n).padStart(2, '0');
+    const printed = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+    const purpose = s.purpose ? `<p>${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : s.copy.map(p => `<p>${esc(p)}</p>`).join('');
+    const kp = s.contentOmitted ? '' : '<h2>교육 내용</h2>' + (s.keyPoints && s.keyPoints.length
+      ? `<ol>${s.keyPoints.map(k => `<li>${esc(k.text).replace(/\n/g, '<br>')}${(k.cites || []).length ? `<span class="p-src">출처: ${[...new Set(k.cites)].map(c => esc(srcLabel(c))).join(' · ')}</span>` : ''}</li>`).join('')}</ol>`
+      : s.copy.map(p => `<p>${esc(p)}</p>`).join('')) +
+      (s.refDocs || []).map(d => `<p class="p-src">원고 문서: ${esc(d.title)} (${esc(d.ref)})</p>`).join('');
+    return `<header class="p-head"><div class="p-brand">모모스 온보딩 · 온천 본점</div>` +
+      `<div class="p-meta">${stg ? `<span class="p-tag">${stg.order}. ${esc(stg.title)}</span>` : ''}${esc(u.no || '')} ${esc(u.title)} · ${i + 1}/${steps().length}</div>` +
+      `<h1>${esc(s.title)}</h1></header>` +
+      `<h2>교육 목적</h2>${purpose}` +
+      (shots.length ? `<div class="p-photos">${shots.map(p => `<figure><img src="${p.src}" alt="${esc(p.caption)}"><figcaption>${esc(p.caption)}</figcaption></figure>`).join('')}</div>` : '') +
+      (s.note ? `<div class="p-note">${esc(s.note)}</div>` : '') + kp +
+      `<h2>수행 확인</h2><ul class="p-checks">${s.checks.map(c => `<li><span class="p-box"></span><span>${esc(c)}</span></li>`).join('')}</ul>` +
+      `<div class="p-foot">콘텐츠 기준 ${esc(dateLabel(content.curriculumVersion))} · 출력 ${printed}</div>`;
+  }
+  async function exportPdf() {
+    closeMenu();
+    const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
+    if (!s) return;
+    const box = $('v1Print');
+    box.innerHTML = printView(s);
+    // 사진을 다 받은 뒤에 인쇄 창을 연다(늦게 오면 빈 칸으로 찍힌다)
+    await Promise.all([...box.querySelectorAll('img')].map(img => img.complete ? null : new Promise(ok => { img.onload = img.onerror = ok; })));
+    const title = document.title;
+    document.title = `${stepIndex(s.id) + 1}_${s.title}`.replace(/[\\/:*?"<>|]/g, '·');  // 'PDF로 저장' 기본 파일명
+    document.body.classList.add('v1-printing');
+    const done = () => { document.body.classList.remove('v1-printing'); document.title = title; box.innerHTML = ''; window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    window.print();
+  }
+
   $('v1Back').onclick = () => { view = view.startsWith('step:') ? 'home' : 'branch'; render(); };
   $('v1Who').onclick = () => ERPAuth.openAccount();
+  $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
+  $('v1ExportPdf').onclick = exportPdf;
+  document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
   // Local trial only: with no session yet, sign in as the first trial learner so nobody types a password.
   // The server answers /api/dev/accounts only on a local run or with LMS_TRIAL=1; elsewhere this is a no-op
