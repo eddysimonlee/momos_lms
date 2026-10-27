@@ -227,6 +227,15 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
             code,h,b=req('GET','/v1/graph',cookie=False);self.assertEqual(code,200);self.assertIn('원본 문서 연결도'.encode(),b)  # 연결도 껍데기, 데이터는 로그인 후
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
+            # 항목 PDF: 주소 발급은 로그인 필요, 발급한 주소는 쿠키 없이 5분·그 항목만
+            self.assertEqual(req('GET','/api/v1/pdf-link?step=menu-glass',cookie=False)[0],401)
+            self.assertEqual(req('GET','/v1/pdf/menu-glass',cookie=False)[0],401)
+            code,h,b=req('GET','/api/v1/pdf-link?step=menu-glass');self.assertEqual(code,200);url=json.loads(b)['url']
+            code,h,b=req('GET',url,cookie=False);self.assertEqual(code,200);self.assertTrue(b.startswith(b'%PDF-'))
+            self.assertIn("filename*=UTF-8''44_",h['Content-Disposition'])
+            self.assertEqual(req('GET',url.replace('/menu-glass?','/pickup-cup?'),cookie=False)[0],401)  # 다른 항목엔 못 씀
+            self.assertEqual(req('GET',url[:-4]+'0000',cookie=False)[0],401)
+            self.assertEqual(req('GET','/v1/pdf/no-such-step')[0],404)
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),55)  # curriculum.json: 6단계 55단원(2.10 OP2 / 2.11 OP3 분리)
             steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),84)

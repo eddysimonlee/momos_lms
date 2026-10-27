@@ -12,7 +12,9 @@ import json
 import mimetypes
 import os
 import re
+import secrets
 import socket
+import time
 import sqlite3
 import sys
 import threading
@@ -326,6 +328,32 @@ class Handler(BaseHTTPRequestHandler):
                 # First-release learner screen: the page carries the login gate itself, the script waits for it.
                 # /v1/graph: 교육항목 ↔ 원본 문서 연결도. 빈 껍데기이고, 데이터는 로그인 후 /v1_content.json 에서 계산한다.
                 return self.file(APP / {'/v1': 'v1.html', '/v1.js': 'v1.js', '/v1/graph': 'v1_graph.html'}[path])
+            if path == '/api/v1/pdf-link' and method == 'GET':
+                # 항목 PDF 의 5분짜리 주소. 앱 내 브라우저의 다운로드·외부 Chrome 은 로그인 쿠키를 넘기지 않아 주소에 토큰을 싣는다.
+                step = query.get('step', [''])[0]
+                if not re.fullmatch(r'[a-z0-9-]{1,64}', step):
+                    raise ValueError('step required')
+                return self.send(200, {'url': f'/v1/pdf/{step}?t=' + pdf_token(self.server, step)})
+            m = re.fullmatch(r'/v1/pdf/([a-z0-9-]{1,64})', path)
+            if m and method == 'GET':  # 로그인 쿠키 또는 pdf-link 토큰(5분, 그 항목만)
+                step = m.group(1)
+                if not user and not pdf_token_ok(self.server, step, query.get('t', [''])[0]):
+                    raise access.LoginRequired()
+                import v1_pdf
+                try:
+                    data, name = v1_pdf.build(v1_content(), step)
+                except KeyError:
+                    raise FileNotFoundError()
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/pdf')
+                self.send_header('Content-Length', str(len(data)))
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('X-Content-Type-Options', 'nosniff')
+                self.send_header('Referrer-Policy', 'same-origin')
+                # filename= 은 한글을 못 읽는 다운로더용 대체 이름, filename*= 이 실제 이름(번호_제목.pdf)
+                self.send_header('Content-Disposition', ('inline' if query.get('inline') else 'attachment') + f'; filename="momos_{name.split("_", 1)[0]}.pdf"' + "; filename*=UTF-8''" + quote(name))
+                self.end_headers()
+                return self.wfile.write(data)
             m = re.fullmatch(r'/v1_photos/([0-9a-f]{12})\.jpg', path)
             if m and method == 'GET':  # 교육 화면의 원본 사진(v1_build.py 가 고른 것만). 교육 내용과 같은 로그인 기준
                 if not user:
@@ -525,12 +553,30 @@ def v1_content():
     return content
 
 
+PDF_LINK_SECONDS = 300
+
+
+def pdf_token(server, step, now=None):
+    exp = int((now or time.time()) + PDF_LINK_SECONDS)
+    sig = hmac.new(server.pdf_secret, f'{step}.{exp}'.encode(), hashlib.sha256).hexdigest()[:32]
+    return f'{exp}.{sig}'
+
+
+def pdf_token_ok(server, step, token, now=None):
+    exp, _, sig = token.partition('.')
+    if not exp.isdigit() or int(exp) < (now or time.time()):
+        return False
+    good = hmac.new(server.pdf_secret, f'{step}.{exp}'.encode(), hashlib.sha256).hexdigest()[:32]
+    return hmac.compare_digest(sig, good)
+
+
 def make_server(store, port=8768, *, host='127.0.0.1', public_url='', trial=False):
     if host != '127.0.0.1' and not public_url.startswith('https://') and not trial:
         raise ValueError('외부 바인딩에는 HTTPS 공개 주소(--public-url)가 필요합니다. 리버스 프록시가 TLS를 맡습니다. (사내 테스트는 LMS_TRIAL=1)')
     server = (CloudHTTPServer if public_url else LocalHTTPServer)((host, port), Handler)
     server.public_url = public_url
     server.trial = trial
+    server.pdf_secret = secrets.token_bytes(32)  # 프로세스마다 새로 — 재시작하면 남은 PDF 주소는 만료
     server.store = store
     server.access = access.Access(store)
     server.invitations = invitations.Invitations(server.access)

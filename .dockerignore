@@ -10,6 +10,7 @@
 !workspace_items.py
 !onboarding.py
 !dev_seed.py
+!v1_pdf.py
 !auth.js
 !workspace_items.js
 !onboarding.js
@@ -33,6 +34,8 @@
 !assets/momos-black.png
 !assets/PretendardVariable.woff2
 !assets/Pretendard-LICENSE.txt
+!assets/fonts/
+!assets/fonts/*.ttf
 !icons/
 !icons/*.png
 !icons/*.svg

@@ -1,5 +1,6 @@
 # Momos LMS — one container, Python stdlib server, sqlite on a mounted volume.
-# python3 from the OS plus the PostgreSQL driver (python3-psycopg, python3-psycopg-pool) for Supabase mode; no pip.
+# python3 from the OS plus the PostgreSQL driver (python3-psycopg, python3-psycopg-pool) for Supabase mode
+# and fpdf2 (python3-fpdf) for the per-item PDF; no pip.
 #
 # n3r: Build argument BASE_IMAGE=base.n3r.reg.navercorp.com/base/ubuntu:24.04 (Docker Hub is not reachable there),
 #      replicas 1 (sqlite has one writer), volume at /data, env LMS_PUBLIC_URL=https://<ingress host>,
@@ -12,11 +13,11 @@ ENV DEBIAN_FRONTEND=noninteractive PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 
 # The n3r base image starts as a non-root user; package installation needs root, the server does not.
 USER root
 # dist-upgrade pulls the base image's pending security patches; image scanners flag them otherwise.
-RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y --no-install-recommends python3 python3-psycopg python3-psycopg-pool ca-certificates \
+RUN apt-get update && apt-get dist-upgrade -y && apt-get install -y --no-install-recommends python3 python3-psycopg python3-psycopg-pool python3-fpdf ca-certificates \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
     && useradd --uid 10001 --create-home lms && mkdir -p /data && chown lms:lms /data
 WORKDIR /app
-COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py ./
+COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py v1_pdf.py ./
 COPY --chown=lms:lms auth.js workspace_items.js onboarding.js styles.css ./
 COPY --chown=lms:lms onboarding_course.json onboarding_reviews.json onboarding.html onboarding_login.html ./
 COPY --chown=lms:lms v1.html v1.js v1_graph.html v1_content.json v1_lessons.json curriculum.json ./
