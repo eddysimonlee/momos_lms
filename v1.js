@@ -324,6 +324,43 @@
       `<h2>수행 확인</h2><ul class="p-checks">${s.checks.map(c => `<li><span class="p-box"></span><span>${esc(c)}</span></li>`).join('')}</ul>` +
       `<div class="p-foot">콘텐츠 기준 ${esc(dateLabel(content.curriculumVersion))} · 출력 ${printed}</div>`;
   }
+
+  // --- 임시: 공유 테스트. WORKS 앱 안 브라우저에서 Web Share(파일)가 되는지 확인한다. 확인이 끝나면 지운다.
+  function testPdf() {
+    // 한 쪽짜리 최소 PDF(영문 한 줄). xref 위치를 계산해 유효한 파일로 만든다.
+    const objs = ['<</Type/Catalog/Pages 2 0 R>>', '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+      '<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>', null,
+      '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>'];
+    const text = 'BT /F1 20 Tf 72 760 Td (MOMOS share test) Tj ET';
+    objs[3] = `<</Length ${text.length}>>\nstream\n${text}\nendstream`;
+    let out = '%PDF-1.4\n'; const at = [];
+    objs.forEach((o, n) => { at.push(out.length); out += `${n + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = out.length;
+    out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n` + at.map(x => String(x).padStart(10, '0') + ' 00000 n \n').join('') +
+      `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF\n`;
+    return new File([out], 'momos_share_test.pdf', {type: 'application/pdf'});
+  }
+  function shareTest() {
+    closeMenu();
+    const file = testPdf(), lines = [];
+    const yn = v => v ? '예' : '아니오';
+    let canFiles = false;
+    try { canFiles = Boolean(navigator.canShare && navigator.canShare({files: [file]})); } catch (e) { lines.push('canShare 오류: ' + e.message); }
+    lines.unshift(`navigator.share 있음: ${yn(typeof navigator.share === 'function')}`, `navigator.canShare 있음: ${yn(typeof navigator.canShare === 'function')}`,
+      `PDF 파일 공유 가능: ${yn(canFiles)}`, `window.print 있음: ${yn(typeof window.print === 'function')}`, `UA: ${navigator.userAgent}`);
+    const show = extra => {
+      let box = $('v1Diag');
+      if (!box) { box = document.createElement('div'); box.id = 'v1Diag'; box.className = 'v1-note v1-diag'; $('app').prepend(box); }
+      box.textContent = '[공유 테스트]\n' + lines.concat(extra || []).join('\n');
+      window.scrollTo({top: 0, behavior: 'instant'});
+    };
+    show(['공유 시도 중…']);
+    // 누른 직후(같은 클릭 안)에 바로 share 를 불러야 iOS 가 공유 시트를 허용한다
+    if (typeof navigator.share !== 'function') return show(['결과: 이 화면에서는 공유 기능을 쓸 수 없음']);
+    const data = canFiles ? {files: [file], title: 'MOMOS 공유 테스트'} : {title: 'MOMOS 공유 테스트', url: location.href};
+    navigator.share(data).then(() => show([`결과: 공유 시트 열림 → 완료 (${canFiles ? 'PDF 파일' : '링크만'})`]))
+      .catch(e => show([`결과: ${e.name} — ${e.message}`, e.name === 'AbortError' ? '(공유 시트는 열렸고 취소함)' : '']));
+  }
   async function exportPdf() {
     closeMenu();
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
@@ -344,6 +381,7 @@
   $('v1Who').onclick = () => ERPAuth.openAccount();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
+  $('v1ShareTest').onclick = shareTest;
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
