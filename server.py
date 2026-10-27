@@ -535,6 +535,7 @@ def v1_content():
     """v1_content.json (빌드 산출물: 절·사진) 위에 v1_lessons.json (교육 목적·교육 내용·인용 글)을 덮어 돌려준다.
     글만 고칠 때는 v1_lessons.json 을 수정·커밋하면 되고, 새 절을 인용할 때만 v1_build.py 를 다시 돌린다."""
     content = json.loads((APP / 'v1_content.json').read_text(encoding='utf-8'))
+    key = lambda c: f'{c[0]}|{c[1]}' + (f'#{c[2]}' if len(c) > 2 and c[2] else '')  # v1_build.section_key 와 같은 규칙(표 일부 인용 '#r2')
     lessons_path = APP / 'v1_lessons.json'
     if lessons_path.exists():
         lessons = json.loads(lessons_path.read_text(encoding='utf-8')).get('lessons', {})
@@ -545,11 +546,11 @@ def v1_content():
                     continue
                 if l.get('title') and not step.get('curriculumTitle'): step['title'] = l['title']
                 if 'purpose' in l: step['purpose'] = l['purpose']
-                if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=['|'.join(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
-                if 'sources' in l: step['sources'] = ['|'.join(c) for c in l['sources']]
+                if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=[key(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
+                if 'sources' in l: step['sources'] = [key(c) for c in l['sources']]
                 if l.get('checks'):
                     step['checks'] = [c['text'] for c in l['checks']]
-                    step['checkCites'] = [['|'.join(x) for x in c.get('cites', [])] for c in l['checks']]
+                    step['checkCites'] = [[key(x) for x in c.get('cites', [])] for c in l['checks']]
     return content
 
 

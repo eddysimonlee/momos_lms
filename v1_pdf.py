@@ -68,7 +68,8 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
         if not sec:
             return key
         doc = documents.get(sec['doc']) or {}
-        return ' '.join(x for x in (doc.get('title', ''), sec['no'], sec['title']) if x)
+        label = ' '.join(x for x in (doc.get('title', ''), sec['no'], sec['title']) if x)
+        return label + (f" · {sec['partLabel']}" if sec.get('partLabel') else '')  # 표 일부 인용: '· 2행'
 
     pdf = _Doc()
     pdf.set_title(f"{index + 1}_{s['title']}")

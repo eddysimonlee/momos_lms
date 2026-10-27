@@ -27,8 +27,43 @@ STAGES = [1, 2]  # 교육과정 journey 순서: 1 입사·현장 적응, 2 기�
 SEP = ' › '
 
 
-def section_key(doc, ref):
-    return f'{doc}|{ref}'
+def section_key(doc, ref, part=None):
+    """part: 표의 일부만 인용할 때 — 'r1', 'r1-3,5'(행), 'c2'(열), 표가 여럿이면 앞에 't2:'. 행·열 번호는 1부터, 머리행 제외."""
+    return f'{doc}|{ref}' + (f'#{part}' if part else '')
+
+
+def _nums(spec):
+    out = []
+    for chunk in spec.split(','):
+        a, _, b = chunk.partition('-')
+        out += list(range(int(a), int(b or a) + 1))
+    return out
+
+
+def table_part(sec, part):
+    """절의 표 하나에서 지정한 행(또는 열)만 남긴 본문과 표시용 이름('1행', '1~3·5행', '3열', 표가 여럿이면 '표2 2·4행')."""
+    table_no, _, spec = part.rpartition(':')
+    t = int(table_no[1:]) if table_no else 1
+    if not 1 <= t <= len(sec['tables']):
+        raise KeyError(f'{sec["no"]} {sec["title"]}: 표 {t}번째가 없음')
+    tab = sec['tables'][t - 1]
+    kind, nums = spec[0], _nums(spec[1:])
+    size = len(tab['rows']) if kind == 'r' else len(tab['header'])
+    if kind not in 'rc' or not nums or not all(1 <= n <= size for n in nums):
+        raise KeyError(f'{sec["no"]} {sec["title"]}: "{part}" — 표 {t}의 {"행" if kind == "r" else "열"}은 1~{size}')
+    if kind == 'r':
+        tab = dict(header=tab['header'], rows=[tab['rows'][n - 1] for n in nums])
+    else:
+        tab = dict(header=[tab['header'][n - 1] for n in nums], rows=[[r[n - 1] if n - 1 < len(r) else '' for n in nums] for r in tab['rows']])
+    runs, i = [], 0
+    while i < len(nums):  # 1,2,3,5 → 1~3·5
+        j = i
+        while j + 1 < len(nums) and nums[j + 1] == nums[j] + 1:
+            j += 1
+        runs.append(str(nums[i]) if i == j else f'{nums[i]}~{nums[j]}')
+        i = j + 1
+    label = ('' if len(sec['tables']) == 1 else f'표{t} ') + '·'.join(runs) + ('행' if kind == 'r' else '열')
+    return tab, label
 
 
 def find_section(doc, ref):
@@ -101,12 +136,17 @@ def main():
         cites = [tuple(c) for kp in l.get('keyPoints', []) + (checks or []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])] \
             + [tuple(ph['cite']) for ph in l.get('photos', [])]
         sources = [list(c) for c in l['sources']] if l.get('sources') else list(dict.fromkeys(cites))
-        for doc, no in cites:
-            key = section_key(doc, no)
+        for c in cites:
+            doc, no, part = (list(c) + [None])[:3]
+            key = section_key(doc, no, part)
             if key not in used_sections:
                 sec = find_section(docs[doc], no)
-                used_sections[key] = dict(doc=doc, no=sec['no'], title=sec['title'], kind=sec['kind'], chars=sec['chars'],
-                                          images=sec['images'], paragraphs=sec['paragraphs'], tables=sec['tables'], hash=sec['hash'])
+                entry = dict(doc=doc, no=sec['no'], title=sec['title'], kind=sec['kind'], chars=sec['chars'],
+                             images=sec['images'], paragraphs=sec['paragraphs'], tables=sec['tables'], hash=sec['hash'])
+                if part:  # 표의 몇 행(열)만 인용: 본문 펼치기에도 머리행 + 그 행(열)만
+                    tab, label = table_part(sec, part)
+                    entry.update(paragraphs=[], tables=[tab], part=part, partLabel=label, base=section_key(doc, no))
+                used_sections[key] = entry
                 used_docs.add(doc)
         step = dict(id=s['id'], title=l.get('title') or s['title'], copy=s['copy'],
                     checks=[c['text'] for c in checks] if checks else s['checks'],
