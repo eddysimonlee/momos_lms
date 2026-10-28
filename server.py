@@ -227,6 +227,10 @@ class Handler(BaseHTTPRequestHandler):
             if method == 'GET' and path in ('/', '/onboarding/'):
                 # v1 is the home page; invite and reset fragments survive the redirect.
                 return self.redirect('/v1' + ('?' + parsed.query if parsed.query else ''))
+            if method == 'GET' and path in ('/auth/works/login', '/auth/works/callback'):
+                # NAVER WORKS 로그인: 시작(→ WORKS)과 돌아오는 곳. 세션 없이 열리고, 끝나면 LMS 세션을 만든다.
+                import works_auth
+                return works_auth.login(self) if path.endswith('/login') else works_auth.callback(self, query)
             auth = self.server.access
             filename = path[1:]
             public_get = method == 'GET' and (path == '/api/health' or filename in STATIC)
@@ -234,7 +238,7 @@ class Handler(BaseHTTPRequestHandler):
             session = None if public_get else auth.session(self.headers.get('Cookie'))
             user = session['user'] if session else None
             if path == '/api/auth/status' and method == 'GET':
-                return self.send(200, {'setupRequired': auth.setup_required(), 'setupAllowed': len(os.environ.get('ERP_BOOTSTRAP_TOKEN', '')) >= 32, 'user': user, 'csrfToken': session['csrfToken'] if session else None,'runtime':'cloud' if store.database else 'local', 'companies': auth.companies()})
+                return self.send(200, {'setupRequired': auth.setup_required(), 'setupAllowed': len(os.environ.get('ERP_BOOTSTRAP_TOKEN', '')) >= 32, 'user': user, 'csrfToken': session['csrfToken'] if session else None,'runtime':'cloud' if store.database else 'local', 'companies': auth.companies(), 'works': __import__('works_auth').enabled()})
             if path == '/api/auth/forgot-password' and method == 'POST':
                 auth.rate('forgot:' + self.client_address[0], limit=4)
                 account = auth.request_reset(self.body().get('email'))

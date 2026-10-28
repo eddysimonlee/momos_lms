@@ -392,13 +392,17 @@
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
-  // Local trial only: with no session yet, sign in as the first trial learner so nobody types a password.
-  // The server answers /api/dev/accounts only on a local run or with LMS_TRIAL=1; elsewhere this is a no-op
-  // and the normal login gate appears. WORKS SSO replaces both later.
+  // 로그인되어 있지 않으면: NAVER WORKS 로그인이 설정된 서버는 WORKS 로그인으로 보낸다(MOMOS uni 에서 열면 바로 이어짐).
+  // 설정 전(체험)에는 첫 체험 교육생으로 자동 로그인 — /api/dev/accounts 는 로컬 실행이나 LMS_TRIAL=1 에서만 답한다.
+  // 둘 다 아니면 기본 로그인 화면이 뜬다.
   async function devAutoLogin() {
     try {
       const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
       if (status.user) return;
+      if (status.works) {
+        location.replace('/auth/works/login');
+        return new Promise(() => {});  // 이동하는 동안 로그인 화면을 그리지 않는다
+      }
       const response = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
       if (!response.ok) return;
       const {accounts} = await response.json();

@@ -236,6 +236,10 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('GET',url.replace('/menu-glass?','/pickup-cup?'),cookie=False)[0],401)  # 다른 항목엔 못 씀
             self.assertEqual(req('GET',url[:-4]+'0000',cookie=False)[0],401)
             self.assertEqual(req('GET','/v1/pdf/no-such-step')[0],404)
+            # NAVER WORKS 로그인: 설정(WORKS_CLIENT_ID 등) 전에는 안내만 하고, status 에 works=false
+            self.assertEqual(req('GET','/auth/works/login',cookie=False)[0],503)
+            self.assertFalse(json.loads(req('GET','/api/auth/status',cookie=False)[2])['works'])
+            code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),55)  # curriculum.json: 6단계 55단원(2.10 OP2 / 2.11 OP3 분리)
             steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),85)
@@ -266,6 +270,16 @@ class EducationTests(unittest.TestCase):
             for removed in ('/api/state','/api/projects','/index.html','/app.js'):
                 self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()
+
+    def test_works_login_creates_member_once_and_blocks_inactive(self):
+        import works_auth
+        a=works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')
+        self.assertEqual((a['role'],a['status'],a['company']),('member','active','momos'))
+        self.assertEqual(works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')['id'],a['id'])
+        b=works_auth.find_or_create(self.store,'other@momos.co.kr','새직원','sub-2');self.assertEqual(b['name'],'새직원 (2)')  # 동명이인
+        with self.assertRaises(access.LoginRequired): self.auth.login(dict(email='new@momos.co.kr',password='works:'))  # 비밀번호 로그인 불가
+        with self.store.connect() as db: db.execute("UPDATE access_users SET status='disabled' WHERE id=?",(a['id'],))
+        with self.assertRaises(PermissionError): works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')
 
     def test_first_entry_enrols_the_learner_with_today_as_start(self):
         c=self.service.get(self.other);self.assertFalse(c['enrolled'])
