@@ -92,7 +92,7 @@ def login(handler):
     handler.send_response(302)
     handler.send_header('Location', f'{AUTH_BASE}/oauth2/v2.0/authorize?' + urlencode(params))
     # 돌아올 때(다른 사이트에서 오는 최상위 이동) 실려야 하므로 Lax. 10분, 이 경로에서만.
-    handler.send_header('Set-Cookie', f'{STATE_COOKIE}={state}; Path=/auth/works; HttpOnly; SameSite=Lax; Max-Age={STATE_SECONDS}' + _secure(handler))
+    handler.send_header('Set-Cookie', f'{STATE_COOKIE}={state}.{nonce}; Path=/auth/works; HttpOnly; SameSite=Lax; Max-Age={STATE_SECONDS}' + _secure(handler))
     handler.send_header('Content-Length', '0')
     handler.send_header('Cache-Control', 'no-store')
     handler.send_header('Referrer-Policy', 'no-referrer')
@@ -139,7 +139,7 @@ def callback(handler, query):
         jar.load(handler.headers.get('Cookie', ''))
     except Exception:
         pass
-    expected = jar[STATE_COOKIE].value if STATE_COOKIE in jar else ''
+    expected, _, nonce = (jar[STATE_COOKIE].value if STATE_COOKIE in jar else '').partition('.')
     if not expected or not secrets.compare_digest(expected, q('state')) or not q('code'):
         return _fail(handler, '로그인 요청이 만료되었어요. 처음부터 다시 시도해 주세요.')
     step = 'token'
@@ -148,11 +148,14 @@ def callback(handler, query):
         form = dict(code=q('code'), grant_type='authorization_code', client_id=cfg['client_id'],
                     client_secret=cfg['client_secret'], redirect_uri=_redirect_url(handler, cfg))
         token = _post_form(f'{AUTH_BASE}/oauth2/v2.0/token', form)
-        step = 'userinfo'
-        info = _get_json(f'{AUTH_BASE}/oauth2/v2.0/userinfo', token['access_token'])
+        step = 'id_token'
+        info = id_token_claims(token.get('id_token', ''), cfg['client_id'], nonce)
+        if not info.get('email'):  # id_token 에 email 이 없으면(scope 설정 등) userinfo 로 보충
+            step = 'userinfo'
+            info = {**info, **_get_json(f'{AUTH_BASE}/oauth2/v2.0/userinfo', token['access_token'])}
     except (HTTPError, URLError, KeyError, ValueError, TimeoutError) as e:
         _log_failure(step, e)
-        return _fail(handler, f'NAVER WORKS 와 통신하지 못했어요({"토큰" if step == "token" else "구성원 정보"} 단계). 잠시 후 다시 시도해 주세요.', 502)
+        return _fail(handler, f'NAVER WORKS 와 통신하지 못했어요({ {"token": "토큰", "id_token": "로그인 정보", "userinfo": "구성원 정보"}[step] } 단계). 잠시 후 다시 시도해 주세요.', 502)
     email = str(info.get('email', '')).strip().lower()
     name = str(info.get('name') or '').strip() or email.split('@')[0]
     if not info.get('sub') or '@' not in email or email.rsplit('@', 1)[1] not in cfg['allowed']:
@@ -168,6 +171,22 @@ def callback(handler, query):
     return _page(handler, 200, '모모스 온보딩',
                  '<meta http-equiv="refresh" content="0;url=/v1"><p>로그인했어요. 잠시만 기다려 주세요…</p>'
                  '<script>location.replace("/v1")</script><a href="/v1">계속하기</a>', cookies)
+
+
+def id_token_claims(id_token, client_id, nonce, now=None):
+    """토큰 엔드포인트에서 TLS 로 직접 받은 ID Token 의 클레임(OIDC Core 3.1.3.7: 이 경우 TLS 서버 검증으로 서명 검증을 대신할 수 있다).
+    발급자·대상(client_id)·만료·nonce 는 확인한다."""
+    import base64
+    parts = id_token.split('.')
+    if len(parts) != 3:
+        raise ValueError('id_token missing')
+    claims = json.loads(base64.urlsafe_b64decode(parts[1] + '=' * (-len(parts[1]) % 4)))
+    now = now or time.time()
+    aud = claims.get('aud')
+    if not str(claims.get('iss', '')).startswith(AUTH_BASE) or (client_id not in aud if isinstance(aud, list) else aud != client_id) \
+            or not (float(claims.get('exp', 0)) > now - 60) or (nonce and claims.get('nonce') and claims['nonce'] != nonce):
+        raise ValueError('id_token claims invalid')
+    return {k: claims.get(k) for k in ('sub', 'email', 'name') if claims.get(k)}
 
 
 def find_or_create(store, email, name, sub):
