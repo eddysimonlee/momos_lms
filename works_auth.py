@@ -295,7 +295,7 @@ def avatar_key(user_id):
 def fetch_photo(access_token, member_id):
     """WORKS 구성원 사진(GET /users/{userId}/photo → 302 파일 주소). 사진이 없으면 None."""
     from urllib.parse import quote
-    req = Request(f'{API_BASE}/users/{quote(member_id, safe="")}/photo', headers={**UA, 'Authorization': 'Bearer ' + access_token, 'Accept': 'image/*'})
+    req = Request(f'{API_BASE}/users/{quote(member_id, safe="")}/photo', headers={**UA, 'Authorization': 'Bearer ' + access_token, 'Accept': '*/*'})  # image/* 는 406(NOT_ACCEPTABLE)
     try:
         with urlopen(req, timeout=10) as r:  # 302 는 urllib 가 따라간다(Authorization 헤더 유지)
             raw = r.read(5_000_001)
