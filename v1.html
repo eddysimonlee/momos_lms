@@ -29,11 +29,6 @@
 .v1-top h1{max-width:100%;margin:0;font:var(--title-xs-bold);color:var(--text-default);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 /* account button = tag outline xs pill */
 .v1-top .v1-who{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer;max-width:44vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* dev switcher = banner yellow, round */
-.v1-dev{display:flex;gap:var(--spacing-8);align-items:center;flex-wrap:wrap;min-height:var(--component-banner-base-height);padding:var(--component-banner-base-padding-y) var(--component-banner-type-round-padding-x);background:var(--component-banner-color-yellow-surface);color:var(--component-banner-color-yellow-text);font:var(--component-banner-base-typography)}
-.v1-dev[hidden]{display:none}
-.v1-dev button{appearance:none;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border:var(--component-tag-color-outline-border-width) solid var(--component-tag-color-outline-border-color);background:var(--component-tag-color-outline-surface);color:var(--component-tag-color-outline-text-color);border-radius:var(--component-tag-type-pill-border-radius);font:var(--label-sm);cursor:pointer}
-.v1-dev button.on{background:var(--component-tag-color-solid-surface);border-color:var(--component-tag-color-solid-surface);color:var(--component-tag-color-solid-text-color)}
 .v1-main{max-width:600px; /* wds-allow: 읽기 폭 상한, 레이아웃 토큰 없음 */margin:0 auto;padding:var(--spacing-16) var(--spacing-16) var(--spacing-48)}
 .v1-card{background:var(--surface-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--spacing-16);margin-bottom:var(--spacing-12)}
 .v1-card h2{margin:0 0 var(--spacing-4);font:var(--title-xs-bold)}
@@ -165,6 +160,10 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-branch-icon svg{width:28px;height:28px} /* wds-allow: 아이콘 크기 */
 .v1-branch-name{font:var(--body-lg-bold)}
 .v1-branch-soon{font:var(--label-xs);color:var(--text-default-disabled)}
+.v1-branch-desc{font:var(--body-sm);color:var(--text-muted);text-align:center}
+.v1-branch-card.on{border-color:var(--border-primary)}
+.v1-branch-card.on .v1-branch-soon{color:var(--text-primary)}
+.v1-branch .v1-stage-tag{margin-top:var(--spacing-8)}
 .v1-branch-card:disabled{cursor:not-allowed;background:var(--surface-default-disabled);border-color:var(--border-default-disabled);color:var(--text-default-disabled)}
 .v1-branch-card:disabled .v1-branch-icon{background:var(--surface-fill-disabled);color:var(--icon-default-disabled)}
 /* 더보기(⋮) = icon button ghost md round. WDS 0.4.0 에 세로 점 3개 아이콘이 없어 직접 그린다 */
@@ -177,6 +176,9 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 /* 메뉴 = popover 표면 + menu item */
 .v1-menu{position:absolute;right:0;top:calc(100% + var(--spacing-4));min-width:168px; /* wds-allow: 메뉴 최소 폭 */padding:var(--spacing-4);background:var(--surface-default);border-radius:var(--component-popover-base-border-radius);box-shadow:var(--component-popover-base-shadow);z-index:var(--component-layout-z-index-gnb)}
 .v1-menu[hidden]{display:none}
+.v1-menu [hidden]{display:none}
+.v1-menu button small{margin-left:auto;padding-left:var(--spacing-12);font:var(--label-sm);color:var(--text-muted)}
+.v1-menu-sep{border:0;border-top:1px solid var(--border-subtle);margin:var(--spacing-4) 0}
 .v1-menu button{appearance:none;border:0;display:flex;align-items:center;gap:var(--component-menu-item-base-content-gap);width:100%;height:var(--component-menu-item-base-height);padding:0 var(--component-menu-item-base-padding-x);border-radius:var(--component-menu-item-base-radius);background:transparent;color:var(--component-menu-item-state-default-label-text-color);font:var(--component-menu-item-state-default-label-typography);white-space:nowrap;cursor:pointer;text-align:left}
 .v1-menu button:hover{background:var(--component-menu-item-state-hover-background);color:var(--component-menu-item-state-hover-label-text-color)}
 /* PDF 내보내기: 화면에는 숨기고, 인쇄할 때만 이 영역만 찍는다. 종이는 항상 밝은 배경이라 인쇄 색은 고정값 */
@@ -219,10 +221,9 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Who" class="v1-who" title="내 계정">…</button>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
-      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>
+      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button><hr id="v1MenuSep" class="v1-menu-sep"><button type="button" role="menuitem" id="v1MenuBranch">지점 변경</button><button type="button" role="menuitem" id="v1MenuRole">역할 변경</button></div>
     </div>
   </header>
-  <div id="v1Dev" class="v1-dev" hidden></div>
   <main id="app" class="v1-main"></main>
   <div id="v1Toast" class="v1-toast" role="status"></div>
 </div>

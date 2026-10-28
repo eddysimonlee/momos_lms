@@ -7,7 +7,7 @@
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
-  let shownView = null, keepFocus = null, devBar = false;
+  let shownView = null, keepFocus = null, pickBranch = null;  // pickBranch: 지점을 고른 뒤 역할을 고르기 전
   let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
@@ -60,7 +60,9 @@
   const canWrite = () => cloud.enrolled && cloud.scheduled;
   // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
   // The record still stores who confirmed each check, so trainers can be split out later.
-  const isStaff = () => Boolean(cloud.workspaceRoles.admin || cloud.workspaceRoles.trainer || cloud.workspaceRoles.assessor);
+  // 화면의 역할은 첫 진입에서 고른 것(계정에 저장)을 따른다. 고르기 전(예전 계정)에는 서버 권한으로 판단.
+  const profile = () => cloud.profile || null;
+  const isStaff = () => profile() ? profile().role === 'staff' : Boolean(cloud.workspaceRoles.admin || cloud.workspaceRoles.trainer || cloud.workspaceRoles.assessor);
   const role = () => cloud.permissions.own ? 'learner' : isStaff() ? 'staff' : 'viewer';
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
@@ -69,19 +71,21 @@
   function render() {
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
-    const branch = view === 'branch';
-    // 지점 선택(첫 화면) ← 홈(교육 목록) ← 항목. 꺽쇠는 한 단계 위로. 역할 전환·계정 칩은 지점을 고른 뒤에만.
-    $('v1Back').hidden = branch;
-    $('v1Back').setAttribute('aria-label', step ? '교육 목록으로' : '지점 선택으로');
+    const branch = view === 'branch' || view === 'role';
+    // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
+    // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
+    const backTo = step ? 'home' : view === 'role' ? 'branch' : view === 'branch' && profile() ? 'home' : null;
+    $('v1Back').hidden = !backTo;
+    $('v1Back').dataset.to = backTo || '';
+    $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : '교육 목록으로');
     $('v1Title').textContent = step ? step.title : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
     $('v1Who').textContent = cloud.user.name;
-    $('v1Who').hidden = branch;
-    $('v1More').hidden = !step || planned(step);
+    $('v1Who').hidden = branch && !profile();
+    $('v1More').hidden = !profile();  // 지점·역할을 정한 뒤부터: 지점·역할 변경, (항목 화면) PDF
     closeMenu();
-    if (devBar) $('v1Dev').hidden = branch;
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
     const app = $('app'), same = view === shownView, y = window.scrollY;
     if (!same && shownView === 'home') homeScroll = {stage: stageSel, y};  // 항목을 누른 직후라 stageSel 은 보던 탭(= 그 항목의 단계)
@@ -91,7 +95,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = branch ? branchView() : step ? stepView(step) : homeView();
+    app.innerHTML = view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : homeView();
     bind(step);
     if (same) {
       opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
@@ -123,10 +127,38 @@
   const BRANCHES = [{id: 'oncheon', name: '온천 본점', ready: true}, {id: 'yeongdo', name: '영도점'}, {id: 'marine', name: '마린시티점'}, {id: 'domoheon', name: '도모헌점'}];
   const STORE_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M3 9l1.6-4.3A1 1 0 0 1 5.5 4h13a1 1 0 0 1 .9.7L21 9a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 12 11a2.5 2.5 0 0 1-4.5-.5A2.5 2.5 0 0 1 3 9ZM10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';  // wds-allow: 상점 아이콘(mono/24 store 자산 반입 전 임시 인라인 SVG)
   function branchView() {
+    const cur = profile() && profile().branch;
     return `<section class="v1-branch"><h2>교육을 진행할 지점을 선택해 주세요.</h2><p class="v1-muted">선택한 지점의 교육 과정으로 이동합니다.</p>` +
       `<div class="v1-branches">${BRANCHES.map(b => b.ready
-        ? `<button type="button" class="v1-branch-card" data-branch="${b.id}"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span></button>`
+        ? `<button type="button" class="v1-branch-card${b.id === cur ? ' on' : ''}" data-branch="${b.id}" aria-pressed="${b.id === cur}"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span>${b.id === cur ? '<span class="v1-branch-soon">현재</span>' : ''}</button>`
         : `<button type="button" class="v1-branch-card" disabled aria-disabled="true" title="교육 과정 준비 중"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span><span class="v1-branch-soon">준비 중</span></button>`).join('')}</div></section>`;
+  }
+
+  // 지점 다음: 교육생 / 관리자. 고른 값은 계정에 저장되어 다음 로그인에도 유지된다.
+  const ROLES = [
+    {id: 'learner', name: '교육생', desc: '내 교육을 진행하고 기록해요',
+     icon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'},  // wds-allow: 사람 아이콘(임시 인라인)
+    {id: 'staff', name: '관리자', desc: '교육생의 수행을 확인하고 관리해요',
+     icon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3.5 5 6.2v5.3c0 4.3 2.9 7.7 7 9 4.1-1.3 7-4.7 7-9V6.2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2.2 2.2L15.5 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'},  // wds-allow: 방패 체크 아이콘(임시 인라인)
+  ];
+  function roleView() {
+    const b = BRANCHES.find(x => x.id === (pickBranch || (profile() && profile().branch))) || BRANCHES[0];
+    const cur = profile() && profile().branch === b.id ? profile().role : null;
+    return `<section class="v1-branch"><span class="v1-stage-tag">${esc(b.name)}</span><h2>어떤 역할로 들어가시나요?</h2><p class="v1-muted">선택한 역할은 다음 로그인에도 유지돼요. 바꾸려면 오른쪽 위 ⋮ 를 누르세요.</p>` +
+      `<div class="v1-branches">${ROLES.map(r => `<button type="button" class="v1-branch-card${r.id === cur ? ' on' : ''}" data-role="${r.id}" aria-pressed="${r.id === cur}" ${busy ? 'disabled' : ''}><span class="v1-branch-icon">${r.icon}</span><span class="v1-branch-name">${esc(r.name)}</span><span class="v1-branch-desc">${esc(r.desc)}</span>${r.id === cur ? '<span class="v1-branch-soon">현재</span>' : ''}</button>`).join('')}</div></section>`;
+  }
+
+  // 역할 저장 → 교육생이면 (처음이면) 오늘부터 교육 시작, 관리자면 첫 교육생 기록을 연다 → 홈
+  async function chooseRole(role) {
+    const branch = pickBranch || (profile() && profile().branch) || BRANCHES[0].id;
+    if (cloud.target !== cloud.user.id) cloud = await api('GET');
+    if (!(await act('profile.set', {branch, role}))) return;
+    pickBranch = null;
+    if (role === 'learner' && !cloud.enrolled) await act('config.selfEnrol', {});
+    if (role === 'staff' && others().length) cloud = await api('GET', null, others()[0].id);
+    if (role === 'learner' && cloud.target !== cloud.user.id) cloud = await api('GET');
+    view = 'home'; stageSel = null; render();
+    toast(`${BRANCHES.find(x => x.id === branch).name} · ${ROLES.find(x => x.id === role).name}(으)로 들어왔어요.`);
   }
 
   function peopleBar() {
@@ -196,7 +228,6 @@
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
     const i = stepIndex(s.id), next = steps()[i + 1];
     const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
-    const editTeacher = staff && mayConfirm() && canWrite() && st === 'review';
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.trim() : key; };
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
       r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -214,8 +245,8 @@
     // 수행 확인에는 근거 본문을 달지 않는다(근거 문서는 교육 내용에서 본다). checkCites 데이터·매핑은 그대로 둔다.
     const checkCites = () => '';
     const checks = '<ul class="v1-checks">' + s.checks.map((c, k) => {
-      if (staff) {
-        return `<li><label><input type="checkbox" data-teacher="${k}" ${r.teacher[k] ? 'checked' : ''} ${editTeacher && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
+      if (staff) {  // 관리자: 교육생이 체크한 상태를 보기만 한다(항목별 체크 없음, 승인은 아래 버튼)
+        return `<li><label><input type="checkbox" ${r.self[k] ? 'checked' : ''} disabled><span class="v1-box"></span><span>${esc(c)}` +
           `<span class="v1-by">교육생 ${r.self[k] ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}${r.teacher[k] ? ' · 담당자 확인 ' + dateLabel(r.teacherAt[k]) : ''}</span></span></label>${checkCites(k)}</li>`;
       }
       return `<li><label><input type="checkbox" data-self="${k}" ${r.self[k] ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span><span>${esc(c)}` +
@@ -240,8 +271,10 @@
     if (own && (st === 'ready' || st === 'practice')) {
       const ready = r.self.every(Boolean);
       actions = `<button class="v1-btn primary" data-request ${ready && canWrite() && !busy ? '' : 'disabled'}>담당자 확인 요청</button>`;
-    } else if (staff && st === 'review') {
-      actions = `<button class="v1-btn primary" data-complete ${r.teacher.every(Boolean) && mayConfirm() && !busy ? '' : 'disabled'}>확인 완료</button>`;
+    } else if (staff && (st === 'review' || st === 'done') && mayConfirm()) {
+      // 관리자 승인: 확인 요청된 항목은 확인 완료 또는 재교육(사유), 완료된 항목은 재교육만
+      if (st === 'review') actions = `<button class="v1-btn primary" data-complete ${busy ? 'disabled' : ''}>확인 완료</button>`;
+      actions += `<button class="v1-btn" data-retry-open ${busy ? 'disabled' : ''}>재교육</button>`;
     }
     if (next) actions += `<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`;
     const memo = own || r.memo ? `<section class="v1-card"><h2>메모</h2><div class="v1-muted">어려웠던 점, 담당자에게 확인할 내용</div>` +
@@ -253,14 +286,17 @@
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       (s.contentOmitted ? '' : `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">항목을 누르면 근거가 된 원본 본문이 그 자리에서 펼쳐져요.</p>${keyPoints}${refDocs}</section>`) +
-      `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 항목을 현장에서 확인하고 체크하세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
+      `<section class="v1-card"><h2>수행 확인</h2><div class="v1-muted">${own ? '직접 해 보고 하나씩 체크하세요. 다 체크하면 담당자에게 확인을 요청할 수 있어요.' : staff ? (mayConfirm() ? '교육생이 체크한 내용이에요. 확인 요청이 오면 현장에서 보고 확인 완료 또는 재교육을 눌러 주세요.' : '이 교육생의 확인 담당자는 ' + esc(cloud.roster.find(x => x.id === cloud.target)?.trainer || '미배정') + '님이에요.') : '교육생 본인과 담당자만 체크할 수 있어요.'}</div>${checks}</section>` +
       memo +
-      (actions ? `<div class="v1-actions">${actions}</div>` : '');
+      (actions ? `<div class="v1-actions">${actions}</div>` : '') +
+      (staff && mayConfirm() && (st === 'review' || st === 'done') ? `<section class="v1-card v1-retry" id="v1Retry" hidden><h2>재교육 사유</h2><div class="v1-muted">교육생에게 보여요. 이 항목은 다시 실습할 수 있는 상태로 돌아가요.</div>` +
+        `<textarea class="v1-memo" data-retry-reason maxlength="2000" placeholder="예: 소서 매칭을 다시 연습해 주세요"></textarea><div class="v1-actions"><button class="v1-btn primary" data-retry-send>재교육 요청</button><button class="v1-btn" data-retry-cancel>취소</button></div></section>` : '');
   }
 
   function bind(step) {
     const app = $('app');
-    app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { view = 'home'; render(); });
+    app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; view = 'role'; render(); });
+    app.querySelectorAll('[data-role]').forEach(b => b.onclick = () => chooseRole(b.dataset.role).catch(e => toast(e.message)));
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
@@ -272,34 +308,23 @@
     });
     if (!step) return;
     app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => (keepFocus = `[data-self="${c.dataset.self}"]`, act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked})));
-    app.querySelectorAll('[data-teacher]').forEach(c => c.onchange = () => (keepFocus = `[data-teacher="${c.dataset.teacher}"]`, act('step.teacher', {step: step.id, index: Number(c.dataset.teacher), on: c.checked})));  // 누른 체크박스 = 다시 그릴 때의 기준점·포커스(Safari 는 클릭해도 포커스를 안 준다)
     const memo = app.querySelector('[data-memo]');
     if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('메모를 저장했어요.')); };
     const request = app.querySelector('[data-request]');
     if (request) request.onclick = () => act('step.request', {step: step.id}).then(ok => ok && toast('담당자에게 확인을 요청했어요.'));
     const complete = app.querySelector('[data-complete]');
     if (complete) complete.onclick = () => act('step.complete', {step: step.id}).then(ok => ok && toast('확인 완료로 기록했어요.'));
+    const retryBox = app.querySelector('#v1Retry'), open = app.querySelector('[data-retry-open]');
+    if (open && retryBox) open.onclick = () => { retryBox.hidden = false; retryBox.querySelector('textarea').focus(); retryBox.scrollIntoView({block: 'nearest', behavior: 'instant'}); };
+    const cancel = app.querySelector('[data-retry-cancel]');
+    if (cancel) cancel.onclick = () => { retryBox.hidden = true; };
+    const send = app.querySelector('[data-retry-send]');
+    if (send) send.onclick = () => {
+      const reason = retryBox.querySelector('textarea').value.trim();
+      if (!reason) { toast('재교육 사유를 적어 주세요.'); return; }
+      act('step.retry', {step: step.id, reason}).then(ok => ok && toast('재교육으로 돌렸어요. 교육생 화면에 사유가 보여요.'));
+    };
   }
-
-  // Trial only: the server answers /api/dev/accounts on a local run or when started with LMS_TRIAL=1.
-  async function devSwitcher() {
-    const bar = $('v1Dev');
-    try {
-      const response = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
-      if (!response.ok) return;
-      const data = await response.json();
-      if (!data.accounts.length) return;
-      bar.innerHTML = '<span>역할 전환</span>' + data.accounts.map(a =>
-        `<button data-dev="${esc(a.id)}" class="${a.id === data.current ? 'on' : ''}">${esc(a.name)}</button>`).join('');
-      devBar = true; bar.hidden = view === 'branch';
-      bar.querySelectorAll('[data-dev]').forEach(b => b.onclick = async () => {
-        const r = await fetch('/api/dev/accounts?id=' + encodeURIComponent(b.dataset.dev), {method: 'POST', credentials: 'same-origin',
-          headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''}, body: '{}'});
-        if (r.ok) { try { sessionStorage.setItem('v1.skipBranch', '1'); } catch {} location.reload(); } else toast('계정을 바꾸지 못했어요.');
-      });
-    } catch {}
-  }
-
 
   // --- 더보기 메뉴 · PDF 내보내기(항목 하나). 브라우저 인쇄 → 'PDF로 저장'.
   // 원문 본문·상태 안내·메모·버튼은 빼고, 수행 확인은 빈 체크박스로 찍는다.
@@ -349,6 +374,11 @@
   }
   function onMenuOpen() {
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
+    const p = profile(), b = p && BRANCHES.find(x => x.id === p.branch), r = p && ROLES.find(x => x.id === p.role);
+    $('v1MenuBranch').innerHTML = `지점 변경<small>${esc(b ? b.name : '')}</small>`;
+    $('v1MenuRole').innerHTML = `역할 변경<small>${esc(r ? r.name : '')}</small>`;
+    $('v1ExportPdf').hidden = !s || planned(s);
+    $('v1MenuSep').hidden = $('v1ExportPdf').hidden;
     if (!s || planned(s)) return;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
@@ -385,10 +415,12 @@
     window.print();
   }
 
-  $('v1Back').onclick = () => { view = view.startsWith('step:') ? 'home' : 'branch'; render(); };
+  $('v1Back').onclick = () => { const to = $('v1Back').dataset.to; if (to) { view = to; render(); } };
   $('v1Who').onclick = () => ERPAuth.openAccount();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
+  $('v1MenuBranch').onclick = () => { closeMenu(); pickBranch = null; view = 'branch'; render(); };
+  $('v1MenuRole').onclick = () => { closeMenu(); pickBranch = profile() && profile().branch; view = 'role'; render(); };
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
@@ -412,16 +444,32 @@
     } catch {}
   }
 
+  // 같은 자리에서 함께 보는 현장: 5초마다 지금 보는 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
+  // 화면이 보일 때만, 저장 중이 아닐 때만, 글을 입력하는 중(메모·재교육 사유)이 아닐 때만.
+  setInterval(async () => {
+    if (!cloud || !content || busy || document.visibilityState !== 'visible' || view === 'branch' || view === 'role') return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT' && a.type === 'text')) return;
+    if ($('v1Retry') && !$('v1Retry').hidden) return;
+    try {
+      const fresh = await api('GET', null, cloud.target);
+      if (busy || fresh.target !== cloud.target) return;
+      if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision) { cloud = fresh; render(); }
+    } catch {}
+  }, 5000);
+
   // --- start: sign in (automatically on a local trial), load the slice and the record, pick a sensible first target
   devAutoLogin().then(() => ERPAuth.ensureSession()).then(async () => {
     const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
-    try { if (sessionStorage.getItem('v1.skipBranch')) { sessionStorage.removeItem('v1.skipBranch'); view = 'home'; } } catch {}  // 역할 전환 직후의 새로고침
     cloud = await api('GET');
-    if (!cloud.enrolled && !isStaff()) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
-    if (!cloud.enrolled && isStaff() && others().length) cloud = await api('GET', null, others()[0].id);
+    // 지점·역할을 이미 골랐으면 바로 홈. 처음이면 지점 → 역할 화면(교육 시작·첫 교육생 열기는 역할을 고른 뒤)
+    if (profile()) {
+      view = 'home';
+      if (!isStaff() && !cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
+      if (isStaff() && others().length) cloud = await api('GET', null, others()[0].id);
+    }
     render();
-    devSwitcher();
   }).catch(e => { $('app').innerHTML = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(e.message)}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button></div>`; });
 })();

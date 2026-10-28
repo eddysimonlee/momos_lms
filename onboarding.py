@@ -62,6 +62,11 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 
+# 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
+LATEST_OK = {'step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+# v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
+BRANCHES = {'oncheon': '온천 본점'}
+
 class InquiryHTML(HTMLParser):
     """Only formatting and this author's validated education image references."""
     tags={'p','div','br','strong','b','em','i','u','ul','ol','li','blockquote'}
@@ -191,13 +196,18 @@ class Service:
         return (user['company']=='momos' or user['id'] in root['technical'] or user['id'] in root['content']
                 or any(user['id'] in (x['trainer'],x['assessor']) for x in root['learners'].values()))
 
+    def lms_staff(self, root, user):
+        """v1 첫 진입에서 '관리자'를 고른 모모스 구성원: 교육생 기록을 보고 확인한다(배정 관리·권한 변경은 하지 않음)."""
+        return user['company'] == 'momos' and root.get('profiles', {}).get(user['id'], {}).get('role') == 'staff'
+
     def roles(self, root, user, target):
         entry = root['learners'].get(target)
         own = user['id'] == target and bool(entry)
-        # 1차: 배정 없이 운영한다. 관리자는 누구의 교육이든 확인할 수 있다(본인 것은 제외). 배정된 교육자·평가자도 그대로 인정.
-        admin=self.admin(user)
-        return dict(own=own, trainer=bool(entry and not own and (admin or user['id']==entry['trainer'])),
-                    assessor=bool(entry and not own and (admin or user['id']==entry['assessor'])),
+        # 1차: 배정 없이 운영한다. 관리자(모모스 관리자·v1 에서 관리자를 고른 구성원)는 누구의 교육이든 확인할 수 있다(본인 것은 제외).
+        # 배정된 교육자·평가자도 그대로 인정. 교육 배정(config.*)은 모모스 관리자(admin)만.
+        admin=self.admin(user); staff=self.lms_staff(root,user)
+        return dict(own=own, trainer=bool(entry and not own and (admin or staff or user['id']==entry['trainer'])),
+                    assessor=bool(entry and not own and (admin or staff or user['id']==entry['assessor'])),
                     admin=admin,technical=user['id'] in root['technical'],content=user['id'] in root['content'])
 
     def may_view(self, root, user, target):
@@ -231,7 +241,7 @@ class Service:
                   for i,x in root['learners'].items() if i in users and self.may_view(root,user,i)]
         if not any(x['id']==user['id'] for x in roster):
             roster.insert(0,dict(id=user['id'],name=user['name'],join=None,startDate=None,trainer='미배정',assessor='미배정'))
-        workspace_roles=dict(admin=self.admin(user),learner=user['id'] in root['learners'],
+        workspace_roles=dict(admin=self.admin(user),staff=self.lms_staff(root,user),learner=user['id'] in root['learners'],
                              trainer=any(x['trainer']==user['id'] for x in root['learners'].values()),
                              assessor=any(x['assessor']==user['id'] for x in root['learners'].values()),
                              technical=user['id'] in root['technical'],content=user['id'] in root['content'])
@@ -251,6 +261,7 @@ class Service:
         lesson_notes=[{k:copy.deepcopy(r[k]) for k in ('id','title','category','step','relatedSteps','needed','evidence','sourceFile','sourceVersion','checkedAt') if k in r} for r in SYSTEM_REVIEWS if root.get('systemReviews',{}).get(r['id'],{}).get('status')!='applied']
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
+                    profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
@@ -411,10 +422,13 @@ class Service:
             if old:
                 if old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
                 return self.context(db,root,user,target)
-            root_action = action.startswith(('config.','ticket.','notification.','system.'))
+            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.'))
             if type(v.get('rootRevision' if root_action else 'revision')) is not int:
                 raise ValueError('서버 판본을 확인하세요.')
-            if root_action and action!='notification.read' and v['rootRevision']!=root['revision']:
+            # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
+            # 저장은 한 건씩 차례로 처리되고(BEGIN IMMEDIATE / advisory lock), 상태 규칙은 education() 이 최신 기록으로 다시 확인한다.
+            latest_ok = action in LATEST_OK
+            if root_action and action!='notification.read' and not latest_ok and v['rootRevision']!=root['revision']:
                 raise projects.Conflict('교육 배정·문의 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
             p = self.roles(root,user,target)
             if action == 'notification.read':
@@ -427,6 +441,8 @@ class Service:
                 readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))[-500:]
             elif action=='config.selfEnrol':
                 self.self_enrol(db,root,user,data)
+            elif action=='profile.set':
+                self.set_profile(root,user,target,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -438,7 +454,7 @@ class Service:
                 entry = root['learners'].get(target)
                 if not entry: raise ValueError('관리자가 교육생·입사일·교육자를 먼저 배정해야 합니다.')
                 learner = fit(projects.Rooms.read(db,entry['key']))
-                if v['revision']!=learner['revision']:
+                if not latest_ok and v['revision']!=learner['revision']:
                     raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
                 self.education(db,root,user,p,learner,action,data)
                 learner['revision']+=1
@@ -524,6 +540,15 @@ class Service:
             add('material:'+doc['id']+':'+doc['hash'],'교육 참고자료 반영 · '+doc['title'],
                 doc['status']+' · 반영일 '+doc['reflectedAt'],doc['reflectedAt'],target=user['id'],view='materials',material=doc['id'])
         return sorted(items,key=lambda n:(n.get('date') or '',n['id']),reverse=True)[:200]
+
+    def set_profile(self, root, user, target, d):
+        """v1 첫 진입에서 고른 지점·역할을 계정에 저장한다. 다음 로그인부터는 묻지 않고, 우상단 메뉴에서 바꾼다."""
+        if target != user['id']: raise PermissionError('본인의 지점·역할만 바꿀 수 있습니다.')
+        if not isinstance(d,dict) or set(d)!={'branch','role'}: raise ValueError('지점과 역할을 선택해 주세요.')
+        if d['branch'] not in BRANCHES: raise ValueError('교육 과정이 있는 지점을 선택해 주세요.')
+        if d['role'] not in ('learner','staff'): raise ValueError('교육생 또는 관리자를 선택해 주세요.')
+        if user['company']!='momos': raise PermissionError('모모스 계정만 선택할 수 있습니다.')
+        root.setdefault('profiles',{})[user['id']]=dict(branch=d['branch'],role=d['role'],at=stamp())  # 누가 언제 바꿨는지는 공통 audit 에 남는다
 
     def self_enrol(self, db, root, user, d):
         """처음 들어온 교육생을 바로 등록한다: 입사일·교육 시작일 = 오늘, 담당자 미배정(관리자 누구나 확인)."""
@@ -680,12 +705,17 @@ class Service:
             if r['status']!='practice' or not all(r['self']):raise ValueError('직원 실습 체크를 모두 완료하세요.')
             r['status']='review';r['request']=today()
         elif action=='step.complete':
-            if r['status']!='review' or not all(r['teacher']):raise ValueError('교육자가 실습 항목을 모두 확인하세요.')
+            # v1: 관리자는 항목별로 체크하지 않고, 교육생이 확인 요청한 항목을 보고 한 번에 확인 완료한다
+            if r['status']!='review':raise ValueError('교육생이 확인 요청한 항목만 확인 완료할 수 있습니다.')
+            n=len(s['checks']);by=r.setdefault('teacherBy',[None]*n)
+            for i in range(n):
+                if not r['teacher'][i]:r['teacher'][i]=True;r['teacherAt'][i]=today();by[i]=user['id']
             r['status']='done';r['done']=today();r['completedBy']=user['id']
         elif action=='step.memo':
             if r['status'] not in ('ready','practice'):raise ValueError('확인 요청·완료 후 메모는 보존합니다.')
             r['memo']=projects.text(d['memo'],4000)
         elif action=='step.retry':
+            if r['status'] not in ('review','done'):raise ValueError('확인 요청 또는 완료된 항목만 재교육으로 돌릴 수 있습니다.')
             reason=projects.text(d['reason'],2000,True)
             history=copy.deepcopy(r['history']);old=copy.deepcopy(r);old.pop('history');old['archived']=today();old['archivedBy']=user['id'];history.append(old)
             new=blank(l['join'])['records'][ident];new.update(history=history,attempt=r['attempt']+1,feedback=reason)

@@ -105,10 +105,11 @@ class EducationTests(unittest.TestCase):
     def test_own_checks_teacher_confirmation_and_retries_are_separate(self):
         ident=self.ready_review()
         with self.assertRaises(PermissionError):self.act(self.learner,'step.teacher',dict(step=ident,index=0,on=True))
-        with self.assertRaises(ValueError):self.act(self.trainer,'step.complete',dict(step=ident),self.learner['id'])
-        for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.trainer,'step.teacher',dict(step=ident,index=i,on=True),self.learner['id'])
-        c=self.act(self.trainer,'step.complete',dict(step=ident),self.learner['id'])
-        self.assertEqual(c['learner']['records'][ident]['status'],'done');self.assertEqual(c['learner']['records'][ident]['completedBy'],self.trainer['id'])
+        with self.assertRaises(PermissionError):self.act(self.learner,'step.complete',dict(step=ident))  # 자기 승인 불가
+        c=self.act(self.trainer,'step.complete',dict(step=ident),self.learner['id'])  # v1: 항목별 체크 없이 확인 요청을 한 번에 승인
+        r=c['learner']['records'][ident]
+        self.assertEqual(r['status'],'done');self.assertEqual(r['completedBy'],self.trainer['id']);self.assertTrue(all(r['teacher']));self.assertEqual(set(r['teacherBy']),{self.trainer['id']})
+        with self.assertRaises(ValueError):self.act(self.trainer,'step.complete',dict(step=ident),self.learner['id'])  # 이미 완료
         c=self.act(self.learner,'step.retry',dict(step=ident,reason='다시 연습'))
         r=c['learner']['records'][ident];self.assertEqual(r['attempt'],2);self.assertEqual(r['history'][0]['status'],'done');self.assertFalse(any(r['self']))
         self.assertEqual(self.erp_snapshot(),self.erp_before)
@@ -129,7 +130,9 @@ class EducationTests(unittest.TestCase):
         ident=next(iter(ob.STEPS));v=self.payload(self.learner,'step.self',dict(step=ident,index=0,on=True));stale=copy.deepcopy(v);stale['requestId']=str(uuid.uuid4())
         c=self.service.update(self.learner,v);rev=c['learner']['revision']
         self.assertEqual(self.service.update(self.learner,v)['learner']['revision'],rev)
-        with self.assertRaises(projects.Conflict):self.service.update(self.learner,stale)
+        # 체크는 예전 판본으로 보내도 최신 기록에 얹는다(같은 자리에서 교육생·관리자가 함께 쓰는 현장)
+        stale['data']['index']=1;c=self.service.update(self.learner,stale);rev+=1;self.assertEqual(c['learner']['revision'],rev)
+        self.assertTrue(c['learner']['records'][ident]['self'][0] and c['learner']['records'][ident]['self'][1])
         v['data']['on']=False
         with self.assertRaises(ValueError):self.service.update(self.learner,v)
         for i in (-1,999,True):
@@ -270,6 +273,23 @@ class EducationTests(unittest.TestCase):
             for removed in ('/api/state','/api/projects','/index.html','/app.js'):
                 self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()
+
+    def test_profile_branch_role_saved_and_staff_can_confirm_but_not_configure(self):
+        c=self.service.get(self.other);self.assertIsNone(c['profile'])
+        with self.assertRaises(PermissionError): self.service.get(self.other,self.learner['id'])  # 고르기 전: 다른 교육생 기록 못 봄
+        for bad in (dict(branch='yeongdo',role='staff'),dict(branch='oncheon',role='admin'),dict(branch='oncheon')):
+            with self.assertRaises(ValueError): self.act(self.other,'profile.set',bad)
+        c=self.act(self.other,'profile.set',dict(branch='oncheon',role='staff'))
+        self.assertEqual((c['profile']['branch'],c['profile']['role']),('oncheon','staff'));self.assertTrue(c['workspaceRoles']['staff'])
+        self.assertEqual(self.service.get(self.other)['profile']['role'],'staff')  # 다시 들어와도 유지
+        c=self.service.get(self.other,self.learner['id']);self.assertTrue(c['permissions']['trainer']);self.assertFalse(c['permissions']['admin'])
+        ident=self.ready_review()
+        self.act(self.other,'step.teacher',dict(step=ident,index=0,on=True),target=self.learner['id'])  # 관리자를 고른 구성원은 확인할 수 있다
+        with self.assertRaises(PermissionError):  # 교육 배정은 모모스 관리자만
+            self.act(self.other,'config.enrol',dict(learner=self.content['id'],trainer=self.other['id'],assessor=self.other['id'],join=ob.today()))
+        with self.assertRaises(PermissionError): self.act(self.other,'profile.set',dict(branch='oncheon',role='learner'),target=self.learner['id'])  # 남의 것은 못 바꿈
+        c=self.act(self.other,'profile.set',dict(branch='oncheon',role='learner'));self.assertFalse(c['workspaceRoles']['staff'])
+        with self.assertRaises(PermissionError): self.service.get(self.other,self.learner['id'])  # 교육생으로 바꾸면 다시 본인 기록만
 
     def test_works_login_creates_member_once_and_blocks_inactive(self):
         import works_auth
