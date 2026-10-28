@@ -82,7 +82,7 @@
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
-    $('v1Who').textContent = cloud.user.name;
+    $('v1Who').textContent = cloud.user.name + ' 님';
     $('v1Who').hidden = branch && !profile();
     $('v1More').hidden = !profile();  // 지점·역할을 정한 뒤부터: 지점·역할 변경, (항목 화면) PDF
     closeMenu();
@@ -416,7 +416,6 @@
   }
 
   $('v1Back').onclick = () => { const to = $('v1Back').dataset.to; if (to) { view = to; render(); } };
-  $('v1Who').onclick = () => ERPAuth.openAccount();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
   $('v1MenuBranch').onclick = () => { closeMenu(); pickBranch = null; view = 'branch'; render(); };
