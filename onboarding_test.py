@@ -278,6 +278,9 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')['id'],a['id'])
         b=works_auth.find_or_create(self.store,'other@momos.co.kr','새직원','sub-2');self.assertEqual(b['name'],'새직원 (2)')  # 동명이인
         with self.assertRaises(access.LoginRequired): self.auth.login(dict(email='new@momos.co.kr',password='works:'))  # 비밀번호 로그인 불가
+        self.assertEqual(works_auth.find_or_create(self.store,'new@momos.co.kr','김새직원','sub-1')['name'],'김새직원')  # WORKS 이름이 바뀌면 따른다
+        self.assertEqual(works_auth.display_name(dict(name='재현 이',family_name='이',given_name='재현')),'이재현')
+        self.assertEqual(works_auth.display_name(dict(name='재현 이')),'이재현')
         with self.store.connect() as db: db.execute("UPDATE access_users SET status='disabled' WHERE id=?",(a['id'],))
         with self.assertRaises(PermissionError): works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')
 

@@ -157,7 +157,7 @@ def callback(handler, query):
         _log_failure(step, e)
         return _fail(handler, f'NAVER WORKS 와 통신하지 못했어요({ {"token": "토큰", "id_token": "로그인 정보", "userinfo": "구성원 정보"}[step] } 단계). 잠시 후 다시 시도해 주세요.', 502)
     email = str(info.get('email', '')).strip().lower()
-    name = str(info.get('name') or '').strip() or email.split('@')[0]
+    name = display_name(info) or email.split('@')[0]
     if not info.get('sub') or '@' not in email or email.rsplit('@', 1)[1] not in cfg['allowed']:
         return _fail(handler, f'이 서비스는 {", ".join(cfg["allowed"])} 계정만 이용할 수 있어요.', 403)
     try:
@@ -186,7 +186,22 @@ def id_token_claims(id_token, client_id, nonce, now=None):
     if not str(claims.get('iss', '')).startswith(AUTH_BASE) or (client_id not in aud if isinstance(aud, list) else aud != client_id) \
             or not (float(claims.get('exp', 0)) > now - 60) or (nonce and claims.get('nonce') and claims['nonce'] != nonce):
         raise ValueError('id_token claims invalid')
-    return {k: claims.get(k) for k in ('sub', 'email', 'name') if claims.get(k)}
+    return {k: claims.get(k) for k in ('sub', 'email', 'name', 'family_name', 'given_name') if claims.get(k)}
+
+
+def display_name(info):
+    """한국식 이름: 성 + 이름을 붙여 쓴다('이' + '재현' → '이재현'). WORKS 의 name 은 '재현 이'처럼 올 수 있다.
+    한글이 아닌 이름은 WORKS 대표 이름 그대로."""
+    import re
+    family, given = str(info.get('family_name') or '').strip(), str(info.get('given_name') or '').strip()
+    hangul = lambda t: bool(t) and bool(re.fullmatch(r'[가-힣 ]+', t))
+    if hangul(family) and hangul(given):
+        return (family + given).replace(' ', '')
+    name = str(info.get('name') or '').strip()
+    parts = name.split()
+    if len(parts) == 2 and all(hangul(p) for p in parts) and len(parts[1]) == 1 and len(parts[0]) >= 2:
+        return parts[1] + parts[0]  # '재현 이' → '이재현' (성이 한 글자로 뒤에 온 경우)
+    return name
 
 
 def find_or_create(store, email, name, sub):
@@ -199,6 +214,11 @@ def find_or_create(store, email, name, sub):
         if row:
             if row['status'] != 'active':
                 raise PermissionError('이용이 중지되었거나 승인 대기 중인 계정이에요. 관리자에게 문의해 주세요.')
+            # WORKS 로 만든 계정은 WORKS 이름을 따른다(바뀐 이름·표기 반영). 같은 이름이 이미 있으면 그대로 둔다
+            if row['password_hash'].startswith('works:') and name and row['name'] != name[:60] \
+                    and not db.execute('SELECT 1 FROM access_users WHERE name=? AND id<>?', (name[:60], row['id'])).fetchone():
+                db.execute('UPDATE access_users SET name=?, updated_at=? WHERE id=?', (name[:60], now, row['id']))
+                row = db.execute('SELECT * FROM access_users WHERE id=?', (row['id'],)).fetchone()
             db.execute('INSERT INTO access_audit(at,actor_id,kind,target_id,detail) VALUES(?,?,?,?,?)',
                        (now, row['id'], 'works.login', row['id'], json.dumps({'sub': hashlib.sha256(sub.encode()).hexdigest()[:16]})))
             return access.public_user(row)
