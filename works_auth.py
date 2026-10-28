@@ -233,3 +233,46 @@ def find_or_create(store, email, name, sub):
         db.execute('INSERT INTO access_audit(at,actor_id,kind,target_id,detail) VALUES(?,?,?,?,?)',
                    (now, ident, 'works.signup', ident, json.dumps({'sub': hashlib.sha256(sub.encode()).hexdigest()[:16]})))
         return access.public_user(db.execute('SELECT * FROM access_users WHERE id=?', (ident,)).fetchone())
+
+
+TRIAL_DOMAIN = 'local.test'  # dev_seed.py 의 체험 계정(staff / learner / newbie @local.test)
+
+
+def allowed_email(email):
+    email = str(email or '').lower()
+    return '@' in email and email.rsplit('@', 1)[1] in config()['allowed']
+
+
+def purge_trial_accounts(store):
+    """WORKS 로그인을 켠 서버에서 체험 계정과 그 교육 기록·지점/역할·세션을 지운다(되돌릴 수 없음).
+    서버가 시작할 때 한 번 돈다. 다른 계정의 담당 교육자·평가자로 지정돼 있었다면 '미배정'으로 돌린다."""
+    import onboarding as ob
+    import lms_store as projects
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        ids = [r['id'] for r in db.execute('SELECT id FROM access_users WHERE email LIKE ?', ('%@' + TRIAL_DOMAIN,)).fetchall()]
+        if not ids:
+            return 0
+        root = projects.Rooms.read(db, ob.ROOT)
+        if root:
+            for i in ids:
+                entry = root.get('learners', {}).pop(i, None)
+                if entry:
+                    db.execute('DELETE FROM metadata WHERE id=?', (entry['key'],))
+                root.get('profiles', {}).pop(i, None)
+                root.get('accessOverrides', {}).pop(i, None)
+                for k in ('technical', 'content'):
+                    root[k] = [x for x in root.get(k, []) if x != i]
+            for entry in root.get('learners', {}).values():
+                for k in ('trainer', 'assessor'):
+                    if entry.get(k) in ids:
+                        entry[k] = None
+            root['revision'] = root.get('revision', 0) + 1
+            projects.Rooms.write(db, ob.ROOT, root)
+        for i in ids:
+            for table in ('access_sessions', 'access_recovery', 'access_reset_requests', 'file_access'):
+                db.execute(f'DELETE FROM {table} WHERE user_id=?', (i,))
+            db.execute('DELETE FROM access_users WHERE id=?', (i,))
+        db.execute('INSERT INTO access_audit(at,actor_id,kind,target_id,detail) VALUES(?,?,?,?,?)',
+                   (time.time(), 'system', 'trial.purge', None, json.dumps({'count': len(ids)})))
+    return len(ids)

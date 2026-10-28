@@ -291,6 +291,20 @@ class EducationTests(unittest.TestCase):
         c=self.act(self.other,'profile.set',dict(branch='oncheon',role='learner'));self.assertFalse(c['workspaceRoles']['staff'])
         with self.assertRaises(PermissionError): self.service.get(self.other,self.learner['id'])  # 교육생으로 바꾸면 다시 본인 기록만
 
+    def test_works_on_purges_trial_accounts_and_their_records(self):
+        import works_auth, os
+        t=self.auth.update_user(self.admin,self.auth.create(dict(name='체험 교육생',email='learner@local.test',password='TestOnlyPassword1!',company='momos'))['id'],dict(status='active',role='member'))
+        self.enrol(t);self.act(t,'profile.set',dict(branch='oncheon',role='learner'))
+        key=self.service.get(self.admin)['configuration']['learners'][t['id']]['key']
+        with patch.dict(os.environ,{'WORKS_CLIENT_ID':'c','WORKS_CLIENT_SECRET':'s','WORKS_DOMAIN':'momos.co.kr'}):
+            self.assertTrue(works_auth.allowed_email('a@momos.co.kr'));self.assertFalse(works_auth.allowed_email('learner@local.test'))
+            self.assertEqual(works_auth.purge_trial_accounts(self.store),1);self.assertEqual(works_auth.purge_trial_accounts(self.store),0)
+        with self.store.connect() as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM access_users WHERE email='learner@local.test'").fetchone())
+            self.assertIsNone(db.execute('SELECT 1 FROM metadata WHERE id=?',(key,)).fetchone())
+        c=self.service.get(self.admin);self.assertNotIn(t['id'],c['configuration']['learners'])
+        self.assertIn(self.learner['id'],c['configuration']['learners'])  # 다른 교육생 기록은 그대로
+
     def test_works_login_creates_member_once_and_blocks_inactive(self):
         import works_auth
         a=works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')

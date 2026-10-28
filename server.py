@@ -237,6 +237,12 @@ class Handler(BaseHTTPRequestHandler):
             # Public assets have no account-specific content; private APIs still check every session.
             session = None if public_get else auth.session(self.headers.get('Cookie'))
             user = session['user'] if session else None
+            if user:
+                import works_auth
+                if works_auth.enabled() and not works_auth.allowed_email(user.get('email')):
+                    # WORKS 로그인을 켠 뒤에는 WORKS 계정(허용 도메인)만 쓴다. 남아 있던 체험·자체 계정 세션은 끊는다
+                    auth.logout(self.headers.get('Cookie'))
+                    session = user = None
             if path == '/api/auth/status' and method == 'GET':
                 return self.send(200, {'setupRequired': auth.setup_required(), 'setupAllowed': len(os.environ.get('ERP_BOOTSTRAP_TOKEN', '')) >= 32, 'user': user, 'csrfToken': session['csrfToken'] if session else None,'runtime':'cloud' if store.database else 'local', 'companies': auth.companies(), 'works': __import__('works_auth').enabled()})
             if path == '/api/auth/forgot-password' and method == 'POST':
@@ -294,7 +300,8 @@ class Handler(BaseHTTPRequestHandler):
                 # (n3r staging, and for now the Render PoC). Anyone who can open the address can then act as any
                 # trial account, including the trial administrator, so unset LMS_TRIAL once real accounts are used.
                 local_run = not store.database and not self.server.public_url and self.client_address[0] in ('127.0.0.1', '::1')
-                if not (local_run or getattr(self.server, 'trial', False)):
+                import works_auth
+                if works_auth.enabled() or not (local_run or getattr(self.server, 'trial', False)):  # WORKS 로그인을 켜면 체험 계정 전환은 없다
                     raise FileNotFoundError()
                 with store.connect() as db:
                     rows = db.execute("SELECT id,name,email,role FROM access_users WHERE status='active' AND email LIKE '%@local.test' ORDER BY name").fetchall()
@@ -606,7 +613,11 @@ def main():
         return cloud.run()
     store = Store(args.data_dir)
     trial = os.environ.get('LMS_TRIAL') == '1' and not store.database
-    if trial:
+    import works_auth
+    if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 지운다
+        n = works_auth.purge_trial_accounts(store)
+        if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
+    if trial and not works_auth.enabled():
         import dev_seed
         if dev_seed.seed(store):
             print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
