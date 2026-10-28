@@ -99,16 +99,32 @@ def login(handler):
     handler.end_headers()
 
 
+UA = {'User-Agent': 'MomosLMS/1', 'Accept': 'application/json'}
+
+
 def _post_form(url, data):
-    req = Request(url, data=urlencode(data).encode(), headers={'Content-Type': 'application/x-www-form-urlencoded'}, method='POST')
+    req = Request(url, data=urlencode(data).encode(), headers={**UA, 'Content-Type': 'application/x-www-form-urlencoded'}, method='POST')
     with urlopen(req, timeout=10) as r:
         return json.loads(r.read())
 
 
 def _get_json(url, token):
-    req = Request(url, headers={'Authorization': 'Bearer ' + token})
+    req = Request(url, headers={**UA, 'Authorization': 'Bearer ' + token})
     with urlopen(req, timeout=10) as r:
         return json.loads(r.read())
+
+
+def _log_failure(step, e):
+    """Render 로그에 남길 실패 이유: 단계·HTTP 상태·WORKS 오류 코드만. 코드·토큰·시크릿 값은 남기지 않는다."""
+    detail = ''
+    if isinstance(e, HTTPError):
+        try:
+            body = json.loads(e.read() or b'{}')
+            detail = f" error={body.get('error') or body.get('code')} description={str(body.get('error_description') or body.get('description') or '')[:200]}"
+        except Exception:
+            detail = ''
+        detail = f' status={e.code}' + detail
+    print(f'works login: {step} failed: {type(e).__name__}{detail}', flush=True)
 
 
 def callback(handler, query):
@@ -126,16 +142,17 @@ def callback(handler, query):
     expected = jar[STATE_COOKIE].value if STATE_COOKIE in jar else ''
     if not expected or not secrets.compare_digest(expected, q('state')) or not q('code'):
         return _fail(handler, '로그인 요청이 만료되었어요. 처음부터 다시 시도해 주세요.')
+    step = 'token'
     try:
+        # domain 은 고객사 SSO(WORKS as SP)를 쓸 때만 필요하다고 문서에 있어 토큰 요청에는 넣지 않는다
         form = dict(code=q('code'), grant_type='authorization_code', client_id=cfg['client_id'],
                     client_secret=cfg['client_secret'], redirect_uri=_redirect_url(handler, cfg))
-        if cfg['domain']:
-            form['domain'] = cfg['domain']
         token = _post_form(f'{AUTH_BASE}/oauth2/v2.0/token', form)
+        step = 'userinfo'
         info = _get_json(f'{AUTH_BASE}/oauth2/v2.0/userinfo', token['access_token'])
     except (HTTPError, URLError, KeyError, ValueError, TimeoutError) as e:
-        print(f'works login: token/userinfo failed: {type(e).__name__}', flush=True)  # 토큰·코드 값은 남기지 않는다
-        return _fail(handler, 'NAVER WORKS 와 통신하지 못했어요. 잠시 후 다시 시도해 주세요.', 502)
+        _log_failure(step, e)
+        return _fail(handler, f'NAVER WORKS 와 통신하지 못했어요({"토큰" if step == "token" else "구성원 정보"} 단계). 잠시 후 다시 시도해 주세요.', 502)
     email = str(info.get('email', '')).strip().lower()
     name = str(info.get('name') or '').strip() or email.split('@')[0]
     if not info.get('sub') or '@' not in email or email.rsplit('@', 1)[1] not in cfg['allowed']:
