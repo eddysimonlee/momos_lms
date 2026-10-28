@@ -28,6 +28,7 @@ from urllib.request import Request, urlopen
 import access
 
 AUTH_BASE = os.environ.get('WORKS_AUTH_BASE', 'https://auth.worksmobile.com')  # 테스트에서만 바꾼다
+API_BASE = os.environ.get('WORKS_API_BASE', 'https://www.worksapis.com/v1.0')
 STATE_COOKIE = 'works_state'
 STATE_SECONDS = 600
 
@@ -85,7 +86,7 @@ def login(handler):
     if not cfg['enabled']:
         return _fail(handler, 'NAVER WORKS 로그인이 아직 설정되지 않았어요. 관리자에게 문의해 주세요.', 503)
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(16)
-    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile',
+    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read',  # user.read: 구성원 사진
                   response_type='code', state=state, nonce=nonce)
     if cfg['domain']:
         params['domain'] = cfg['domain']
@@ -164,6 +165,10 @@ def callback(handler, query):
         user = find_or_create(handler.server.store, email, name, info['sub'])
     except PermissionError as e:
         return _fail(handler, str(e), 403)
+    try:  # 프로필 사진: 로그인할 때마다 WORKS 사진을 받아 둔다(없거나 실패해도 로그인은 계속)
+        save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
+    except Exception as e:
+        _log_failure('photo', e)
     _, session_token = handler.server.access.new_session(user)
     secure = _secure(handler)
     cookies = [access.COOKIE + '=' + session_token + '; Path=/; HttpOnly; SameSite=Strict; Max-Age=' + str(access.SESSION_SECONDS) + secure,
@@ -270,9 +275,64 @@ def purge_trial_accounts(store):
             root['revision'] = root.get('revision', 0) + 1
             projects.Rooms.write(db, ob.ROOT, root)
         for i in ids:
+            db.execute('DELETE FROM metadata WHERE id=?', (avatar_key(i),))
             for table in ('access_sessions', 'access_recovery', 'access_reset_requests', 'file_access'):
                 db.execute(f'DELETE FROM {table} WHERE user_id=?', (i,))
             db.execute('DELETE FROM access_users WHERE id=?', (i,))
         db.execute('INSERT INTO access_audit(at,actor_id,kind,target_id,detail) VALUES(?,?,?,?,?)',
                    (time.time(), 'system', 'trial.purge', None, json.dumps({'count': len(ids)})))
     return len(ids)
+
+
+AVATAR_PX, AVATAR_MAX = 160, 200_000
+
+
+def avatar_key(user_id):
+    """프로필 사진을 담는 metadata 행 번호(교육 기록 행과 겹치지 않는 범위)."""
+    return 9_000_000_000 + int(hashlib.sha256(('avatar:' + user_id).encode()).hexdigest()[:8], 16)
+
+
+def fetch_photo(access_token, member_id):
+    """WORKS 구성원 사진(GET /users/{userId}/photo → 302 파일 주소). 사진이 없으면 None."""
+    from urllib.parse import quote
+    req = Request(f'{API_BASE}/users/{quote(member_id, safe="")}/photo', headers={**UA, 'Authorization': 'Bearer ' + access_token, 'Accept': 'image/*'})
+    try:
+        with urlopen(req, timeout=10) as r:  # 302 는 urllib 가 따라간다(Authorization 헤더 유지)
+            raw = r.read(5_000_001)
+    except HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    if not raw or len(raw) > 5_000_000:
+        return None
+    return raw
+
+
+def save_avatar(store, user_id, raw):
+    """작은 정사각형 JPEG(160px)로 줄여 저장한다. raw 가 None 이면(사진 없음) 지운다."""
+    import base64, io
+    import lms_store as projects
+    data = None
+    if raw:
+        from PIL import Image, ImageOps
+        img = ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert('RGB')
+        img = ImageOps.fit(img, (AVATAR_PX, AVATAR_PX))
+        out = io.BytesIO(); img.save(out, 'JPEG', quality=82); data = out.getvalue()
+        if len(data) > AVATAR_MAX:
+            data = None
+    with store.connect() as db:
+        if data:
+            projects.Rooms.write(db, avatar_key(user_id), dict(kind='avatar', user=user_id, mime='image/jpeg',
+                                                               data=base64.b64encode(data).decode(), at=time.time()))
+        else:
+            db.execute('DELETE FROM metadata WHERE id=?', (avatar_key(user_id),))
+
+
+def read_avatar(store, user_id):
+    import base64
+    import lms_store as projects
+    with store.connect() as db:
+        row = projects.Rooms.read(db, avatar_key(user_id))
+    if not row or row.get('kind') != 'avatar' or row.get('user') != user_id:
+        return None
+    return base64.b64decode(row['data'])

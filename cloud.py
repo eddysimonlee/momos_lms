@@ -273,14 +273,14 @@ def run():
     # so visitors land on the lessons without signing in. Seeding never runs once any account exists.
     trial = os.environ.get('LMS_TRIAL') == '1'
     import works_auth
-    if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 계정·교육 기록·세션을 지운다
-        n = works_auth.purge_trial_accounts(store)
-        if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
     if trial and not works_auth.enabled():
         import dev_seed
         if dev_seed.seed(store):
             print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
     httpd = server.make_server(store,config.port,host='0.0.0.0',public_url=config.public_url,trial=trial)
+    if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 계정·교육 기록·세션을 지운다
+        n = works_auth.purge_trial_accounts(store)
+        if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
     httpd.daemon_threads=False
     stop = threading.Event()
     def terminate(signum,frame):

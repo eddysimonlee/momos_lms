@@ -345,6 +345,25 @@ class Handler(BaseHTTPRequestHandler):
                 if not re.fullmatch(r'[a-z0-9-]{1,64}', step):
                     raise ValueError('step required')
                 return self.send(200, {'url': f'/v1/pdf/{step}?t=' + pdf_token(self.server, step)})
+            m = re.fullmatch(r'/v1/avatar/([0-9a-f]{32})', path)
+            if m and method == 'GET':  # WORKS 프로필 사진(로그인할 때 받아 둔 것). 로그인한 구성원끼리만
+                if not user:
+                    raise access.LoginRequired()
+                import works_auth
+                data = works_auth.read_avatar(store, m.group(1))
+                if not data:
+                    raise FileNotFoundError()
+                etag = '"' + hashlib.sha256(data).hexdigest()[:32] + '"'
+                unchanged = etag in self.headers.get('If-None-Match', '')
+                self.send_response(304 if unchanged else 200)
+                self.send_header('Content-Type', 'image/jpeg')
+                self.send_header('Cache-Control', 'private, max-age=3600')  # 사진은 다음 WORKS 로그인 때 바뀐다
+                self.send_header('ETag', etag)
+                self.send_header('X-Content-Type-Options', 'nosniff')
+                if not unchanged:
+                    self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                return None if unchanged else self.wfile.write(data)
             m = re.fullmatch(r'/v1/pdf/([a-z0-9-]{1,64})', path)
             if m and method == 'GET':  # 로그인 쿠키 또는 pdf-link 토큰(5분, 그 항목만)
                 step = m.group(1)
@@ -614,14 +633,14 @@ def main():
     store = Store(args.data_dir)
     trial = os.environ.get('LMS_TRIAL') == '1' and not store.database
     import works_auth
-    if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 지운다
-        n = works_auth.purge_trial_accounts(store)
-        if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
     if trial and not works_auth.enabled():
         import dev_seed
         if dev_seed.seed(store):
             print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
     server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'), trial=trial)
+    if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 지운다(계정 테이블은 make_server 가 준비)
+        n = works_auth.purge_trial_accounts(store)
+        if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
     print('Momos LMS: %s/v1' % (args.public_url.rstrip('/') or 'http://127.0.0.1:%d' % args.port), flush=True)
     try:
         server.serve_forever()

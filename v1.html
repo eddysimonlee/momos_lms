@@ -27,9 +27,12 @@
 .v1-stage-tag{display:inline-flex;align-items:center;max-width:100%;height:var(--component-tag-size-xs-height);padding:0 var(--component-tag-size-xs-padding-x);border-radius:var(--component-tag-type-square-border-radius);background:var(--component-tag-color-info-surface);color:var(--component-tag-color-info-text-color);font:var(--component-tag-size-xs-text-typography);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .v1-stage-tag[hidden]{display:none}
 .v1-top h1{max-width:100%;margin:0;font:var(--title-xs-bold);color:var(--text-default);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-/* 로그인한 사람 이름: 글자만(계정 팝업 없음 — 로그인은 WORKS) */
-.v1-top .v1-who{flex:none;max-width:40vw;font:var(--body-md);color:var(--text-default);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} /* wds-allow: 이름 최대 폭 */
-.v1-top .v1-who[hidden]{display:none}
+/* 프로필 사진(WORKS): 없거나 못 불러오면 이름 첫 글자 */
+.v1-avatar{position:relative;flex:none;display:inline-grid;place-items:center;width:var(--spacing-32);height:var(--spacing-32);border-radius:var(--radius-full);overflow:hidden;background:var(--action-selected);color:var(--icon-primary);font:var(--label-sm-bold);vertical-align:middle}
+.v1-avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.v1-avatar[hidden]{display:none}
+.v1-people button{display:inline-flex;align-items:center}
+.v1-people .v1-avatar{width:var(--spacing-20);height:var(--spacing-20);font:var(--label-xs-bold);margin-right:var(--spacing-4)}
 .v1-main{max-width:600px; /* wds-allow: 읽기 폭 상한, 레이아웃 토큰 없음 */margin:0 auto;padding:var(--spacing-16) var(--spacing-16) var(--spacing-48)}
 .v1-card{background:var(--surface-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--spacing-16);margin-bottom:var(--spacing-12)}
 .v1-card h2{margin:0 0 var(--spacing-4);font:var(--title-xs-bold)}
@@ -219,7 +222,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
   <header class="v1-top">
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
-    <span id="v1Who" class="v1-who"></span>
+    <span id="v1Who" class="v1-avatar v1-avatar-top" role="img"></span>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
       <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1MenuBranch">지점 변경</button><button type="button" role="menuitem" id="v1MenuRole">역할 변경</button><hr id="v1MenuSep" class="v1-menu-sep"><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>

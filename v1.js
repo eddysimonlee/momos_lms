@@ -82,7 +82,10 @@
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
-    $('v1Who').textContent = cloud.user.name + ' 님';
+    if ($('v1Who').dataset.id !== cloud.user.id) {  // 사람이 바뀔 때만 다시 그린다(사진을 매번 다시 받지 않게)
+      $('v1Who').dataset.id = cloud.user.id; $('v1Who').innerHTML = avatarInner(cloud.user);
+      $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
+    }
     $('v1Who').hidden = branch && !profile();
     $('v1More').hidden = !profile();  // 지점·역할을 정한 뒤부터: 지점·역할 변경, (항목 화면) PDF
     closeMenu();
@@ -161,12 +164,16 @@
     toast(`${BRANCHES.find(x => x.id === branch).name} · ${ROLES.find(x => x.id === role).name}(으)로 들어왔어요.`);
   }
 
+  // WORKS 프로필 사진(/v1/avatar/<id>, 로그인할 때 받아 둔 것). 없으면 이름 첫 글자
+  const avatarInner = u => `<span aria-hidden="true">${esc((u.name || '?').trim().slice(0, 1))}</span><img src="/v1/avatar/${encodeURIComponent(u.id)}" alt="" loading="lazy" onerror="this.remove()">`;
+  const avatar = u => `<span class="v1-avatar">${avatarInner(u)}</span>`;
+
   function peopleBar() {
     if (!isStaff()) return '';
     const list = others();
     return '<section class="v1-card"><h2>교육생</h2>' +
       (list.length ? '<div class="v1-muted">이름을 누르면 그 교육생의 기록이 열려요.</div><div class="v1-people">' +
-        list.map(r => `<button data-person="${esc(r.id)}" class="${r.id === cloud.target ? 'on' : ''}">${esc(r.name)}</button>`).join('') + '</div>'
+        list.map(r => `<button data-person="${esc(r.id)}" class="${r.id === cloud.target ? 'on' : ''}">${avatar(r)}${esc(r.name)}</button>`).join('') + '</div>'
         : '<div class="v1-muted">아직 교육을 시작한 교육생이 없어요. 교육생이 처음 접속하면 여기에 나타나요.</div>') +
       '</section>';
   }

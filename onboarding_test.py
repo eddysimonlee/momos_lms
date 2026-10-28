@@ -305,6 +305,16 @@ class EducationTests(unittest.TestCase):
         c=self.service.get(self.admin);self.assertNotIn(t['id'],c['configuration']['learners'])
         self.assertIn(self.learner['id'],c['configuration']['learners'])  # 다른 교육생 기록은 그대로
 
+    def test_works_avatar_saved_small_and_removed(self):
+        import works_auth, io
+        from PIL import Image
+        b=io.BytesIO();Image.new('RGB',(600,400),(10,20,30)).save(b,'PNG')
+        works_auth.save_avatar(self.store,self.learner['id'],b.getvalue())
+        raw=works_auth.read_avatar(self.store,self.learner['id']);self.assertTrue(raw.startswith(b'\xff\xd8'))
+        self.assertEqual(Image.open(io.BytesIO(raw)).size,(works_auth.AVATAR_PX,works_auth.AVATAR_PX))
+        self.assertIsNone(works_auth.read_avatar(self.store,self.other['id']))
+        works_auth.save_avatar(self.store,self.learner['id'],None);self.assertIsNone(works_auth.read_avatar(self.store,self.learner['id']))
+
     def test_works_login_creates_member_once_and_blocks_inactive(self):
         import works_auth
         a=works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')
