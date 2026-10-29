@@ -192,7 +192,8 @@ def main():
                         step['title'] = sess['title']
                         step['curriculumTitle'] = True  # 교육과정의 세션 제목이 교육안 제목보다 우선
                     step.update(kind=sess['kind'], sessionNote=sess.get('note', ''), fromItems=sess.get('from', []),
-                                reworkPending=sess['kind'] in ('보완', '교체') and not fresh)
+                                reworkPending=sess['kind'] in ('보완', '교체') and not fresh,
+                                shift=sess.get('shift', []), position=sess.get('position', []))  # 홈 목록 '필터'(근무조·포지션). 공통 교육은 비어 있다
                     steps.append(step)
                 plans = [course_steps[x['id']][0]['plan'] for x in steps if x['id'] in course_steps]
                 units.append(dict(id=u['no'], no=u['no'], title=u['title'], summary=u.get('note', ''),
@@ -211,6 +212,7 @@ def main():
         format='momos-lms-v1-content',
         courseVersion=course['version'], sourceIndexedAt=index['generated_at'],
         units=units, extra=extra, curriculumVersion=curriculum['version'] if curriculum else None,
+        filters={k: v for k, v in ((curriculum or {}).get('filters') or {}).items() if k in ('shift', 'position')},
         documents={k: dict(title=d['title'], type=d['type'], version=d['version'], revised=d['revised_at'], status=d['status'], file=d['file'], folder=d.get('folder', ''))
                    for k, d in docs.items() if k in used_docs},
         sections=used_sections,

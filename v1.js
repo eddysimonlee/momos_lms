@@ -67,6 +67,40 @@
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
 
+  // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 84개 목록을 좁혀 볼 뿐 기록은 하나다.
+  // 고른 값은 이 기기에만 기억한다(localStorage). 교육 화면에는 아무것도 더하지 않는다.
+  const FILTER_KEY = 'v1.filter', FKIND = {shift: '근무조', position: '포지션'};
+  let filt = (() => { try { return JSON.parse(localStorage.getItem(FILTER_KEY)); } catch { return null; } })(), sheetPick = null;
+  const validFilter = f => f && f.k in FKIND && ((content.filters || {})[f.k] || []).includes(f.v) ? {k: f.k, v: f.v} : null;
+  const matches = (s, f = filt) => !f || (s[f.k] || []).includes(f.v);
+  // '다음 항목 ›': 필터를 걸었으면 그 필터 안의 다음 항목으로(번호는 전체 번호 그대로)
+  const nextOf = s => { const f = validFilter(filt); return steps().slice(stepIndex(s.id) + 1).find(x => matches(x, f)); };
+  function setFilter(f) {
+    filt = f;
+    try { f ? localStorage.setItem(FILTER_KEY, JSON.stringify(f)) : localStorage.removeItem(FILTER_KEY); } catch {}
+    stageSel = null; homeScroll = null; lastStep = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
+  }
+  function drawSheet() {
+    const live = steps().filter(s => !planned(s)), n = f => live.filter(s => matches(s, f)).length;
+    const on = f => sheetPick ? f && sheetPick.k === f.k && sheetPick.v === f.v : !f;
+    const chip = f => `<button type="button" class="v1-fchip${on(f) ? ' on' : ''}" aria-pressed="${on(f)}" data-pick="${f ? esc(f.k + '|' + f.v) : ''}">${esc(f ? f.v : '전체')} <small>${n(f)}</small></button>`;
+    const group = k => ((content.filters || {})[k] || []).length ? `<h3>${FKIND[k]}</h3><div class="v1-fwrap">${content.filters[k].map(v => chip({k, v})).join('')}</div>` : '';
+    $('v1Sheet').querySelector('.v1-sheet-panel').innerHTML = '<div class="v1-sheet-grab" aria-hidden="true"></div><h2 id="v1SheetTitle">보기 필터</h2>' +
+      '<p class="v1-muted">근무조나 포지션을 고르면 그 교육만 보여요. 완료 기록은 전체와 같아요.</p>' +
+      `<div class="v1-fwrap" style="margin-top:var(--spacing-16)">${chip(null)}</div>${group('shift')}${group('position')}` +
+      `<div class="v1-actions"><button type="button" class="v1-btn primary" data-sheet-apply>${n(sheetPick)}개 보기</button></div>`;
+  }
+  function openSheet() { sheetPick = filt; drawSheet(); $('v1Sheet').hidden = false; document.body.style.overflow = 'hidden'; $('v1Sheet').querySelector('[data-sheet-apply]').focus(); }
+  function closeSheet() { $('v1Sheet').hidden = true; document.body.style.overflow = ''; const b = $('app').querySelector('[data-filter-open]'); if (b) b.focus({preventScroll: true}); }
+  $('v1Sheet').addEventListener('click', e => {
+    const t = e.target.closest('[data-pick],[data-sheet-apply],[data-sheet-close]');
+    if (!t) return;
+    if (t.hasAttribute('data-pick')) { const [k, v] = t.dataset.pick.split('|'); sheetPick = t.dataset.pick ? {k, v} : null; drawSheet(); }
+    else if (t.hasAttribute('data-sheet-apply')) { closeSheet(); setFilter(sheetPick); }
+    else closeSheet();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Sheet').hidden) closeSheet(); });
+
   // --- rendering
   function render() {
     if (!cloud || !content) return;
@@ -184,13 +218,15 @@
   }
 
   function homeView() {
-    const list = steps(), live = list.filter(s => !planned(s));
+    filt = validFilter(filt);
+    const list = steps().filter(s => matches(s)), live = list.filter(s => !planned(s));
     const isDone = s => !planned(s) && record(s.id).status === 'done';
     const done = live.filter(isDone).length;
     const mine = cloud.target === cloud.user.id;
     if (isStaff() && mine) return peopleBar();
     const who = mine ? '' : `<div class="v1-muted">${esc(cloud.name)}님의 교육 기록</div>`;
-    const all = stages();
+    // 필터를 걸면 맞는 항목만 남기고, 빈 단원·단계는 감춘다(번호는 전체 번호 그대로)
+    const all = stages().map(g => Object.assign({}, g, {units: g.units.map(u => Object.assign({}, u, {steps: u.steps.filter(s => matches(s))})).filter(u => u.steps.length)})).filter(g => g.units.length);
     // 처음 열면: 끝나지 않은 첫 세션이 있는 단계
     if (!all.some(g => g.order === stageSel)) stageSel = (all.find(g => g.units.some(u => u.steps.some(s => !planned(s) && !isDone(s)))) || all[0]).order;
     const g = all.find(x => x.order === stageSel);
@@ -214,14 +250,16 @@
     return peopleBar() +
       `<section class="v1-card">${who}` +
       `<div class="v1-progress"><i style="width:${live.length ? Math.round(done / live.length * 100) : 0}%"></i></div>` +
-      `<div class="v1-muted">${done}/${live.length} 완료${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>${enrolNotice()}</section>` +
+      `<div class="v1-prow"><div class="v1-muted">${filt ? esc(`${FKIND[filt.k]} · ${filt.v} · `) : ''}${done}/${live.length} 완료${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>` +
+      (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)}</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
+        : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + `</div>${enrolNotice()}</section>` +
       tabs + `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>${g.summary ? `<p class="v1-unote">${esc(g.summary)}</p>` : ''}` + units +
-      (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (g.order === all[all.length - 1].order ? extra : '') +
+      (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (!filt && g.order === all[all.length - 1].order ? extra : '') +
       `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다 · <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a></p>`;
   }
 
   function plannedView(s) {
-    const i = stepIndex(s.id), next = steps()[i + 1], u = unitOf(s.id);
+    const i = stepIndex(s.id), next = nextOf(s), u = unitOf(s.id);
     return `<section class="v1-card"><span class="v1-pill planned">${STATUS.planned}</span> <span class="v1-muted">${i + 1}/${steps().length} · ${esc(u.no || '')} ${esc(u.title)}</span>` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2><p class="v1-muted">이 세션의 교육 목적·교육 내용·수행 확인은 원본 문서를 바탕으로 준비 중이에요.</p>` +
       (s.topics && s.topics.length ? `<h2 style="margin-top:var(--spacing-16)">다룰 내용</h2><ol class="v1-kp">${s.topics.map(t => `<li><div>${esc(t)}</div></li>`).join('')}</ol>` : '') +
@@ -233,7 +271,7 @@
   function stepView(s) {
     if (planned(s)) return plannedView(s);
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
-    const i = stepIndex(s.id), next = steps()[i + 1];
+    const i = stepIndex(s.id), next = nextOf(s);
     const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.trim() : key; };
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
@@ -306,6 +344,9 @@
     app.querySelectorAll('[data-role]').forEach(b => b.onclick = () => chooseRole(b.dataset.role).catch(e => toast(e.message)));
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
+    const fo = app.querySelector('[data-filter-open]'), fc = app.querySelector('[data-filter-clear]');
+    if (fo) fo.onclick = openSheet;
+    if (fc) fc.onclick = () => setFilter(null);
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
     // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동
     app.querySelectorAll('[data-close-src]').forEach(b => b.onclick = () => {

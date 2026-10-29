@@ -246,6 +246,12 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),55)  # curriculum.json: 6단계 55단원(2.10 OP2 / 2.11 OP3 분리)
             steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),84)
+            # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
+            fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
+            for s in steps:
+                self.assertTrue(set(s['shift'])<=set(fl['shift']) and set(s['position'])<=set(fl['position']),s['id'])
+            by={s['id']:s for s in steps};self.assertEqual(by['floor-tools']['position'],['정리','라운딩']);self.assertEqual(by['supplies-shortage']['position'],[])
+            self.assertTrue(by['bar-supply']['title'].startswith('정리 포지션 ②'))
             course_ids=[s['id'] for u in ob.COURSE['units'] if u['id'] in ('welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer') for s in u['steps']]
             course_ids=[i for i in course_ids if i!='materials-product-6']  # 10/26 재료 SOP 에서 후르츠봉봉 삭제 → 교육과정에서 뺌
             self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 항목이 한 번씩

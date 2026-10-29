@@ -101,6 +101,25 @@
 .v1-stages button.on{border-color:var(--border-primary);box-shadow:inset 0 0 0 1px var(--border-primary)}
 .v1-stages button.on b{color:var(--component-button-type-primary-state-default-background)}
 .v1-uno{color:var(--text-muted);font:var(--label-sm-bold);min-width:2.2em}
+/* 홈 목록 필터(근무조·포지션): 진행률 줄 오른쪽의 칩 하나 → 바텀시트. 고정 영역 없이 목록과 함께 스크롤된다 */
+.v1-prow{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8)}
+.v1-fchip{appearance:none;flex:none;display:inline-flex;align-items:center;gap:var(--spacing-4);height:var(--component-filter-chip-type-pill-height);padding:0 var(--component-filter-chip-type-pill-padding-x);border-radius:var(--component-filter-chip-type-pill-border-radius);border:var(--component-filter-chip-appearance-outline-state-default-border-width) solid var(--component-filter-chip-appearance-outline-state-default-border-color);background:var(--component-filter-chip-appearance-outline-state-default-surface);color:var(--component-filter-chip-appearance-outline-state-default-text-color);font:var(--component-filter-chip-base-text-typography);white-space:nowrap;cursor:pointer}
+.v1-fchip:hover{background:var(--component-filter-chip-appearance-outline-state-hover-surface)}
+.v1-fchip.on{border:var(--component-filter-chip-appearance-outline-state-selected-border-width) solid var(--component-filter-chip-appearance-outline-state-selected-border-color);background:var(--component-filter-chip-appearance-outline-state-selected-surface);color:var(--component-filter-chip-appearance-outline-state-selected-text-color)}
+.v1-fchip small{font:var(--label-xs);opacity:.75}
+.v1-fgroup{display:inline-flex;flex:none;align-items:center}
+.v1-fgroup .v1-fchip:first-child{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0;padding-right:var(--spacing-6)}
+.v1-fgroup .v1-fchip:last-child{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:var(--spacing-6)}
+.v1-sheet{position:fixed;inset:0;z-index:calc(var(--component-layout-z-index-gnb) + 1)}
+.v1-sheet[hidden]{display:none}
+.v1-scrim{position:absolute;inset:0;background:var(--surface-scrim)}
+.v1-sheet-panel{position:absolute;left:0;right:0;bottom:0;max-width:600px; /* wds-allow: 읽기 폭 상한과 같게 */margin:0 auto;max-height:85vh;overflow-y:auto;background:var(--surface-default);border-radius:var(--radius-xl) var(--radius-xl) 0 0;padding:var(--spacing-12) var(--spacing-16) calc(var(--spacing-16) + env(safe-area-inset-bottom));box-shadow:var(--component-popover-base-shadow)}
+.v1-sheet-grab{width:var(--spacing-36);height:var(--spacing-4);border-radius:var(--radius-full);background:var(--border-default);margin:0 auto var(--spacing-12)}
+.v1-sheet h2{margin:0;font:var(--title-xs-bold)}
+.v1-sheet h3{margin:var(--spacing-16) 0 var(--spacing-8);font:var(--label-sm-bold);color:var(--text-muted)}
+.v1-sheet p{margin:var(--spacing-4) 0 0}
+.v1-fwrap{display:flex;flex-wrap:wrap;gap:var(--spacing-8)}
+.v1-sheet .v1-actions{margin-top:var(--spacing-20)}
 .v1-unote{color:var(--text-muted);font:var(--body-sm);margin:var(--spacing-4) 0 0}
 .v1-item.planned{opacity:.62}.v1-item.planned .v1-num{background:transparent;border:1px dashed var(--border-default,#c9ced6)}
 .v1-pill.planned{background:var(--component-tag-color-neutral-surface);color:var(--component-tag-color-neutral-text-color)}
@@ -230,6 +249,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
   </header>
   <main id="app" class="v1-main"></main>
   <div id="v1Toast" class="v1-toast" role="status"></div>
+  <div id="v1Sheet" class="v1-sheet" hidden><div class="v1-scrim" data-sheet-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1SheetTitle"></div></div>
 </div>
 <div id="v1Print" class="v1-print" aria-hidden="true"></div>
 <dialog id="accountDialog"></dialog>
