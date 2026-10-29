@@ -250,9 +250,11 @@
     return peopleBar() +
       `<section class="v1-card">${who}` +
       `<div class="v1-progress"><i style="width:${live.length ? Math.round(done / live.length * 100) : 0}%"></i></div>` +
-      `<div class="v1-prow"><div class="v1-muted">${filt ? esc(`${FKIND[filt.k]} · ${filt.v} · `) : ''}${done}/${live.length} 완료${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>` +
-      (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)}</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
-        : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + `</div>${enrolNotice()}</section>` +
+      `<div class="v1-muted">${done}/${live.length} 완료${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>${enrolNotice()}</section>` +
+      // 단계 카드 바로 위 머리 줄: '교육 단계' + 필터 칩(필터가 단계·목록을 좁힌다). 고정하지 않고 함께 스크롤
+      `<div class="v1-prow v1-lhead"><h2>교육 단계${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${list.length}개</small>` : ''}</h2>` +
+      (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)} ▾</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
+        : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + '</div>' +
       tabs + `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>${g.summary ? `<p class="v1-unote">${esc(g.summary)}</p>` : ''}` + units +
       (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (!filt && g.order === all[all.length - 1].order ? extra : '') +
       `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다 · <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a></p>`;

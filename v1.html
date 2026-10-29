@@ -103,6 +103,10 @@
 .v1-uno{color:var(--text-muted);font:var(--label-sm-bold);min-width:2.2em}
 /* 홈 목록 필터(근무조·포지션): 진행률 줄 오른쪽의 칩 하나 → 바텀시트. 고정 영역 없이 목록과 함께 스크롤된다 */
 .v1-prow{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8)}
+.v1-lhead{margin:var(--spacing-20) 0 0}
+.v1-lhead h2{margin:0;font:var(--body-md-bold)}
+.v1-lhead h2 small{color:var(--text-muted);font:var(--label-sm)}
+.v1-lhead+.v1-stages{margin-top:var(--spacing-8)}
 .v1-fchip{appearance:none;flex:none;display:inline-flex;align-items:center;gap:var(--spacing-4);height:var(--component-filter-chip-type-pill-height);padding:0 var(--component-filter-chip-type-pill-padding-x);border-radius:var(--component-filter-chip-type-pill-border-radius);border:var(--component-filter-chip-appearance-outline-state-default-border-width) solid var(--component-filter-chip-appearance-outline-state-default-border-color);background:var(--component-filter-chip-appearance-outline-state-default-surface);color:var(--component-filter-chip-appearance-outline-state-default-text-color);font:var(--component-filter-chip-base-text-typography);white-space:nowrap;cursor:pointer}
 .v1-fchip:hover{background:var(--component-filter-chip-appearance-outline-state-hover-surface)}
 .v1-fchip.on{border:var(--component-filter-chip-appearance-outline-state-selected-border-width) solid var(--component-filter-chip-appearance-outline-state-selected-border-color);background:var(--component-filter-chip-appearance-outline-state-selected-surface);color:var(--component-filter-chip-appearance-outline-state-selected-text-color)}
