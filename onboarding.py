@@ -27,10 +27,15 @@ STEPS = {s['id']: dict(s, unit=u['id'], plan=s.get('defaultDays', u['plan'])) fo
 # v1 교육안(v1_lessons.json)이 원본 문서 기준으로 다시 쓴 항목은 제목·수행 확인 문구를 그쪽으로 맞춘다.
 # 기록의 체크 배열 길이는 fit()이 맞추므로, 문구가 바뀐 항목의 이전 체크는 앞에서부터 이어진다.
 _LESSONS = Path(__file__).with_name('v1_lessons.json')
+# 2026-10-29: '수행 확인'을 없애고 교육 내용(keyPoints) 항목마다 체크한다. 교육 내용이 없는 항목(첫날 OJT 17항목)만 기존 체크 목록.
+CHECK_BASIS = 'keypoints-2026-10-29'
+def _check_texts(l):
+    kps = [k['text'] for k in l.get('keyPoints') or []]
+    return kps or [c['text'] if isinstance(c, dict) else c for c in l.get('checks') or []]
 if _LESSONS.exists():
     for _id, _l in json.loads(_LESSONS.read_text(encoding='utf-8')).get('lessons', {}).items():
-        if _id in STEPS and _l.get('checks'):
-            STEPS[_id]['checks'] = [c['text'] if isinstance(c, dict) else c for c in _l['checks']]
+        if _id in STEPS and _check_texts(_l):
+            STEPS[_id]['checks'] = _check_texts(_l)
         if _id in STEPS and _l.get('title'):
             STEPS[_id]['title'] = _l['title']
     # 6단계 교육과정(curriculum.json)에서 새로 생긴 세션: 교육과정 파일에는 없고 교육안에만 있다. 기록 칸을 만들 수 있도록 단계 항목으로 등록한다.
@@ -42,16 +47,16 @@ if _LESSONS.exists():
             for _u in _st['units']:
                 for _s in _u['sessions']:
                     _l = _all.get(_s['id'], {})
-                    if _s['id'] not in STEPS and _l.get('checks'):
+                    if _s['id'] not in STEPS and _check_texts(_l):
                         STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
-                                               checks=[c['text'] if isinstance(c, dict) else c for c in _l['checks']],
+                                               checks=_check_texts(_l),
                                                unit='curriculum-' + _u['no'], plan=_u.get('plan') or [1, 180])
                     elif _s['id'] in STEPS and _u.get('plan'):
                         STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
 TESTS = {t['id']: t for t in COURSE['tests']}
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'step.finish':'교육 완료(교육한 관리자 선택)','step.reopen':'교육 완료 취소','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -63,7 +68,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'step.finish','step.reopen','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -136,13 +141,20 @@ def fit(learner):
         if ident not in records:
             n = len(s['checks'])
             records[ident] = dict(status='ready', self=[False]*n, teacher=[False]*n, selfAt=[None]*n, teacherAt=[None]*n, start=None,
-                                  done=None, request=None, attempt=1, memo='', feedback='', history=[], lessonVersion=COURSE['version'])
+                                  done=None, request=None, attempt=1, memo='', feedback='', history=[], lessonVersion=COURSE['version'], checkBasis=CHECK_BASIS)
         if ident not in plans:
             plans[ident] = dict(start=plus(join, s['plan'][0]-1), end=plus(join, s['plan'][1]-1), edited=False)
     for ident, r in learner.get('records', {}).items():
         s = STEPS.get(ident)
         if not s: continue
         n = len(s['checks'])
+        if r.get('checkBasis') != CHECK_BASIS:
+            # 체크 기준이 '수행 확인' → '교육 내용'으로 바뀌었다: 이전 체크는 다른 문장이므로 비운다.
+            # 완료된 항목은 완료로 두고(모두 체크), 확인 요청(review)은 확인 절차가 없어져 진행 중으로 돌린다.
+            done = r.get('status') == 'done'
+            r.update(self=[done] * n, selfAt=[r.get('done') if done else None] * n, selfBy=[None] * n, checkBasis=CHECK_BASIS)
+            if r.get('status') in ('review', 'practice'):
+                r['status'] = 'ready'
         for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None)):
             if key in r and len(r[key]) != n:
                 r[key] = (list(r[key]) + [empty] * n)[:n]
@@ -157,7 +169,7 @@ def blank(join):
         records[ident] = dict(status='ready', self=[False]*count, teacher=[False]*count,
                               selfAt=[None]*count, teacherAt=[None]*count, start=None,
                               done=None, request=None, attempt=1, memo='', feedback='',
-                              history=[], lessonVersion=COURSE['version'])
+                              history=[], lessonVersion=COURSE['version'], checkBasis=CHECK_BASIS)
         plans[ident] = dict(start=plus(join,s['plan'][0]-1), end=plus(join,s['plan'][1]-1),edited=False)
     for ident, t in TESTS.items():
         d = plus(month(join,t['month']),-t['buffer'])
@@ -181,7 +193,7 @@ class Service:
         return root
 
     def identity(self, db, user):
-        row = db.execute("SELECT id,name,role,company,status FROM access_users WHERE id=?", (user['id'],)).fetchone()
+        row = db.execute("SELECT id,name,email,role,company,status FROM access_users WHERE id=?", (user["id"],)).fetchone()
         if not row or row['status'] != 'active':
             raise PermissionError('승인된 계정으로 다시 로그인하세요.')
         return dict(row)
@@ -410,7 +422,7 @@ class Service:
         data = v.get('data',{})
         if not isinstance(data,dict): raise ValueError('입력 내용을 확인하세요.')
         for field in ('step','item','test','question','ticket','learner','trainer','assessor','type','category','ref','operation','result'):
-            if field in data:projects.text(data[field],200)
+            if field in data and not (field=='trainer' and v.get('action')=='step.finish'):projects.text(data[field],200)  # step.finish 의 trainer 는 {id,name,email,org}
         digest = hashlib.sha256(json.dumps(v,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -667,7 +679,7 @@ class Service:
         l['startDate']=start
 
     def education(self,db,root,user,p,l,action,d):
-        fields={'step.start':{'step'},'step.self':{'step','index','on'},'step.request':{'step'},
+        fields={'step.finish':{'step','trainer'},'step.reopen':{'step'},'step.start':{'step'},'step.self':{'step','index','on'},'step.request':{'step'},
                 'step.teacher':{'step','index','on'},'step.complete':{'step'},'step.retry':{'step','reason'},
                 'step.memo':{'step','memo'},'schedule.reason':{'item','reason'},'plan.save':{'plans'},'plan.test':{'test','date'},
                 'practice.add':{'step','date','condition','observation'},
@@ -701,6 +713,18 @@ class Service:
             r[k][i]=d['on'];r[k+'At'][i]=today() if d['on'] else None
             r.setdefault(k+'By',[None]*len(s['checks']))[i]=user['id'] if d['on'] else None
             if k=='self':r['status']='practice';r['start']=r['start'] or today()
+        elif action=='step.finish':
+            # v1(10/29): 확인 절차 없이 교육생이 직접 완료한다. 교육을 제공한 관리자(WORKS 주소록에서 고름)를 함께 남긴다.
+            if r['status'] not in ('ready','practice') or not all(r['self']):raise ValueError('교육 내용을 모두 체크한 뒤 완료할 수 있어요.')
+            t=d['trainer']
+            if not isinstance(t,dict) or not all(isinstance(t.get(k),str) and t.get(k) for k in ('id','name','email')):raise ValueError('교육을 제공한 관리자를 선택해 주세요.')
+            if t['email'].lower()==str(user.get('email') or '').lower():raise ValueError('본인은 교육한 관리자로 고를 수 없어요.')
+            r['status']='done';r['done']=today();r['start']=r['start'] or today()
+            r['trainedBy']=dict(id=t['id'][:200],name=projects.text(t['name'][:100],100),email=t['email'][:200].lower(),org=projects.text(str(t.get('org') or '')[:200],200),at=stamp())
+        elif action=='step.reopen':
+            if r['status']!='done':raise ValueError('완료한 항목만 완료를 취소할 수 있어요.')
+            history=copy.deepcopy(r['history']);old=copy.deepcopy(r);old.pop('history');old['reopened']=today();history.append(old)
+            r['history']=history;r['status']='practice';r['done']=None;r.pop('trainedBy',None)
         elif action=='step.request':
             if r['status']!='practice' or not all(r['self']):raise ValueError('직원 실습 체크를 모두 완료하세요.')
             r['status']='review';r['request']=today()

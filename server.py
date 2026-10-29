@@ -442,13 +442,32 @@ class Handler(BaseHTTPRequestHandler):
                     source,name,preview=education.get_asset(user,ident)
                     return self.file(source,name,preview=preview)
                 raise FileNotFoundError()
+            if path == '/api/works/members' and method == 'GET':
+                # 교육 완료 팝업: '나에게 교육을 제공한 관리자' 검색(WORKS 주소록). 본인은 빼고 20명까지
+                try:
+                    people = members_for(store, user)
+                except LookupError as e:
+                    return self.send(409, {'error': str(e)})
+                import works_auth
+                return self.send(200, {'members': works_auth.search(people, query.get('q', [''])[0], (user.get('email') or '').lower())})
             if path == '/api/onboarding':
                 import onboarding
                 education = onboarding.Service(store)
                 if method == 'GET':
                     return self.send(200,education.get(user,query.get('target',[None])[0]))
                 if method == 'POST':
-                    return self.send(200,education.update(user,self.body()))
+                    value = self.body()
+                    if isinstance(value, dict) and value.get('action') == 'step.finish' and isinstance(value.get('data'), dict):
+                        # 화면이 보낸 이름·이메일은 믿지 않는다: 주소록에서 그 id 를 다시 찾아 이름·이메일·조직을 채운다
+                        pick = (value['data'].get('trainer') or {}).get('id') if isinstance(value['data'].get('trainer'), dict) else None
+                        try:
+                            found = next((m for m in members_for(store, user) if m['id'] == pick), None)
+                        except LookupError as e:
+                            return self.send(409, {'error': str(e)})
+                        if not found or found['email'] == (user.get('email') or '').lower():
+                            raise ValueError('교육을 제공한 관리자를 목록에서 다시 선택해 주세요.')
+                        value['data']['trainer'] = dict(found)
+                    return self.send(200,education.update(user,value))
                 raise FileNotFoundError()
             if path == '/api/auth/logout' and method == 'POST':
                 self.body()
@@ -559,6 +578,19 @@ class CloudHTTPServer(LocalHTTPServer):
         try:super().process_request_thread(request,address)
         finally:self.request_slots.release()
 
+
+
+def members_for(store, user):
+    """교육한 관리자 후보. WORKS 로그인을 쓰면 WORKS 주소록, 아니면(로컬·테스트) 이 LMS 의 모모스 구성원."""
+    import works_auth
+    if works_auth.enabled():
+        try:
+            return works_auth.directory(user['id'])
+        except works_auth.DirectoryUnavailable as e:
+            raise LookupError(str(e))
+    with store.connect() as db:
+        rows = db.execute("SELECT id,name,email FROM access_users WHERE status='active' AND company='momos' ORDER BY name").fetchall()
+    return [dict(id=r['id'], name=r['name'], email=(r['email'] or '').lower(), org='') for r in rows]
 
 
 def v1_content():

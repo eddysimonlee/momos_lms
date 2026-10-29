@@ -176,6 +176,7 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
+    remember_token(user['id'], token)  # 주소록 검색(교육한 관리자 선택)에 쓴다. 서버 메모리에만, 화면·DB 로는 보내지 않는다
     handler.server.access.logout(handler.headers.get('Cookie'))  # 이전 LMS 세션이 있으면 끝내고 새로 시작
     _, session_token = handler.server.access.new_session(user)
     secure = _secure(handler)
@@ -344,3 +345,76 @@ def read_avatar(store, user_id):
     if not row or row.get('kind') != 'avatar' or row.get('user') != user_id:
         return None
     return base64.b64decode(row['data'])
+
+
+# --- 주소록(구성원 목록): 교육생이 '나에게 교육을 제공한 관리자'를 고를 때 쓴다 ---
+# 로그인할 때 받은 그 사람의 WORKS 토큰(scope user.read)으로 GET /users 를 부른다.
+# 토큰은 이 서버 프로세스 메모리에만 두고(재시작하면 사라짐 → 다시 로그인), 화면·DB·로그로 보내지 않는다.
+# 목록 API 에는 이름 검색이 없어 구성원 전체를 받아 서버에서 거른다(10분 캐시).
+_TOKENS = {}       # LMS 사용자 id → (access_token, 만료 시각)
+_DIRECTORY = {}    # 'list' → (받은 시각, [구성원])
+DIRECTORY_SECONDS = 600
+
+
+class DirectoryUnavailable(Exception):
+    """주소록을 읽을 수 없다(토큰 없음·만료·권한). 화면에는 다시 로그인하라고 안내한다."""
+
+
+def remember_token(user_id, token):
+    if token.get('access_token'):
+        _TOKENS[user_id] = (token['access_token'], time.time() + max(60, int(token.get('expires_in') or 3600)) - 60)
+
+
+def _token_for(user_id):
+    tok = _TOKENS.get(user_id)
+    if not tok or tok[1] < time.time():
+        raise DirectoryUnavailable('WORKS 주소록을 불러오려면 다시 로그인해 주세요.')
+    return tok[0]
+
+
+def _member(u, allowed):
+    """WORKS 구성원 1명 → 화면에 보일 최소 정보(이름·이메일·조직·직책)."""
+    email = str(u.get('email') or '').strip().lower()
+    if not email or u.get('isDeleted') or u.get('isSuspended') or u.get('isPending') or (allowed and email.rsplit('@', 1)[-1] not in allowed):
+        return None
+    n = u.get('userName') or {}
+    name = display_name(dict(family_name=n.get('lastName'), given_name=n.get('firstName'), name=f"{n.get('firstName') or ''} {n.get('lastName') or ''}".strip())) or email.split('@')[0]
+    org = next((o for o in u.get('organizations') or [] if o.get('primary')), (u.get('organizations') or [{}])[0] if u.get('organizations') else {})
+    unit = next((x for x in org.get('orgUnits') or [] if x.get('primary')), (org.get('orgUnits') or [{}])[0] if org.get('orgUnits') else {})
+    return dict(id=str(u.get('userId') or email), name=name, email=email,
+                org=' · '.join(x for x in (unit.get('orgUnitName'), unit.get('positionName') or org.get('levelName')) if x))
+
+
+def directory(user_id, now=None):
+    """momos.co.kr 구성원 전체(이름순). 10분 동안은 다시 받지 않는다."""
+    now = now or time.time()
+    cached = _DIRECTORY.get('list')
+    if cached and now - cached[0] < DIRECTORY_SECONDS:
+        return cached[1]
+    token, allowed = _token_for(user_id), config()['allowed']
+    people, cursor = [], ''
+    try:
+        for _ in range(50):  # 100명 × 50쪽까지
+            data = _get_json(f'{API_BASE}/users?' + urlencode(dict(count=100, **({'cursor': cursor} if cursor else {}))), token)
+            people += [m for m in (_member(u, allowed) for u in data.get('users') or []) if m]
+            cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
+            if not cursor:
+                break
+    except HTTPError as e:
+        _log_failure('directory', e)
+        if e.code in (401, 403):
+            _TOKENS.pop(user_id, None)
+            raise DirectoryUnavailable('WORKS 주소록 권한이 없거나 로그인이 만료됐어요. 다시 로그인해 주세요.')
+        raise DirectoryUnavailable('WORKS 주소록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+    except (URLError, TimeoutError, ValueError) as e:
+        _log_failure('directory', e)
+        raise DirectoryUnavailable('WORKS 주소록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+    people.sort(key=lambda m: m['name'])
+    _DIRECTORY['list'] = (now, people)
+    return people
+
+
+def search(people, q, exclude_email='', limit=20):
+    q = ' '.join(str(q or '').lower().split())
+    hits = [m for m in people if m['email'] != exclude_email and (not q or all(w in f"{m['name']} {m['email']} {m['org']}".lower() for w in q.split()))]
+    return hits[:limit]

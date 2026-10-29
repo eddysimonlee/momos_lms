@@ -31,12 +31,9 @@ def main():
             ph['src'] = 'data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode()
     page = (APP / 'v1.html').read_text(encoding='utf-8')
     # 외부 파일을 전부 안에 넣는다
-    font = APP / 'assets/PretendardVariable.woff2'
-    font_css = ''
+    font = APP / 'assets/PretendardVariable.woff2'  # v1.html 의 @font-face 주소를 data URI 로(ERP styles.css 는 v1 에서 쓰지 않는다)
     if font.exists():
-        font_css = "<style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;src:url(data:font/woff2;base64,%s) format('woff2')}</style>" % base64.b64encode(font.read_bytes()).decode()
-    styles = re.sub(r"url\('assets/PretendardVariable.woff2'\)", "url(data:,)", inline_file(APP / 'styles.css'))
-    page = page.replace('<link rel="stylesheet" href="/styles.css">', font_css + '<style>' + styles + '</style>')
+        page = page.replace("url('/assets/PretendardVariable.woff2')", "url(data:font/woff2;base64,%s)" % base64.b64encode(font.read_bytes()).decode())
     page = page.replace('<link rel="stylesheet" href="/wds/web/variables.css">', '<style>' + inline_file(APP / 'wds/web/variables.css') + '</style>')
     page = re.sub(r'<link rel="icon"[^>]*>\s*', '', page)
     page = re.sub(r'<link rel="apple-touch-icon"[^>]*>\s*', '', page)
@@ -60,15 +57,23 @@ MOCK = r'''
   const today = () => new Date().toISOString().slice(0, 10);
   const plus = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
   const STEPS = {}; for (const u of CONTENT.units) for (const s of u.steps) STEPS[s.id] = s;
+  // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
+  const N = s => (s.keyPoints && s.keyPoints.length ? s.keyPoints : s.checks).map(() => null);
+  // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다
+  const DIRECTORY = [
+    {id: 'w-staff', name: '체험 담당자', email: 'staff@local.test', org: '바리스타팀 · 메인바리스타'},
+    {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
+    {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
+    {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
   const ACCOUNTS = [
     {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
     {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
     {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
-  const KEY = 'momos-v1-preview-7';
+  const KEY = 'momos-v1-preview-8';
   function blank(join) {
     const records = {};
-    for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: s.checks.map(() => false), teacher: s.checks.map(() => false),
-      selfAt: s.checks.map(() => null), teacherAt: s.checks.map(() => null), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
+    for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
+      selfAt: N(s), teacherAt: N(s), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
     return {revision: 0, join, startDate: join, records};
   }
   function fresh() {
@@ -129,6 +134,14 @@ MOCK = r'''
       r[k][d.index] = !!d.on; r[k + 'At'][d.index] = d.on ? t : null;
       if (k === 'self') { r.status = 'practice'; r.start = r.start || t; }
     } else if (v.action === 'step.memo') { r.memo = String(d.memo || '').slice(0, 4000); }
+    else if (v.action === 'step.finish') {
+      if (!['ready', 'practice'].includes(r.status) || !r.self.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};
+      const m = DIRECTORY.find(x => x.id === (d.trainer || {}).id); if (!m || m.email === u.email) throw {status: 400, error: '교육을 제공한 관리자를 목록에서 다시 선택해 주세요.'};
+      Object.assign(r, {status: 'done', done: t, start: r.start || t, trainedBy: {...m, at: new Date().toISOString()}});
+    } else if (v.action === 'step.reopen') {
+      if (r.status !== 'done') throw {status: 400, error: '완료한 항목만 완료를 취소할 수 있어요.'};
+      r.history = (r.history || []).concat([{...r, history: undefined, reopened: t}]); r.status = 'practice'; r.done = null; delete r.trainedBy;
+    }
     else if (v.action === 'step.request') { if (r.status !== 'practice' || !r.self.every(Boolean)) throw {status: 400, error: '직원 실습 체크를 모두 완료하세요.'}; r.status = 'review'; r.request = t; }
     else if (v.action === 'step.complete') { if (r.status !== 'review') throw {status: 400, error: '교육생이 확인 요청한 항목만 확인 완료할 수 있습니다.'}; r.teacher = r.teacher.map(() => true); r.teacherAt = r.teacherAt.map(x => x || t); r.status = 'done'; r.done = t; r.completedBy = u.id; }
     else if (v.action === 'step.retry') { if (!['review', 'done'].includes(r.status)) throw {status: 400, error: '확인 요청 또는 완료된 항목만 재교육으로 돌릴 수 있습니다.'};
@@ -148,6 +161,11 @@ MOCK = r'''
       if (url.pathname === '/api/dev/accounts') {
         if (method === 'POST') { const id = url.searchParams.get('id'); if (ACCOUNTS.some(a => a.id === id)) { setCurrent(id); return json({ok: true}); } return json({error: '없는 계정'}, 404); }
         return json({accounts: ACCOUNTS.map(a => ({id: a.id, name: a.name, email: a.email})), current});
+      }
+      if (url.pathname === '/api/works/members') {
+        const q = (url.searchParams.get('q') || '').trim().toLowerCase();
+        await new Promise(r => setTimeout(r, 200));
+        return json({members: DIRECTORY.filter(m => m.email !== user().email && (!q || `${m.name} ${m.email} ${m.org}`.toLowerCase().includes(q))).slice(0, 20)});
       }
       if (url.pathname === '/api/onboarding') {
         const target = url.searchParams.get('target') || undefined;

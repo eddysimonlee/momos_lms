@@ -2,6 +2,7 @@
 import copy
 import http.client
 import json
+from urllib.parse import quote
 import tempfile
 import threading
 import unittest
@@ -230,6 +231,17 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('GET','/v1.js',cookie=False)[0],200)
             code,h,b=req('GET','/v1/graph',cookie=False);self.assertEqual(code,200);self.assertIn('원본 문서 연결도'.encode(),b)  # 연결도 껍데기, 데이터는 로그인 후
             self.assertEqual(req('GET','/v1_content.json',cookie=False)[0],401)
+            # 완료 팝업: 관리자 검색(로컬은 이 LMS 의 모모스 구성원) → 서버가 id 로 다시 찾아 이름·이메일을 채운다
+            code,h,b=req('GET','/api/works/members?q='+quote('교육자'));self.assertEqual(code,200)
+            ms=json.loads(b)['members'];self.assertEqual([m['name'] for m in ms],['교육자'])
+            self.assertNotIn(self.learner['email'],[m['email'] for m in json.loads(req('GET','/api/works/members')[2])['members']])  # 본인 제외
+            ident='welcome-orientation'
+            for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.learner,'step.self',dict(step=ident,index=i,on=True))
+            bad=self.payload(self.learner,'step.finish',dict(step=ident,trainer=dict(id='nope',name='가짜',email='x@y.z')))
+            self.assertEqual(req('POST','/api/onboarding',bad)[0],400)
+            ok=self.payload(self.learner,'step.finish',dict(step=ident,trainer=dict(id=ms[0]['id'],name='위조된 이름',email='fake@x.y')))
+            code,h,b=req('POST','/api/onboarding',ok);self.assertEqual(code,200)
+            tb=json.loads(b)['learner']['records'][ident]['trainedBy'];self.assertEqual((tb['name'],tb['email']),('교육자',self.trainer['email']))
             # 항목 PDF: 주소 발급은 로그인 필요, 발급한 주소는 쿠키 없이 5분·그 항목만
             self.assertEqual(req('GET','/api/v1/pdf-link?step=menu-glass',cookie=False)[0],401)
             self.assertEqual(req('GET','/v1/pdf/menu-glass',cookie=False)[0],401)
@@ -354,6 +366,59 @@ class EducationTests(unittest.TestCase):
         for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.admin,'step.teacher',dict(step=ident,index=i,on=True),self.learner['id'])
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
+
+    def test_learner_finishes_with_trainer_and_can_reopen(self):
+        # 10/29: 확인 절차 없음. 체크 = 교육 내용 항목, 모두 체크 → 교육한 관리자를 골라 직접 완료 → 본인만 완료 취소
+        ident='welcome-prep';n=len(ob.STEPS[ident]['checks'])
+        self.assertEqual(ob.STEPS[ident]['checks'][0][:8],'첫 출근은 09')  # 수행 확인 문구가 아니라 교육 내용 문장
+        self.assertEqual(len(ob.STEPS['welcome-ojt']['checks']),17)  # 교육 내용이 없는 첫날 OJT 는 체크 목록 그대로
+        t=dict(id='w1',name='교육자',email=self.trainer['email'],org='바리스타팀')
+        with self.assertRaises(ValueError):self.act(self.learner,'step.finish',dict(step=ident,trainer=t))  # 아직 다 체크하지 않음
+        for i in range(n):self.act(self.learner,'step.self',dict(step=ident,index=i,on=True))
+        with self.assertRaises(ValueError):self.act(self.learner,'step.finish',dict(step=ident,trainer=dict(t,email=self.learner['email'])))  # 본인 선택 불가
+        with self.assertRaises(PermissionError):self.act(self.trainer,'step.finish',dict(step=ident,trainer=t),self.learner['id'])  # 남이 완료할 수 없다
+        r=self.act(self.learner,'step.finish',dict(step=ident,trainer=t))['learner']['records'][ident]
+        self.assertEqual((r['status'],r['done'],r['trainedBy']['name'],r['trainedBy']['org']),('done',ob.today(),'교육자','바리스타팀'))
+        with self.assertRaises(ValueError):self.act(self.learner,'step.self',dict(step=ident,index=0,on=False))  # 완료 후 잠금
+        with self.assertRaises(PermissionError):self.act(self.trainer,'step.reopen',dict(step=ident),self.learner['id'])
+        r=self.act(self.learner,'step.reopen',dict(step=ident))['learner']['records'][ident]
+        self.assertEqual(r['status'],'practice');self.assertNotIn('trainedBy',r);self.assertTrue(all(r['self']));self.assertEqual(r['history'][-1]['trainedBy']['name'],'교육자')
+
+    def test_old_check_records_are_reset_once_for_keypoint_checks(self):
+        ident='welcome-prep'
+        with self.store.connect() as db:
+            key=projects.Rooms.read(db,ob.ROOT)['learners'][self.learner['id']]['key'];l=projects.Rooms.read(db,key)
+            for k,r in l['records'].items():r.pop('checkBasis',None)
+            l['records'][ident].update(status='review',self=[True]*4);l['records']['welcome-orientation'].update(status='done',done='2026-10-20',self=[True,True])
+            projects.Rooms.write(db,key,l)
+        rec=self.service.get(self.learner)['learner']['records']
+        self.assertEqual(rec[ident]['status'],'ready');self.assertFalse(any(rec[ident]['self']));self.assertEqual(len(rec[ident]['self']),len(ob.STEPS[ident]['checks']))
+        self.assertEqual(rec['welcome-orientation']['status'],'done');self.assertTrue(all(rec['welcome-orientation']['self']))
+        c=self.act(self.learner,'step.self',dict(step=ident,index=0,on=True))
+        self.assertTrue(self.service.get(self.learner)['learner']['records'][ident]['self'][0])  # 한 번만 비우고 이후 체크는 남는다
+
+    def test_works_directory_pages_filters_and_searches(self):
+        import works_auth
+        pages={'':dict(users=[dict(userId='a1',email='Kim@momos.co.kr',userName=dict(lastName='김',firstName='모모'),organizations=[dict(primary=True,orgUnits=[dict(primary=True,orgUnitName='바리스타팀',positionName='매니저')])]),
+                             dict(userId='a2',email='gone@momos.co.kr',userName=dict(lastName='박',firstName='퇴사'),isDeleted=True)],responseMetaData=dict(nextCursor='p2')),
+               'p2':dict(users=[dict(userId='a3',email='lee@momos.co.kr',userName=dict(lastName='이',firstName='재현')),dict(userId='a4',email='out@other.com',userName=dict(lastName='최',firstName='외부'))],responseMetaData={})}
+        calls=[]
+        def fake(url,token):
+            calls.append(token);from urllib.parse import urlsplit,parse_qs
+            return pages[(parse_qs(urlsplit(url).query).get('cursor') or [''])[0]]
+        old=(works_auth._get_json,dict(works_auth._TOKENS),dict(works_auth._DIRECTORY))
+        try:
+            works_auth._get_json=fake;works_auth._TOKENS.clear();works_auth._DIRECTORY.clear()
+            with patch.dict(__import__('os').environ,{'WORKS_CLIENT_ID':'x','WORKS_CLIENT_SECRET':'y','WORKS_DOMAIN':'momos.co.kr'}):
+                with self.assertRaises(works_auth.DirectoryUnavailable):works_auth.directory('u1')  # 토큰 없음 → 다시 로그인 안내
+                works_auth.remember_token('u1',dict(access_token='tok',expires_in=3600))
+                people=works_auth.directory('u1')
+                self.assertEqual([(m['name'],m['email'],m['org']) for m in people],[('김모모','kim@momos.co.kr','바리스타팀 · 매니저'),('이재현','lee@momos.co.kr','')])
+                works_auth.directory('u1');self.assertEqual(len(calls),2)  # 10분 캐시
+                self.assertEqual([m['id'] for m in works_auth.search(people,'매니저')],['a1'])
+                self.assertEqual([m['id'] for m in works_auth.search(people,'',exclude_email='lee@momos.co.kr')],['a1'])
+        finally:
+            works_auth._get_json=old[0];works_auth._TOKENS.clear();works_auth._TOKENS.update(old[1]);works_auth._DIRECTORY.clear();works_auth._DIRECTORY.update(old[2])
 
     def test_records_saved_before_new_sessions_still_load(self):
         # 배포 전에 저장된 기록(새 세션 칸 없음)도 교육생·담당자 화면과 요약에서 그대로 읽혀야 한다.

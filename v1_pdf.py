@@ -1,6 +1,6 @@
 """교육 항목 하나를 PDF 로 만든다(모바일 공유·다운로드용). 화면의 인쇄본(v1.js printView)과 같은 구성.
 
-머리글(단계·단원·번호·제목) → 교육 목적 → 사진(3열) → 비고 → 교육 내용 + 출처명 → 수행 확인(빈 체크박스) → 기준일·출력일.
+머리글(단계·단원·번호·제목) → 교육 목적 → 사진(3열) → 비고 → 교육 내용(빈 체크박스 + 출처명) → 기준일·출력일.
 원문 본문·메모·상태 안내는 넣지 않는다. 글꼴: Pretendard(OFL-1.1, assets/fonts).
 """
 from datetime import datetime, timedelta, timezone
@@ -77,7 +77,7 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
 
     # 머리글
     pdf.text_block('모모스 온보딩 · 온천 본점', 9, color=SUB, after=0.5)
-    meta = f"{unit.get('no', '')} {unit['title']} · {index + 1}/{len(steps)}".strip()
+    meta = f"{unit.get('no', '')} {unit['title']}".strip()
     if stage:
         tag = f"{stage['order']}. {stage['title']}"
         pdf.set_font('P', '', 8.5)
@@ -147,40 +147,29 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
         pdf.multi_cell(pdf.width - 6, 5.6, s['note'], new_x='LMARGIN', new_y='NEXT')
         pdf.ln(2.5)
 
-    # 교육 내용
-    if not s.get('contentOmitted'):
-        pdf.heading('교육 내용')
-        kps = s.get('keyPoints') or []
-        if kps:
-            for n, k in enumerate(kps, 1):
-                y = pdf.get_y()
-                pdf.set_font('P', '', 10.5)
-                pdf.set_text_color(*INK)
-                pdf.set_xy(ML, y)
-                pdf.cell(5.5, 5.9, f'{n}.')
-                pdf.text_block(k['text'], x=ML + 5.5, after=0)
-                cites = list(dict.fromkeys(k.get('cites') or []))
-                if cites:
-                    pdf.text_block('출처: ' + ' · '.join(src_label(c) for c in cites), 8.5, color=SUB, x=ML + 5.5, lh=1.45, after=0)
-                pdf.ln(1.8)
-        else:
-            for p in s.get('copy', []):
-                pdf.text_block(p)
-        for d in s.get('refDocs') or []:
-            pdf.text_block(f"원고 문서: {d['title']} ({d['ref']})", 8.5, color=SUB)
-
-    # 수행 확인 — 빈 체크박스. 목록이 쪽 사이에서 갈라지지 않게 남은 높이를 먼저 본다
-    pdf.set_font('P', '', 10.5)
-    need = 12 + sum(len(pdf.multi_cell(pdf.width - 7, 5.9, c, dry_run=True, output='LINES')) * 5.9 + 1.5 for c in s['checks'])
-    if pdf.get_y() + need > pdf.h - MB and need < pdf.h - MT - MB:
-        pdf.add_page()
-    pdf.heading('수행 확인')
-    for c in s['checks']:
-        y = pdf.get_y()
-        pdf.set_draw_color(*INK)
-        pdf.set_line_width(0.35)
-        pdf.rect(ML, y + 1.1, 3.9, 3.9, round_corners=True, corner_radius=0.5)
-        pdf.text_block(c, x=ML + 7, after=1.5)
+    # 교육 내용 = 체크 목록(빈 상자). 10/29부터 '수행 확인' 절은 없다. 교육 내용이 없는 항목(첫날 OJT)은 체크 목록 자체
+    items = [dict(text=k['text'], cites=k.get('cites') or []) for k in s.get('keyPoints') or []] or [dict(text=c, cites=[]) for c in s.get('checks') or []]
+    pdf.heading('교육 내용')
+    if items:
+        for k in items:
+            pdf.set_font('P', '', 10.5)
+            cites = list(dict.fromkeys(k['cites']))
+            need = len(pdf.multi_cell(pdf.width - 7, 5.9, k['text'], dry_run=True, output='LINES')) * 5.9 + (5 if cites else 0) + 2
+            if pdf.get_y() + need > pdf.h - MB and need < pdf.h - MT - MB:  # 한 항목이 쪽 사이에서 갈라지지 않게
+                pdf.add_page()
+            y = pdf.get_y()
+            pdf.set_draw_color(*INK)
+            pdf.set_line_width(0.35)
+            pdf.rect(ML, y + 1.1, 3.9, 3.9, round_corners=True, corner_radius=0.5)
+            pdf.text_block(k['text'], x=ML + 7, after=0)
+            if cites:
+                pdf.text_block('출처: ' + ' · '.join(src_label(c) for c in cites), 8.5, color=SUB, x=ML + 7, lh=1.45, after=0)
+            pdf.ln(1.8)
+    else:
+        for p in s.get('copy', []):
+            pdf.text_block(p)
+    for d in s.get('refDocs') or []:
+        pdf.text_block(f"원고 문서: {d['title']} ({d['ref']})", 8.5, color=SUB)
 
     # 바닥글
     now = now or datetime.now(KST)
