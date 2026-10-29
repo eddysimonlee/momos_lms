@@ -127,11 +127,15 @@ img{max-width:100%}
 .v1-nav-item.on{background:var(--component-menu-item-state-selected-background);color:var(--component-menu-item-state-selected-label-text-color);font:var(--component-menu-item-state-selected-label-typography)}
 .v1-nav-item.d2{padding-left:calc(var(--component-menu-item-base-padding-x) + var(--component-menu-item-base-indentation-width))}
 .v1-nav-no{min-width:1.2em;color:var(--component-menu-item-base-number-color);font:var(--component-menu-item-base-number-typography)}
-.v1-nav-cat{appearance:none;border:0;display:flex;align-items:center;gap:var(--component-category-item-base-content-gap);width:100%;min-height:var(--component-lnb-menu-slot-item-category-height);padding:0 var(--component-menu-item-base-padding-x);background:transparent;color:var(--component-category-item-base-label-text-color);font:var(--component-category-item-base-label-typography);text-align:left;cursor:pointer;border-radius:var(--component-lnb-menu-slot-item-menu-radius)}
-.v1-nav-cat:hover{background:var(--component-menu-item-state-hover-background)}
-.v1-nav-cat span{flex:1}
-.v1-nav-cat svg{width:var(--component-category-item-base-expansion-icon-size);height:var(--component-category-item-base-expansion-icon-size);color:var(--component-category-item-base-expansion-icon-color);transition:transform .15s}
-.v1-nav-cat[aria-expanded="true"] svg{transform:rotate(180deg)}
+.v1-nav-cat{display:flex;align-items:center;min-height:var(--component-lnb-menu-slot-item-menu-height);border-radius:var(--component-lnb-menu-slot-item-menu-radius)} /* '교육 진행 현황'과 같은 1단계 메뉴 항목 */
+.v1-nav-cat.on{background:var(--component-menu-item-state-selected-background)}
+.v1-nav-cat-label,.v1-nav-cat-toggle{appearance:none;border:0;background:transparent;cursor:pointer;color:var(--component-menu-item-state-default-label-text-color);border-radius:var(--component-lnb-menu-slot-item-menu-radius)}
+.v1-nav-cat-label{flex:1;align-self:stretch;text-align:left;padding:0 var(--component-menu-item-base-padding-x);font:var(--component-menu-item-state-default-label-typography)}
+.v1-nav-cat.on .v1-nav-cat-label{color:var(--component-menu-item-state-selected-label-text-color);font:var(--component-menu-item-state-selected-label-typography)}
+.v1-nav-cat-toggle{flex:none;width:var(--spacing-44);align-self:stretch;display:grid;place-items:center}
+.v1-nav-cat-label:hover,.v1-nav-cat-toggle:hover{background:var(--component-menu-item-state-hover-background)}
+.v1-nav-cat-toggle svg{width:var(--component-menu-item-base-expansion-icon-size);height:var(--component-menu-item-base-expansion-icon-size);color:var(--component-menu-item-base-expansion-icon-color);transition:transform .15s}
+.v1-nav-cat-toggle[aria-expanded="true"] svg{transform:rotate(180deg)}
 /* 진행 현황: 상태 3가지(시작 전·진행 중·완료) */
 .v1-who{margin:0 0 var(--spacing-12)}
 .v1-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--spacing-8);margin-bottom:var(--spacing-12)}
@@ -189,10 +193,16 @@ img{max-width:100%}
 .v1-fb-step{display:block;margin-top:var(--spacing-4);color:var(--text-muted);font:var(--label-xs)}
 .v1-lhead.v1-lhead-top{margin-top:0}
 /* 교육 내용 체크(10/29): 카드 오른쪽 위 상자. 상자만 눌러야 체크되고, 글을 누르면 근거 본문이 펼쳐진다 */
-.v1-kp li.v1-kc{position:relative}
-.v1-kc .v1-topic>summary,.v1-kc div.v1-topic{padding-right:calc(var(--spacing-16) + var(--spacing-44))} /* 체크 상자 터치 영역 */
-.v1-kc.on .v1-topic{border-color:var(--component-checkbox-state-selected-background)}
-.v1-kcheck{position:absolute;top:var(--spacing-4);right:var(--spacing-4);width:var(--spacing-44);height:var(--spacing-44);display:grid;place-items:center;cursor:pointer}
+.v1-kcard{min-width:0;border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);overflow:hidden}
+.v1-kcard>.v1-topic{border:0;border-radius:0}
+.v1-kcard:has(details[open]){border-color:var(--border-primary)}
+.v1-kc.on .v1-kcard{border-color:var(--surface-success-vivid)}
+.v1-kp li.v1-kc.on::before{background:var(--surface-success-vivid);color:var(--text-static-light)}
+.v1-khead{display:flex;align-items:center;gap:var(--spacing-4);min-height:var(--spacing-44);padding:0 var(--spacing-16) 0 var(--spacing-4)}
+.v1-khead-ro{min-height:0;padding:var(--spacing-10) var(--spacing-16) 0}
+.v1-khead+.v1-topic>summary,.v1-khead+div.v1-topic{padding-top:0}
+.v1-khead .v1-by{color:var(--text-success-strong);font:var(--label-sm-bold)}
+.v1-kcheck{position:relative;flex:none;width:var(--spacing-44);height:var(--spacing-44);display:grid;place-items:center;cursor:pointer}
 .v1-kcheck input{position:absolute;opacity:0;width:var(--v1-hairline);height:var(--v1-hairline);margin:0}
 .v1-kcheck .v1-box{width:var(--component-checkbox-size);height:var(--component-checkbox-size);border-radius:var(--component-checkbox-radius);border:var(--component-checkbox-border-width) solid var(--component-checkbox-state-default-border);background:var(--component-checkbox-state-default-background);display:grid;place-items:center}
 .v1-kcheck:hover .v1-box{border-color:var(--component-checkbox-state-hover-border)}

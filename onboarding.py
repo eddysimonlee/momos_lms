@@ -159,7 +159,7 @@ def fit(learner):
                      teacher=[done] * n, teacherAt=[r.get('done') if done else None] * n, teacherBy=[None] * n, teacherName=[None] * n, checkBasis=CHECK_BASIS)
             if r.get('status') in ('review', 'practice'):
                 r['status'] = 'ready'
-        for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None), ('teacherName', None)):
+        for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None), ('teacherName', None), ('teacherWhen', None)):
             if key in r and len(r[key]) != n:
                 r[key] = (list(r[key]) + [empty] * n)[:n]
     return learner
@@ -777,8 +777,8 @@ class Service:
             i=d['index']
             if type(i) is not int or not 0<=i<len(s['checks']) or type(d['on']) is not bool:raise ValueError('체크 항목을 확인하세요.')
             n=len(s['checks'])
-            for k in ('teacherBy','teacherName'):r.setdefault(k,[None]*n)
-            r['teacher'][i]=d['on'];r['teacherAt'][i]=today() if d['on'] else None
+            for k in ('teacherBy','teacherName','teacherWhen'):r.setdefault(k,[None]*n)
+            r['teacher'][i]=d['on'];r['teacherAt'][i]=today() if d['on'] else None;r['teacherWhen'][i]=stamp() if d['on'] else None  # 화면에는 체크한 관리자와 일시
             r['teacherBy'][i]=user['id'] if d['on'] else None;r['teacherName'][i]=user['name'] if d['on'] else None
             r['status']='practice' if any(r['teacher']) else 'ready';r['start']=r['start'] or today()
         elif action=='step.close':

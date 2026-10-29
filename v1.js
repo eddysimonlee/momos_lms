@@ -6,6 +6,10 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
+  // 체크 일시(서버 UTC ISO) → '10.30 14:05'(한국 시각). 일시가 없던 예전 기록은 날짜만
+  const whenLabel = (iso, day) => { const t = iso && new Date(iso); if (!t || isNaN(t)) return day ? day.slice(5).replace('-', '.') : '';
+    const k = new Date(t.getTime() + 9 * 3600e3).toISOString(); return `${k.slice(5, 7)}.${k.slice(8, 10)} ${k.slice(11, 16)}`; };
+  const markLabel = (r, k) => [(r.teacherName || [])[k], whenLabel((r.teacherWhen || [])[k], r.teacherAt[k])].filter(Boolean).join(' · ');
 
   let shownView = null, keepFocus = null, pickBranch = null;  // pickBranch: 지점을 고른 뒤 역할을 고르기 전
   let returnView = 'home';  // 항목 화면의 꺽쇠가 돌아갈 화면
@@ -42,12 +46,13 @@
   function toggleMark(step, k, on) {
     const r = record(step.id), n = checkItems(step).length;
     if (!r.teacherName) r.teacherName = Array(n).fill(null);
-    r.teacher[k] = on; r.teacherAt[k] = on ? cloud.today : null; r.teacherName[k] = on ? cloud.user.name : null;
+    if (!r.teacherWhen) r.teacherWhen = Array(n).fill(null);
+    r.teacher[k] = on; r.teacherAt[k] = on ? cloud.today : null; r.teacherName[k] = on ? cloud.user.name : null; r.teacherWhen[k] = on ? new Date().toISOString() : null;
     r.status = r.teacher.some(Boolean) ? 'practice' : 'ready';
     const box = $('app').querySelector(`[data-mark="${k}"]`);
     if (box) box.closest('li').classList.toggle('on', on);
     const by = $('app').querySelector(`[data-by="${k}"]`);
-    if (by) by.textContent = on ? `${cloud.user.name} · ${dateLabel(cloud.today)}` : '미체크';
+    if (by) by.textContent = on ? markLabel(r, k) : '';
     const pill = $('app').querySelector('.v1-pill');
     if (pill) { pill.className = 'v1-pill ' + r.status; pill.textContent = STATUS[r.status]; }
     const close = $('app').querySelector('[data-close]');
@@ -57,7 +62,7 @@
       try {
         const fresh = await api('POST', {action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
           requestId: uid(), data: {step: step.id, index: k, on}});
-        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), status: mine.status}); }
+        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
       } catch (e) {
         toast(e.message || '체크를 저장하지 못했어요. 다시 눌러 주세요.');
         try { cloud = await api('GET', null, cloud.target); } catch {}
@@ -337,11 +342,13 @@
     $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
       `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r].filter(Boolean).join(' · '))}</small></span></div>` +
       `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person')}` +
-      `<button type="button" class="v1-nav-cat" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages"><span>교육 단계</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
-      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${item('data-nav="all"', '전체 교육', view === 'all', true)}${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
+      // '교육 단계': 글자를 누르면 전체 교육, 오른쪽 꺽쇠를 눌러야 1~6단계가 펼쳐진다
+      `<div class="v1-nav-cat${view === 'all' ? ' on' : ''}"><button type="button" class="v1-nav-cat-label" data-nav="all" ${view === 'all' ? 'aria-current="page"' : ''}>교육 단계</button>` +
+      `<button type="button" class="v1-nav-cat-toggle" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages" aria-label="교육 단계 ${navStagesOpen ? '접기' : '펼치기'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>` +
+      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
       `<div class="v1-nav-foot">${isStaff() ? item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger') : ''}${item('data-nav="branch"', '지점 변경')}</div>`;
   }
-  function openNav() { if (view === 'stage' || view === 'all') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
+  function openNav() { if (view === 'stage') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
   function closeNav() { $('v1Nav').hidden = true; document.body.style.overflow = ''; }
   $('v1Nav').addEventListener('click', async e => {
     const t = e.target.closest('[data-nav],[data-nav-toggle],[data-nav-close]');
@@ -397,15 +404,17 @@
       // 사진도 원본 docx 의 절에서만 가져온다. 아래 토글 = 그 사진이 들어 있는 절(펼치면 사진 칸이 한 줄 전체로 넓어진다).
       `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy">${p.hideCaption ? '' : `<figcaption>${esc(p.caption)}</figcaption>`}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     // 교육 내용: 요약 카드 전체가 토글(근거 본문 펼치기). 체크 상자는 카드 오른쪽 위 — 상자만 눌러야 체크된다.
-    const box = k => {
-      const on = Boolean(r.teacher[k]), name = (r.teacherName || [])[k];
-      const by = `<span class="v1-by" data-by="${k}">${on ? esc([name, dateLabel(r.teacherAt[k])].filter(Boolean).join(' · ')) : '미체크'}</span>`;
-      return [`<label class="v1-kcheck" title="${on ? '체크 해제' : '교육했으면 체크'}"><input type="checkbox" data-mark="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''} ${editMark ? '' : 'disabled'}><span class="v1-box"></span></label>`, by];
+    // 교육 내용 카드(번호는 왼쪽 그대로): 위 = 교육 체크 줄, 가운데 = 글, 아래 = 본문 펼치기.
+    // 관리자: 체크 상자 + (체크하면) 체크한 관리자·일시. 교육생: 체크된 항목에만 체크한 관리자·일시
+    const head = k => {
+      const on = Boolean(r.teacher[k]), who = on ? `<span class="v1-by" data-by="${k}">${esc(markLabel(r, k))}</span>` : `<span class="v1-by" data-by="${k}"></span>`;
+      if (editMark) return `<div class="v1-khead"><label class="v1-kcheck"><input type="checkbox" data-mark="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''}><span class="v1-box"></span></label>${who}</div>`;
+      return on ? `<div class="v1-khead v1-khead-ro">${who}</div>` : '';
     };
     const keyPoints = items.length ? `<ol class="v1-kp">${items.map((k, n) => {
-      const keys = [...new Set(k.cites || [])], [check, by] = box(n);
-      return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}">${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}${by}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
-        : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}${by}</span></div>`}${check}</li>`;
+      const keys = [...new Set(k.cites || [])];
+      return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}"><div class="v1-kcard">${head(n)}${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
+        : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span></div>`}</div></li>`;
     }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const refDocs = (s.refDocs || []).map(d => `<p class="v1-inline-file">원고 문서: ${esc(d.title)} (${esc(d.ref)}) · ${esc(d.file)}</p>`).join('');
     let status = '';
@@ -425,7 +434,7 @@
     const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
-    const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 오른쪽 상자에 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
+    const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
       : '관리자가 교육하면서 체크해요. 글을 누르면 근거 본문이 펼쳐져요.';
     return learnerBar() + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
