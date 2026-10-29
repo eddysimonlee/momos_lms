@@ -8,6 +8,7 @@
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
 
   let shownView = null, keepFocus = null, pickBranch = null;  // pickBranch: 지점을 고른 뒤 역할을 고르기 전
+  let returnView = 'home';  // 항목 화면의 꺽쇠가 돌아갈 화면
   let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
@@ -106,11 +107,11 @@
   const validFilter = f => f && f.k in FKIND && ((content.filters || {})[f.k] || []).includes(f.v) ? {k: f.k, v: f.v} : null;
   const matches = (s, f = filt) => !f || (s[f.k] || []).includes(f.v);
   // '다음 항목 ›': 필터를 걸었으면 그 필터 안의 다음 항목으로(번호는 전체 번호 그대로)
-  const nextOf = s => { const f = validFilter(filt); return steps().slice(stepIndex(s.id) + 1).find(x => matches(x, f)); };
+  const nextOf = s => { const f = returnView === 'all' ? validFilter(filt) : null; return steps().slice(stepIndex(s.id) + 1).find(x => matches(x, f)); };
   function setFilter(f) {
     filt = f;
     try { f ? localStorage.setItem(FILTER_KEY, JSON.stringify(f)) : localStorage.removeItem(FILTER_KEY); } catch {}
-    stageSel = null; homeScroll = null; lastStep = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
+    homeScroll = null; lastStep = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
   }
   function drawSheet() {
     const live = steps().filter(s => !planned(s)), n = f => live.filter(s => matches(s, f)).length;
@@ -140,11 +141,14 @@
     const branch = view === 'branch' || view === 'role';
     // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
-    const backTo = step ? 'home' : view === 'role' ? 'branch' : view === 'branch' && profile() ? 'home' : null;
+    // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
+    // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
+    const backTo = step ? returnView : view === 'person' && cloud.target !== cloud.user.id ? 'home' : view === 'role' ? 'branch' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
-    $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : '교육 목록으로');
-    $('v1Title').textContent = step ? step.title : '모모스 온보딩';
+    $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && view === 'person' ? '교육생 목록으로' : '이전 화면으로');
+    $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 진행 현황' : view === 'person' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'all' ? '전체 교육' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -153,18 +157,18 @@
       $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
     }
     $('v1Who').hidden = branch && !profile();
-    $('v1More').hidden = !profile();  // 지점·역할을 정한 뒤부터: 지점·역할 변경, (항목 화면) PDF
+    $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
     const app = $('app'), same = view === shownView, y = window.scrollY;
-    if (!same && shownView === 'home') homeScroll = {stage: stageSel, y};  // 항목을 누른 직후라 stageSel 은 보던 탭(= 그 항목의 단계)
+    if (!same && shownView && !shownView.startsWith('step:') && view.startsWith('step:')) homeScroll = {view: shownView, stage: stageSel, target: cloud.target, y};  // 목록에서 항목으로 들어갈 때 보던 위치
     const opened = same ? [...app.querySelectorAll('details[open][id]')].map(d => d.id) : [];
     const f = same && app.contains(document.activeElement) ? document.activeElement : null;
     const focusSel = f && ['data-self', 'data-teacher', 'data-step'].map(a => f.hasAttribute(a) ? `[${a}="${CSS.escape(f.getAttribute(a))}"]` : '').find(Boolean);
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : homeView();
+    app.innerHTML = view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
     if (same) {
       opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
@@ -183,7 +187,7 @@
       window.scrollTo({top: 0, behavior: 'instant'});
     } else {
       keepFocus = null;
-      if (homeScroll && homeScroll.stage === stageSel) window.scrollTo({top: homeScroll.y, behavior: 'instant'});
+      if (homeScroll && homeScroll.view === view && (view !== 'stage' || homeScroll.stage === stageSel) && homeScroll.target === cloud.target) window.scrollTo({top: homeScroll.y, behavior: 'instant'});
       else {  // '다음 항목'으로 넘어가다 다른 단계까지 온 경우: 그 단계 목록에서 마지막으로 본 항목을 화면 가운데에
         const it = lastStep && app.querySelector(`[data-step="${CSS.escape(lastStep)}"]`);
         if (it) it.scrollIntoView({block: 'center', behavior: 'instant'}); else window.scrollTo({top: 0, behavior: 'instant'});
@@ -224,8 +228,7 @@
     if (!(await act('profile.set', {branch, role}))) return;
     pickBranch = null;
     if (role === 'learner' && !cloud.enrolled) await act('config.selfEnrol', {});
-    if (role === 'staff' && others().length) cloud = await api('GET', null, others()[0].id);
-    if (role === 'learner' && cloud.target !== cloud.user.id) cloud = await api('GET');
+    if (cloud.target !== cloud.user.id) cloud = await api('GET');
     view = 'home'; stageSel = null; render();
     toast(`${BRANCHES.find(x => x.id === branch).name} · ${ROLES.find(x => x.id === role).name}(으)로 들어왔어요.`);
   }
@@ -234,14 +237,41 @@
   const avatarInner = u => `<span aria-hidden="true">${esc((u.name || '?').trim().slice(0, 1))}</span><img src="/v1/avatar/${encodeURIComponent(u.id)}" alt="" loading="lazy" onerror="this.remove()">`;
   const avatar = u => `<span class="v1-avatar">${avatarInner(u)}</span>`;
 
-  function peopleBar() {
-    if (!isStaff()) return '';
-    const list = others();
-    return '<section class="v1-card"><h2>교육생</h2>' +
-      (list.length ? '<div class="v1-muted">이름을 누르면 그 교육생의 기록이 열려요.</div><div class="v1-people">' +
-        list.map(r => `<button data-person="${esc(r.id)}" class="${r.id === cloud.target ? 'on' : ''}">${avatar(r)}${esc(r.name)}</button>`).join('') + '</div>'
-        : '<div class="v1-muted">아직 교육을 시작한 교육생이 없어요. 교육생이 처음 접속하면 여기에 나타나요.</div>') +
-      '</section>';
+  // --- 진행 현황(홈). 교육생: 내 84개 교육 상태를 단계별 칸으로. 관리자: 교육생마다 한 줄(완료·진행 중·시작 전 비중) → 누르면 그 사람 칸.
+  // 일정과 무관하게 각 교육의 상태만 본다(순서 없이 듣거나, 체크를 다 안 하고 나온 것도 그대로). 진행 중 칸은 체크한 만큼 아래에서 채운다.
+  const liveSteps = () => steps().filter(s => !planned(s));
+  const stateOf = st => st === 'done' ? 'done' : st === 'practice' || st === 'review' ? 'prog' : 'none';
+  const LABEL = {none: '시작 전', prog: '진행 중', done: '완료'};
+  function countsOf(get) { const c = {none: 0, prog: 0, done: 0}; liveSteps().forEach(s => c[stateOf(get(s))]++); return c; }
+  const ratioBar = (c, cls = '') => { const n = c.none + c.prog + c.done || 1;
+    return `<span class="v1-pbar ${cls}" aria-hidden="true"><i class="done" style="width:${c.done / n * 100}%"></i><i class="prog" style="width:${c.prog / n * 100}%"></i></span>`; };
+  function progressView() {
+    const mine = cloud.target === cloud.user.id, c = countsOf(s => record(s.id).status);
+    const tiles = stages().map(g => {
+      const xs = g.units.flatMap(u => u.steps).filter(s => !planned(s));
+      if (!xs.length) return '';
+      return `<section class="v1-pgroup"><h3>${g.order}. ${esc(g.title)}</h3><div class="v1-tiles">` + xs.map(s => {
+        const r = record(s.id), k = stateOf(r.status), items = checkItems(s), n = stepIndex(s.id) + 1;
+        const fill = k === 'prog' && items.length ? Math.round(items.filter((_, i) => r.self[i]).length / items.length * 100) : 0;
+        return `<button type="button" class="v1-tile ${k}" style="--fill:${fill}%" data-step="${esc(s.id)}" aria-label="${n}번 ${esc(s.title)} · ${LABEL[k]}" title="${n}. ${esc(s.title)} · ${LABEL[k]}">${n}</button>`;
+      }).join('') + '</div></section>';
+    }).join('');
+    return (mine ? '' : `<p class="v1-muted v1-who">${esc(cloud.name)}님의 교육 기록이에요(보기만 할 수 있어요).</p>`) + enrolNotice() +
+      `<div class="v1-counts"><div><b>${c.done}</b><span><i class="v1-dot done"></i>완료</span></div><div><b>${c.prog}</b><span><i class="v1-dot prog"></i>진행 중</span></div><div><b>${c.none}</b><span><i class="v1-dot none"></i>시작 전</span></div></div>` +
+      ratioBar(c, 'lg') + tiles +
+      `<p class="v1-muted v1-ptip">칸을 누르면 그 교육으로 이동해요. 진행 중인 칸은 체크한 만큼 채워져요.</p>`;
+  }
+  function staffHome() {
+    const sums = cloud.educationSummary || [], me = cloud.user.id;
+    const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
+      return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><strong>${esc(label || x.name)}</strong>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
+    const self = sums.find(x => x.id === me);
+    const others = sums.filter(x => x.id !== me), mineList = others.filter(x => x.trainedByMe), rest = others.filter(x => !x.trainedByMe);
+    // 내 교육: 아직 시작 전이어도 같은 막대로 보여 주고, 누르면(처음이면 교육을 시작하고) 내 진행도로
+    const meRow = self ? row(self, '내 교육') : row(Object.assign({}, cloud.user, {states: {}, trainedByMe: false}), '내 교육').replace('data-person=', 'data-enrol-self data-x=');
+    return `<ul class="v1-plist">${meRow}</ul>` +
+      `<h3 class="v1-pcat">나의 교육생 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 나를 교육한 관리자로 고른 교육생이 없어요.</p>') +
+      `<h3 class="v1-pcat">전체 교육생 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 교육을 시작한 교육생이 없어요.</p>');
   }
 
   function enrolNotice() {
@@ -249,47 +279,76 @@
     return `<div class="v1-note warn">교육 기록을 아직 시작하지 못했어요. 새로고침해 보세요.</div>`;
   }
 
-  function homeView() {
-    filt = validFilter(filt);
-    const list = steps().filter(s => matches(s)), live = list.filter(s => !planned(s));
-    const isDone = s => !planned(s) && record(s.id).status === 'done';
-    const done = live.filter(isDone).length;
-    const mine = cloud.target === cloud.user.id;
-    if (isStaff() && mine) return peopleBar();
-    const who = mine ? '' : `<div class="v1-muted">${esc(cloud.name)}님의 교육 기록</div>`;
-    // 필터를 걸면 맞는 항목만 남기고, 빈 단원·단계는 감춘다(번호는 전체 번호 그대로)
+  function homeView() { return isStaff() ? staffHome() : progressView(); }
+
+  const listItem = s => {
+    const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
+    const sub = st === 'done' ? ' · ' + dateLabel(r.done) + (r.trainedBy ? ' · 교육: ' + r.trainedBy.name : '') : '';
+    return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${st === 'planned' ? '교육안 준비 중' : esc(STATUS[st] + sub)}</small></span><span class="v1-chev">›</span></button></li>`;
+  };
+  const unitBlock = u => {
+    const us = u.steps.filter(s => !planned(s));
+    const meta = [us.length ? '' : '준비 중', u.plan ? `교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차` : ''].filter(Boolean).join(' · ');
+    return `<h3 class="v1-unit"><span class="v1-uno">${esc(u.no || '')}</span>${esc(u.title)}<small>${meta}</small></h3>` +
+      (u.summary ? `<p class="v1-unote">${esc(u.summary)}</p>` : '') + '<ul class="v1-list">' + u.steps.map(listItem).join('') + '</ul>';
+  };
+  const whoLine = () => cloud.target === cloud.user.id ? '' : `<p class="v1-muted v1-who">${esc(cloud.name)}님의 교육 기록</p>`;
+  const srcLine = () => `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다 · <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a></p>`;
+  function wholeView() {
     const all = stages().map(g => Object.assign({}, g, {units: g.units.map(u => Object.assign({}, u, {steps: u.steps.filter(s => matches(s))})).filter(u => u.steps.length)})).filter(g => g.units.length);
-    // 처음 열면: 끝나지 않은 첫 세션이 있는 단계
-    if (!all.some(g => g.order === stageSel)) stageSel = (all.find(g => g.units.some(u => u.steps.some(s => !planned(s) && !isDone(s)))) || all[0]).order;
-    const g = all.find(x => x.order === stageSel);
-    const item = s => {
-      const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
-      const sub = st === 'done' ? ' · ' + dateLabel(r.done) + (r.trainedBy ? ' · 교육: ' + r.trainedBy.name : '') : '';
-      return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${st === 'planned' ? '교육안 준비 중' : esc(STATUS[st] + sub)}</small></span><span class="v1-chev">›</span></button></li>`;
-    };
-    const tabs = '<nav class="v1-stages" aria-label="교육 단계">' + all.map(x => {
-      const xs = x.units.flatMap(u => u.steps).filter(s => !planned(s));
-      return `<button data-stage="${x.order}" class="${x.order === stageSel ? 'on' : ''}" aria-pressed="${x.order === stageSel}"><b>${x.order}</b><span>${esc(x.title)}</span>${xs.length ? '' : '<small>준비 중</small>'}</button>`;
-    }).join('') + '</nav>';
-    const units = g.units.map(u => {
-      const us = u.steps.filter(s => !planned(s));
-      const meta = [us.length ? '' : '준비 중', u.plan ? `교육 시작 후 ${u.plan[0]}~${u.plan[1]}일차` : ''].filter(Boolean).join(' · ');
-      return `<h3 class="v1-unit"><span class="v1-uno">${esc(u.no || '')}</span>${esc(u.title)}<small>${meta}</small></h3>` +
-        (u.summary ? `<p class="v1-unote">${esc(u.summary)}</p>` : '') + '<ul class="v1-list">' + u.steps.map(item).join('') + '</ul>';
-    }).join('');
+    const count = all.reduce((n, g) => n + g.units.reduce((m, u) => m + u.steps.length, 0), 0);
     const extra = (content.extra || []).map(e => `<section class="v1-card v1-extra"><h2>${esc(e.title)}</h2><div class="v1-muted">${e.sessions.map(x => esc(x.title)).join(' · ')}${e.note ? ' — ' + esc(e.note) : ''}</div></section>`).join('');
-    return peopleBar() +
-      `<section class="v1-card">${who}` +
-      `<div class="v1-progress"><i style="width:${live.length ? Math.round(done / live.length * 100) : 0}%"></i></div>` +
-      `<div class="v1-muted">진행률 ${live.length ? Math.round(done / live.length * 100) : 0}%${list.length > live.length ? ` · 교육안 준비 중 ${list.length - live.length}개` : ''}</div>${enrolNotice()}</section>` +
-      // 단계 카드 바로 위 머리 줄: '교육 단계' + 필터 칩(필터가 단계·목록을 좁힌다). 고정하지 않고 함께 스크롤
-      `<div class="v1-prow v1-lhead"><h2>교육 단계${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${list.length}개</small>` : ''}</h2>` +
+    return whoLine() + `<div class="v1-prow v1-lhead v1-lhead-top"><h2>전체 교육${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${count}개</small>` : `<small> · ${count}개</small>`}</h2>` +
       (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)} ▾</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
         : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + '</div>' +
-      tabs + `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>${g.summary ? `<p class="v1-unote">${esc(g.summary)}</p>` : ''}` + units +
-      (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (!filt && g.order === all[all.length - 1].order ? extra : '') +
-      `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다 · <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a></p>`;
+      all.map(g => `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>` + g.units.map(unitBlock).join('')).join('') +
+      (!filt ? extra : '') + srcLine();
   }
+
+  // 교육 단계 화면(메뉴 › 교육 단계 › 1~6): 그 단계의 교육 목록(필터는 '전체 교육'에서만)
+  function stageView(whole) {
+    // whole: 메뉴 › 교육 단계 › 전체 교육 — 84개를 단계별로 한 화면에, 필터(근무조·포지션)는 여기에서만
+    filt = validFilter(filt);
+    if (whole) return wholeView();
+    const all = stages();
+    if (!all.some(g => g.order === stageSel)) stageSel = (all.find(g => g.units.some(u => u.steps.some(s => !planned(s) && record(s.id).status !== 'done'))) || all[0]).order;
+    const g = all.find(x => x.order === stageSel);
+    const extra = (content.extra || []).map(e => `<section class="v1-card v1-extra"><h2>${esc(e.title)}</h2><div class="v1-muted">${e.sessions.map(x => esc(x.title)).join(' · ')}${e.note ? ' — ' + esc(e.note) : ''}</div></section>`).join('');
+    return whoLine() + `<h2 class="v1-stage v1-stage-top">${g.order}. ${esc(g.title)}</h2>${g.summary ? `<p class="v1-unote">${esc(g.summary)}</p>` : ''}` +
+      g.units.map(unitBlock).join('') +
+      (g.note ? `<div class="v1-note">${esc(g.note)}</div>` : '') + (g.order === all[all.length - 1].order ? extra : '') + srcLine();
+  }
+
+  // --- 왼쪽 메뉴(LNB, 최대 2단계): 진행 현황 · 교육 단계(펼치기/접기) › 1~6 · 아래쪽 지점·역할 변경
+  let navStagesOpen = false;
+  function drawNav() {
+    const homeLabel = '교육 진행 현황', inStage = view === 'stage';
+    const item = (attrs, label, on, depth2) => `<button type="button" class="v1-nav-item${on ? ' on' : ''}${depth2 ? ' d2' : ''}" ${attrs} ${on ? 'aria-current="page"' : ''}>${label}</button>`;
+    const b = BRANCHES.find(x => x.id === (profile() && profile().branch)), r = ROLES.find(x => x.id === (profile() && profile().role));
+    $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
+      `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r && r.name].filter(Boolean).join(' · '))}</small></span></div>` +
+      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person')}` +
+      `<button type="button" class="v1-nav-cat" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages"><span>교육 단계</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
+      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${item('data-nav="all"', '전체 교육', view === 'all', true)}${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
+      `<div class="v1-nav-foot">${item('data-nav="branch"', '지점 변경')}${item('data-nav="role"', '역할 변경')}</div>`;
+  }
+  function openNav() { if (view === 'stage' || view === 'all') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
+  function closeNav() { $('v1Nav').hidden = true; document.body.style.overflow = ''; }
+  $('v1Nav').addEventListener('click', async e => {
+    const t = e.target.closest('[data-nav],[data-nav-toggle],[data-nav-close]');
+    if (!t) return;
+    if (t.hasAttribute('data-nav-close')) return closeNav();
+    if (t.hasAttribute('data-nav-toggle')) { navStagesOpen = !navStagesOpen; return drawNav(); }
+    const to = t.dataset.nav; closeNav();
+    if (isStaff() && cloud.target !== cloud.user.id && to !== 'branch' && to !== 'role') { try { cloud = await api('GET'); } catch {} }  // 메뉴는 항상 '나' 기준
+    if (isStaff() && !cloud.enrolled && (to === 'all' || to === 'stage')) await act('config.selfEnrol', {});  // 관리자가 처음 교육 목록을 열면 내 교육을 시작
+    if (to === 'all') { homeScroll = null; view = 'all'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    if (to === 'stage') { stageSel = Number(t.dataset.navStage); homeScroll = null; view = 'stage'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    if (to === 'home') { view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    if (to === 'branch') { pickBranch = null; view = 'branch'; render(); return; }
+    if (to === 'role') { pickBranch = profile() && profile().branch; view = 'role'; render(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Nav').hidden) { closeNav(); $('v1Ham').focus(); } });
 
   function plannedView(s) {
     const i = stepIndex(s.id), next = nextOf(s), u = unitOf(s.id);
@@ -346,8 +405,8 @@
       actions = `<button class="v1-btn primary" data-finish ${ready && canWrite() && !busy ? '' : 'disabled'}>완료</button>`;
     } else if (own && st === 'done') actions = `<button class="v1-btn" data-reopen ${busy ? 'disabled' : ''}>완료 취소</button>`;
     if (next) actions += `<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`;
-    const memo = own || r.memo ? `<section class="v1-card"><h2>메모</h2><div class="v1-muted">어려웠던 점, 관리자에게 물어볼 내용</div>` +
-      `<textarea class="v1-memo" data-memo ${editSelf && !busy ? '' : 'disabled'} placeholder="${own ? '적어 두면 관리자도 함께 볼 수 있어요' : ''}">${esc(r.memo)}</textarea></section>` : '';
+    const memo = own || r.memo ? `<section class="v1-card"><h2>의견 보내기</h2>` +
+      `<textarea class="v1-memo" data-memo ${editSelf && !busy ? '' : 'disabled'} placeholder="${own ? '궁금하거나 이해가 어려운 점을 입력해주세요.' : ''}">${esc(r.memo)}</textarea></section>` : '';
     const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
@@ -364,12 +423,14 @@
     const app = $('app');
     app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; view = 'role'; render(); });
     app.querySelectorAll('[data-role]').forEach(b => b.onclick = () => chooseRole(b.dataset.role).catch(e => toast(e.message)));
-    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { view = 'step:' + b.dataset.step; stageSel = unitOf(b.dataset.step).stage.order; render(); });
+    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { if (!view.startsWith('step:')) returnView = view; view = 'step:' + b.dataset.step; if (returnView !== 'stage') stageSel = unitOf(b.dataset.step).stage.order; render(); });
+    const enrolSelf = app.querySelector('[data-enrol-self]');
+    if (enrolSelf) enrolSelf.onclick = async () => { if (await act('config.selfEnrol', {})) { cloud = await api('GET'); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } };
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     const fo = app.querySelector('[data-filter-open]'), fc = app.querySelector('[data-filter-clear]');
     if (fo) fo.onclick = openSheet;
     if (fc) fc.onclick = () => setFilter(null);
-    app.querySelectorAll('[data-person]').forEach(b => b.onclick = () => load(b.dataset.person).catch(e => toast(e.message)));
+    app.querySelectorAll('[data-person]').forEach(b => b.onclick = async () => { try { cloud = await api('GET', null, b.dataset.person); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { toast(e.message); } });
     // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동
     app.querySelectorAll('[data-close-src]').forEach(b => b.onclick = () => {
       const d = b.closest('details'); d.open = false;
@@ -379,7 +440,7 @@
     if (!step) return;
     app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => toggleSelf(step, Number(c.dataset.self), c.checked));
     const memo = app.querySelector('[data-memo]');
-    if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('메모를 저장했어요.')); };
+    if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('의견을 저장했어요.')); };
     const finish = app.querySelector('[data-finish]');
     if (finish) finish.onclick = () => openFinish(step);
     const reopen = app.querySelector('[data-reopen]');
@@ -516,11 +577,7 @@
   }
   function onMenuOpen() {
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
-    const p = profile(), b = p && BRANCHES.find(x => x.id === p.branch), r = p && ROLES.find(x => x.id === p.role);
-    $('v1MenuBranch').innerHTML = `지점 변경<small>${esc(b ? b.name : '')}</small>`;
-    $('v1MenuRole').innerHTML = `역할 변경<small>${esc(r ? r.name : '')}</small>`;
     $('v1ExportPdf').hidden = !s || planned(s);
-    $('v1MenuSep').hidden = $('v1ExportPdf').hidden;
     if (!s || planned(s)) return;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
@@ -557,11 +614,12 @@
     window.print();
   }
 
-  $('v1Back').onclick = () => { const to = $('v1Back').dataset.to; if (to) { view = to; render(); } };
+  $('v1Back').onclick = async () => { const to = $('v1Back').dataset.to; if (!to) return;
+    if (to === 'home' && view === 'person' && cloud.target !== cloud.user.id) { try { cloud = await api('GET'); } catch {} }  // 교육생 목록으로: 내 기록으로 돌아온다
+    view = to; render(); };
+  $('v1Ham').onclick = openNav;
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
-  $('v1MenuBranch').onclick = () => { closeMenu(); pickBranch = null; view = 'branch'; render(); };
-  $('v1MenuRole').onclick = () => { closeMenu(); pickBranch = profile() && profile().branch; view = 'role'; render(); };
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
@@ -617,7 +675,6 @@
     if (profile()) {
       view = 'home';
       if (!isStaff() && !cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
-      if (isStaff() && others().length) cloud = await api('GET', null, others()[0].id);
     }
     render();
   }).catch(e => { $('app').innerHTML = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(e.message)}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button></div>`; });

@@ -46,6 +46,7 @@ img{max-width:100%}
 .v1-main{max-width:600px; /* wds-allow: 읽기 폭 상한, 레이아웃 토큰 없음 */margin:0 auto;padding:var(--spacing-16) var(--spacing-16) var(--spacing-48)}
 .v1-card{background:var(--surface-subtle);border:var(--v1-hairline) solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--spacing-16);margin-bottom:var(--spacing-12)}
 .v1-card h2{margin:0 0 var(--spacing-4);font:var(--title-xs-bold)}
+.v1-card>h2+.v1-memo{margin-top:var(--spacing-8)}
 .v1-muted{color:var(--text-muted);font:var(--body-sm)}
 /* notes = banner round: gray / yellow / blue */
 .v1-note{display:block;min-height:var(--component-banner-base-height);padding:var(--component-banner-base-padding-y) var(--component-banner-type-round-padding-x);border-radius:var(--component-banner-type-round-radius);background:var(--component-banner-color-gray-surface);color:var(--component-banner-color-gray-text);font:var(--component-banner-base-typography);margin:var(--spacing-12) 0 0}
@@ -111,6 +112,56 @@ img{max-width:100%}
 .v1-stages button.on{border-color:var(--border-primary);box-shadow:inset 0 0 0 var(--v1-hairline) var(--border-primary)}
 .v1-stages button.on b{color:var(--component-button-type-primary-state-default-background)}
 .v1-uno{color:var(--text-muted);font:var(--label-sm-bold);min-width:2.2em}
+.v1-ham{margin-left:calc(var(--spacing-8) * -1)}
+.v1-ham[hidden]{display:none}
+/* 왼쪽 메뉴(LNB basic, 2단계): 메뉴 항목 = menu-item 토큰, '교육 단계' = category-item(펼치기/접기) */
+.v1-nav{position:fixed;inset:0;z-index:calc(var(--component-layout-z-index-gnb) + 1)}
+.v1-nav[hidden]{display:none}
+.v1-nav-panel{position:absolute;top:0;bottom:0;left:0;width:min(var(--component-lnb-type-basic-width) + var(--spacing-40),85vw);display:flex;flex-direction:column;background:var(--component-lnb-base-background);box-shadow:var(--component-popover-base-shadow);padding-bottom:env(safe-area-inset-bottom)}
+.v1-nav-head{display:flex;align-items:center;gap:var(--spacing-12);padding:var(--spacing-20) var(--spacing-16) var(--spacing-12);border-bottom:var(--v1-hairline) solid var(--border-subtle)}
+.v1-nav-head strong{display:block;font:var(--body-md-bold)}.v1-nav-head small{display:block;color:var(--text-muted);font:var(--label-sm)}
+.v1-nav-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:var(--spacing-2);padding:var(--component-lnb-type-basic-navigation-padding-top) var(--component-lnb-type-basic-navigation-padding-x)}
+.v1-nav-foot{display:flex;flex-direction:column;gap:var(--spacing-2);padding:var(--spacing-8) var(--component-lnb-type-basic-navigation-padding-x);border-top:var(--v1-hairline) solid var(--border-subtle)}
+.v1-nav-item{appearance:none;border:0;display:flex;align-items:center;gap:var(--component-menu-item-base-content-gap);width:100%;min-height:var(--component-lnb-menu-slot-item-menu-height);padding:0 var(--component-menu-item-base-padding-x);border-radius:var(--component-lnb-menu-slot-item-menu-radius);background:transparent;color:var(--component-menu-item-state-default-label-text-color);font:var(--component-menu-item-state-default-label-typography);text-align:left;cursor:pointer}
+.v1-nav-item:hover{background:var(--component-menu-item-state-hover-background);color:var(--component-menu-item-state-hover-label-text-color)}
+.v1-nav-item.on{background:var(--component-menu-item-state-selected-background);color:var(--component-menu-item-state-selected-label-text-color);font:var(--component-menu-item-state-selected-label-typography)}
+.v1-nav-item.d2{padding-left:calc(var(--component-menu-item-base-padding-x) + var(--component-menu-item-base-indentation-width))}
+.v1-nav-no{min-width:1.2em;color:var(--component-menu-item-base-number-color);font:var(--component-menu-item-base-number-typography)}
+.v1-nav-cat{appearance:none;border:0;display:flex;align-items:center;gap:var(--component-category-item-base-content-gap);width:100%;min-height:var(--component-lnb-menu-slot-item-category-height);padding:0 var(--component-menu-item-base-padding-x);background:transparent;color:var(--component-category-item-base-label-text-color);font:var(--component-category-item-base-label-typography);text-align:left;cursor:pointer;border-radius:var(--component-lnb-menu-slot-item-menu-radius)}
+.v1-nav-cat:hover{background:var(--component-menu-item-state-hover-background)}
+.v1-nav-cat span{flex:1}
+.v1-nav-cat svg{width:var(--component-category-item-base-expansion-icon-size);height:var(--component-category-item-base-expansion-icon-size);color:var(--component-category-item-base-expansion-icon-color);transition:transform .15s}
+.v1-nav-cat[aria-expanded="true"] svg{transform:rotate(180deg)}
+/* 진행 현황: 상태 3가지(시작 전·진행 중·완료) */
+.v1-who{margin:0 0 var(--spacing-12)}
+.v1-counts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--spacing-8);margin-bottom:var(--spacing-12)}
+.v1-counts>div{background:var(--surface-subtle);border-radius:var(--radius-lg);padding:var(--spacing-10) var(--spacing-12)}
+.v1-counts b{display:block;font:var(--title-md-bold)}.v1-counts span{display:flex;align-items:center;gap:var(--spacing-4);color:var(--text-muted);font:var(--label-sm)}
+.v1-dot{display:inline-block;width:var(--spacing-8);height:var(--spacing-8);border-radius:var(--radius-sm)}
+.v1-dot.done,.v1-pbar .done{background:var(--surface-success-vivid)}
+.v1-dot.prog,.v1-pbar .prog{background:var(--surface-warning-vivid)}
+.v1-dot.none{background:var(--surface-muted)}
+.v1-pbar{display:flex;height:var(--spacing-8);border-radius:var(--radius-full);overflow:hidden;background:var(--surface-muted)}
+.v1-pbar.lg{height:var(--spacing-10);margin-bottom:var(--spacing-20)}
+.v1-pgroup{margin-bottom:var(--spacing-20)}.v1-pgroup h3{margin:0 0 var(--spacing-8);font:var(--body-md-bold)}
+.v1-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--spacing-32),1fr));gap:var(--spacing-4)}
+.v1-tile{appearance:none;border:0;aspect-ratio:1;border-radius:var(--radius-md);background:var(--surface-muted);color:var(--text-muted);font:var(--label-xs);cursor:pointer;padding:0}
+.v1-tile.done{background:var(--surface-success-vivid);color:var(--text-static-light)}
+.v1-tile.prog{background:linear-gradient(to top,var(--surface-warning-vivid) var(--fill),var(--surface-warning-subtle) var(--fill));color:var(--text-default)}
+.v1-ptip{margin-top:var(--spacing-4)}
+/* 관리자 홈: 교육생 한 줄씩 */
+.v1-plist{list-style:none;margin:0;padding:0}
+.v1-plist li[hidden]{display:none}
+.v1-prow-btn{appearance:none;width:100%;display:flex;align-items:center;gap:var(--spacing-12);padding:var(--spacing-12) 0;border:0;border-bottom:var(--v1-hairline) solid var(--border-subtle);background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.v1-prow-btn:hover{background:var(--action-hover)}
+.v1-pbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-4)}
+.v1-pbody strong{display:flex;align-items:center;gap:var(--spacing-6);font:var(--body-md-bold)}
+.v1-pbody small{color:var(--text-muted);font:var(--label-sm)}
+.v1-tag{display:inline-flex;align-items:center;height:var(--component-tag-size-xxs-height);padding:0 var(--component-tag-size-xxs-padding-x);border-radius:var(--component-tag-type-square-border-radius);background:var(--component-tag-color-info-surface);color:var(--component-tag-color-info-text-color);font:var(--label-xs-bold)}
+.v1-psearch{margin:var(--spacing-16) 0 0}
+.v1-pcat{margin:var(--spacing-20) 0 var(--spacing-4);font:var(--label-sm-bold);color:var(--text-muted)}
+.v1-stage-top{margin-top:0}
+.v1-lhead.v1-lhead-top{margin-top:0}
 /* 교육 내용 체크(10/29): 카드 오른쪽 위 상자. 상자만 눌러야 체크되고, 글을 누르면 근거 본문이 펼쳐진다 */
 .v1-kp li.v1-kc{position:relative}
 .v1-kc .v1-topic>summary,.v1-kc div.v1-topic{padding-right:calc(var(--spacing-16) + var(--spacing-44))} /* 체크 상자 터치 영역 */
@@ -284,16 +335,18 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 <section id="authGate" class="auth-gate" aria-label="로그인"></section>
 <div id="appShell" inert aria-hidden="true">
   <header class="v1-top">
+    <button id="v1Ham" class="v1-icon-btn v1-ham" hidden aria-label="메뉴 열기" aria-controls="v1Nav"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><!-- wds-allow: mono/20/menu.svg 반입 전 임시 인라인 -->
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
     <span id="v1Who" class="v1-avatar v1-avatar-top" role="img"></span>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
-      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1MenuBranch">지점 변경</button><button type="button" role="menuitem" id="v1MenuRole">역할 변경</button><hr id="v1MenuSep" class="v1-menu-sep"><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>
+      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>
     </div>
   </header>
   <main id="app" class="v1-main"></main>
   <div id="v1Toast" class="v1-toast" role="status"></div>
+  <div id="v1Nav" class="v1-nav" hidden><div class="v1-scrim" data-nav-close></div><nav class="v1-nav-panel" aria-label="메뉴"></nav></div>
   <div id="v1Pop" class="v1-pop" hidden><div class="v1-scrim" data-pop-close></div><div class="v1-pop-panel" role="dialog" aria-modal="true" aria-labelledby="v1PopTitle"></div></div>
   <div id="v1Sheet" class="v1-sheet" hidden><div class="v1-scrim" data-sheet-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1SheetTitle"></div></div>
 </div>

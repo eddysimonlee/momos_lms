@@ -107,7 +107,12 @@ MOCK = r'''
     if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null, trainer: '미배정', assessor: '미배정'});
     const workspaceRoles = {admin: isAdmin(u), staff: isStaffPick(u), learner: !!state.learners[u.id],
       trainer: Object.values(state.learners).some(x => x.trainer === u.id), assessor: Object.values(state.learners).some(x => x.assessor === u.id)};
-    return {user: {id: u.id, name: u.name}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p, workspaceRoles, roster,
+    // 진행 현황용 요약(onboarding.context 의 educationSummary 와 같은 모양): 시작 전이 아닌 항목 상태, 나를 교육한 관리자로 고른 적 있는지
+    const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
+      const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
+      const trainedByMe = Object.values(recs).some(x => (x.trainedBy && x.trainedBy.email === u.email) || (x.history || []).some(h => h && h.trainedBy && h.trainedBy.email === u.email));
+      return {...r, states, trainedByMe}; });
+    return {educationSummary, user: {id: u.id, name: u.name}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p, workspaceRoles, roster,
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {

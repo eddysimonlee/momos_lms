@@ -265,7 +265,11 @@ class Service:
             l=fit(projects.Rooms.read(db,item['key']));records=l['records']
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
-            summaries.append(dict(**r,total=len(STEPS),done=done,waiting=waiting,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
+            # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 84개 교육 기준으로 센다), 나를 '교육한 관리자'로 고른 적이 있는지
+            states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
+            mine=bool(user.get('email')) and any((x.get('trainedBy') or {}).get('email')==str(user['email']).lower() for x in records.values())
+            mine=mine or any((h.get('trainedBy') or {}).get('email')==str(user.get('email') or '').lower() for x in records.values() for h in x.get('history') or [] if isinstance(h,dict))
+            summaries.append(dict(**r,total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
         reviews=self.system_reviews(root) if review_access else []
