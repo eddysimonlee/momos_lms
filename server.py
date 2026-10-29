@@ -230,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
             if method == 'GET' and path in ('/auth/works/login', '/auth/works/callback'):
                 # NAVER WORKS 로그인: 시작(→ WORKS)과 돌아오는 곳. 세션 없이 열리고, 끝나면 LMS 세션을 만든다.
                 import works_auth
-                return works_auth.login(self) if path.endswith('/login') else works_auth.callback(self, query)
+                return works_auth.login(self, query) if path.endswith('/login') else works_auth.callback(self, query)
             auth = self.server.access
             filename = path[1:]
             public_get = method == 'GET' and (path == '/api/health' or filename in STATIC)

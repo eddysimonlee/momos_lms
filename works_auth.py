@@ -81,11 +81,17 @@ def _fail(handler, message, code=400):
                  f'<h2>로그인하지 못했어요</h2><p>{escape(message)}</p><a href="/auth/works/login">다시 로그인</a>', [clear])
 
 
-def login(handler):
+# 로그인 후 돌아갈 곳(정해진 것만 — 임의 주소로 보내지 않는다)
+NEXT = {'v1': '/v1', 'graph': '/v1/graph'}
+
+
+def login(handler, query=None):
     cfg = config()
     if not cfg['enabled']:
         return _fail(handler, 'NAVER WORKS 로그인이 아직 설정되지 않았어요. 관리자에게 문의해 주세요.', 503)
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(16)
+    nxt = ((query or {}).get('next') or ['v1'])[0]
+    nxt = nxt if nxt in NEXT else 'v1'
     params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read',  # user.read: 구성원 사진
                   response_type='code', state=state, nonce=nonce)
     if cfg['domain']:
@@ -93,7 +99,7 @@ def login(handler):
     handler.send_response(302)
     handler.send_header('Location', f'{AUTH_BASE}/oauth2/v2.0/authorize?' + urlencode(params))
     # 돌아올 때(다른 사이트에서 오는 최상위 이동) 실려야 하므로 Lax. 10분, 이 경로에서만.
-    handler.send_header('Set-Cookie', f'{STATE_COOKIE}={state}.{nonce}; Path=/auth/works; HttpOnly; SameSite=Lax; Max-Age={STATE_SECONDS}' + _secure(handler))
+    handler.send_header('Set-Cookie', f'{STATE_COOKIE}={state}.{nonce}.{nxt}; Path=/auth/works; HttpOnly; SameSite=Lax; Max-Age={STATE_SECONDS}' + _secure(handler))
     handler.send_header('Content-Length', '0')
     handler.send_header('Cache-Control', 'no-store')
     handler.send_header('Referrer-Policy', 'no-referrer')
@@ -140,7 +146,8 @@ def callback(handler, query):
         jar.load(handler.headers.get('Cookie', ''))
     except Exception:
         pass
-    expected, _, nonce = (jar[STATE_COOKIE].value if STATE_COOKIE in jar else '').partition('.')
+    expected, nonce, nxt = ((jar[STATE_COOKIE].value if STATE_COOKIE in jar else '').split('.') + ['', '', ''])[:3]
+    dest = NEXT.get(nxt, '/v1')
     if not expected or not secrets.compare_digest(expected, q('state')) or not q('code'):
         return _fail(handler, '로그인 요청이 만료되었어요. 처음부터 다시 시도해 주세요.')
     step = 'token'
@@ -175,8 +182,8 @@ def callback(handler, query):
     cookies = [access.COOKIE + '=' + session_token + '; Path=/; HttpOnly; SameSite=Strict; Max-Age=' + str(access.SESSION_SECONDS) + secure,
                f'{STATE_COOKIE}=; Path=/auth/works; HttpOnly; SameSite=Lax; Max-Age=0' + secure]
     return _page(handler, 200, '모모스 온보딩',
-                 '<meta http-equiv="refresh" content="0;url=/v1"><p>로그인했어요. 잠시만 기다려 주세요…</p>'
-                 '<script>location.replace("/v1")</script><a href="/v1">계속하기</a>', cookies)
+                 f'<meta http-equiv="refresh" content="0;url={dest}"><p>로그인했어요. 잠시만 기다려 주세요…</p>'
+                 f'<script>location.replace("{dest}")</script><a href="{dest}">계속하기</a>', cookies)
 
 
 def id_token_claims(id_token, client_id, nonce, now=None):

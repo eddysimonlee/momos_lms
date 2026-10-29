@@ -108,10 +108,20 @@ svg .node.hit text{fill:var(--accent);font-weight:700}
 </div>
 
 <script>
-// 화면(/v1)과 같은 체험 자동 로그인: LMS_TRIAL 서버에서만 /api/dev/accounts 가 응답한다. 그 밖에는 /v1 에서 로그인 후 다시 연다.
+// 로그인: 교육 화면(/v1)과 같다. WORKS 로그인 서버는 새로 열 때마다 WORKS 에 다시 확인하고, 로그인 후 이 화면으로 돌아온다.
+// (WORKS 설정 전 체험 서버에서만 /api/dev/accounts 자동 로그인)
 async function autoLogin() {
   try {
     const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
+    if (status.works) {
+      let checked = true; try { checked = sessionStorage.getItem('v1.worksVisit') === '1'; } catch {}
+      if (!status.user || !checked) {
+        try { sessionStorage.setItem('v1.worksVisit', '1'); } catch {}
+        location.replace('/auth/works/login?next=graph');
+        return new Promise(() => {});
+      }
+      return;
+    }
     if (status.user) return;
     const r = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
     if (!r.ok) return;
@@ -144,7 +154,7 @@ function buildGraph(c) {
 (async () => {
 await autoLogin();
 const res = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
-if (!res.ok) { document.querySelector('.main').innerHTML = '<div class="msg">로그인이 필요해요. <a href="/v1">교육 화면</a>에서 로그인한 뒤 다시 열어 주세요.</div>'; return; }
+if (!res.ok) { document.querySelector('.main').innerHTML = '<div class="msg">로그인이 필요해요. <a href="/auth/works/login?next=graph">NAVER WORKS 로 로그인</a>한 뒤 다시 열어 주세요.</div>'; return; }
 const G = buildGraph(await res.json());
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
