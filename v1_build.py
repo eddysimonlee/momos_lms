@@ -122,7 +122,7 @@ def main():
                 name = next(c for c in row['cells'] if c)
                 caption = f"{name} ({ph['n']}/{len(items)})" if len(items) > 1 else name
             photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
-                               caption=caption, cite=section_key(doc, no), n=ph['n'],
+                               caption=caption, cite=section_key(doc, no), n=ph['n'], hideCaption=ph.get('showCaption') is False,  # 그림 안에 제목이 있으면 설명을 숨긴다(대체 글로만)
                                row=dict(header=row['header'], cells=row['cells']) if data_row else None,
                                wide=bool(items[ph['n'] - 1].get('w') and items[ph['n'] - 1]['w'] > 1.2 * items[ph['n'] - 1]['h']))  # 글씨 있는 가로 그림은 한 줄 전체
             keys.append(pid)

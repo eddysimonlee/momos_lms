@@ -3681,7 +3681,18 @@
       ],
       "status": "draft",
       "draftBy": "LLM (Claude) 2026-10-26 · OP2·OP3 역할별 분리 · 업무문서(10.22) 기준",
-      "curriculum": "2026-10-22"
+      "curriculum": "2026-10-22",
+      "photos": [
+        {
+          "cite": [
+            "14본점-오픈조-퇴근-준비-절차",
+            "5.3"
+          ],
+          "n": 1,
+          "caption": "전체 동선 요약도",
+          "showCaption": false
+        }
+      ]
     },
     "daily-open-form": {
       "status": "draft",

@@ -114,7 +114,7 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
         for row in range(0, len(shots), 3):
             group = shots[row:row + 3]
             pdf.set_font('P', '', 8.5)
-            cap_h = max(len(pdf.multi_cell(cw, 3.6, p['caption'], dry_run=True, output='LINES')) for p in group) * 3.6
+            cap_h = max(0 if p.get('hideCaption') else len(pdf.multi_cell(cw, 3.6, p['caption'], dry_run=True, output='LINES')) for p in group) * 3.6
             if pdf.get_y() + PHOTO_H + cap_h + 2 > pdf.h - MB:
                 pdf.add_page()
             y = pdf.get_y()
@@ -128,7 +128,8 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
                     pdf.image(str(f), x=x + 0.4, y=y + 0.4, w=cw - 0.8, h=PHOTO_H - 0.8, keep_aspect_ratio=True)
                 pdf.set_xy(x, y + PHOTO_H + 0.8)
                 pdf.set_text_color(*SUB)
-                pdf.multi_cell(cw, 3.6, p['caption'])
+                if not p.get('hideCaption'):
+                    pdf.multi_cell(cw, 3.6, p['caption'])
             pdf.set_y(y + PHOTO_H + 0.8 + cap_h + GAP)
 
     if s.get('note'):
