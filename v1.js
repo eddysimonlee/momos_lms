@@ -141,12 +141,12 @@
   function render() {
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
-    const branch = view === 'branch' || view === 'role';
+    const branch = view === 'branch';
     // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : view === 'person' && cloud.target !== cloud.user.id ? 'home' : view === 'role' ? 'branch' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view === 'person' && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && view === 'person' ? '교육생 목록으로' : '이전 화면으로');
@@ -171,7 +171,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'admin' ? adminView() : view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
+    app.innerHTML = view === 'admin' ? adminView() : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
@@ -213,20 +213,6 @@
   }
 
   // 지점 다음: 교육생 / 관리자. 고른 값은 계정에 저장되어 다음 로그인에도 유지된다.
-  const ROLES = [
-    {id: 'learner', name: '교육생', desc: '내 교육을 진행하고 기록해요',
-     icon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'},  // wds-allow: 사람 아이콘(임시 인라인)
-    {id: 'staff', name: '관리자', desc: '교육생의 수행을 확인하고 관리해요',
-     icon: '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 3.5 5 6.2v5.3c0 4.3 2.9 7.7 7 9 4.1-1.3 7-4.7 7-9V6.2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2.2 2.2L15.5 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'},  // wds-allow: 방패 체크 아이콘(임시 인라인)
-  ];
-  function roleView() {
-    const b = BRANCHES.find(x => x.id === (pickBranch || (profile() && profile().branch))) || BRANCHES[0];
-    const cur = profile() && profile().branch === b.id ? profile().role : null;
-    return `<section class="v1-branch"><span class="v1-stage-tag">${esc(b.name)}</span><h2>어떤 역할로 들어가시나요?</h2><p class="v1-muted">선택한 역할은 다음 로그인에도 유지돼요. 바꾸려면 오른쪽 위 ⋮ 를 누르세요.</p>` +
-      `<div class="v1-branches">${ROLES.map(r => `<button type="button" class="v1-branch-card${r.id === cur ? ' on' : ''}" data-role="${r.id}" aria-pressed="${r.id === cur}" ${busy ? 'disabled' : ''}><span class="v1-branch-icon">${r.icon}</span><span class="v1-branch-name">${esc(r.name)}</span><span class="v1-branch-desc">${esc(r.desc)}</span>${r.id === cur ? '<span class="v1-branch-soon">현재</span>' : ''}</button>`).join('')}</div></section>`;
-  }
-
-  // 역할 저장 → 교육생이면 (처음이면) 오늘부터 교육 시작, 관리자면 첫 교육생 기록을 연다 → 홈
   async function chooseRole(role) {
     const branch = pickBranch || (profile() && profile().branch) || BRANCHES[0].id;
     if (cloud.target !== cloud.user.id) cloud = await api('GET');
@@ -347,9 +333,9 @@
   function drawNav() {
     const homeLabel = '교육 진행 현황', inStage = view === 'stage';
     const item = (attrs, label, on, depth2) => `<button type="button" class="v1-nav-item${on ? ' on' : ''}${depth2 ? ' d2' : ''}" ${attrs} ${on ? 'aria-current="page"' : ''}>${label}</button>`;
-    const b = BRANCHES.find(x => x.id === (profile() && profile().branch)), r = ROLES.find(x => x.id === (profile() && profile().role));
+    const b = BRANCHES.find(x => x.id === (profile() && profile().branch)), r = isStaff() ? (cloud.lmsLevel || 'mentor') : '교육생';
     $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
-      `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r && r.name].filter(Boolean).join(' · '))}</small></span></div>` +
+      `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r].filter(Boolean).join(' · '))}</small></span></div>` +
       `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person')}` +
       `<button type="button" class="v1-nav-cat" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages"><span>교육 단계</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
       `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${item('data-nav="all"', '전체 교육', view === 'all', true)}${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
@@ -370,7 +356,6 @@
     if (to === 'home') { view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'admin') { view = 'admin'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'branch') { pickBranch = null; view = 'branch'; render(); return; }
-    if (to === 'role') { pickBranch = profile() && profile().branch; view = 'role'; render(); }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Nav').hidden) { closeNav(); $('v1Ham').focus(); } });
 
@@ -453,7 +438,6 @@
     const app = $('app');
     // 지점을 고르면 바로 홈(역할은 고르지 않는다: 관리자 = 지정된 LMS관리자)
     app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; chooseRole(isStaff() ? 'staff' : 'learner').catch(e => toast(e.message)); });
-    app.querySelectorAll('[data-role]').forEach(b => b.onclick = () => chooseRole(b.dataset.role).catch(e => toast(e.message)));
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { if (!view.startsWith('step:')) returnView = view; view = 'step:' + b.dataset.step; if (returnView !== 'stage') stageSel = unitOf(b.dataset.step).stage.order; render(); });
     const addBtn = app.querySelector('[data-admin-add]');
     // 구성원 검색(WORKS 주소록): 이름·이메일·조직으로 찾아 누르면 이메일 칸에 채운다. 이미 관리자인 사람은 뺀다
@@ -655,7 +639,7 @@
   // 같은 자리에서 함께 보는 현장: 5초마다 지금 보는 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
   // 화면이 보일 때만, 저장 중이 아닐 때만, 글을 입력하는 중(메모·재교육 사유)이 아닐 때만.
   setInterval(async () => {
-    if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch' || view === 'role') return;
+    if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch') return;
     const a = document.activeElement;
     if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.tagName === 'INPUT' && ['text', 'search', 'email'].includes(a.type))) return;
     if (pop) return;  // 완료 팝업을 보는 중

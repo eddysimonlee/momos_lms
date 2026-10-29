@@ -434,6 +434,11 @@ class EducationTests(unittest.TestCase):
                 works_auth.directory('u1');self.assertEqual(len(calls),2)  # 10분 캐시
                 self.assertEqual([m['id'] for m in works_auth.search(people,'매니저')],['a1'])
                 self.assertEqual([m['id'] for m in works_auth.search(people,'',exclude_email='lee@momos.co.kr')],['a1'])
+                from urllib.error import HTTPError
+                def denied(url,token):raise HTTPError(url,403,'Forbidden',{},None)
+                works_auth._get_json=denied;works_auth._DIRECTORY.clear()
+                with self.assertRaises(works_auth.DirectoryUnavailable) as e:works_auth.directory('u1')
+                self.assertIn('directory.read',str(e.exception));self.assertIn('u1',works_auth._TOKENS)  # 권한 없음(403)은 토큰을 지우지 않는다
         finally:
             works_auth._get_json=old[0];works_auth._TOKENS.clear();works_auth._TOKENS.update(old[1]);works_auth._DIRECTORY.clear();works_auth._DIRECTORY.update(old[2])
 

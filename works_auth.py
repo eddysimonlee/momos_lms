@@ -92,7 +92,7 @@ def login(handler, query=None):
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(16)
     nxt = ((query or {}).get('next') or ['v1'])[0]
     nxt = nxt if nxt in NEXT else 'v1'
-    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read',  # user.read: 구성원 사진
+    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read directory.read',  # user.read: 구성원 사진
                   response_type='code', state=state, nonce=nonce)
     if cfg['domain']:
         params['domain'] = cfg['domain']
@@ -348,7 +348,7 @@ def read_avatar(store, user_id):
 
 
 # --- 주소록(구성원 목록): LMS관리자 화면에서 관리자로 추가할 구성원을 검색할 때 쓴다 ---
-# 로그인할 때 받은 그 사람의 WORKS 토큰(scope user.read)으로 GET /users 를 부른다.
+# 로그인할 때 받은 그 사람의 WORKS 토큰(scope user.read directory.read)으로 GET /users 를 부른다.
 # 토큰은 이 서버 프로세스 메모리에만 두고(재시작하면 사라짐 → 다시 로그인), 화면·DB·로그로 보내지 않는다.
 # 목록 API 에는 이름 검색이 없어 구성원 전체를 받아 서버에서 거른다(10분 캐시).
 _TOKENS = {}       # LMS 사용자 id → (access_token, 만료 시각)
@@ -368,7 +368,7 @@ def remember_token(user_id, token):
 def _token_for(user_id):
     tok = _TOKENS.get(user_id)
     if not tok or tok[1] < time.time():
-        raise DirectoryUnavailable('WORKS 주소록을 불러오려면 다시 로그인해 주세요.')
+        raise DirectoryUnavailable('WORKS 주소록을 불러오려면 다시 로그인해 주세요(서버가 다시 시작되면 로그인이 한 번 더 필요해요).')
     return tok[0]
 
 
@@ -402,9 +402,11 @@ def directory(user_id, now=None):
                 break
     except HTTPError as e:
         _log_failure('directory', e)
-        if e.code in (401, 403):
+        if e.code == 401:  # 토큰 만료·무효: 다시 로그인하면 새 토큰
             _TOKENS.pop(user_id, None)
-            raise DirectoryUnavailable('WORKS 주소록 권한이 없거나 로그인이 만료됐어요. 다시 로그인해 주세요.')
+            raise DirectoryUnavailable('WORKS 로그인이 만료됐어요. 다시 로그인해 주세요.')
+        if e.code == 403:  # 토큰은 맞지만 이 API 권한(scope)이 없다 — 다시 로그인해도 같다
+            raise DirectoryUnavailable('WORKS 주소록 조회 권한이 없어요. Developer Console 의 OAuth 권한(scope)에 directory.read 추가가 필요해요.')
         raise DirectoryUnavailable('WORKS 주소록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
     except (URLError, TimeoutError, ValueError) as e:
         _log_failure('directory', e)
