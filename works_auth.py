@@ -169,6 +169,7 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
+    handler.server.access.logout(handler.headers.get('Cookie'))  # 이전 LMS 세션이 있으면 끝내고 새로 시작
     _, session_token = handler.server.access.new_session(user)
     secure = _secure(handler)
     cookies = [access.COOKIE + '=' + session_token + '; Path=/; HttpOnly; SameSite=Strict; Max-Age=' + str(access.SESSION_SECONDS) + secure,

@@ -436,11 +436,19 @@
   async function devAutoLogin() {
     try {
       const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
-      if (status.user) return;
       if (status.works) {
-        location.replace('/auth/works/login');
-        return new Promise(() => {});  // 이동하는 동안 로그인 화면을 그리지 않는다
+        // LMS 로그인은 WORKS 와 따로 남아 있으므로, 새로 들어올 때(새 탭·MOMOS uni 를 다시 열 때)마다 WORKS 에 다시 확인한다.
+        // WORKS 에 로그인돼 있으면 화면 전환 없이 곧바로 돌아오고, WORKS 에서 로그아웃했다면 WORKS 로그인 화면이 뜬다.
+        // 같은 탭 안의 새로고침은 다시 묻지 않는다(sessionStorage).
+        let checked = true; try { checked = sessionStorage.getItem('v1.worksVisit') === '1'; } catch {}  // 저장소를 못 쓰면 다시 묻지 않는다(무한 이동 방지)
+        if (!status.user || !checked) {
+          try { sessionStorage.setItem('v1.worksVisit', '1'); } catch {}
+          location.replace('/auth/works/login');
+          return new Promise(() => {});  // 이동하는 동안 화면을 그리지 않는다
+        }
+        return;
       }
+      if (status.user) return;
       const response = await fetch('/api/dev/accounts', {credentials: 'same-origin', cache: 'no-store'});
       if (!response.ok) return;
       const {accounts} = await response.json();
