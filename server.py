@@ -443,7 +443,13 @@ class Handler(BaseHTTPRequestHandler):
                     return self.file(source,name,preview=preview)
                 raise FileNotFoundError()
             if path == '/api/works/members' and method == 'GET':
-                # 교육 완료 팝업: '나에게 교육을 제공한 관리자' 검색(WORKS 주소록). 본인은 빼고 20명까지
+                # LMS관리자 화면: 관리자로 추가할 구성원 검색(WORKS 주소록). admin 만, 20명까지
+                import onboarding
+                education = onboarding.Service(store)
+                with store.connect() as db:
+                    me = education.identity(db, user); level = education.lms_level(education.root(db), me)
+                if level != 'admin':
+                    raise PermissionError('구성원 검색은 LMS관리자 admin 만 할 수 있습니다.')
                 try:
                     people = members_for(store, user)
                 except LookupError as e:
@@ -457,16 +463,6 @@ class Handler(BaseHTTPRequestHandler):
                     return self.send(200,education.get(user,query.get('target',[None])[0]))
                 if method == 'POST':
                     value = self.body()
-                    if isinstance(value, dict) and value.get('action') == 'step.finish' and isinstance(value.get('data'), dict):
-                        # 화면이 보낸 이름·이메일은 믿지 않는다: 주소록에서 그 id 를 다시 찾아 이름·이메일·조직을 채운다
-                        pick = (value['data'].get('trainer') or {}).get('id') if isinstance(value['data'].get('trainer'), dict) else None
-                        try:
-                            found = next((m for m in members_for(store, user) if m['id'] == pick), None)
-                        except LookupError as e:
-                            return self.send(409, {'error': str(e)})
-                        if not found or found['email'] == (user.get('email') or '').lower():
-                            raise ValueError('교육을 제공한 관리자를 목록에서 다시 선택해 주세요.')
-                        value['data']['trainer'] = dict(found)
                     return self.send(200,education.update(user,value))
                 raise FileNotFoundError()
             if path == '/api/auth/logout' and method == 'POST':
@@ -581,7 +577,7 @@ class CloudHTTPServer(LocalHTTPServer):
 
 
 def members_for(store, user):
-    """교육한 관리자 후보. WORKS 로그인을 쓰면 WORKS 주소록, 아니면(로컬·테스트) 이 LMS 의 모모스 구성원."""
+    """관리자로 추가할 구성원 후보. WORKS 로그인을 쓰면 WORKS 주소록(로그인한 사람의 토큰), 아니면(로컬·테스트) 이 LMS 의 모모스 구성원."""
     import works_auth
     if works_auth.enabled():
         try:

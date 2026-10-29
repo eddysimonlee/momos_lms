@@ -176,7 +176,7 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
-    remember_token(user['id'], token)  # 주소록 검색(교육한 관리자 선택)에 쓴다. 서버 메모리에만, 화면·DB 로는 보내지 않는다
+    remember_token(user['id'], token)  # LMS관리자 화면의 구성원 검색(주소록)에 쓴다. 서버 메모리에만, 화면·DB·로그로는 보내지 않는다
     handler.server.access.logout(handler.headers.get('Cookie'))  # 이전 LMS 세션이 있으면 끝내고 새로 시작
     _, session_token = handler.server.access.new_session(user)
     secure = _secure(handler)
@@ -347,7 +347,7 @@ def read_avatar(store, user_id):
     return base64.b64decode(row['data'])
 
 
-# --- 주소록(구성원 목록): 교육생이 '나에게 교육을 제공한 관리자'를 고를 때 쓴다 ---
+# --- 주소록(구성원 목록): LMS관리자 화면에서 관리자로 추가할 구성원을 검색할 때 쓴다 ---
 # 로그인할 때 받은 그 사람의 WORKS 토큰(scope user.read)으로 GET /users 를 부른다.
 # 토큰은 이 서버 프로세스 메모리에만 두고(재시작하면 사라짐 → 다시 로그인), 화면·DB·로그로 보내지 않는다.
 # 목록 API 에는 이름 검색이 없어 구성원 전체를 받아 서버에서 거른다(10분 캐시).

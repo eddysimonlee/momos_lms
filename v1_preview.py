@@ -59,26 +59,27 @@ MOCK = r'''
   const STEPS = {}; for (const u of CONTENT.units) for (const s of u.steps) STEPS[s.id] = s;
   // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
   const N = s => (s.keyPoints && s.keyPoints.length ? s.keyPoints : s.checks).map(() => null);
-  // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다
+  const ACCOUNTS = [
+    {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
+    {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
+    {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
+  const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
+  // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
     {id: 'w-staff', name: '체험 담당자', email: 'staff@local.test', org: '바리스타팀 · 메인바리스타'},
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const ACCOUNTS = [
-    {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
-    {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
-    {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
-  const KEY = 'momos-v1-preview-8';
+  const KEY = 'momos-v1-preview-10';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
-      selfAt: N(s), teacherAt: N(s), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
+      selfAt: N(s), teacherAt: N(s), teacherBy: N(s), teacherName: N(s), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
     return {revision: 0, join, startDate: join, records};
   }
   function fresh() {
-    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}};
-    st.learners['u-learner'] = {join: plus(today(), -4), startDate: plus(today(), -4), trainer: 'u-staff', assessor: 'u-staff'};
+    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}, lmsAdmins: [], feedback: []};
+    st.learners['u-learner'] = {join: plus(today(), -4), startDate: plus(today(), -4), trainer: null, assessor: null};
     st.rooms['u-learner'] = blank(plus(today(), -4));
     return st;
   }
@@ -89,37 +90,37 @@ MOCK = r'''
   let current = 'u-learner'; try { current = sessionStorage.getItem(KEY + '-who') || current; } catch (e) {}
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
-  const isAdmin = u => u.role === 'admin';
-  const isStaffPick = u => (state.profiles || {})[u.id]?.role === 'staff';  // v1 첫 진입에서 관리자를 고른 계정
+  const levels = () => { const m = {}; for (const x of state.lmsAdmins || []) if (x && x.email) m[x.email] = x.level; for (const e of SEED) m[e] = 'admin'; return m; };
+  const levelOf = u => levels()[u.email] || null;
+  const isLms = u => Boolean(levelOf(u));  // onboarding.lms_staff: 지정된 이메일(admin·mentor)만 관리자
   function roles(u, target) {
-    const entry = state.learners[target]; const own = u.id === target && !!entry; const admin = isAdmin(u), staff = isStaffPick(u);
-    return {own, trainer: !!entry && !own && (admin || staff || entry.trainer === u.id), assessor: !!entry && !own && (admin || staff || entry.assessor === u.id), admin};
+    const entry = state.learners[target]; const own = u.id === target && !!entry; const staff = isLms(u);
+    return {own, trainer: !!entry && !own && staff, assessor: !!entry && !own && staff, admin: false};
   }
   function context(u, target) {
     target = target || u.id;
     const p = roles(u, target);
-    if (!(target === u.id || p.trainer || p.assessor || p.admin)) throw {status: 403, error: '본인 또는 배정된 교육생의 기록만 열 수 있습니다.'};
+    if (!(target === u.id || p.trainer)) throw {status: 403, error: '본인 또는 배정된 교육생의 기록만 열 수 있습니다.'};
     const entry = state.learners[target];
     const learner = entry ? state.rooms[target] : blank(today());
-    const roster = Object.entries(state.learners).filter(([i]) => { const q = roles(u, i); return i === u.id || q.trainer || q.assessor || q.admin; })
-      .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate,
-        trainer: ACCOUNTS.find(a => a.id === x.trainer)?.name || '미배정', assessor: ACCOUNTS.find(a => a.id === x.assessor)?.name || '미배정'}));
-    if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null, trainer: '미배정', assessor: '미배정'});
-    const workspaceRoles = {admin: isAdmin(u), staff: isStaffPick(u), learner: !!state.learners[u.id],
-      trainer: Object.values(state.learners).some(x => x.trainer === u.id), assessor: Object.values(state.learners).some(x => x.assessor === u.id)};
-    // 진행 현황용 요약(onboarding.context 의 educationSummary 와 같은 모양): 시작 전이 아닌 항목 상태, 나를 교육한 관리자로 고른 적 있는지
+    const roster = Object.entries(state.learners).filter(([i]) => i === u.id || roles(u, i).trainer)
+      .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate}));
+    if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null});
+    const touched = x => (x.teacherBy || []).includes(u.id) || x.completedBy === u.id;
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
-      const trainedByMe = Object.values(recs).some(x => (x.trainedBy && x.trainedBy.email === u.email) || (x.history || []).some(h => h && h.trainedBy && h.trainedBy.email === u.email));
-      return {...r, states, trainedByMe}; });
-    return {educationSummary, user: {id: u.id, name: u.name}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p, workspaceRoles, roster,
+      return {...r, states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
+    const lms = isLms(u);
+    return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
+      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, lmsAdmin: lms, lmsLevel: levelOf(u),
+      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => (a[1] !== 'admin') - (b[1] !== 'admin') || a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse()} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {
     const target = v.target || u.id, p = roles(u, target), d = v.data || {};
     if (v.action === 'profile.set') {
       if (target !== u.id) throw {status: 403, error: '본인의 지점·역할만 바꿀 수 있습니다.'};
-      if (d.branch !== 'oncheon' || !['learner', 'staff'].includes(d.role)) throw {status: 400, error: '지점과 역할을 선택해 주세요.'};
+      if (d.role === 'staff' && !isLms(u)) throw {status: 403, error: '관리자는 LMS관리자로 지정된 구성원만 선택할 수 있습니다.'};
       (state.profiles = state.profiles || {})[u.id] = {branch: d.branch, role: d.role, at: new Date().toISOString()}; state.rootRevision++;
       save(); return context(u, target);
     }
@@ -127,31 +128,36 @@ MOCK = r'''
       if (!state.learners[u.id]) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
       save(); return context(u, target);
     }
+    if (v.action === 'lms.admin') {
+      if (levelOf(u) !== 'admin') throw {status: 403, error: 'LMS관리자 권한은 admin 만 바꿀 수 있습니다.'};
+      const email = String(d.email || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw {status: 400, error: '이메일 주소를 확인해 주세요.'};
+      if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
+      state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level ? [{email, level: d.level}] : []); state.rootRevision++; save(); return context(u, target);
+    }
+    if (v.action === 'feedback.send') {
+      if (target !== u.id) throw {status: 403, error: '본인 이름으로만 의견을 보낼 수 있어요.'};
+      const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '입력 내용의 길이와 필수 항목을 확인해 주세요.'};
+      (state.feedback = state.feedback || []).push({id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString(), user: u.id, name: u.name, email: u.email, step: d.step, text: text.slice(0, 2000)});
+      state.rootRevision++; save(); return context(u, target);
+    }
     const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
-    const teacher = ['step.teacher', 'step.complete'].includes(v.action) || (v.action === 'step.retry' && !p.own);
+    const teacher = ['step.mark', 'step.close', 'step.reopen'].includes(v.action);
     if (teacher && !p.trainer) throw {status: 403, error: '배정된 교육자·평가자만 확인합니다. 자기 승인은 허용하지 않습니다.'};
-    if (!teacher && !p.own) throw {status: 403, error: '직원 실습·답안은 해당 직원만 기록합니다.'};
+    if (!teacher) throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
     const r = l.records[d.step]; if (!r) throw {status: 400, error: '배정된 교육 단계를 선택하세요.'};
     const t = today();
-    if (v.action === 'step.self' || v.action === 'step.teacher') {
-      const k = v.action === 'step.teacher' ? 'teacher' : 'self';
-      if ((k === 'teacher' && r.status !== 'review') || (k === 'self' && !['ready', 'practice'].includes(r.status))) throw {status: 400, error: '현재 단계 상태에서 이 체크를 변경할 수 없습니다.'};
-      r[k][d.index] = !!d.on; r[k + 'At'][d.index] = d.on ? t : null;
-      if (k === 'self') { r.status = 'practice'; r.start = r.start || t; }
-    } else if (v.action === 'step.memo') { r.memo = String(d.memo || '').slice(0, 4000); }
-    else if (v.action === 'step.finish') {
-      if (!['ready', 'practice'].includes(r.status) || !r.self.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};
-      const m = DIRECTORY.find(x => x.id === (d.trainer || {}).id); if (!m || m.email === u.email) throw {status: 400, error: '교육을 제공한 관리자를 목록에서 다시 선택해 주세요.'};
-      Object.assign(r, {status: 'done', done: t, start: r.start || t, trainedBy: {...m, at: new Date().toISOString()}});
-    } else if (v.action === 'step.reopen') {
+    if (v.action === 'step.mark') {
+      if (!['ready', 'practice'].includes(r.status)) throw {status: 400, error: '완료한 교육은 체크를 바꿀 수 없어요. 완료를 취소한 뒤 바꿔 주세요.'};
+      for (const k of ['teacherBy', 'teacherName']) if (!r[k]) r[k] = r.teacher.map(() => null);
+      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null;
+      r.status = r.teacher.some(Boolean) ? 'practice' : 'ready'; r.start = r.start || t;
+    } else if (v.action === 'step.close') {
+      if (!['ready', 'practice'].includes(r.status) || !r.teacher.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};
+      Object.assign(r, {status: 'done', done: t, completedBy: u.id, completedByName: u.name});
+    } else {
       if (r.status !== 'done') throw {status: 400, error: '완료한 항목만 완료를 취소할 수 있어요.'};
-      r.history = (r.history || []).concat([{...r, history: undefined, reopened: t}]); r.status = 'practice'; r.done = null; delete r.trainedBy;
+      r.history = (r.history || []).concat([{...r, history: undefined, reopened: t}]); r.status = 'practice'; r.done = null; delete r.completedBy; delete r.completedByName;
     }
-    else if (v.action === 'step.request') { if (r.status !== 'practice' || !r.self.every(Boolean)) throw {status: 400, error: '직원 실습 체크를 모두 완료하세요.'}; r.status = 'review'; r.request = t; }
-    else if (v.action === 'step.complete') { if (r.status !== 'review') throw {status: 400, error: '교육생이 확인 요청한 항목만 확인 완료할 수 있습니다.'}; r.teacher = r.teacher.map(() => true); r.teacherAt = r.teacherAt.map(x => x || t); r.status = 'done'; r.done = t; r.completedBy = u.id; }
-    else if (v.action === 'step.retry') { if (!['review', 'done'].includes(r.status)) throw {status: 400, error: '확인 요청 또는 완료된 항목만 재교육으로 돌릴 수 있습니다.'};
-      const s = STEPS[d.step]; Object.assign(r, {status: 'ready', self: s.checks.map(() => false), teacher: s.checks.map(() => false), selfAt: s.checks.map(() => null), teacherAt: s.checks.map(() => null), start: null, done: null, request: null, attempt: r.attempt + 1, feedback: String(d.reason || '').slice(0, 2000)}); }
-    else throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
     l.revision++; save(); return context(u, target);
   }
   const json = (obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: {'Content-Type': 'application/json'}});
@@ -168,6 +174,7 @@ MOCK = r'''
         return json({accounts: ACCOUNTS.map(a => ({id: a.id, name: a.name, email: a.email})), current});
       }
       if (url.pathname === '/api/works/members') {
+        if (levelOf(user()) !== 'admin') return json({error: '구성원 검색은 LMS관리자 admin 만 할 수 있습니다.'}, 403);
         const q = (url.searchParams.get('q') || '').trim().toLowerCase();
         await new Promise(r => setTimeout(r, 200));
         return json({members: DIRECTORY.filter(m => m.email !== user().email && (!q || `${m.name} ${m.email} ${m.org}`.toLowerCase().includes(q))).slice(0, 20)});

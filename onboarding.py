@@ -12,6 +12,7 @@ import io
 from html.parser import HTMLParser
 import calendar
 import copy
+import os
 import hashlib
 import json
 import secrets
@@ -28,7 +29,7 @@ STEPS = {s['id']: dict(s, unit=u['id'], plan=s.get('defaultDays', u['plan'])) fo
 # 기록의 체크 배열 길이는 fit()이 맞추므로, 문구가 바뀐 항목의 이전 체크는 앞에서부터 이어진다.
 _LESSONS = Path(__file__).with_name('v1_lessons.json')
 # 2026-10-29: '수행 확인'을 없애고 교육 내용(keyPoints) 항목마다 체크한다. 교육 내용이 없는 항목(첫날 OJT 17항목)만 기존 체크 목록.
-CHECK_BASIS = 'keypoints-2026-10-29'
+CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관리자)만. 교육생 체크는 쓰지 않는다
 def _check_texts(l):
     kps = [k['text'] for k in l.get('keyPoints') or []]
     return kps or [c['text'] if isinstance(c, dict) else c for c in l.get('checks') or []]
@@ -54,9 +55,12 @@ if _LESSONS.exists():
                     elif _s['id'] in STEPS and _u.get('plan'):
                         STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
 TESTS = {t['id']: t for t in COURSE['tests']}
+# 처음 LMS관리자(admin) 이메일(소문자). Render 환경변수 LMS_ADMIN_EMAILS(쉼표 구분)로도 더할 수 있다. 화면에서 지울 수 없다
+LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
+LMS_LEVELS = ('admin', 'mentor')  # admin: 체크·완료 + LMS관리자 권한 부여·제거 / mentor: 체크·완료만
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'step.finish':'교육 완료(교육한 관리자 선택)','step.reopen':'교육 완료 취소','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -68,7 +72,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'step.finish','step.reopen','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -149,13 +153,13 @@ def fit(learner):
         if not s: continue
         n = len(s['checks'])
         if r.get('checkBasis') != CHECK_BASIS:
-            # 체크 기준이 '수행 확인' → '교육 내용'으로 바뀌었다: 이전 체크는 다른 문장이므로 비운다.
-            # 완료된 항목은 완료로 두고(모두 체크), 확인 요청(review)은 확인 절차가 없어져 진행 중으로 돌린다.
+            # 체크 주체가 바뀔 때(수행 확인 → 교육 내용 → 관리자 체크) 이전 체크는 비운다. 완료된 항목은 완료로 둔다(모두 체크).
             done = r.get('status') == 'done'
-            r.update(self=[done] * n, selfAt=[r.get('done') if done else None] * n, selfBy=[None] * n, checkBasis=CHECK_BASIS)
+            r.update(self=[False] * n, selfAt=[None] * n, selfBy=[None] * n,
+                     teacher=[done] * n, teacherAt=[r.get('done') if done else None] * n, teacherBy=[None] * n, teacherName=[None] * n, checkBasis=CHECK_BASIS)
             if r.get('status') in ('review', 'practice'):
                 r['status'] = 'ready'
-        for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None)):
+        for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None), ('teacherName', None)):
             if key in r and len(r[key]) != n:
                 r[key] = (list(r[key]) + [empty] * n)[:n]
     return learner
@@ -208,9 +212,23 @@ class Service:
         return (user['company']=='momos' or user['id'] in root['technical'] or user['id'] in root['content']
                 or any(user['id'] in (x['trainer'],x['assessor']) for x in root['learners'].values()))
 
+    def lms_admins(self, root):
+        """LMS관리자 {이메일: 'admin'|'mentor'}. 기본 admin(코드 LMS_ADMIN_SEED·환경변수 LMS_ADMIN_EMAILS)은 화면에서 바꿀 수 없다."""
+        seed = {e for e in LMS_ADMIN_SEED + [x.strip().lower() for x in os.environ.get('LMS_ADMIN_EMAILS', '').split(',')] if e}
+        levels = {}
+        for x in root.get('lmsAdmins') or []:
+            email, level = (x.get('email'), x.get('level')) if isinstance(x, dict) else (x, 'mentor')
+            if email and level in LMS_LEVELS: levels[str(email).lower()] = level
+        levels.update({e: 'admin' for e in seed})
+        return seed, levels
+
+    def lms_level(self, root, user):
+        if user.get('company') != 'momos': return None
+        return self.lms_admins(root)[1].get(str(user.get('email') or '').lower())
+
     def lms_staff(self, root, user):
-        """v1 첫 진입에서 '관리자'를 고른 모모스 구성원: 교육생 기록을 보고 확인한다(배정 관리·권한 변경은 하지 않음)."""
-        return user['company'] == 'momos' and root.get('profiles', {}).get(user['id'], {}).get('role') == 'staff'
+        """LMS관리자(admin·mentor): 교육생의 교육 내용을 체크하고 완료한다. 의견을 본다. admin 은 관리자 권한도 준다·뺀다."""
+        return self.lms_level(root, user) is not None
 
     def roles(self, root, user, target):
         entry = root['learners'].get(target)
@@ -265,10 +283,11 @@ class Service:
             l=fit(projects.Rooms.read(db,item['key']));records=l['records']
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
-            # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 84개 교육 기준으로 센다), 나를 '교육한 관리자'로 고른 적이 있는지
+            # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 84개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
-            mine=bool(user.get('email')) and any((x.get('trainedBy') or {}).get('email')==str(user['email']).lower() for x in records.values())
-            mine=mine or any((h.get('trainedBy') or {}).get('email')==str(user.get('email') or '').lower() for x in records.values() for h in x.get('history') or [] if isinstance(h,dict))
+            # '나의 교육생': 내가 한 번이라도 체크하거나 완료한 교육생(완료 취소 이력 포함)
+            touched=lambda x:user['id'] in (x.get('teacherBy') or []) or x.get('completedBy')==user['id']
+            mine=any(touched(x) or any(isinstance(h,dict) and touched(h) for h in x.get('history') or []) for x in records.values())
             summaries.append(dict(**r,total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
@@ -278,6 +297,7 @@ class Service:
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
+                    lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
@@ -426,7 +446,7 @@ class Service:
         data = v.get('data',{})
         if not isinstance(data,dict): raise ValueError('입력 내용을 확인하세요.')
         for field in ('step','item','test','question','ticket','learner','trainer','assessor','type','category','ref','operation','result'):
-            if field in data and not (field=='trainer' and v.get('action')=='step.finish'):projects.text(data[field],200)  # step.finish 의 trainer 는 {id,name,email,org}
+            if field in data:projects.text(data[field],200)
         digest = hashlib.sha256(json.dumps(v,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
         with self.store.connect() as db:
             db.execute('BEGIN IMMEDIATE')
@@ -438,7 +458,7 @@ class Service:
             if old:
                 if old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
                 return self.context(db,root,user,target)
-            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.'))
+            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.','lms.','feedback.'))
             if type(v.get('rootRevision' if root_action else 'revision')) is not int:
                 raise ValueError('서버 판본을 확인하세요.')
             # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
@@ -459,6 +479,10 @@ class Service:
                 self.self_enrol(db,root,user,data)
             elif action=='profile.set':
                 self.set_profile(root,user,target,data)
+            elif action=='lms.admin':
+                self.set_lms_admin(root,user,data)
+            elif action=='feedback.send':
+                self.send_feedback(root,user,target,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -475,7 +499,7 @@ class Service:
                 self.education(db,root,user,p,learner,action,data)
                 learner['revision']+=1
                 label=ACTION_NAMES[action]
-                if action in ('step.self','step.teacher'):
+                if action in ('step.self','step.teacher','step.mark'):
                     label+=' · '+('체크' if data['on'] else '체크 해제')+' · '+STEPS[data['step']]['checks'][data['index']]
                 elif action=='step.retry':label+=' · '+data['reason']
                 learner['events'].append(dict(person='A',date=today(),at=stamp(),id=data.get('step',data.get('item')),
@@ -564,7 +588,37 @@ class Service:
         if d['branch'] not in BRANCHES: raise ValueError('교육 과정이 있는 지점을 선택해 주세요.')
         if d['role'] not in ('learner','staff'): raise ValueError('교육생 또는 관리자를 선택해 주세요.')
         if user['company']!='momos': raise PermissionError('모모스 계정만 선택할 수 있습니다.')
+        if d['role']=='staff' and not self.lms_staff(root,user): raise PermissionError('관리자는 LMS관리자로 지정된 구성원만 선택할 수 있습니다.')
         root.setdefault('profiles',{})[user['id']]=dict(branch=d['branch'],role=d['role'],at=stamp())  # 누가 언제 바꿨는지는 공통 audit 에 남는다
+
+    def lms_admin_view(self, root):
+        seed, levels = self.lms_admins(root)
+        steps = {k: v.get('title', '') for k, v in STEPS.items()}
+        return dict(lmsAdmins=[dict(email=e, level=l, seed=e in seed) for e, l in sorted(levels.items(), key=lambda x: (x[1] != 'admin', x[0]))],
+                    feedback=[dict(f, stepTitle=steps.get(f.get('step'), '')) for f in reversed((root.get('feedback') or [])[-300:])])
+
+    def set_lms_admin(self, root, user, d):
+        """admin 만 LMS관리자 권한을 준다·바꾼다·뺀다(level None). 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
+        if self.lms_level(root, user) != 'admin': raise PermissionError('LMS관리자 권한은 admin 만 바꿀 수 있습니다.')
+        if not isinstance(d, dict) or set(d) != {'email', 'level'} or d['level'] not in LMS_LEVELS + (None,): raise ValueError('이메일과 권한(admin·mentor)을 확인해 주세요.')
+        email = projects.text(d['email'], 200, True).lower()
+        if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email): raise ValueError('이메일 주소를 확인해 주세요.')
+        allowed = [x.strip().lower().lstrip('@') for x in (os.environ.get('WORKS_ALLOWED_DOMAINS') or os.environ.get('WORKS_DOMAIN') or '').split(',') if x.strip()]
+        if allowed and email.rsplit('@', 1)[1] not in allowed: raise ValueError(f'{", ".join(allowed)} 계정만 LMS관리자로 지정할 수 있어요.')
+        seed, _ = self.lms_admins(root)
+        if email in seed or email == str(user.get('email') or '').lower(): raise ValueError('기본 admin 과 본인의 권한은 바꿀 수 없어요.')
+        rest = [x for x in root.get('lmsAdmins') or [] if (x.get('email') if isinstance(x, dict) else x) != email]
+        root['lmsAdmins'] = rest + ([dict(email=email, level=d['level'])] if d['level'] else [])
+        root['audit'].append(dict(at=stamp(), actor=user['id'], action='LMS관리자 ' + (d['level'] or '삭제'), email=email))
+
+    def send_feedback(self, root, user, target, d):
+        """교육 화면의 '의견 보내기'. LMS관리자 화면의 표(보낸사람·시간·의견)로 모인다."""
+        if target != user['id']: raise PermissionError('본인 이름으로만 의견을 보낼 수 있어요.')
+        if not isinstance(d, dict) or set(d) != {'step', 'text'} or d['step'] not in STEPS: raise ValueError('의견을 보낼 교육을 확인해 주세요.')
+        text = projects.text(d['text'], 2000, True)
+        items = root.setdefault('feedback', [])
+        items.append(dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''), step=d['step'], text=text))
+        root['feedback'] = items[-2000:]
 
     def self_enrol(self, db, root, user, d):
         """처음 들어온 교육생을 바로 등록한다: 입사일·교육 시작일 = 오늘, 담당자 미배정(관리자 누구나 확인)."""
@@ -683,7 +737,7 @@ class Service:
         l['startDate']=start
 
     def education(self,db,root,user,p,l,action,d):
-        fields={'step.finish':{'step','trainer'},'step.reopen':{'step'},'step.start':{'step'},'step.self':{'step','index','on'},'step.request':{'step'},
+        fields={'step.mark':{'step','index','on'},'step.close':{'step'},'step.reopen':{'step'},'step.start':{'step'},'step.self':{'step','index','on'},'step.request':{'step'},
                 'step.teacher':{'step','index','on'},'step.complete':{'step'},'step.retry':{'step','reason'},
                 'step.memo':{'step','memo'},'schedule.reason':{'item','reason'},'plan.save':{'plans'},'plan.test':{'test','date'},
                 'practice.add':{'step','date','condition','observation'},
@@ -691,7 +745,7 @@ class Service:
                 'quiz.assign':set(),'quiz.retry':set(),'quiz.answers':{'answers'},'quiz.submit':{'answers'},
                 'quiz.grade':{'question','result','feedback'}}
         if action not in fields or set(d)!=fields[action]:raise ValueError('교육 작업과 입력 항목을 확인하세요.')
-        teacher=action in ('step.teacher','step.complete','plan.save','plan.test','quiz.grade')
+        teacher=action in ('step.teacher','step.complete','step.mark','step.close','step.reopen','plan.save','plan.test','quiz.grade')
         if action=='schedule.reason':
             permitted=p['own'] or (p['assessor'] if d['item'].startswith('test-') else p['trainer'])
             if not permitted:raise PermissionError('본인 또는 배정된 해당 교육 담당자만 지연 사유를 기록합니다.')
@@ -717,18 +771,24 @@ class Service:
             r[k][i]=d['on'];r[k+'At'][i]=today() if d['on'] else None
             r.setdefault(k+'By',[None]*len(s['checks']))[i]=user['id'] if d['on'] else None
             if k=='self':r['status']='practice';r['start']=r['start'] or today()
-        elif action=='step.finish':
-            # v1(10/29): 확인 절차 없이 교육생이 직접 완료한다. 교육을 제공한 관리자(WORKS 주소록에서 고름)를 함께 남긴다.
-            if r['status'] not in ('ready','practice') or not all(r['self']):raise ValueError('교육 내용을 모두 체크한 뒤 완료할 수 있어요.')
-            t=d['trainer']
-            if not isinstance(t,dict) or not all(isinstance(t.get(k),str) and t.get(k) for k in ('id','name','email')):raise ValueError('교육을 제공한 관리자를 선택해 주세요.')
-            if t['email'].lower()==str(user.get('email') or '').lower():raise ValueError('본인은 교육한 관리자로 고를 수 없어요.')
-            r['status']='done';r['done']=today();r['start']=r['start'] or today()
-            r['trainedBy']=dict(id=t['id'][:200],name=projects.text(t['name'][:100],100),email=t['email'][:200].lower(),org=projects.text(str(t.get('org') or '')[:200],200),at=stamp())
+        elif action=='step.mark':
+            # v1(10/30): 관리자가 교육생 기록에 들어가 교육 내용을 하나씩 체크한다. 누가·언제 체크했는지 남고, 다른 관리자가 이어서 체크할 수 있다
+            if r['status'] not in ('ready','practice'):raise ValueError('완료한 교육은 체크를 바꿀 수 없어요. 완료를 취소한 뒤 바꿔 주세요.')
+            i=d['index']
+            if type(i) is not int or not 0<=i<len(s['checks']) or type(d['on']) is not bool:raise ValueError('체크 항목을 확인하세요.')
+            n=len(s['checks'])
+            for k in ('teacherBy','teacherName'):r.setdefault(k,[None]*n)
+            r['teacher'][i]=d['on'];r['teacherAt'][i]=today() if d['on'] else None
+            r['teacherBy'][i]=user['id'] if d['on'] else None;r['teacherName'][i]=user['name'] if d['on'] else None
+            r['status']='practice' if any(r['teacher']) else 'ready';r['start']=r['start'] or today()
+        elif action=='step.close':
+            if r['status'] not in ('ready','practice') or not all(r['teacher']):raise ValueError('교육 내용을 모두 체크한 뒤 완료할 수 있어요.')
+            r['status']='done';r['done']=today();r['completedBy']=user['id'];r['completedByName']=user['name']
         elif action=='step.reopen':
             if r['status']!='done':raise ValueError('완료한 항목만 완료를 취소할 수 있어요.')
-            history=copy.deepcopy(r['history']);old=copy.deepcopy(r);old.pop('history');old['reopened']=today();history.append(old)
-            r['history']=history;r['status']='practice';r['done']=None;r.pop('trainedBy',None)
+            history=copy.deepcopy(r['history']);old=copy.deepcopy(r);old.pop('history');old['reopened']=today();old['reopenedBy']=user['id'];history.append(old)
+            r['history']=history;r['status']='practice';r['done']=None
+            for k in ('trainedBy','completedBy','completedByName'):r.pop(k,None)
         elif action=='step.request':
             if r['status']!='practice' or not all(r['self']):raise ValueError('직원 실습 체크를 모두 완료하세요.')
             r['status']='review';r['request']=today()

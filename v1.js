@@ -36,25 +36,28 @@
   // 요청 id: 오래된 iOS WebView 에는 crypto.randomUUID 가 없다 → getRandomValues 로 만든다
   const uid = () => (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
 
-  // 교육 내용 체크: 화면을 다시 그리지 않고 그 자리에서 바꾼 뒤 서버에 저장한다(스크롤·포커스가 그대로).
+  // 관리자의 교육 내용 체크: 화면을 다시 그리지 않고 그 자리에서 바꾼 뒤 서버에 저장한다(스크롤·포커스가 그대로).
   // 빠르게 여러 개를 눌러도 순서대로 하나씩 저장한다. 저장에 실패하면 서버 기록으로 화면을 되돌린다.
   let selfQueue = Promise.resolve(), selfPending = 0;
-  function toggleSelf(step, k, on) {
-    const r = record(step.id);
-    r.self[k] = on; r.selfAt[k] = on ? cloud.today : null;
-    if (on && r.status === 'ready') r.status = 'practice';
-    const box = $('app').querySelector(`[data-self="${k}"]`);
+  function toggleMark(step, k, on) {
+    const r = record(step.id), n = checkItems(step).length;
+    if (!r.teacherName) r.teacherName = Array(n).fill(null);
+    r.teacher[k] = on; r.teacherAt[k] = on ? cloud.today : null; r.teacherName[k] = on ? cloud.user.name : null;
+    r.status = r.teacher.some(Boolean) ? 'practice' : 'ready';
+    const box = $('app').querySelector(`[data-mark="${k}"]`);
     if (box) box.closest('li').classList.toggle('on', on);
+    const by = $('app').querySelector(`[data-by="${k}"]`);
+    if (by) by.textContent = on ? `${cloud.user.name} · ${dateLabel(cloud.today)}` : '미체크';
     const pill = $('app').querySelector('.v1-pill');
     if (pill) { pill.className = 'v1-pill ' + r.status; pill.textContent = STATUS[r.status]; }
-    const finish = $('app').querySelector('[data-finish]');
-    if (finish) finish.disabled = !(checkItems(step).every((_, i) => r.self[i]) && canWrite());
+    const close = $('app').querySelector('[data-close]');
+    if (close) close.disabled = !checkItems(step).every((_, i) => r.teacher[i]);
     selfPending++;
     selfQueue = selfQueue.then(async () => {
       try {
-        const fresh = await api('POST', {action: 'step.self', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
+        const fresh = await api('POST', {action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
           requestId: uid(), data: {step: step.id, index: k, on}});
-        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {self: mine.self.slice(), selfAt: mine.selfAt.slice()}, mine.status === 'practice' ? {status: 'practice'} : {}); }
+        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), status: mine.status}); }
       } catch (e) {
         toast(e.message || '체크를 저장하지 못했어요. 다시 눌러 주세요.');
         try { cloud = await api('GET', null, cloud.target); } catch {}
@@ -95,7 +98,7 @@
   // The record still stores who confirmed each check, so trainers can be split out later.
   // 화면의 역할은 첫 진입에서 고른 것(계정에 저장)을 따른다. 고르기 전(예전 계정)에는 서버 권한으로 판단.
   const profile = () => cloud.profile || null;
-  const isStaff = () => profile() ? profile().role === 'staff' : Boolean(cloud.workspaceRoles.admin || cloud.workspaceRoles.trainer || cloud.workspaceRoles.assessor);
+  const isStaff = () => Boolean(cloud.lmsAdmin);  // 10/30: 관리자 = 지정된 LMS관리자(이메일)만. 역할 선택은 없다
   const role = () => cloud.permissions.own ? 'learner' : isStaff() ? 'staff' : 'viewer';
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
@@ -148,7 +151,7 @@
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && view === 'person' ? '교육생 목록으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 진행 현황' : view === 'person' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'all' ? '전체 교육' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 진행 현황' : view === 'person' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'all' ? '전체 교육' : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -168,8 +171,10 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
+    app.innerHTML = view === 'admin' ? adminView() : view === 'branch' ? branchView() : view === 'role' ? roleView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
+    const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
+    if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
     if (same) {
       opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
       // 저장 중에는 체크박스가 잠깐 disabled 라 포커스를 못 받는다 → 기억해 두었다가 저장 후 다시 그릴 때 돌려준다
@@ -230,7 +235,7 @@
     if (role === 'learner' && !cloud.enrolled) await act('config.selfEnrol', {});
     if (cloud.target !== cloud.user.id) cloud = await api('GET');
     view = 'home'; stageSel = null; render();
-    toast(`${BRANCHES.find(x => x.id === branch).name} · ${ROLES.find(x => x.id === role).name}(으)로 들어왔어요.`);
+    toast(`${BRANCHES.find(x => x.id === branch).name}(으)로 들어왔어요.`);
   }
 
   // WORKS 프로필 사진(/v1/avatar/<id>, 로그인할 때 받아 둔 것). 없으면 이름 첫 글자
@@ -252,11 +257,11 @@
       if (!xs.length) return '';
       return `<section class="v1-pgroup"><h3>${g.order}. ${esc(g.title)}</h3><div class="v1-tiles">` + xs.map(s => {
         const r = record(s.id), k = stateOf(r.status), items = checkItems(s), n = stepIndex(s.id) + 1;
-        const fill = k === 'prog' && items.length ? Math.round(items.filter((_, i) => r.self[i]).length / items.length * 100) : 0;
+        const fill = k === 'prog' && items.length ? Math.round(items.filter((_, i) => r.teacher[i]).length / items.length * 100) : 0;
         return `<button type="button" class="v1-tile ${k}" style="--fill:${fill}%" data-step="${esc(s.id)}" aria-label="${n}번 ${esc(s.title)} · ${LABEL[k]}" title="${n}. ${esc(s.title)} · ${LABEL[k]}">${n}</button>`;
       }).join('') + '</div></section>';
     }).join('');
-    return (mine ? '' : `<p class="v1-muted v1-who">${esc(cloud.name)}님의 교육 기록이에요(보기만 할 수 있어요).</p>`) + enrolNotice() +
+    return learnerBar() + enrolNotice() +
       `<div class="v1-counts"><div><b>${c.done}</b><span><i class="v1-dot done"></i>완료</span></div><div><b>${c.prog}</b><span><i class="v1-dot prog"></i>진행 중</span></div><div><b>${c.none}</b><span><i class="v1-dot none"></i>시작 전</span></div></div>` +
       ratioBar(c, 'lg') + tiles +
       `<p class="v1-muted v1-ptip">칸을 누르면 그 교육으로 이동해요. 진행 중인 칸은 체크한 만큼 채워져요.</p>`;
@@ -270,7 +275,7 @@
     // 내 교육: 아직 시작 전이어도 같은 막대로 보여 주고, 누르면(처음이면 교육을 시작하고) 내 진행도로
     const meRow = self ? row(self, '내 교육') : row(Object.assign({}, cloud.user, {states: {}, trainedByMe: false}), '내 교육').replace('data-person=', 'data-enrol-self data-x=');
     return `<ul class="v1-plist">${meRow}</ul>` +
-      `<h3 class="v1-pcat">나의 교육생 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 나를 교육한 관리자로 고른 교육생이 없어요.</p>') +
+      `<h3 class="v1-pcat">나의 교육생 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 없어요. 전체 교육생에서 교육생을 골라 교육 내용을 체크하거나 완료하면 여기에 모여요.</p>') +
       `<h3 class="v1-pcat">전체 교육생 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 교육을 시작한 교육생이 없어요.</p>');
   }
 
@@ -281,9 +286,27 @@
 
   function homeView() { return isStaff() ? staffHome() : progressView(); }
 
+  // 관리자가 다른 사람의 기록을 볼 때: 누구를 교육하고 있는지 항상 보이게(화면 위에 고정)
+  const learnerBar = () => cloud.target === cloud.user.id ? '' : `<div class="v1-learner-bar" role="status">${avatar({id: cloud.target, name: cloud.name})}<span>교육생 <strong>${esc(cloud.name)}</strong></span></div>`;
+
+  // LMS관리자: 관리자 지정(서로 추가·삭제) · 보낸 의견 표
+  function adminView() {
+    const titleOf = id => { const st = steps().find(x => x.id === id); return st ? `${stepIndex(id) + 1}. ${st.title}` : ''; };
+    const me = String(cloud.user.email || '').toLowerCase(), canEdit = cloud.lmsLevel === 'admin';
+    const tag = l => `<span class="v1-tag${l === 'admin' ? ' v1-tag-admin' : ''}">${l}</span>`;
+    const admins = (cloud.lmsAdmins || []).map(a => `<li><span class="v1-admin-mail">${esc(a.email)}${a.email === me ? ' <small class="v1-muted">(나)</small>' : ''}</span>` +
+      (canEdit && !a.seed && a.email !== me
+        ? `<span class="v1-admin-ctl"><select class="v1-admin-level" data-admin-level="${esc(a.email)}" aria-label="${esc(a.email)} 권한"><option value="admin"${a.level === 'admin' ? ' selected' : ''}>admin</option><option value="mentor"${a.level === 'mentor' ? ' selected' : ''}>mentor</option></select><button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">삭제</button></span>`
+        : tag(a.level)) + '</li>').join('');
+    const rows = (cloud.feedback || []).map(f => `<tr><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td>${esc(f.text).replace(/\n/g, '<br>')}${titleOf(f.step) ? `<small class="v1-fb-step">${esc(titleOf(f.step))}</small>` : ''}</td></tr>`).join('');
+    return `<section class="v1-card"><h2>LMS관리자</h2><p class="v1-muted">admin·mentor 모두 교육생의 교육을 체크·완료할 수 있어요. 권한을 주고 빼는 것은 admin 만 할 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
+      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><select class="v1-admin-level" data-admin-new-level aria-label="권한"><option value="mentor">mentor</option><option value="admin">admin</option></select><button type="button" class="v1-btn" data-admin-add>추가</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
+      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>보낸사람</th><th>시간</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+  }
+
   const listItem = s => {
     const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
-    const sub = st === 'done' ? ' · ' + dateLabel(r.done) + (r.trainedBy ? ' · 교육: ' + r.trainedBy.name : '') : '';
+    const sub = st === 'done' ? ' · ' + dateLabel(r.done) + ((r.completedByName || (r.trainedBy && r.trainedBy.name)) ? ' · ' + (r.completedByName || r.trainedBy.name) : '') : '';
     return `<li><button class="v1-item ${st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong><small>${st === 'planned' ? '교육안 준비 중' : esc(STATUS[st] + sub)}</small></span><span class="v1-chev">›</span></button></li>`;
   };
   const unitBlock = u => {
@@ -292,7 +315,7 @@
     return `<h3 class="v1-unit"><span class="v1-uno">${esc(u.no || '')}</span>${esc(u.title)}<small>${meta}</small></h3>` +
       (u.summary ? `<p class="v1-unote">${esc(u.summary)}</p>` : '') + '<ul class="v1-list">' + u.steps.map(listItem).join('') + '</ul>';
   };
-  const whoLine = () => cloud.target === cloud.user.id ? '' : `<p class="v1-muted v1-who">${esc(cloud.name)}님의 교육 기록</p>`;
+  const whoLine = () => learnerBar();
   const srcLine = () => `<p class="v1-src">교육과정 ${esc(content.curriculumVersion || content.courseVersion)} · 원본 색인 ${esc((content.sourceIndexedAt || '').slice(0, 10))} · 기록은 서버에 저장됩니다 · <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a></p>`;
   function wholeView() {
     const all = stages().map(g => Object.assign({}, g, {units: g.units.map(u => Object.assign({}, u, {steps: u.steps.filter(s => matches(s))})).filter(u => u.steps.length)})).filter(g => g.units.length);
@@ -330,7 +353,7 @@
       `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person')}` +
       `<button type="button" class="v1-nav-cat" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages"><span>교육 단계</span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
       `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${item('data-nav="all"', '전체 교육', view === 'all', true)}${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
-      `<div class="v1-nav-foot">${item('data-nav="branch"', '지점 변경')}${item('data-nav="role"', '역할 변경')}</div>`;
+      `<div class="v1-nav-foot">${isStaff() ? item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger') : ''}${item('data-nav="branch"', '지점 변경')}</div>`;
   }
   function openNav() { if (view === 'stage' || view === 'all') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
   function closeNav() { $('v1Nav').hidden = true; document.body.style.overflow = ''; }
@@ -340,11 +363,12 @@
     if (t.hasAttribute('data-nav-close')) return closeNav();
     if (t.hasAttribute('data-nav-toggle')) { navStagesOpen = !navStagesOpen; return drawNav(); }
     const to = t.dataset.nav; closeNav();
-    if (isStaff() && cloud.target !== cloud.user.id && to !== 'branch' && to !== 'role') { try { cloud = await api('GET'); } catch {} }  // 메뉴는 항상 '나' 기준
+    if (cloud.target !== cloud.user.id && to !== 'branch') { try { cloud = await api('GET'); } catch {} }  // 메뉴는 항상 '나' 기준
     if (isStaff() && !cloud.enrolled && (to === 'all' || to === 'stage')) await act('config.selfEnrol', {});  // 관리자가 처음 교육 목록을 열면 내 교육을 시작
     if (to === 'all') { homeScroll = null; view = 'all'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'stage') { stageSel = Number(t.dataset.navStage); homeScroll = null; view = 'stage'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'home') { view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    if (to === 'admin') { view = 'admin'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'branch') { pickBranch = null; view = 'branch'; render(); return; }
     if (to === 'role') { pickBranch = profile() && profile().branch; view = 'role'; render(); }
   });
@@ -364,7 +388,8 @@
     if (planned(s)) return plannedView(s);
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
     const i = stepIndex(s.id), next = nextOf(s);
-    const editSelf = own && canWrite() && (st === 'ready' || st === 'practice');
+    // 10/30: 체크·완료는 관리자만 — 교육생 기록에 들어가서 한다. 교육생은 관리자가 체크한 상태를 보고, 의견만 보낸다
+    const editMark = staff && mayConfirm() && cloud.target !== cloud.user.id && (st === 'ready' || st === 'practice');
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.trim() : key; };
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
       r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -388,31 +413,36 @@
       `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy">${p.hideCaption ? '' : `<figcaption>${esc(p.caption)}</figcaption>`}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     // 교육 내용: 요약 카드 전체가 토글(근거 본문 펼치기). 체크 상자는 카드 오른쪽 위 — 상자만 눌러야 체크된다.
     const box = k => {
-      const on = Boolean(r.self[k]), by = staff || !own ? `<span class="v1-by">${on ? '체크 ' + dateLabel(r.selfAt[k]) : '미체크'}</span>` : '';
-      return [`<label class="v1-kcheck" title="${on ? '체크 해제' : '익혔으면 체크'}"><input type="checkbox" data-self="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''} ${editSelf && !busy ? '' : 'disabled'}><span class="v1-box"></span></label>`, by];
+      const on = Boolean(r.teacher[k]), name = (r.teacherName || [])[k];
+      const by = `<span class="v1-by" data-by="${k}">${on ? esc([name, dateLabel(r.teacherAt[k])].filter(Boolean).join(' · ')) : '미체크'}</span>`;
+      return [`<label class="v1-kcheck" title="${on ? '체크 해제' : '교육했으면 체크'}"><input type="checkbox" data-mark="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''} ${editMark ? '' : 'disabled'}><span class="v1-box"></span></label>`, by];
     };
     const keyPoints = items.length ? `<ol class="v1-kp">${items.map((k, n) => {
       const keys = [...new Set(k.cites || [])], [check, by] = box(n);
-      return `<li class="v1-kc${r.self[n] ? ' on' : ''}">${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}${by}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
+      return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}">${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}${by}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
         : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}${by}</span></div>`}${check}</li>`;
     }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const refDocs = (s.refDocs || []).map(d => `<p class="v1-inline-file">원고 문서: ${esc(d.title)} (${esc(d.ref)}) · ${esc(d.file)}</p>`).join('');
     let status = '';
-    if (st === 'done') status = `<div class="v1-note ok">${dateLabel(r.done)} 완료${r.trainedBy ? ` · 교육: ${esc(r.trainedBy.name)}${r.trainedBy.org ? ` (${esc(r.trainedBy.org)})` : ''}` : ''}</div>`;
+    const doneBy = r.completedByName || (r.trainedBy && r.trainedBy.name);
+    if (st === 'done') status = `<div class="v1-note ok">${dateLabel(r.done)} 완료${doneBy ? ' · ' + esc(doneBy) : ''}</div>`;
     let actions = '';
-    if (own && (st === 'ready' || st === 'practice')) {
-      const ready = items.length && items.every((_, k) => r.self[k]);
-      actions = `<button class="v1-btn primary" data-finish ${ready && canWrite() && !busy ? '' : 'disabled'}>완료</button>`;
-    } else if (own && st === 'done') actions = `<button class="v1-btn" data-reopen ${busy ? 'disabled' : ''}>완료 취소</button>`;
+    const trainer = staff && mayConfirm() && cloud.target !== cloud.user.id;
+    if (trainer && (st === 'ready' || st === 'practice')) {
+      const ready = items.length && items.every((_, k) => r.teacher[k]);
+      actions = `<button class="v1-btn primary" data-close ${ready && !busy ? '' : 'disabled'}>완료</button>`;
+    } else if (trainer && st === 'done') actions = `<button class="v1-btn" data-reopen ${busy ? 'disabled' : ''}>완료 취소</button>`;
     if (next) actions += `<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`;
-    const memo = own || r.memo ? `<section class="v1-card"><h2>의견 보내기</h2>` +
-      `<textarea class="v1-memo" data-memo ${editSelf && !busy ? '' : 'disabled'} placeholder="${own ? '궁금하거나 이해가 어려운 점을 입력해주세요.' : ''}">${esc(r.memo)}</textarea></section>` : '';
+    // 의견 보내기: 본인 교육 화면에서만. 보내면 LMS관리자 화면의 표로 모인다
+    const memo = own ? `<section class="v1-card"><h2>의견 보내기</h2>` +
+      `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="궁금하거나 이해가 어려운 점을 입력해주세요."></textarea>` +
+      `<div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-feedback-send>보내기</button></div></section>` : '';
     const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
-    const guide = own ? (st === 'done' ? '완료한 항목이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '익힌 항목은 오른쪽 상자에 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
-      : '교육생이 체크한 내용이에요(보기만 할 수 있어요). 글을 누르면 근거 본문이 펼쳐져요.';
-    return `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
+    const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 오른쪽 상자에 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
+      : '관리자가 교육하면서 체크해요. 글을 누르면 근거 본문이 펼쳐져요.';
+    return learnerBar() + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
@@ -421,9 +451,36 @@
   }
   function bind(step) {
     const app = $('app');
-    app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; view = 'role'; render(); });
+    // 지점을 고르면 바로 홈(역할은 고르지 않는다: 관리자 = 지정된 LMS관리자)
+    app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; chooseRole(isStaff() ? 'staff' : 'learner').catch(e => toast(e.message)); });
     app.querySelectorAll('[data-role]').forEach(b => b.onclick = () => chooseRole(b.dataset.role).catch(e => toast(e.message)));
     app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { if (!view.startsWith('step:')) returnView = view; view = 'step:' + b.dataset.step; if (returnView !== 'stage') stageSel = unitOf(b.dataset.step).stage.order; render(); });
+    const addBtn = app.querySelector('[data-admin-add]');
+    // 구성원 검색(WORKS 주소록): 이름·이메일·조직으로 찾아 누르면 이메일 칸에 채운다. 이미 관리자인 사람은 뺀다
+    const adminQ = app.querySelector('[data-admin-email]'), adminRes = app.querySelector('#v1AdminResults');
+    let adminTimer = null, adminSeq = 0;
+    if (adminQ) adminQ.oninput = () => {
+      clearTimeout(adminTimer);
+      const q = adminQ.value.trim();
+      if (!q || /@/.test(q) && q === adminQ.dataset.picked) { adminRes.innerHTML = ''; return; }
+      adminTimer = setTimeout(async () => {
+        const seq = ++adminSeq; adminRes.innerHTML = '<p class="v1-muted">찾는 중…</p>';
+        try {
+          const res = await fetch('/api/works/members?q=' + encodeURIComponent(q), {credentials: 'same-origin', cache: 'no-store'});
+          const data = await res.json().catch(() => ({}));
+          if (seq !== adminSeq) return;
+          if (!res.ok) throw new Error(data.error || '주소록을 불러오지 못했어요.');
+          const taken = new Set((cloud.lmsAdmins || []).map(a => a.email));
+          const list = (data.members || []).filter(m => !taken.has(m.email));
+          adminRes.innerHTML = list.length ? list.map(m => `<button type="button" class="v1-person" data-admin-pick="${esc(m.email)}"><span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').slice(0, 1))}</span></span><span class="v1-person-body"><strong>${esc(m.name)}</strong><small>${esc([m.org, m.email].filter(Boolean).join(' · '))}</small></span></button>`).join('')
+            : '<p class="v1-muted">검색 결과가 없어요. 이름이나 이메일을 다시 확인해 주세요.</p>';
+        } catch (e) { if (seq === adminSeq) adminRes.innerHTML = `<div class="v1-note warn">${esc(e.message)}</div>`; }
+      }, 250);
+    };
+    if (adminRes) adminRes.onclick = e => { const b = e.target.closest('[data-admin-pick]'); if (!b) return; adminQ.value = adminQ.dataset.picked = b.dataset.adminPick; adminRes.innerHTML = ''; app.querySelector('[data-admin-new-level]').focus(); };
+    if (addBtn) addBtn.onclick = async () => { const email = app.querySelector('[data-admin-email]').value.trim(); if (!email) return; if (await act('lms.admin', {email, level: app.querySelector('[data-admin-new-level]').value})) toast('LMS관리자를 추가했습니다.'); };
+    app.querySelectorAll('[data-admin-level]').forEach(x => x.onchange = async () => { if (await act('lms.admin', {email: x.dataset.adminLevel, level: x.value})) toast(`${x.value} 권한으로 바꿨습니다.`); });
+    app.querySelectorAll('[data-admin-del]').forEach(b => b.onclick = async () => { if (await act('lms.admin', {email: b.dataset.adminDel, level: null})) toast('LMS관리자에서 삭제했습니다.'); });
     const enrolSelf = app.querySelector('[data-enrol-self]');
     if (enrolSelf) enrolSelf.onclick = async () => { if (await act('config.selfEnrol', {})) { cloud = await api('GET'); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } };
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
@@ -438,94 +495,38 @@
       sum.scrollIntoView({block: 'nearest', behavior: 'instant'});
     });
     if (!step) return;
-    app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => toggleSelf(step, Number(c.dataset.self), c.checked));
-    const memo = app.querySelector('[data-memo]');
-    if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('의견을 저장했어요.')); };
-    const finish = app.querySelector('[data-finish]');
-    if (finish) finish.onclick = () => openFinish(step);
+    app.querySelectorAll('[data-mark]').forEach(c => c.onchange = () => toggleMark(step, Number(c.dataset.mark), c.checked));
+    const fb = app.querySelector('[data-feedback]'), fbSend = app.querySelector('[data-feedback-send]');
+    if (fbSend) fbSend.onclick = async () => {
+      const text = fb.value.trim();
+      if (!text) { toast('보낼 의견을 입력해 주세요.'); fb.focus(); return; }
+      if (await act('feedback.send', {step: step.id, text})) { const box = $('app').querySelector('[data-feedback]'); if (box) box.value = ''; toast('의견을 보냈습니다.'); }
+    };
+    const close = app.querySelector('[data-close]');
+    if (close) close.onclick = async () => { await selfQueue; if (await act('step.close', {step: step.id})) toast('완료했습니다.'); };
     const reopen = app.querySelector('[data-reopen]');
     if (reopen) reopen.onclick = () => openReopen(step);
   }
 
-  // --- 완료 팝업: '나에게 교육을 제공한 관리자'를 WORKS 주소록에서 검색해 고른다 → step.finish
-  // 이름·이메일은 서버가 주소록에서 다시 찾아 채운다(화면은 id 만 보낸다).
-  let pop = null;  // {step, pick, q, list, loading, error}
+  // --- 확인 팝업(완료 취소)
+  let pop = null;  // {kind:'reopen', step}
   const popEl = () => $('v1Pop');
   function closePop() { pop = null; popEl().hidden = true; document.body.style.overflow = ''; }
-  function recentTrainers() {  // 내가 이전에 고른 관리자(최근 순, 최대 5명) — 검색 전에 먼저 보여 준다
-    const seen = new Map();
-    Object.values(cloud.learner.records || {}).filter(r => r.trainedBy).sort((a, b) => String(b.trainedBy.at).localeCompare(String(a.trainedBy.at)))
-      .forEach(r => { if (!seen.has(r.trainedBy.id)) seen.set(r.trainedBy.id, r.trainedBy); });
-    return [...seen.values()].slice(0, 5);
-  }
   function drawPop() {
     if (!pop) return;
-    const panel = popEl().querySelector('.v1-pop-panel');
-    if (pop.kind === 'reopen') {
-      panel.innerHTML = '<h2 id="v1PopTitle">완료를 취소할까요?</h2><p class="v1-muted">체크한 내용은 그대로 남아요. 다시 완료할 때 교육한 관리자를 다시 선택해요.</p>' +
-        `<div class="v1-actions"><button type="button" class="v1-btn" data-pop-close>닫기</button><button type="button" class="v1-btn primary" data-pop-reopen ${busy ? 'disabled' : ''}>완료 취소</button></div>`;
-      return;
-    }
-    const person = m => `<button type="button" class="v1-person${pop.pick && pop.pick.id === m.id ? ' on' : ''}" data-pick-person="${esc(m.id)}" aria-pressed="${Boolean(pop.pick && pop.pick.id === m.id)}">` +
-      `<span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').slice(0, 1))}</span></span><span class="v1-person-body"><strong>${esc(m.name)}</strong><small>${esc([m.org, m.email].filter(Boolean).join(' · '))}</small></span></button>`;
-    const recent = !pop.q.trim() ? recentTrainers() : [];
-    const list = pop.error ? `<div class="v1-note warn">${esc(pop.error)}</div>` : pop.loading && !pop.list.length ? '<p class="v1-muted">찾는 중…</p>'
-      : pop.q.trim() && !pop.list.length ? '<p class="v1-muted">검색 결과가 없어요. 이름이나 이메일을 다시 확인해 주세요.</p>'
-      : (recent.length ? '<h3>최근 선택</h3>' + recent.map(person).join('') : '') + (pop.list.length ? (recent.length ? '<h3>구성원</h3>' : '') + pop.list.map(person).join('') : '');
-    const results = panel.querySelector('.v1-pop-list');
-    if (results) {  // 입력하는 동안에는 목록만 다시 그린다(입력창 포커스·커서 유지)
-      results.innerHTML = list;
-      panel.querySelector('[data-pop-done]').disabled = !pop.pick || busy;
-      panel.querySelector('.v1-pop-picked').innerHTML = pop.pick ? `선택: <strong>${esc(pop.pick.name)}</strong>` : '교육한 관리자를 선택해 주세요.';
-      return;
-    }
-    panel.innerHTML = `<h2 id="v1PopTitle">교육 완료</h2><p class="v1-muted">「${esc(pop.step.title)}」 교육을 진행해 준 관리자를 선택해 주세요.</p>` +
-      `<label class="v1-pop-label" for="v1PopQ">나에게 교육을 제공한 관리자</label>` +
-      `<input id="v1PopQ" class="v1-pop-input" type="search" autocomplete="off" enterkeyhint="search" placeholder="이름 또는 이메일 검색 (NAVER WORKS 주소록)" value="${esc(pop.q)}">` +
-      `<div class="v1-pop-list" role="list">${list}</div><p class="v1-pop-picked v1-muted">${pop.pick ? `선택: <strong>${esc(pop.pick.name)}</strong>` : '교육한 관리자를 선택해 주세요.'}</p>` +
-      `<div class="v1-actions"><button type="button" class="v1-btn" data-pop-close>취소</button><button type="button" class="v1-btn primary" data-pop-done ${pop.pick && !busy ? '' : 'disabled'}>완료</button></div>`;
-    const input = panel.querySelector('#v1PopQ');
-    input.oninput = () => { pop.q = input.value; pop.pick = pop.pick && pop.list.concat(recentTrainers()).some(m => m.id === pop.pick.id) ? pop.pick : null; searchSoon(); };
-  }
-  let searchTimer = null, searchSeq = 0;
-  function searchSoon(delay = 250) {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(async () => {
-      if (!pop || pop.kind !== 'finish') return;
-      const seq = ++searchSeq; pop.loading = true; pop.error = ''; drawPop();
-      try {
-        const res = await fetch('/api/works/members?q=' + encodeURIComponent(pop.q.trim()), {credentials: 'same-origin', cache: 'no-store'});
-        const data = await res.json().catch(() => ({}));
-        if (!pop || seq !== searchSeq) return;
-        if (!res.ok) throw new Error(data.error || '주소록을 불러오지 못했어요.');
-        pop.list = data.members || [];
-      } catch (e) { if (pop && seq === searchSeq) { pop.list = []; pop.error = e.message; } }
-      if (pop && seq === searchSeq) { pop.loading = false; drawPop(); }
-    }, delay);
-  }
-  function openFinish(step) {
-    pop = {kind: 'finish', step, pick: null, q: '', list: [], loading: true, error: ''};
-    popEl().querySelector('.v1-pop-panel').innerHTML = ''; drawPop(); popEl().hidden = false; document.body.style.overflow = 'hidden';
-    popEl().querySelector('#v1PopQ').focus(); searchSoon(0);
+    popEl().querySelector('.v1-pop-panel').innerHTML = '<h2 id="v1PopTitle">완료를 취소할까요?</h2><p class="v1-muted">체크한 내용은 그대로 남아요. 고친 뒤 다시 「완료」를 누르면 됩니다.</p>' +
+      `<div class="v1-actions"><button type="button" class="v1-btn" data-pop-close>닫기</button><button type="button" class="v1-btn primary" data-pop-reopen ${busy ? 'disabled' : ''}>완료 취소</button></div>`;
   }
   function openReopen(step) {
     pop = {kind: 'reopen', step}; drawPop(); popEl().hidden = false; document.body.style.overflow = 'hidden';
     popEl().querySelector('[data-pop-close]').focus();
   }
   popEl().addEventListener('click', async e => {
-    const t = e.target.closest('[data-pick-person],[data-pop-done],[data-pop-reopen],[data-pop-close]');
+    const t = e.target.closest('[data-pop-reopen],[data-pop-close]');
     if (!t || !pop) return;
     if (t.hasAttribute('data-pop-close')) return closePop();
-    if (t.hasAttribute('data-pick-person')) { pop.pick = pop.list.concat(recentTrainers()).find(m => m.id === t.dataset.pickPerson) || null; return drawPop(); }
-    const step = pop.step;
-    if (t.hasAttribute('data-pop-done') && pop.pick) {
-      const pick = pop.pick; closePop();
-      await selfQueue;  // 방금 누른 체크가 저장된 뒤에 완료
-      if (await act('step.finish', {step: step.id, trainer: {id: pick.id}})) toast(`완료했어요 · 교육: ${pick.name}`);
-    } else if (t.hasAttribute('data-pop-reopen')) {
-      closePop();
-      if (await act('step.reopen', {step: step.id})) toast('완료를 취소했어요. 다시 체크하고 완료할 수 있어요.');
-    }
+    const step = pop.step; closePop();
+    if (await act('step.reopen', {step: step.id})) toast('완료를 취소했습니다.');
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop) closePop(); });
 
@@ -656,7 +657,7 @@
   setInterval(async () => {
     if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch' || view === 'role') return;
     const a = document.activeElement;
-    if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT' && a.type === 'text')) return;
+    if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.tagName === 'INPUT' && ['text', 'search', 'email'].includes(a.type))) return;
     if (pop) return;  // 완료 팝업을 보는 중
     try {
       const fresh = await api('GET', null, cloud.target);

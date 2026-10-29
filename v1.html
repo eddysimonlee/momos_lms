@@ -161,6 +161,32 @@ img{max-width:100%}
 .v1-psearch{margin:var(--spacing-16) 0 0}
 .v1-pcat{margin:var(--spacing-20) 0 var(--spacing-4);font:var(--label-sm-bold);color:var(--text-muted)}
 .v1-stage-top{margin-top:0}
+.v1-learner-bar{position:sticky;top:var(--component-gnb-height);z-index:1;display:flex;align-items:center;gap:var(--spacing-8);margin:calc(var(--spacing-16) * -1) calc(var(--spacing-16) * -1) var(--spacing-12);padding:var(--spacing-8) var(--spacing-16);background:var(--component-banner-color-blue-surface);color:var(--component-banner-color-blue-text);font:var(--body-md)}
+.v1-learner-bar .v1-avatar{width:var(--spacing-24);height:var(--spacing-24);font:var(--label-xs-bold)}
+.v1-actions.v1-actions-inline{position:static;padding:var(--spacing-8) 0 0;background:transparent;justify-content:flex-end}
+.v1-actions.v1-actions-inline .v1-btn{flex:none}
+.v1-nav-item.v1-nav-danger{color:var(--text-error)}
+.v1-nav-item.v1-nav-danger:hover{color:var(--text-error-strong)}
+.v1-nav-item.v1-nav-danger.on{background:var(--surface-error-subtle);color:var(--text-error-strong)}
+.v1-admins{list-style:none;margin:var(--spacing-12) 0 0;padding:0}
+.v1-admins li{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8);min-height:var(--spacing-44);border-bottom:var(--v1-hairline) solid var(--border-subtle);font:var(--body-md)}
+.v1-admin-mail{min-width:0;overflow-wrap:anywhere}
+.v1-tbtn.v1-danger,.v1-tbtn.v1-danger:hover{color:var(--text-error)}
+.v1-admin-add{display:flex;gap:var(--spacing-8);margin-top:var(--spacing-12)}
+.v1-admin-add .v1-btn{flex:none}
+.v1-admin-ctl{display:flex;align-items:center;gap:var(--spacing-4);flex:none}
+.v1-admin-level{height:var(--component-button-size-lg-height);padding:0 var(--spacing-8);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-lg);background:var(--surface-default);color:var(--text-default);font:var(--body-md)}
+.v1-admin-ctl .v1-admin-level{height:var(--spacing-32);font:var(--body-sm)}
+.v1-admin-add .v1-admin-level{flex:none}
+.v1-admin-results{max-height:none}
+.v1-admin-results:empty{display:none}
+.v1-tag.v1-tag-admin{background:var(--surface-error-subtle);color:var(--text-error-strong)}
+.v1-table{overflow-x:auto;margin-top:var(--spacing-8)}
+.v1-table table{width:100%;border-collapse:collapse;font:var(--body-sm)}
+.v1-table th,.v1-table td{border-bottom:var(--v1-hairline) solid var(--border-subtle);padding:var(--spacing-8);text-align:left;vertical-align:top}
+.v1-table th{color:var(--text-muted);font:var(--body-sm-bold);white-space:nowrap}
+.v1-nowrap{white-space:nowrap}
+.v1-fb-step{display:block;margin-top:var(--spacing-4);color:var(--text-muted);font:var(--label-xs)}
 .v1-lhead.v1-lhead-top{margin-top:0}
 /* 교육 내용 체크(10/29): 카드 오른쪽 위 상자. 상자만 눌러야 체크되고, 글을 누르면 근거 본문이 펼쳐진다 */
 .v1-kp li.v1-kc{position:relative}
