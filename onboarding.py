@@ -252,7 +252,7 @@ class Service:
         if not self.admitted(root,user):
             raise PermissionError('현장 온보딩 접근이 허용되지 않았습니다. 관리자에게 온보딩 접근 권한을 요청하세요.')
         if not self.may_view(root,user,target):
-            raise PermissionError('본인 또는 배정된 교육생의 기록만 열 수 있습니다.')
+            raise PermissionError('본인 또는 배정된 멘티의 기록만 열 수 있습니다.')
         users = {r['id']:dict(r) for r in db.execute("SELECT id,name,company,role FROM access_users WHERE status='active'").fetchall()}
         entry = root['learners'].get(target)
         learner = fit(projects.Rooms.read(db,entry['key'])) if entry else blank(today())
@@ -453,7 +453,7 @@ class Service:
             user = self.identity(db,user)
             root = self.root(db)
             if not self.admitted(root,user) or not self.may_view(root,user,target):
-                raise PermissionError('본인 또는 배정된 교육생만 변경할 수 있습니다.')
+                raise PermissionError('본인 또는 배정된 멘티만 변경할 수 있습니다.')
             old = next((r for r in root['requests'] if r['user']==user['id'] and r['id']==rid),None)
             if old:
                 if old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
@@ -600,7 +600,7 @@ class Service:
     def set_lms_admin(self, root, user, d):
         """admin 만 LMS관리자 권한을 준다·바꾼다·뺀다(level None). 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
         if self.lms_level(root, user) != 'admin': raise PermissionError('LMS관리자 권한은 admin 만 바꿀 수 있습니다.')
-        if not isinstance(d, dict) or set(d) != {'email', 'level'} or d['level'] not in LMS_LEVELS + (None,): raise ValueError('이메일과 권한(admin·mentor)을 확인해 주세요.')
+        if not isinstance(d, dict) or set(d) != {'email', 'level'} or d['level'] not in LMS_LEVELS + (None,): raise ValueError('이메일과 권한(admin·멘토)을 확인해 주세요.')
         email = projects.text(d['email'], 200, True).lower()
         if not re.fullmatch(r'[^@\s]+@[^@\s]+\.[^@\s]+', email): raise ValueError('이메일 주소를 확인해 주세요.')
         allowed = [x.strip().lower().lstrip('@') for x in (os.environ.get('WORKS_ALLOWED_DOMAINS') or os.environ.get('WORKS_DOMAIN') or '').split(',') if x.strip()]
