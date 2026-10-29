@@ -32,12 +32,42 @@
     render();
   }
 
+  // 요청 id: 오래된 iOS WebView 에는 crypto.randomUUID 가 없다 → getRandomValues 로 만든다
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)));
+
+  // 교육 내용 체크: 화면을 다시 그리지 않고 그 자리에서 바꾼 뒤 서버에 저장한다(스크롤·포커스가 그대로).
+  // 빠르게 여러 개를 눌러도 순서대로 하나씩 저장한다. 저장에 실패하면 서버 기록으로 화면을 되돌린다.
+  let selfQueue = Promise.resolve(), selfPending = 0;
+  function toggleSelf(step, k, on) {
+    const r = record(step.id);
+    r.self[k] = on; r.selfAt[k] = on ? cloud.today : null;
+    if (on && r.status === 'ready') r.status = 'practice';
+    const box = $('app').querySelector(`[data-self="${k}"]`);
+    if (box) box.closest('li').classList.toggle('on', on);
+    const pill = $('app').querySelector('.v1-pill');
+    if (pill) { pill.className = 'v1-pill ' + r.status; pill.textContent = STATUS[r.status]; }
+    const finish = $('app').querySelector('[data-finish]');
+    if (finish) finish.disabled = !(checkItems(step).every((_, i) => r.self[i]) && canWrite());
+    selfPending++;
+    selfQueue = selfQueue.then(async () => {
+      try {
+        const fresh = await api('POST', {action: 'step.self', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
+          requestId: uid(), data: {step: step.id, index: k, on}});
+        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {self: mine.self.slice(), selfAt: mine.selfAt.slice()}, mine.status === 'practice' ? {status: 'practice'} : {}); }
+      } catch (e) {
+        toast(e.message || '체크를 저장하지 못했어요. 다시 눌러 주세요.');
+        try { cloud = await api('GET', null, cloud.target); } catch {}
+        if (selfPending === 1) render();
+      } finally { selfPending--; }
+    });
+  }
+
   async function act(action, data) {
     if (busy) return false;
     busy = true; render();
     try {
       cloud = await api('POST', {action, target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
-        requestId: crypto.randomUUID(), data});
+        requestId: uid(), data});
       return true;
     } catch (e) {
       toast(e.message);
@@ -347,7 +377,7 @@
       sum.scrollIntoView({block: 'nearest', behavior: 'instant'});
     });
     if (!step) return;
-    app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => (keepFocus = `[data-self="${c.dataset.self}"]`, act('step.self', {step: step.id, index: Number(c.dataset.self), on: c.checked})));
+    app.querySelectorAll('[data-self]').forEach(c => c.onchange = () => toggleSelf(step, Number(c.dataset.self), c.checked));
     const memo = app.querySelector('[data-memo]');
     if (memo) memo.onchange = () => { if (memo.value !== record(step.id).memo) act('step.memo', {step: step.id, memo: memo.value}).then(ok => ok && toast('메모를 저장했어요.')); };
     const finish = app.querySelector('[data-finish]');
@@ -429,6 +459,7 @@
     const step = pop.step;
     if (t.hasAttribute('data-pop-done') && pop.pick) {
       const pick = pop.pick; closePop();
+      await selfQueue;  // 방금 누른 체크가 저장된 뒤에 완료
       if (await act('step.finish', {step: step.id, trainer: {id: pick.id}})) toast(`완료했어요 · 교육: ${pick.name}`);
     } else if (t.hasAttribute('data-pop-reopen')) {
       closePop();
@@ -565,7 +596,7 @@
   // 같은 자리에서 함께 보는 현장: 5초마다 지금 보는 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
   // 화면이 보일 때만, 저장 중이 아닐 때만, 글을 입력하는 중(메모·재교육 사유)이 아닐 때만.
   setInterval(async () => {
-    if (!cloud || !content || busy || document.visibilityState !== 'visible' || view === 'branch' || view === 'role') return;
+    if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch' || view === 'role') return;
     const a = document.activeElement;
     if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT' && a.type === 'text')) return;
     if (pop) return;  // 완료 팝업을 보는 중
