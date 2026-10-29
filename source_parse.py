@@ -125,6 +125,35 @@ def table_rows(table):
     return rows
 
 
+def layout_parts(table):
+    """칸 안에 표가 있거나(중첩 표), 한 줄짜리 표에 사진이 든 경우 = 배치용 표. 그 밖에는 None."""
+    tc_tag = W + 'tc'
+    cells, seen = [], set()
+    for r in table.rows:
+        for c in r.cells:
+            if id(c._tc) in seen:
+                continue
+            seen.add(id(c._tc)); cells.append(c)
+    nested = any(c._tc.find(W + 'tbl') is not None for c in cells)
+    pictures = len(table._tbl.findall(BLIP))
+    if not nested and not (len(table.rows) == 1 and pictures):
+        return None
+    out = {'paragraphs': [], 'tables': []}
+    for c in cells:
+        has_pic = c._tc.find(BLIP) is not None
+        for child in c._tc.iterchildren():
+            if child.tag == W + 'p':
+                t = _text(child)
+                if t and not has_pic:
+                    out['paragraphs'].append(t)
+            elif child.tag == W + 'tbl':
+                inner = Table(child, c)
+                rows = table_rows(inner)
+                if rows:
+                    out['tables'].append({'header': rows[0], 'rows': rows[1:]})
+    return out
+
+
 def kv_table(rows):
     """'메타 항목 | 값 | 메타 항목 | 값' 꼴을 dict 로."""
     out = {}
@@ -206,7 +235,14 @@ def parse(path):
             if cur is None:
                 cur = new_section('0', '(머리말)', 0)
                 sections.append(cur)
-            cur['tables'].append({'header': rows[0], 'rows': rows[1:]})
+            layout = layout_parts(b)
+            if layout is not None:
+                # 배치용 표(칸 안에 표·사진을 넣어 나란히 놓은 것, 예: '기준표+배합표 | 제조 완료 모습'):
+                # 바깥 표는 버리고, 칸 안의 표는 표로, 글은 단락으로 싣는다. 사진 칸의 글(사진 설명)은 단락에서 뺀다.
+                cur['paragraphs'] += layout['paragraphs']
+                cur['tables'] += layout['tables']
+            else:
+                cur['tables'].append({'header': rows[0], 'rows': rows[1:]})
             cur['images'] += len(b._tbl.findall(BLIP))
             cur['photos'] += photos_in(b._tbl, document, last_text)
             continue
