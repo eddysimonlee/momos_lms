@@ -372,6 +372,23 @@ class EducationTests(unittest.TestCase):
             self.assertIn('hiredDate',x);self.assertIn('targetDate',x)
             if x['id']==self.learner['id']:self.assertEqual(x['targetDate'],'2027-05-01')
 
+    def test_works_levels_sorted_and_errors(self):
+        import works_auth, time as _t
+        from unittest import mock
+        from urllib.error import HTTPError
+        works_auth._TOKENS['u1']=('tok',_t.time()+600)
+        pages=[{'levels':[{'displayOrder':3,'levelName':'사원','executive':False},{'displayOrder':1,'levelName':'대표','executive':True}],'responseMetaData':{'nextCursor':'n'}},
+               {'levels':[{'displayOrder':2,'levelName':'매니저'}],'responseMetaData':{}}]
+        with mock.patch.object(works_auth,'_get_json',side_effect=pages) as g:
+            lv=works_auth.levels('u1')
+        self.assertEqual([x['name'] for x in lv],['대표','매니저','사원']);self.assertTrue(lv[0]['executive'])
+        self.assertIn('/directory/levels',g.call_args_list[0][0][0]);self.assertIn('cursor=n',g.call_args_list[1][0][0])
+        with mock.patch.object(works_auth,'_get_json',side_effect=HTTPError('u',403,'x',{},None)):
+            with self.assertRaises(works_auth.DirectoryUnavailable):works_auth.levels('u1')
+        self.assertIn('u1',works_auth._TOKENS)  # 403 은 토큰을 지우지 않는다
+        works_auth._TOKENS.pop('u1',None)
+        with self.assertRaises(works_auth.DirectoryUnavailable):works_auth.levels('u1')  # 토큰 없음 → 다시 로그인 안내
+
     def test_works_login_creates_member_once_and_blocks_inactive(self):
         import works_auth
         a=works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')

@@ -453,6 +453,31 @@ def directory(user_id, now=None):
     return people
 
 
+def levels(user_id):
+    """WORKS 직급 목록(GET /directory/levels): 표시 순서·직급명·임원 여부. LMS관리자 화면에서 확인용으로만 보여 주고 저장하지 않는다."""
+    token, out, cursor = _token_for(user_id), [], ''
+    try:
+        for _ in range(20):
+            data = _get_json(f'{API_BASE}/directory/levels?' + urlencode(dict(count=100, **({'cursor': cursor} if cursor else {}))), token)
+            out += [dict(order=x.get('displayOrder'), name=str(x.get('levelName') or ''), executive=bool(x.get('executive')),
+                         externalKey=x.get('levelExternalKey') or '') for x in data.get('levels') or []]
+            cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
+            if not cursor:
+                break
+    except HTTPError as e:
+        _log_failure('levels', e)
+        if e.code == 401:
+            _TOKENS.pop(user_id, None)
+            raise DirectoryUnavailable('WORKS 로그인이 만료됐어요. 다시 로그인해 주세요.')
+        if e.code == 403:
+            raise DirectoryUnavailable('WORKS 직급 조회 권한이 없어요. Developer Console 의 OAuth 권한(scope)에 directory.read 가 있는지 확인해 주세요.')
+        raise DirectoryUnavailable('WORKS 직급 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+    except (URLError, TimeoutError, ValueError) as e:
+        _log_failure('levels', e)
+        raise DirectoryUnavailable('WORKS 직급 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.')
+    return sorted(out, key=lambda x: (x['order'] is None, x['order'] if isinstance(x['order'], (int, float)) else 0))
+
+
 def search(people, q, exclude_email='', limit=20):
     q = ' '.join(str(q or '').lower().split())
     hits = [m for m in people if m['email'] != exclude_email and (not q or all(w in f"{m['name']} {m['email']} {m['org']}".lower() for w in q.split()))]
