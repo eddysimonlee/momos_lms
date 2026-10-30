@@ -355,6 +355,23 @@ class EducationTests(unittest.TestCase):
         self.assertIsNone(works_auth.read_avatar(self.store,self.other['id']))
         works_auth.save_avatar(self.store,self.learner['id'],None);self.assertIsNone(works_auth.read_avatar(self.store,self.learner['id']))
 
+    def test_hired_date_start_and_target(self):
+        import works_auth
+        self.assertEqual(ob.target_date('2026-11-01'),'2027-05-01')
+        self.assertEqual(ob.target_date('2024-08-31'),'2025-02-28')  # 그 달에 없는 날은 말일
+        self.assertIsNone(ob.target_date(None))
+        self.assertIsNone(works_auth.valid_date('2026-13-01'));self.assertIsNone(works_auth.valid_date(''))
+        works_auth.save_hired(self.store,self.learner['id'],'2026-11-01')
+        works_auth.save_hired(self.store,self.other['id'],None)  # WORKS 에 입사일이 비어 있음
+        c=self.service.get(self.learner)
+        self.assertEqual(c['myDates'],dict(hiredDate='2026-11-01',targetDate='2027-05-01'))
+        with self.store.connect() as db:
+            self.assertIsNone(works_auth.read_hired(db,self.other['id']))
+            self.assertIsNone(works_auth.read_hired(db,'nobody'))
+        for x in self.service.get(self.admin)['educationSummary']:
+            self.assertIn('hiredDate',x);self.assertIn('targetDate',x)
+            if x['id']==self.learner['id']:self.assertEqual(x['targetDate'],'2027-05-01')
+
     def test_works_login_creates_member_once_and_blocks_inactive(self):
         import works_auth
         a=works_auth.find_or_create(self.store,'new@momos.co.kr','새직원','sub-1')

@@ -176,6 +176,10 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
+    try:  # 입사일(WORKS 구성원 정보 hiredDate): LMS 시작일·목표일 표시용. 읽지 못하면 저장해 둔 값을 그대로 둔다
+        save_hired(handler.server.store, user['id'], fetch_hired(token['access_token'], info['sub']))
+    except Exception as e:
+        _log_failure('hired', e)
     remember_token(user['id'], token)  # LMS관리자 화면의 구성원 검색(주소록)에 쓴다. 서버 메모리에만, 화면·DB·로그로는 보내지 않는다
     handler.server.access.logout(handler.headers.get('Cookie'))  # 이전 LMS 세션이 있으면 끝내고 새로 시작
     _, session_token = handler.server.access.new_session(user)
@@ -345,6 +349,39 @@ def read_avatar(store, user_id):
     if not row or row.get('kind') != 'avatar' or row.get('user') != user_id:
         return None
     return base64.b64decode(row['data'])
+
+
+def hired_key(user_id):
+    """입사일을 담는 metadata 행 번호(교육 기록·사진 행과 겹치지 않는 범위)."""
+    return 20_000_000_000 + int(hashlib.sha256(('hired:' + user_id).encode()).hexdigest()[:8], 16)
+
+
+def valid_date(v):
+    """'YYYY-MM-DD' 형식의 실제 날짜면 그 문자열, 아니면 None."""
+    import datetime
+    v = str(v or '').strip()[:10]
+    try:
+        return v if len(v) == 10 and datetime.date.fromisoformat(v) else None
+    except ValueError:
+        return None
+
+
+def fetch_hired(access_token, member_id):
+    """WORKS 구성원 입사일(GET /users/{userId} 의 hiredDate, 'YYYY-MM-DD'). 입력돼 있지 않으면 None."""
+    from urllib.parse import quote
+    return valid_date(_get_json(f'{API_BASE}/users/{quote(member_id, safe="")}', access_token).get('hiredDate'))
+
+
+def save_hired(store, user_id, hired):
+    import lms_store as projects
+    with store.connect() as db:
+        projects.Rooms.write(db, hired_key(user_id), dict(kind='hired', user=user_id, hiredDate=valid_date(hired), at=time.time()))
+
+
+def read_hired(db, user_id):
+    import lms_store as projects
+    row = projects.Rooms.read(db, hired_key(user_id))
+    return valid_date(row.get('hiredDate')) if row and row.get('kind') == 'hired' and row.get('user') == user_id else None
 
 
 # --- 주소록(구성원 목록): LMS관리자 화면에서 관리자로 추가할 구성원을 검색할 때 쓴다 ---

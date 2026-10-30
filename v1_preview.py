@@ -63,6 +63,11 @@ MOCK = r'''
     {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
     {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
     {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
+  // 미리보기용 입사일(WORKS hiredDate 대신). 체험 신입은 비어 있음 → N/A
+  const HIRED = {'u-staff': '2024-08-31', 'u-learner': '2026-11-02'};
+  const target6 = h => { if (!h) return null; const [y, m, d] = h.split('-').map(Number); const t = m - 1 + 6, Y = y + Math.floor(t / 12), M = t % 12;
+    const last = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate(); return `${Y}-${String(M + 1).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`; };
+  const dates = id => ({hiredDate: HIRED[id] || null, targetDate: target6(HIRED[id])});
   const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
   // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
@@ -70,7 +75,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-10';
+  const KEY = 'momos-v1-preview-11';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -109,10 +114,10 @@ MOCK = r'''
     const touched = x => (x.teacherBy || []).includes(u.id) || x.completedBy === u.id;
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
-      return {...r, states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
+      return {...r, ...dates(r.id), states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
-      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, lmsAdmin: lms, lmsLevel: levelOf(u),
+      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => (a[1] !== 'admin') - (b[1] !== 'admin') || a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse()} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }

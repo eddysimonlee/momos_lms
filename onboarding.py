@@ -183,6 +183,16 @@ def blank(join):
                 practiceLogs=[],exam=None,examArchive=[],events=[],planHistory=[])
 
 
+TARGET_MONTHS = 6
+
+
+def target_date(start):
+    """목표일 = 시작일(입사일)로부터 6개월 뒤. 그 달에 같은 날이 없으면 말일(8-31 → 2-28)."""
+    if not start: return None
+    d = date.fromisoformat(start); m = d.month - 1 + TARGET_MONTHS; y, m = d.year + m // 12, m % 12 + 1
+    return date(y, m, min(d.day, calendar.monthrange(y, m)[1])).isoformat()
+
+
 class Service:
     def __init__(self, store):
         self.store = store
@@ -276,6 +286,9 @@ class Service:
                              assessor=any(x['assessor']==user['id'] for x in root['learners'].values()),
                              technical=user['id'] in root['technical'],content=user['id'] in root['content'])
         review_access=any(workspace_roles[k] for k in ('admin','trainer','assessor','technical','content'))
+        import works_auth
+        def dates(uid):  # 시작일 = WORKS 입사일(없으면 None → 화면에 N/A), 목표일 = 6개월 뒤
+            h = works_auth.read_hired(db, uid); return dict(hiredDate=h, targetDate=target_date(h))
         summaries=[]
         for r in roster:
             item=root['learners'].get(r['id'])
@@ -288,7 +301,7 @@ class Service:
             # '나의 교육생': 내가 한 번이라도 체크하거나 완료한 교육생(완료 취소 이력 포함)
             touched=lambda x:user['id'] in (x.get('teacherBy') or []) or x.get('completedBy')==user['id']
             mine=any(touched(x) or any(isinstance(h,dict) and touched(h) for h in x.get('history') or []) for x in records.values())
-            summaries.append(dict(**r,total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
+            summaries.append(dict(**r,**dates(r['id']),total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
         reviews=self.system_reviews(root) if review_access else []
@@ -297,7 +310,7 @@ class Service:
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
-                    lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(root) if self.lms_staff(root,user) else {}),
+                    myDates=dates(user['id']), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},

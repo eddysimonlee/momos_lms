@@ -275,11 +275,11 @@
   function staffHome() {
     const sums = cloud.educationSummary || [], me = cloud.user.id;
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
-      return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><strong>${esc(label || x.name)}</strong>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
+      return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">시작일: ${esc(x.hiredDate || 'N/A')} · 목표일: ${esc(x.targetDate || 'N/A')}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
     const self = sums.find(x => x.id === me);
     const others = sums.filter(x => x.id !== me), mineList = others.filter(x => x.trainedByMe), rest = others.filter(x => !x.trainedByMe);
     // 내 교육: 아직 시작 전이어도 같은 막대로 보여 주고, 누르면(처음이면 교육을 시작하고) 내 진행도로
-    const meRow = self ? row(self, '내 교육') : row(Object.assign({}, cloud.user, {states: {}, trainedByMe: false}), '내 교육').replace('data-person=', 'data-enrol-self data-x=');
+    const meRow = self ? row(self, '내 교육') : row(Object.assign({}, cloud.user, cloud.myDates || {}, {states: {}, trainedByMe: false}), '내 교육').replace('data-person=', 'data-enrol-self data-x=');
     return `<ul class="v1-plist">${meRow}</ul>` +
       `<h3 class="v1-pcat">나의 멘티 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 없어요. 전체 멘티에서 멘티를 골라 교육 내용을 체크하거나 완료하면 여기에 모여요.</p>') +
       `<h3 class="v1-pcat">전체 멘티 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 교육을 시작한 멘티가 없어요.</p>');
