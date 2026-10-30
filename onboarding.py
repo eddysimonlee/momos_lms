@@ -296,7 +296,7 @@ class Service:
             l=fit(projects.Rooms.read(db,item['key']));records=l['records']
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
-            # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 84개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
+            # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
             # '나의 교육생': 내가 한 번이라도 체크하거나 완료한 교육생(완료 취소 이력 포함)
             touched=lambda x:user['id'] in (x.get('teacherBy') or []) or x.get('completedBy')==user['id']

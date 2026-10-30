@@ -276,8 +276,8 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(json.loads(req('GET','/api/auth/status',cookie=False)[2])['works'])
             code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
-            slice_=json.loads(b);self.assertEqual(len(slice_['units']),55)  # curriculum.json: 6단계 55단원(2.10 OP2 / 2.11 OP3 분리)
-            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),84)
+            slice_=json.loads(b);self.assertEqual(len(slice_['units']),57)  # curriculum.json: 6단계 57단원(2.10 OP2 / 2.11 OP3 분리, 2.12 MD / 2.13 CL 출근)
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),86)
             # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
             fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
             for s in steps:
@@ -288,7 +288,7 @@ class EducationTests(unittest.TestCase):
             course_ids=[i for i in course_ids if i!='materials-product-6']  # 10/26 재료 SOP 에서 후르츠봉봉 삭제 → 교육과정에서 뺌
             self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 항목이 한 번씩
             planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
-            self.assertEqual(len(planned),0)  # 84개 세션 모두 교육안이 있다(6단계 교육과정 기준)
+            self.assertEqual(len(planned),0)  # 86개 세션 모두 교육안이 있다(6단계 교육과정 기준)
             self.assertFalse(any(s.get('reworkPending') for s in steps))
             self.assertTrue(all(s['purpose'] and (s['keyPoints'] or s['contentOmitted']) and s['sources'] for s in live))
             self.assertEqual([s['id'] for s in live if s['contentOmitted']],['welcome-ojt'])  # 수행 확인만 두는 세션(모모스 피드백)
@@ -541,7 +541,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),112)  # 기존 82 + 6단계 교육과정 새 세션 30(10-26 OP3 담당 구역과 오픈 준비, 10-27 입사 후 오리엔테이션 일정)
+        self.assertEqual(len(ob.STEPS),114)  # 기존 82 + 6단계 교육과정 새 세션 32(10-26 OP3 담당 구역과 오픈 준비, 10-27 입사 후 오리엔테이션 일정, 10-30 MD·CL 출근 직후 업무)
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

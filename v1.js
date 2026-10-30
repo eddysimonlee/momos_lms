@@ -123,7 +123,7 @@
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
 
-  // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 84개 목록을 좁혀 볼 뿐 기록은 하나다.
+  // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 86개 목록을 좁혀 볼 뿐 기록은 하나다.
   // 고른 값은 이 기기에만 기억한다(localStorage). 교육 화면에는 아무것도 더하지 않는다.
   const FILTER_KEY = 'v1.filter', FKIND = {shift: '근무조', position: '포지션'};
   let filt = (() => { try { return JSON.parse(localStorage.getItem(FILTER_KEY)); } catch { return null; } })(), sheetPick = null;
@@ -142,7 +142,7 @@
     const chip = f => `<button type="button" class="v1-fchip${on(f) ? ' on' : ''}" aria-pressed="${on(f)}" data-pick="${f ? esc(f.k + '|' + f.v) : ''}">${esc(f ? f.v : '전체')} <small>${n(f)}</small></button>`;
     const group = k => ((content.filters || {})[k] || []).length ? `<h3>${FKIND[k]}</h3><div class="v1-fwrap">${content.filters[k].map(v => chip({k, v})).join('')}</div>` : '';
     $('v1Sheet').querySelector('.v1-sheet-panel').innerHTML = '<div class="v1-sheet-grab" aria-hidden="true"></div><h2 id="v1SheetTitle">보기 필터</h2>' +
-      '<p class="v1-muted">근무조나 포지션을 고르면 그 교육만 보여요. 완료 기록은 전체와 같아요.</p>' +
+      '<p class="v1-muted">근무조나 포지션을 고르면 해당 교육만 볼 수 있습니다.</p>' +
       `<div class="v1-fwrap" style="margin-top:var(--spacing-16)">${chip(null)}</div>${group('shift')}${group('position')}` +
       `<div class="v1-actions"><button type="button" class="v1-btn primary" data-sheet-apply>${n(sheetPick)}개 보기</button></div>`;
   }
@@ -248,7 +248,7 @@
   const avatarInner = u => `<span aria-hidden="true">${esc((u.name || '?').trim().slice(0, 1))}</span><img src="/v1/avatar/${encodeURIComponent(u.id)}" alt="" loading="lazy" onerror="this.remove()">`;
   const avatar = u => `<span class="v1-avatar">${avatarInner(u)}</span>`;
 
-  // --- 진행 현황(홈). 교육생: 내 84개 교육 상태를 단계별 칸으로. 관리자: 교육생마다 한 줄(완료·진행 중·시작 전 비중) → 누르면 그 사람 칸.
+  // --- 진행 현황(홈). 교육생: 내 86개 교육 상태를 단계별 칸으로. 관리자: 교육생마다 한 줄(완료·진행 중·시작 전 비중) → 누르면 그 사람 칸.
   // 일정과 무관하게 각 교육의 상태만 본다(순서 없이 듣거나, 체크를 다 안 하고 나온 것도 그대로). 진행 중 칸은 체크한 만큼 아래에서 채운다.
   const liveSteps = () => steps().filter(s => !planned(s));
   const stateOf = st => st === 'done' ? 'done' : st === 'practice' || st === 'review' ? 'prog' : 'none';
@@ -338,7 +338,7 @@
 
   // 교육 단계 화면(메뉴 › 교육 단계 › 1~6): 그 단계의 교육 목록(필터는 '전체 교육'에서만)
   function stageView(whole) {
-    // whole: 메뉴 › 교육 단계 › 전체 교육 — 84개를 단계별로 한 화면에, 필터(근무조·포지션)는 여기에서만
+    // whole: 메뉴 › 교육 단계 › 전체 교육 — 86개를 단계별로 한 화면에, 필터(근무조·포지션)는 여기에서만
     filt = validFilter(filt);
     if (whole) return wholeView();
     const all = stages();
