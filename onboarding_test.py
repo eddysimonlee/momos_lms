@@ -445,9 +445,11 @@ class EducationTests(unittest.TestCase):
             # 막혀야 할 때: 멘티 본인, 지정 안 된 구성원, 본인 기록, 삭제된 멘토
             with self.assertRaises(PermissionError):self.act(mentee,'step.mark',dict(step=ident,index=0,on=True))
             with self.assertRaises(PermissionError):self.act(self.learner,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            # 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다 — 교육 시작이 되지 않고, 멘티 목록에도 나오지 않는다
             self.act(men,'config.selfEnrol',{})
-            with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True))  # 멘토 본인 교육은 다른 멘토가
-            self.act(men2,'step.mark',dict(step=ident,index=0,on=True),men['id'])  # 멘토도 다른 멘토에게 교육받는다
+            self.assertFalse(self.service.get(men)['enrolled'])
+            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=0,on=True))
+            self.assertNotIn(men['id'],[x['id'] for x in self.service.get(men2)['educationSummary']])
             self.act(adm,'lms.admin',dict(email=men['email'],level=None))
             with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
 
@@ -483,7 +485,12 @@ class EducationTests(unittest.TestCase):
             with self.assertRaises(PermissionError):self.act(b,'profile.set',dict(branch='oncheon',role='staff'))  # 관리자 역할은 지정된 사람만
             self.act(self.learner,'feedback.send',dict(step=ident,text='라벨 위치가 헷갈려요'))
             fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['text'],fb['step']),(self.learner['name'],'라벨 위치가 헷갈려요',ident))
-            with self.assertRaises(PermissionError):self.act(a,'feedback.send',dict(step=ident,text='x'),self.learner['id'])  # 남의 이름으로 못 보냄
+            self.assertEqual((fb['menteeName'],fb['mentors']),(self.learner['name'],[a['name'],b['name']]))  # 멘티 = 본인, 멘토 = 체크·완료한 관리자
+            self.act(a,'feedback.send',dict(step=ident,text='5번 문장 확인 필요'),self.learner['id'])  # 관리자는 멘티 교육 화면에서도 보낸다
+            fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['menteeName'],fb['text']),(a['name'],self.learner['name'],'5번 문장 확인 필요'))
+            self.act(a,'feedback.send',dict(step=ident,text='교육 과정에서'))  # 교육 과정(둘러보기)에서 보내면 멘티·멘토 없음
+            fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['mentee'],fb['menteeName'],fb['mentors']),(None,'',[]))
+            with self.assertRaises(PermissionError):self.act(self.learner,'feedback.send',dict(step=ident,text='x'),self.trainer['id'])  # 멘티는 남의 화면에서 못 보냄
 
     def test_old_check_records_are_reset_once_for_trainer_checks(self):
         ident='welcome-prep'

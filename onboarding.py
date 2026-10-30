@@ -290,9 +290,10 @@ class Service:
         def dates(uid):  # 시작일 = WORKS 입사일(없으면 None → 화면에 N/A), 목표일 = 6개월 뒤
             h = works_auth.read_hired(db, uid); return dict(hiredDate=h, targetDate=target_date(h))
         summaries=[]
+        staff_ids=self.staff_ids(db,root)  # 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다 → 멘티 목록에서 뺀다(예전에 생긴 교육 기록은 남아 있어도)
         for r in roster:
             item=root['learners'].get(r['id'])
-            if not item: continue
+            if not item or r['id'] in staff_ids: continue
             l=fit(projects.Rooms.read(db,item['key']));records=l['records']
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
@@ -310,7 +311,7 @@ class Service:
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
-                    myDates=dates(user['id']), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(root) if self.lms_staff(root,user) else {}),
+                    myDates=dates(user['id']), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
@@ -495,7 +496,7 @@ class Service:
             elif action=='lms.admin':
                 self.set_lms_admin(root,user,data)
             elif action=='feedback.send':
-                self.send_feedback(root,user,target,data)
+                self.send_feedback(db,root,user,target,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -604,11 +605,38 @@ class Service:
         if d['role']=='staff' and not self.lms_staff(root,user): raise PermissionError('관리자는 LMS관리자로 지정된 구성원만 선택할 수 있습니다.')
         root.setdefault('profiles',{})[user['id']]=dict(branch=d['branch'],role=d['role'],at=stamp())  # 누가 언제 바꿨는지는 공통 audit 에 남는다
 
-    def lms_admin_view(self, root):
+    def staff_ids(self, db, root):
+        """LMS관리자(admin·멘토)로 지정된 구성원의 id."""
+        levels = self.lms_admins(root)[1]
+        return {r['id'] for r in db.execute("SELECT id,email FROM access_users WHERE status='active'").fetchall() if str(r['email'] or '').lower() in levels}
+
+    def mentors_of(self, db, root, target):
+        """그 멘티의 멘토: 교육 내용을 한 번이라도 체크했거나 완료한 관리자(체크 해제·완료 취소 이력 포함), 처음 체크한 순."""
+        entry = root['learners'].get(target)
+        if not entry: return []
+        out = {}
+        def take(x):
+            for who, name in zip(x.get('teacherBy') or [], x.get('teacherName') or []):
+                if who: out.setdefault(who, name or '')
+            if x.get('completedBy'): out.setdefault(x['completedBy'], x.get('completedByName') or '')
+        for x in fit(projects.Rooms.read(db, entry['key']))['records'].values():
+            take(x)
+            for h in x.get('history') or []:
+                if isinstance(h, dict): take(h)
+        return [n for n in out.values() if n]
+
+    def lms_admin_view(self, db, root):
         seed, levels = self.lms_admins(root)
         steps = {k: v.get('title', '') for k, v in STEPS.items()}
+        mentors = {}
+        def row(f):
+            # 멘티 = 의견을 보낸 교육 화면의 주인(예전 의견은 보낸 사람 본인), 멘토 = 그 멘티를 체크·완료한 관리자. 교육 과정(멘티 없이 둘러보기)에서 보낸 의견은 멘티·멘토 없음
+            mentee = f.get('mentee', f.get('user'))
+            if mentee and mentee not in mentors: mentors[mentee] = self.mentors_of(db, root, mentee)
+            return dict(f, stepTitle=steps.get(f.get('step'), ''), mentee=mentee, menteeName=f.get('menteeName', f.get('name')) if mentee else '',
+                        mentors=mentors.get(mentee, []) if mentee else [])
         return dict(lmsAdmins=[dict(email=e, level=l, seed=e in seed) for e, l in sorted(levels.items(), key=lambda x: (x[1] != 'admin', x[0]))],
-                    feedback=[dict(f, stepTitle=steps.get(f.get('step'), '')) for f in reversed((root.get('feedback') or [])[-300:])])
+                    feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])])
 
     def set_lms_admin(self, root, user, d):
         """admin 만 LMS관리자 권한을 준다·바꾼다·뺀다(level None). 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
@@ -624,13 +652,22 @@ class Service:
         root['lmsAdmins'] = rest + ([dict(email=email, level=d['level'])] if d['level'] else [])
         root['audit'].append(dict(at=stamp(), actor=user['id'], action='LMS관리자 ' + (d['level'] or '삭제'), email=email))
 
-    def send_feedback(self, root, user, target, d):
-        """교육 화면의 '의견 보내기'. LMS관리자 화면의 표(보낸사람·시간·의견)로 모인다."""
-        if target != user['id']: raise PermissionError('본인 이름으로만 의견을 보낼 수 있어요.')
+    def name_of(self, db, ident):
+        row = db.execute('SELECT name FROM access_users WHERE id=?', (ident,)).fetchone()
+        return row['name'] if row else ''
+
+    def send_feedback(self, db, root, user, target, d):
+        """교육 화면의 '의견 보내기'. 멘티는 본인 교육 화면에서, 관리자는 멘티의 교육 화면이나 교육 과정(둘러보기)에서 보낸다.
+        LMS관리자 화면의 표(멘티·멘토·보낸사람·시간·교육 과정·의견)로 모인다."""
+        staff = self.lms_staff(root, user)
+        if target != user['id'] and not (staff and self.roles(root, user, target)['trainer']):
+            raise PermissionError('본인 교육 화면이나 멘티의 교육 화면에서만 의견을 보낼 수 있어요.')
         if not isinstance(d, dict) or set(d) != {'step', 'text'} or d['step'] not in STEPS: raise ValueError('의견을 보낼 교육을 확인해 주세요.')
         text = projects.text(d['text'], 2000, True)
         items = root.setdefault('feedback', [])
-        items.append(dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''), step=d['step'], text=text))
+        mentee = None if staff and target == user['id'] else target  # 관리자 본인 화면 = 교육 과정 둘러보기 → 멘티 없음
+        items.append(dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''), step=d['step'], text=text,
+                          mentee=mentee, menteeName=(user['name'] if mentee == user['id'] else self.name_of(db, mentee)) if mentee else ''))
         root['feedback'] = items[-2000:]
 
     def self_enrol(self, db, root, user, d):
@@ -638,6 +675,7 @@ class Service:
         if d not in ({}, None): raise ValueError('자동 등록에는 입력 항목이 없습니다.')
         if user['company']!='momos': raise PermissionError('모모스 계정만 교육을 시작할 수 있습니다.')
         if user['id'] in root['learners']: return
+        if self.lms_staff(root,user): return  # 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다
         key=-int(uuid.uuid4().hex[:7],16)-10000
         while db.execute('SELECT 1 FROM metadata WHERE id=?',(key,)).fetchone():key-=1
         start=today()

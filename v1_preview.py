@@ -75,7 +75,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-11';
+  const KEY = 'momos-v1-preview-13';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -112,13 +112,17 @@ MOCK = r'''
       .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate}));
     if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null});
     const touched = x => (x.teacherBy || []).includes(u.id) || x.completedBy === u.id;
-    const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
+    const nameOf = id => ACCOUNTS.find(a => a.id === id)?.name || id;
+    const isStaffId = id => { const a = ACCOUNTS.find(x => x.id === id); return !!(a && isLms(a)); };  // 관리자는 멘티 목록에서 뺀다
+    const mentorsOf = id => { const out = new Map(), take = x => { (x.teacherBy || []).forEach((w, k) => { if (w && !out.has(w)) out.set(w, (x.teacherName || [])[k] || nameOf(w)); }); if (x.completedBy && !out.has(x.completedBy)) out.set(x.completedBy, x.completedByName || nameOf(x.completedBy)); };
+      const room = state.rooms[id]; if (room) Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return [...out.values()]; };
+    const educationSummary = roster.filter(r => state.learners[r.id] && !isStaffId(r.id)).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
       return {...r, ...dates(r.id), states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), lmsAdmin: lms, lmsLevel: levelOf(u),
-      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => (a[1] !== 'admin') - (b[1] !== 'admin') || a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse()} : {}),
+      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => (a[1] !== 'admin') - (b[1] !== 'admin') || a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {
@@ -130,7 +134,7 @@ MOCK = r'''
       save(); return context(u, target);
     }
     if (v.action === 'config.selfEnrol') {
-      if (!state.learners[u.id]) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
+      if (!state.learners[u.id] && !isLms(u)) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
       save(); return context(u, target);
     }
     if (v.action === 'lms.admin') {
@@ -140,9 +144,10 @@ MOCK = r'''
       state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level ? [{email, level: d.level}] : []); state.rootRevision++; save(); return context(u, target);
     }
     if (v.action === 'feedback.send') {
-      if (target !== u.id) throw {status: 403, error: '본인 이름으로만 의견을 보낼 수 있어요.'};
+      if (target !== u.id && !(isLms(u) && p.trainer)) throw {status: 403, error: '본인 교육 화면이나 멘티의 교육 화면에서만 의견을 보낼 수 있어요.'};
+      const mentee = isLms(u) && target === u.id ? null : target;
       const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '입력 내용의 길이와 필수 항목을 확인해 주세요.'};
-      (state.feedback = state.feedback || []).push({id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString(), user: u.id, name: u.name, email: u.email, step: d.step, text: text.slice(0, 2000)});
+      (state.feedback = state.feedback || []).push({id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString(), user: u.id, name: u.name, email: u.email, step: d.step, text: text.slice(0, 2000), mentee, menteeName: mentee ? (ACCOUNTS.find(a => a.id === mentee)?.name || mentee) : ''});
       state.rootRevision++; save(); return context(u, target);
     }
     const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
