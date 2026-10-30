@@ -75,7 +75,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-12';
+  const KEY = 'momos-v1-preview-11';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -177,11 +177,6 @@ MOCK = r'''
       if (url.pathname === '/api/dev/accounts') {
         if (method === 'POST') { const id = url.searchParams.get('id'); if (ACCOUNTS.some(a => a.id === id)) { setCurrent(id); return json({ok: true}); } return json({error: '없는 계정'}, 404); }
         return json({accounts: ACCOUNTS.map(a => ({id: a.id, name: a.name, email: a.email})), current});
-      }
-      if (url.pathname === '/api/works/levels') {  // 미리보기 전용 예시 직급(실제는 NAVER WORKS 직급 목록)
-        if (levelOf(user()) !== 'admin') return json({error: '직급 목록은 LMS관리자 admin 만 볼 수 있습니다.'}, 403);
-        await new Promise(r => setTimeout(r, 200));
-        return json({levels: [{order: 1, name: '(예시) 대표', executive: true}, {order: 2, name: '(예시) 매니저', executive: false}, {order: 3, name: '(예시) 사원', executive: false}, {order: 4, name: '(예시) 인턴', executive: false}]});
       }
       if (url.pathname === '/api/works/members') {
         if (levelOf(user()) !== 'admin') return json({error: '구성원 검색은 LMS관리자 admin 만 할 수 있습니다.'}, 403);

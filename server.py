@@ -454,20 +454,6 @@ class Handler(BaseHTTPRequestHandler):
                     source,name,preview=education.get_asset(user,ident)
                     return self.file(source,name,preview=preview)
                 raise FileNotFoundError()
-            if path == '/api/works/levels' and method == 'GET':
-                # LMS관리자 화면: WORKS 직급 목록(표시 순서) 확인용. admin 만, 저장하지 않는다
-                import onboarding, works_auth
-                education = onboarding.Service(store)
-                with store.connect() as db:
-                    me = education.identity(db, user); level = education.lms_level(education.root(db), me)
-                if level != 'admin':
-                    raise PermissionError('직급 목록은 LMS관리자 admin 만 볼 수 있습니다.')
-                if not works_auth.enabled():
-                    return self.send(409, {'error': 'NAVER WORKS 로그인을 쓰는 서버에서만 볼 수 있어요.'})
-                try:
-                    return self.send(200, {'levels': works_auth.levels(user['id'])})
-                except works_auth.DirectoryUnavailable as e:
-                    return self.send(409, {'error': str(e)})
             if path == '/api/works/members' and method == 'GET':
                 # LMS관리자 화면: 관리자로 추가할 구성원 검색(WORKS 주소록). admin 만, 20명까지
                 import onboarding

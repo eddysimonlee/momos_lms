@@ -309,7 +309,6 @@
     const rows = (cloud.feedback || []).map(f => `<tr><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td>${esc(f.text).replace(/\n/g, '<br>')}${titleOf(f.step) ? `<small class="v1-fb-step">${esc(titleOf(f.step))}</small>` : ''}</td></tr>`).join('');
     return `<section class="v1-card"><h2>LMS관리자</h2><p class="v1-muted">admin·멘토 모두 멘티의 교육을 체크·완료할 수 있어요. 권한을 주고 빼는 것은 admin 만 할 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
       (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><select class="v1-admin-level" data-admin-new-level aria-label="권한"><option value="mentor">멘토</option><option value="admin">admin</option></select><button type="button" class="v1-btn" data-admin-add>추가</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
-      (canEdit ? `<section class="v1-card"><h2>WORKS 직급 목록</h2><p class="v1-muted">NAVER WORKS에 설정된 직급과 표시 순서예요. '전체 멘티' 조건을 정할 때 확인하는 용도이고, 저장하지 않아요.</p><button type="button" class="v1-btn v1-levels-load" data-levels-load>불러오기</button><div data-levels-out></div></section>` : '') +
       `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>보낸사람</th><th>시간</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
   }
 
@@ -489,19 +488,6 @@
       }, 250);
     };
     if (adminRes) adminRes.onclick = e => { const b = e.target.closest('[data-admin-pick]'); if (!b) return; adminQ.value = adminQ.dataset.picked = b.dataset.adminPick; adminRes.innerHTML = ''; app.querySelector('[data-admin-new-level]').focus(); };
-    const lvBtn = app.querySelector('[data-levels-load]');
-    if (lvBtn) lvBtn.onclick = async () => {
-      const out = app.querySelector('[data-levels-out]'); lvBtn.disabled = true; out.innerHTML = '<p class="v1-muted">불러오는 중…</p>';
-      try {
-        const res = await fetch('/api/works/levels', {credentials: 'same-origin', cache: 'no-store'});
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data.error || '직급 목록을 불러오지 못했어요.');
-        const lv = data.levels || [];
-        out.innerHTML = lv.length ? `<div class="v1-table"><table><thead><tr><th>표시 순서</th><th>직급</th><th>임원</th></tr></thead><tbody>${lv.map(x => `<tr><td class="v1-nowrap">${esc(x.order == null ? '-' : String(x.order))}</td><td>${esc(x.name)}</td><td class="v1-nowrap">${x.executive ? '예' : ''}</td></tr>`).join('')}</tbody></table></div><p class="v1-muted">총 ${lv.length}개</p>`
-          : '<p class="v1-muted">WORKS에 설정된 직급이 없어요.</p>';
-      } catch (e) { out.innerHTML = `<div class="v1-note warn">${esc(e.message)}</div>`; }
-      lvBtn.disabled = false;
-    };
     if (addBtn) addBtn.onclick = async () => { const email = app.querySelector('[data-admin-email]').value.trim(); if (!email) return; if (await act('lms.admin', {email, level: app.querySelector('[data-admin-new-level]').value})) toast('LMS관리자를 추가했습니다.'); };
     app.querySelectorAll('[data-admin-level]').forEach(x => x.onchange = async () => { if (await act('lms.admin', {email: x.dataset.adminLevel, level: x.value})) toast(`${LEVEL_LABEL[x.value]} 권한으로 바꿨습니다.`); });
     app.querySelectorAll('[data-admin-del]').forEach(b => b.onclick = async () => { if (await act('lms.admin', {email: b.dataset.adminDel, level: null})) toast('LMS관리자에서 삭제했습니다.'); });
