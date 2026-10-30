@@ -450,6 +450,11 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(self.service.get(men)['enrolled'])
             with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=0,on=True))
             self.assertNotIn(men['id'],[x['id'] for x in self.service.get(men2)['educationSummary']])
+            # 예전에 생긴 관리자 본인 교육 기록이 있어도 '교육 과정'은 체크 없는 원본
+            self.act(adm,'lms.admin',dict(email=mentee['email'],level='mentor'))
+            self.assertFalse(any(any(r['teacher']) for r in self.service.get(mentee)['learner']['records'].values()))
+            self.act(adm,'lms.admin',dict(email=mentee['email'],level=None))
+            self.assertTrue(any(any(r['teacher']) for r in self.service.get(mentee)['learner']['records'].values()))
             self.act(adm,'lms.admin',dict(email=men['email'],level=None))
             with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
 

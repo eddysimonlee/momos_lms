@@ -265,7 +265,9 @@ class Service:
             raise PermissionError('본인 또는 배정된 멘티의 기록만 열 수 있습니다.')
         users = {r['id']:dict(r) for r in db.execute("SELECT id,name,company,role FROM access_users WHERE status='active'").fetchall()}
         entry = root['learners'].get(target)
-        learner = fit(projects.Rooms.read(db,entry['key'])) if entry else blank(today())
+        # 10/30: 관리자 본인 화면 = '교육 과정'(조회 전용) → 예전에 생긴 본인 교육 기록이 있어도 체크 없는 원본 그대로 보여 준다
+        browse = target==user['id'] and self.lms_staff(root,user)
+        learner = fit(projects.Rooms.read(db,entry['key'])) if entry and not browse else blank(today())
         learner = copy.deepcopy(learner)
         learner['startDate']=entry.get('startDate',entry['join']) if entry else None
         for exam in [learner['exam'], *learner['examArchive']]:

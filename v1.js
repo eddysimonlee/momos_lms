@@ -108,7 +108,7 @@
   const checkItems = s => s.keyPoints && s.keyPoints.length ? s.keyPoints : (s.checks || []).map(text => ({text, cites: []}));  // 교육안 준비 중(추가·교체 세션): 수행 확인 없음
   // 서버에 아직 기록 칸이 없는 새 세션도 화면이 깨지지 않도록 빈 기록을 돌려준다.
   const EMPTY = {status: 'ready', self: [], teacher: [], selfAt: [], teacherAt: [], memo: '', feedback: ''};
-  const record = id => cloud.learner.records[id] || EMPTY;
+  const record = id => (browse() ? null : cloud.learner.records[id]) || EMPTY;  // 교육 과정(관리자 둘러보기)은 체크 없는 원본
   const statusOf = s => planned(s) ? 'planned' : record(s.id).status;
   const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
   const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
@@ -129,14 +129,15 @@
   // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 86개 목록을 좁혀 볼 뿐 기록은 하나다.
   // 고른 값은 이 기기에만 기억한다(localStorage). 교육 화면에는 아무것도 더하지 않는다.
   const FILTER_KEY = 'v1.filter', FKIND = {shift: '근무조', position: '포지션'};
-  let filt = (() => { try { return JSON.parse(localStorage.getItem(FILTER_KEY)); } catch { return null; } })(), sheetPick = null;
+  // 필터는 '전체 교육' 보기 안에서만 유지(거기서 들어간 항목 포함). 다른 화면으로 벗어나면 초기화한다(멘토·멘티 모두, 저장하지 않음)
+  let filt = null, sheetPick = null;
+  try { localStorage.removeItem(FILTER_KEY); } catch {}
   const validFilter = f => f && f.k in FKIND && ((content.filters || {})[f.k] || []).includes(f.v) ? {k: f.k, v: f.v} : null;
   const matches = (s, f = filt) => !f || (s[f.k] || []).includes(f.v);
   // '다음 항목 ›': 필터를 걸었으면 그 필터 안의 다음 항목으로(번호는 전체 번호 그대로)
   const nextOf = s => { const f = returnView === 'all' ? validFilter(filt) : null; return steps().slice(stepIndex(s.id) + 1).find(x => matches(x, f)); };
   function setFilter(f) {
     filt = f;
-    try { f ? localStorage.setItem(FILTER_KEY, JSON.stringify(f)) : localStorage.removeItem(FILTER_KEY); } catch {}
     homeScroll = null; lastStep = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
   }
   function drawSheet() {
@@ -165,6 +166,7 @@
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
     const branch = view === 'branch';
+    if (view !== 'all' && !(step && returnView === 'all')) filt = null;  // 전체 교육을 벗어나면 필터 초기화
     // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
@@ -174,7 +176,7 @@
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '멘티 목록으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || (view === 'all' && mentee()) ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' || view === 'all' ? (isStaff() ? '교육 과정' : view === 'stage' ? '교육 단계' : '전체 교육') : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' || (view === 'all' && own()) ? '교육 현황' : view === 'person' || (view === 'all' && mentee()) ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' || view === 'all' ? (isStaff() ? '교육 과정' : view === 'stage' ? '교육 단계' : '전체 교육') : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -295,9 +297,15 @@
   // 관리자가 다른 사람의 기록을 볼 때: 누구를 교육하고 있는지 항상 보이게(화면 위에 고정)
   // 권한 표시 이름(저장 값 admin·mentor 는 그대로, 화면 글자만)
   const LEVEL_LABEL = {admin: 'admin', mentor: '멘토'};
-  // 멘티의 진행 현황 ↔ 전체 교육(목록·필터) 보기 전환: 오른쪽 위
-  const learnerBar = () => cloud.target === cloud.user.id ? '' : `<div class="v1-learner-bar" role="status">${avatar({id: cloud.target, name: cloud.name})}<span>멘티 <strong>${esc(cloud.name)}</strong></span>` +
-    (view === 'person' || view === 'all' ? `<span class="v1-seg" role="group" aria-label="보기 방식"><button type="button" data-mview="person" aria-pressed="${view === 'person'}">진행 현황</button><button type="button" data-mview="all" aria-pressed="${view === 'all'}">전체 교육</button></span>` : '') + '</div>';
+  // 진행 현황 ↔ 전체 교육(목록·필터) 보기 전환: 오른쪽 위. 멘토가 보는 멘티 화면은 멘티 줄 안에, 멘티 본인은 화면 맨 위 줄에
+  const own = () => !isStaff() && cloud.target === cloud.user.id;
+  const viewSeg = () => { const prog = own() ? 'home' : 'person', list = view === 'all';
+    return `<span class="v1-seg" role="group" aria-label="보기 방식"><button type="button" data-mview="${prog}" aria-pressed="${!list}" aria-label="진행 현황" title="진행 현황">${ICON_GRID}</button><button type="button" data-mview="all" aria-pressed="${list}" aria-label="전체 교육" title="전체 교육">${ICON_LIST}</button></span>`; };
+  // wds-allow: 보기 전환 아이콘(진행 현황 = 칸 모아보기, 전체 교육 = 목록). WDS 아이콘 자산 반입 전 임시 인라인 SVG
+  const ICON_GRID = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.2"/></g></svg>';
+  const ICON_LIST = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 5h9.5M7.5 10h9.5M7.5 15h9.5"/></g><g fill="currentColor"><circle cx="3.8" cy="5" r="1.2"/><circle cx="3.8" cy="10" r="1.2"/><circle cx="3.8" cy="15" r="1.2"/></g></svg>';
+  const learnerBar = () => cloud.target === cloud.user.id ? (own() && (view === 'home' || view === 'all') ? `<div class="v1-seg-row">${viewSeg()}</div>` : '')
+    : `<div class="v1-learner-bar" role="status">${avatar({id: cloud.target, name: cloud.name})}<span>멘티 <strong>${esc(cloud.name)}</strong></span>` + (view === 'person' || view === 'all' ? viewSeg() : '') + '</div>';
 
   // LMS관리자: 관리자 지정(서로 추가·삭제) · 보낸 의견 표
   function adminView() {
@@ -333,7 +341,7 @@
     const all = stages().map(g => Object.assign({}, g, {units: g.units.map(u => Object.assign({}, u, {steps: u.steps.filter(s => matches(s))})).filter(u => u.steps.length)})).filter(g => g.units.length);
     const count = all.reduce((n, g) => n + g.units.reduce((m, u) => m + u.steps.length, 0), 0);
     const extra = (content.extra || []).map(e => `<section class="v1-card v1-extra"><h2>${esc(e.title)}</h2><div class="v1-muted">${e.sessions.map(x => esc(x.title)).join(' · ')}${e.note ? ' — ' + esc(e.note) : ''}</div></section>`).join('');
-    return whoLine() + (mentee() ? countsBlock(countsOf(s => record(s.id).status, liveSteps().filter(s => matches(s)))) : '')  /* 필터를 걸면 걸러진 교육만 센다 */ + `<div class="v1-prow v1-lhead${mentee() ? '' : ' v1-lhead-top'}"><h2>전체 교육${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${count}개</small>` : `<small> · ${count}개</small>`}</h2>` +
+    return whoLine() + (mentee() || own() ? countsBlock(countsOf(s => record(s.id).status, liveSteps().filter(s => matches(s)))) : '')  /* 필터를 걸면 걸러진 교육만 센다 */ + `<div class="v1-prow v1-lhead${mentee() || own() ? '' : ' v1-lhead-top'}"><h2>전체 교육${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${count}개</small>` : `<small> · ${count}개</small>`}</h2>` +
       (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)} ▾</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
         : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + '</div>' +
       all.map(g => `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>` + g.units.map(unitBlock).join('')).join('') +
@@ -362,11 +370,11 @@
     const b = BRANCHES.find(x => x.id === (profile() && profile().branch)), r = isStaff() ? LEVEL_LABEL[cloud.lmsLevel || 'mentor'] : '멘티';
     $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
       `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r].filter(Boolean).join(' · '))}</small></span></div>` +
-      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person')}` +
-      // '교육 단계': 글자를 누르면 전체 교육, 오른쪽 꺽쇠를 눌러야 1~6단계가 펼쳐진다
-      `<div class="v1-nav-cat${view === 'all' && !mentee() ? ' on' : ''}"><button type="button" class="v1-nav-cat-label" data-nav="all" ${view === 'all' ? 'aria-current="page"' : ''}>${isStaff() ? '교육 과정' : '교육 단계'}</button>` +
+      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person' || (view === 'all' && !isStaff()))}` +
+      // '교육 과정'(관리자만): 글자를 누르면 전체 목록, 오른쪽 꺽쇠를 눌러야 1~6단계가 펼쳐진다. 멘티는 교육 현황의 '전체 교육' 보기로 본다
+      (isStaff() ? `<div class="v1-nav-cat${view === 'all' && !mentee() ? ' on' : ''}"><button type="button" class="v1-nav-cat-label" data-nav="all" ${view === 'all' ? 'aria-current="page"' : ''}>${isStaff() ? '교육 과정' : '교육 단계'}</button>` +
       `<button type="button" class="v1-nav-cat-toggle" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages" aria-label="${isStaff() ? '교육 과정' : '교육 단계'} ${navStagesOpen ? '접기' : '펼치기'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>` +
-      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div></div>` +
+      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div>` : '') + '</div>' +
       `<div class="v1-nav-foot">${isStaff() ? item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger') : ''}${item('data-nav="branch"', '지점 변경')}</div>`;
   }
   function openNav() { if (view === 'stage') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
