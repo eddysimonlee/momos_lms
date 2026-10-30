@@ -130,7 +130,7 @@ class Handler(BaseHTTPRequestHandler):
         if public:
             if self.headers.get('Host') != urlsplit(public).netloc:
                 raise PermissionError('Invalid Host')
-            if mutation and self.headers.get('Origin') != public:
+            if mutation and self.headers.get('Origin') != public and not self.same_origin_without_header(public):
                 raise PermissionError('Same-origin browser request required')
             if mutation and self.headers.get('Sec-Fetch-Site') == 'cross-site':
                 raise PermissionError('Cross-site request refused')
@@ -138,16 +138,28 @@ class Handler(BaseHTTPRequestHandler):
         if getattr(self.server, 'trial', False):
             # Internal staging without a fixed public URL: accept the ingress host, but still refuse
             # cross-site writes by requiring the Origin host to match the Host header.
-            if mutation and urlsplit(self.headers.get('Origin', '')).netloc != self.headers.get('Host', ''):
+            if mutation and urlsplit(self.headers.get('Origin', '')).netloc != self.headers.get('Host', '') \
+                    and not self.same_origin_without_header(urlsplit(self.headers.get('Referer', '')).scheme + '://' + self.headers.get('Host', '')):
                 raise PermissionError('Same-origin browser request required')
             return
         hosts = {f'127.0.0.1:{port}', f'localhost:{port}'}
         if self.headers.get('Host') not in hosts:
             raise PermissionError('Invalid Host')
-        if mutation and self.headers.get('Origin') != 'http://' + self.headers.get('Host', ''):
+        if mutation and self.headers.get('Origin') != 'http://' + self.headers.get('Host', '') and not self.same_origin_without_header('http://' + self.headers.get('Host', '')):
             raise PermissionError('Same-origin browser request required')
         if mutation and self.headers.get('Sec-Fetch-Site') == 'cross-site':
             raise PermissionError('Cross-site request refused')
+
+    def same_origin_without_header(self, public):
+        """일부 앱 내장 브라우저(WebView)는 같은 사이트 요청에 Origin 머리말을 빼고 보낸다.
+        Origin 이 아예 없을 때만, 브라우저가 붙이는 Sec-Fetch-Site: same-origin 또는 같은 사이트 Referer 로 대신 확인한다
+        (CSRF 토큰 검사는 그대로)."""
+        if self.headers.get('Origin'):
+            return False
+        if self.headers.get('Sec-Fetch-Site') == 'same-origin':
+            return True
+        referer = self.headers.get('Referer', '')
+        return bool(referer) and (referer == public or referer.startswith(public.rstrip('/') + '/'))
 
     def send(self, code, obj, cookie=None):
         body = json.dumps(obj, ensure_ascii=False, allow_nan=False).encode()
@@ -517,8 +529,14 @@ class Handler(BaseHTTPRequestHandler):
             self.send(401, {'error': '로그인이 필요하거나 계정 승인·로그인 정보를 확인해야 합니다.'})
         except access.RateLimited:
             self.send(429, {'error': '요청이 많습니다. 잠시 후 다시 시도해 주세요.'})
-        except PermissionError:
-            self.send(403, {'error': 'Access denied'})
+        except PermissionError as exc:
+            # 화면이 원인에 맞게 대응하도록 종류(code)를 함께 보낸다. 로그에는 경로와 종류만(값·토큰 없음)
+            reason = str(exc)
+            code = 'csrf' if reason == 'Invalid CSRF token' else 'origin' if reason in ('Same-origin browser request required', 'Cross-site request refused', 'Invalid Host') else 'permission'
+            message = {'csrf': '로그인 정보가 바뀌었어요. 새로고침한 뒤 다시 시도해 주세요.',
+                       'origin': '요청을 확인하지 못했어요. 앱을 닫았다가 다시 열어 주세요.'}.get(code) or (reason if re.search('[가-힣]', reason) else 'Access denied')
+            print(f'403 {method} {urlsplit(self.path).path} {code}', flush=True)
+            self.send(403, {'error': message, 'code': code})
         except FileNotFoundError:
             self.send(404, {'error': 'Not found'})
         except lms_store.Conflict as exc:

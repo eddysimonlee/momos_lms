@@ -236,6 +236,27 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(req('POST','/api/onboarding',self.payload(self.learner,'step.mark',dict(step=ident,index=0,on=True)))[0],403)
             code,h,b=req('POST','/api/onboarding',self.payload(self.learner,'feedback.send',dict(step=ident,text='통합 스케줄 위치를 모르겠어요')));self.assertEqual(code,200)
             self.assertNotIn('feedback',json.loads(b))  # 의견 목록은 LMS관리자에게만
+            # 멘토가 HTTP 로 체크: 정상 · 다른 창에서 다시 로그인해 토큰이 바뀐 경우(code=csrf → 새 토큰으로 재시도) · Origin 없는 WebView
+            with patch.object(ob,'LMS_ADMIN_SEED',[self.other['email'].lower()]):
+                ms,mt=self.auth.new_session(self.other)
+                def mreq(value,csrf,headers=None):
+                    h={'Origin':f'http://127.0.0.1:{httpd.server_port}','Cookie':'erp_session='+mt,'X-CSRF-Token':csrf,'Content-Type':'application/json'}
+                    h.update(headers or {});h={k:v for k,v in h.items() if v is not None}
+                    conn=http.client.HTTPConnection('127.0.0.1',httpd.server_port,timeout=10)
+                    try:conn.request('POST','/api/onboarding',json.dumps(value).encode(),h);r=conn.getresponse();return r.status,json.loads(r.read() or b'{}')
+                    finally:conn.close()
+                mark=lambda i:self.payload(self.other,'step.mark',dict(step='welcome-prep',index=i,on=True),self.learner['id'])
+                self.assertEqual(mreq(mark(0),ms['csrfToken'])[0],200)
+                code,body=mreq(mark(1),'stale-token');self.assertEqual((code,body.get('code')),(403,'csrf'))
+                self.assertEqual(mreq(mark(1),ms['csrfToken'])[0],200)  # 화면은 /api/auth/status 로 새 토큰을 받아 다시 보낸다
+                self.assertEqual(mreq(mark(2),ms['csrfToken'],{'Origin':None,'Sec-Fetch-Site':'same-origin'})[0],200)
+                self.assertEqual(mreq(mark(3),ms['csrfToken'],{'Origin':None,'Referer':f'http://127.0.0.1:{httpd.server_port}/v1'})[0],200)
+                code,body=mreq(mark(4),ms['csrfToken'],{'Origin':None});self.assertEqual((code,body.get('code')),(403,'origin'))
+                code,body=mreq(mark(4),ms['csrfToken'],{'Origin':'https://evil.example','Sec-Fetch-Site':'cross-site'});self.assertEqual(code,403)
+                cs,ct=self.auth.new_session(self.content)  # 멘토가 아닌 구성원
+                code,body=mreq(mark(4),cs['csrfToken'],{'Cookie':'erp_session='+ct})
+                self.assertEqual((code,body.get('code')),(403,'permission'));self.assertIn('멘티',body.get('error'))  # 권한 문제는 원인 문구로
+                t=self.service.get(self.learner)['learner']['records']['welcome-prep']['teacher'];self.assertEqual(t[:5],[True,True,True,True,False])
             self.assertEqual(req('GET','/api/works/members?q=x')[0],403)  # 구성원 검색은 LMS관리자 admin 만
             with patch.object(ob,'LMS_ADMIN_SEED',[self.learner['email'].lower()]):
                 code,h,b=req('GET','/api/works/members?q='+quote('교육자'));self.assertEqual(code,200)
@@ -366,6 +387,52 @@ class EducationTests(unittest.TestCase):
         for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.admin,'step.teacher',dict(step=ident,index=i,on=True),self.learner['id'])
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
+
+    def test_mentor_marking_scenarios(self):
+        # LMS 의 핵심: 멘토가 멘티의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다
+        adm,men,men2,mentee=self.admin,self.other,self.content,self.tech
+        with self.store.connect() as db:db.execute("UPDATE access_users SET company='momos' WHERE id=?",(mentee['id'],))
+        mentee=dict(mentee,company='momos')
+        with patch.object(ob,'LMS_ADMIN_SEED',[adm['email'].lower()]):
+            # 대소문자가 섞인 이메일로 지정해도 멘토가 된다
+            self.act(adm,'lms.admin',dict(email=men['email'].upper(),level='mentor'))
+            self.act(adm,'lms.admin',dict(email=men2['email'],level='mentor'))
+            self.assertEqual(self.service.get(men)['lmsLevel'],'mentor')
+            # 스스로 교육을 시작한 멘티(배정된 교육자 없음)
+            self.act(mentee,'config.selfEnrol',{})
+            ident='welcome-prep';n=len(ob.STEPS[ident]['checks'])
+            c=self.service.get(men,mentee['id']);self.assertTrue(c['permissions']['trainer'])
+            # 화면이 같은 판본(revision)으로 연달아 보내도(빠른 연속 체크) 모두 저장된다
+            base=self.payload(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            for i in range(n):
+                v=dict(base,data=dict(step=ident,index=i,on=True),requestId=str(uuid.uuid4()))
+                self.service.update(men,v)
+            r=self.service.get(mentee)['learner']['records'][ident]
+            self.assertTrue(all(r['teacher']));self.assertEqual(set(r['teacherName']),{men['name']});self.assertTrue(all(r['teacherWhen']))
+            # 같은 요청을 두 번 보내도(재시도) 한 번만 반영된다
+            v=self.payload(men,'step.mark',dict(step=ident,index=0,on=False),mentee['id']);self.service.update(men,v);self.service.update(men,v)
+            self.assertFalse(self.service.get(mentee)['learner']['records'][ident]['teacher'][0])
+            # 다른 멘토가 이어서 체크하고 완료
+            self.act(men2,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            r=self.act(men2,'step.close',dict(step=ident),mentee['id'])['learner']['records'][ident]
+            self.assertEqual((r['status'],r['teacherName'][0],r['teacherName'][1]),('done',men2['name'],men['name']))
+            # 완료 후 체크 변경은 막히고, 완료 취소 뒤에는 다시 된다
+            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
+            self.act(men,'step.reopen',dict(step=ident),mentee['id'])
+            self.act(men,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
+            # 첫날 OJT(교육 내용 대신 체크 목록 17개)도 마지막 칸까지 체크된다
+            self.act(men,'step.mark',dict(step='welcome-ojt',index=16,on=True),mentee['id'])
+            # 잘못된 입력
+            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=n,on=True),mentee['id'])
+            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=0,on='yes'),mentee['id'])
+            # 막혀야 할 때: 멘티 본인, 지정 안 된 구성원, 본인 기록, 삭제된 멘토
+            with self.assertRaises(PermissionError):self.act(mentee,'step.mark',dict(step=ident,index=0,on=True))
+            with self.assertRaises(PermissionError):self.act(self.learner,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            self.act(men,'config.selfEnrol',{})
+            with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True))  # 멘토 본인 교육은 다른 멘토가
+            self.act(men2,'step.mark',dict(step=ident,index=0,on=True),men['id'])  # 멘토도 다른 멘토에게 교육받는다
+            self.act(adm,'lms.admin',dict(email=men['email'],level=None))
+            with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
 
     def test_lms_admin_marks_closes_reopens_and_manages_admins(self):
         # 10/30: 체크·완료는 지정된 LMS관리자만(교육생 화면에는 체크·완료 없음). 누가 체크했는지 남고 다른 관리자가 이어서 체크한다

@@ -22,13 +22,25 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
   }
 
-  async function api(method, value, target) {
+  // 다른 탭·앱 창에서 다시 로그인하면 세션이 새로 바뀌어, 이 화면이 가진 CSRF 토큰이 맞지 않게 된다.
+  // 그때(403 code=csrf)는 지금 세션의 토큰을 다시 받아 한 번만 다시 보낸다(같은 requestId 라 두 번 저장되지 않는다).
+  async function refreshCsrf() {
+    const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
+    if (!status.user || !status.csrfToken) return false;
+    if (cloud && cloud.user && status.user.id !== cloud.user.id) { location.reload(); return false; }  // 다른 계정으로 바뀌었으면 화면을 새로
+    ERPAuth.csrfToken = status.csrfToken; return true;
+  }
+  async function api(method, value, target, retried) {
     const url = '/api/onboarding' + (target ? '?target=' + encodeURIComponent(target) : '');
     const response = await fetch(url, {method, credentials: 'same-origin', cache: 'no-store',
       headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''},
       ...(value ? {body: JSON.stringify(value)} : {})});
     let data; try { data = await response.json(); } catch { throw new Error('서버 응답을 확인하지 못했습니다.'); }
-    if (!response.ok) throw new Error(data.error || data.message || '저장하지 못했습니다.');
+    if (response.status === 403 && data.code === 'csrf' && !retried) {
+      let ok = false; try { ok = await refreshCsrf(); } catch {}
+      if (ok) return api(method, value, target, true);
+    }
+    if (!response.ok) { const e = new Error(data.error || data.message || '저장하지 못했습니다.'); e.status = response.status; e.code = data.code; throw e; }
     return data;
   }
 
@@ -47,6 +59,7 @@
     const r = record(step.id), n = checkItems(step).length;
     if (!r.teacherName) r.teacherName = Array(n).fill(null);
     if (!r.teacherWhen) r.teacherWhen = Array(n).fill(null);
+    const before = {teacher: r.teacher[k], at: r.teacherAt[k], name: r.teacherName[k], when: r.teacherWhen[k], status: r.status}, who = cloud.target;
     r.teacher[k] = on; r.teacherAt[k] = on ? cloud.today : null; r.teacherName[k] = on ? cloud.user.name : null; r.teacherWhen[k] = on ? new Date().toISOString() : null;
     r.status = r.teacher.some(Boolean) ? 'practice' : 'ready';
     const box = $('app').querySelector(`[data-mark="${k}"]`);
@@ -65,7 +78,9 @@
         if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
       } catch (e) {
         toast(e.message || '체크를 저장하지 못했어요. 다시 눌러 주세요.');
-        try { cloud = await api('GET', null, cloud.target); } catch {}
+        // 화면에서 먼저 바꾼 값을 되돌린 뒤 서버 기록으로 다시 맞춘다(권한이 없어져 기록을 못 읽어도 화면이 저장된 것처럼 남지 않게)
+        if (cloud.target === who) { const x = record(step.id); x.teacher[k] = before.teacher; x.teacherAt[k] = before.at; x.teacherName[k] = before.name; x.teacherWhen[k] = before.when; x.status = before.status; }
+        try { cloud = await api('GET', null, cloud.target); } catch (e2) { if (e2.status === 403) { try { cloud = await api('GET'); view = 'home'; } catch {} } }
         if (selfPending === 1) render();
       } finally { selfPending--; }
     });
