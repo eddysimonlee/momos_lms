@@ -176,7 +176,7 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
-    try:  # 입사일·직급(WORKS 구성원 정보): 시작일·목표일 표시와 '전체 멘티' 조건 판정용. 읽지 못하면 저장해 둔 값을 그대로 둔다
+    try:  # 입사일·직책(WORKS 구성원 정보): 시작일·목표일 표시와 '전체 멘티' 조건 판정용. 읽지 못하면 저장해 둔 값을 그대로 둔다
         save_hired(handler.server.store, user['id'], **fetch_profile(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('hired', e)
@@ -366,38 +366,42 @@ def valid_date(v):
         return None
 
 
-def level_of(u):
-    """WORKS 구성원의 직급 이름(주 소속 organizations[].levelName). 없으면 None."""
+def position_of(u):
+    """WORKS 구성원의 직책 이름: 주 소속 조직(organizations[].primary)의 주 부서(orgUnits[].primary) positionName.
+    주 부서에 직책이 없으면 그 조직의 다른 부서 중 직책이 있는 첫 부서. 없으면 None.
+    (11/02 모모스: '사원'은 직급이 아니라 직책으로 관리한다)"""
     orgs = u.get('organizations') or []
     org = next((o for o in orgs if o.get('primary')), orgs[0] if orgs else {})
-    name = str(org.get('levelName') or '').strip()
+    units = org.get('orgUnits') or []
+    unit = next((x for x in units if x.get('primary') and x.get('positionName')), None) or next((x for x in units if x.get('positionName')), {})
+    name = str(unit.get('positionName') or '').strip()
     return name[:100] or None
 
 
 def fetch_profile(access_token, member_id):
-    """WORKS 구성원 입사일(hiredDate, 'YYYY-MM-DD')과 직급(levelName). GET /users/{userId}. 입력돼 있지 않으면 None."""
+    """WORKS 구성원 입사일(hiredDate, 'YYYY-MM-DD')과 직책(positionName). GET /users/{userId}. 입력돼 있지 않으면 None."""
     from urllib.parse import quote
     u = _get_json(f'{API_BASE}/users/{quote(member_id, safe="")}', access_token)
-    return dict(hired=valid_date(u.get('hiredDate')), level=level_of(u))
+    return dict(hired=valid_date(u.get('hiredDate')), position=position_of(u))
 
 
 def fetch_hired(access_token, member_id):
     return fetch_profile(access_token, member_id)['hired']
 
 
-def save_hired(store, user_id, hired, level=None):
+def save_hired(store, user_id, hired, position=None):
     import lms_store as projects
     with store.connect() as db:
         projects.Rooms.write(db, hired_key(user_id), dict(kind='hired', user=user_id, hiredDate=valid_date(hired),
-                                                          level=(str(level).strip()[:100] or None) if level else None, at=time.time()))
+                                                          position=(str(position).strip()[:100] or None) if position else None, at=time.time()))
 
 
 def read_profile(db, user_id):
-    """로그인 때 저장해 둔 입사일·직급. 없으면 둘 다 None."""
+    """로그인 때 저장해 둔 입사일·직책. 없으면 둘 다 None(예전에 저장한 직급 값은 쓰지 않는다)."""
     import lms_store as projects
     row = projects.Rooms.read(db, hired_key(user_id))
     ok = row and row.get('kind') == 'hired' and row.get('user') == user_id
-    return dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, level=(row.get('level') or None) if ok else None)
+    return dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, position=(row.get('position') or None) if ok else None)
 
 
 def read_hired(db, user_id):

@@ -406,8 +406,21 @@ class EducationTests(unittest.TestCase):
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
 
+    def test_works_position_from_primary_org_unit(self):
+        # 11/02: '전체 멘티' 조건은 직급(levelName)이 아니라 직책(positionName) — 주 소속 조직의 주 부서 기준
+        import works_auth
+        u=dict(organizations=[dict(primary=False,levelName='사원',orgUnits=[dict(primary=True,positionName='매니저')]),
+                              dict(primary=True,levelName='대리',orgUnits=[dict(primary=False,positionName='팀장'),dict(primary=True,positionName=' 사원 ')])])
+        self.assertEqual(works_auth.position_of(u),'사원')
+        u['organizations'][1]['orgUnits'][1].pop('positionName');self.assertEqual(works_auth.position_of(u),'팀장')  # 주 부서에 직책이 없으면 다른 부서
+        self.assertIsNone(works_auth.position_of(dict(organizations=[dict(primary=True,levelName='사원',orgUnits=[])])))  # 직급만 있으면 없음
+        self.assertIsNone(works_auth.position_of({}))
+        works_auth.save_hired(self.store,self.learner['id'],'2026-03-02','사원')
+        with self.store.connect() as db:self.assertEqual(works_auth.read_profile(db,self.learner['id']),dict(hiredDate='2026-03-02',position='사원'))
+        self.assertTrue(ob.mentee_ok(dict(hiredDate='2026-03-02',position='사원')));self.assertFalse(ob.mentee_ok(dict(hiredDate='2026-03-02',level='사원')))
+
     def test_mentee_conditions_mentor_keep_and_one_time_reset(self):
-        # 11/02: '전체 멘티' = 직급이 정확히 '사원' + 2026-01-01 이후 입사. 체크하면 멘토, 조건에서 벗어나도 나의 멘티는 남는다
+        # 11/02: '전체 멘티' = 직책이 정확히 '사원' + 2026-01-01 이후 입사. 체크하면 멘토, 조건에서 벗어나도 나의 멘티는 남는다
         import works_auth
         adm,men,mentee=self.admin,self.other,self.tech
         with self.store.connect() as db:db.execute("UPDATE access_users SET company='momos' WHERE id=?",(mentee['id'],))
@@ -418,7 +431,7 @@ class EducationTests(unittest.TestCase):
             self.act(mentee,'config.selfEnrol',{})
             for hired,level in (('2026-03-02','대리'),('2025-12-31','사원'),(None,'사원'),('2026-03-02',None),('2026-03-02','사원 ')):
                 works_auth.save_hired(self.store,mentee['id'],hired,level)
-                ok=ob.mentee_ok(dict(hiredDate=hired,level=level));self.assertEqual(mentee['id'] in ids(men),ok,(hired,level))
+                ok=ob.mentee_ok(dict(hiredDate=hired,position=level));self.assertEqual(mentee['id'] in ids(men),ok,(hired,level))
                 if not ok:
                     with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
             self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])  # 조건에 맞을 때 체크 → 멘토

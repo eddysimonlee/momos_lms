@@ -184,17 +184,17 @@ def blank(join):
 
 
 TARGET_MONTHS = 6
-# '전체 멘티' 조건(11/02 모모스 확인): WORKS 직급이 정확히 '사원'(가장 낮은 직급) 이고, (PoC 한정) 2026-01-01 이후 입사.
-# 직급·입사일은 각자 로그인할 때 WORKS 에서 읽어 둔 값이다(매일 밤 다시 판정하는 배치는 나중에 — BACKLOG).
-MENTEE_LEVEL = '사원'
+# '전체 멘티' 조건(11/02 모모스 확인): WORKS 직책이 정확히 '사원' 이고(11/02: 직급이 아니라 직책 기준), (PoC 한정) 2026-01-01 이후 입사.
+# 직책·입사일은 각자 로그인할 때 WORKS 에서 읽어 둔 값이다(매일 밤 다시 판정하는 배치는 나중에 — BACKLOG).
+MENTEE_POSITION = '사원'
 MENTEE_HIRED_FROM = '2026-01-01'
 # 11/02 '나의 멘티'·'전체 멘티' 초기화: 배포 뒤 처음 한 번 모든 사람의 교육 체크·완료 기록을 비운다(교육 등록·관리자·의견·사진·입사일은 남긴다)
 MENTEE_RESET = 'mentee-reset-2026-11-02'
 
 
 def mentee_ok(profile):
-    """'전체 멘티'에 보일 사람인가: 직급이 정확히 '사원' 이고 입사일이 2026-01-01 이후. 둘 중 하나라도 모르면 아니다."""
-    return bool(profile) and (profile.get('level') or '').strip() == MENTEE_LEVEL and bool(profile.get('hiredDate')) and profile['hiredDate'] >= MENTEE_HIRED_FROM
+    """'전체 멘티'에 보일 사람인가: 직책이 정확히 '사원' 이고 입사일이 2026-01-01 이후. 둘 중 하나라도 모르면 아니다."""
+    return bool(profile) and (profile.get('position') or '').strip() == MENTEE_POSITION and bool(profile.get('hiredDate')) and profile['hiredDate'] >= MENTEE_HIRED_FROM
 
 
 def mentor_ids(learner):
@@ -346,7 +346,7 @@ class Service:
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
             # '나의 교육생': 내가 한 번이라도 체크하거나 완료한 교육생(완료 취소 이력 포함)
             mine=user['id'] in mentor_ids(l)
-            # 관리자 화면의 멘티 목록: '전체 멘티' 조건(사원·2026년 이후 입사)에 맞는 사람 + 이미 내가 멘토인 사람(조건에서 벗어나도 남긴다)
+            # 관리자 화면의 멘티 목록: '전체 멘티' 조건(직책 사원·2026년 이후 입사)에 맞는 사람 + 이미 내가 멘토인 사람(조건에서 벗어나도 남긴다)
             if staff_view and r['id']!=user['id'] and not mine and not mentee_ok(works_auth.read_profile(db,r['id'])): continue
             summaries.append(dict(**r,**dates(r['id']),total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
@@ -556,9 +556,9 @@ class Service:
                 if not entry: raise ValueError('관리자가 교육생·입사일·교육자를 먼저 배정해야 합니다.')
                 learner = fit(projects.Rooms.read(db,entry['key']))
                 if action in ('step.mark','step.close','step.reopen') and target!=user['id'] and entry.get('trainer')!=user['id']:
-                    import works_auth  # 11/02: 체크·완료는 '전체 멘티' 조건(사원·2026년 이후 입사)에 맞는 사람이나 이미 내가 멘토인 사람에게만
+                    import works_auth  # 11/02: 체크·완료는 '전체 멘티' 조건(직책 사원·2026년 이후 입사)에 맞는 사람이나 이미 내가 멘토인 사람에게만
                     if user['id'] not in mentor_ids(learner) and not mentee_ok(works_auth.read_profile(db,target)):
-                        raise PermissionError('전체 멘티(직급 사원·2026년 이후 입사)에 해당하는 구성원이나 나의 멘티만 체크할 수 있어요.')
+                        raise PermissionError('전체 멘티(직책 사원·2026년 이후 입사)에 해당하는 구성원이나 나의 멘티만 체크할 수 있어요.')
                 if not latest_ok and v['revision']!=learner['revision']:
                     raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
                 self.education(db,root,user,p,learner,action,data)
