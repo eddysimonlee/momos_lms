@@ -26,6 +26,8 @@
 !v1_content.json
 !v1_lessons.json
 !curriculum.json
+!source_log.json
+!source_manifest.json
 !wds/
 !wds/**
 !v1_photos/
