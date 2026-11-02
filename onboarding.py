@@ -189,6 +189,19 @@ TARGET_MONTHS = 6
 MENTEE_RESET = 'mentee-reset-2026-11-02'
 
 
+def checker_ids(learner):
+    """그 교육생의 교육 내용을 한 번이라도 체크했거나 완료한 사람 id(체크 해제·완료 취소 이력 포함). '나의 교육생' 판정용."""
+    out = set()
+    def take(x):
+        out.update(w for w in (x.get('teacherBy') or []) + (x.get('checkedBy') or []) if w)
+        if x.get('completedBy'): out.add(x['completedBy'])
+    for x in learner['records'].values():
+        take(x)
+        for h in x.get('history') or []:
+            if isinstance(h, dict): take(h)
+    return out
+
+
 def target_date(start):
     """목표일 = 시작일(입사일)로부터 6개월 뒤. 그 달에 같은 날이 없으면 말일(8-31 → 2-28)."""
     if not start: return None
@@ -322,7 +335,7 @@ class Service:
             # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
             prof=works_auth.read_profile(db,r['id'])
-            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),total=len(STEPS),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
+            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),total=len(STEPS),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
         # 11/02 조직도(주소록): WORKS 부서·구성원 저장본에 LMS 교육 기록을 잇는다. 교육을 시작하지 않은 사람은 id 없음(화면에 '미접속')
@@ -859,6 +872,7 @@ class Service:
             for k in ('teacherBy','teacherName','teacherWhen'):r.setdefault(k,[None]*n)
             r['teacher'][i]=d['on'];r['teacherAt'][i]=today() if d['on'] else None;r['teacherWhen'][i]=stamp() if d['on'] else None  # 화면에는 체크한 관리자와 일시
             r['teacherBy'][i]=user['id'] if d['on'] else None;r['teacherName'][i]=user['name'] if d['on'] else None
+            if d['on'] and user['id'] not in r.setdefault('checkedBy',[]):r['checkedBy'].append(user['id'])  # 한 번이라도 체크한 사람(체크를 풀어도 남는다, '나의 교육생')
             r['status']='practice' if any(r['teacher']) else 'ready';r['start']=r['start'] or today()
         elif action=='step.close':
             if r['status'] not in ('ready','practice') or not all(r['teacher']):raise ValueError('교육 내용을 모두 체크한 뒤 완료할 수 있어요.')

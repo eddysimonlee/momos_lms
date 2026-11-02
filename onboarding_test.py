@@ -465,9 +465,14 @@ class EducationTests(unittest.TestCase):
         self.assertEqual((rows[a['id']]['org'],rows[a['id']]['position']),('온천 본점','사원'))
         self.assertEqual((rows[b['id']]['org'],rows[b['id']]['position'],rows[b['id']]['hiredDate']),(None,'매니저','2025-05-01'))
         self.assertTrue(rows[b['id']]['canConfirm']);self.assertFalse(rows[a['id']]['canConfirm'])
-        self.assertNotIn('trainedByMe',rows[b['id']])
+        self.assertFalse(rows[b['id']]['trainedByMe'])
         self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])  # 직책·입사일 조건 없이 체크
         self.act(b,'step.mark',dict(step=ident,index=0,on=True),a['id'])  # 서로 체크해도 된다
+        rows={x['id']:x for x in self.service.get(a)['educationSummary']}
+        self.assertTrue(rows[b['id']]['trainedByMe']);self.assertFalse(rows[self.learner['id']]['trainedByMe'])  # 내가 체크한 사람 = 나의 교육생
+        self.act(a,'step.mark',dict(step=ident,index=0,on=False),b['id'])
+        self.assertTrue({x['id']:x for x in self.service.get(a)['educationSummary']}[b['id']]['trainedByMe'])  # 체크를 풀어도 남는다
+        self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])
         with self.assertRaises(PermissionError):self.act(a,'step.mark',dict(step=ident,index=1,on=True))  # 본인 기록은 못 한다
         self.assertFalse(self.service.get(a)['profileMissing'])  # WORKS 로그인이 꺼져 있으면 다시 로그인하지 않는다
         # 배포 뒤 처음 한 번: 모든 체크·완료 기록 초기화(표시 없는 예전 저장소)

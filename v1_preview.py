@@ -84,7 +84,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-17';
+  const KEY = 'momos-v1-preview-18';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -125,7 +125,8 @@ MOCK = r'''
       const room = state.rooms[id]; if (room) Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return [...out.values()]; };
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
-      return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states}; });
+      const ever = Object.values(recs).some(x => (x.checkedBy || []).includes(u.id) || (x.teacherBy || []).includes(u.id) || x.completedBy === u.id || (x.history || []).some(h => h && ((h.teacherBy || []).includes(u.id) || h.completedBy === u.id)));
+      return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['본부장', '점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
@@ -166,7 +167,7 @@ MOCK = r'''
     if (v.action === 'step.mark') {
       if (!['ready', 'practice'].includes(r.status)) throw {status: 400, error: '완료한 교육은 체크를 바꿀 수 없어요. 완료를 취소한 뒤 바꿔 주세요.'};
       for (const k of ['teacherBy', 'teacherName', 'teacherWhen']) if (!r[k]) r[k] = r.teacher.map(() => null);
-      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null;
+      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null; if (d.on) { r.checkedBy = r.checkedBy || []; if (!r.checkedBy.includes(u.id)) r.checkedBy.push(u.id); }
       r.status = r.teacher.some(Boolean) ? 'practice' : 'ready'; r.start = r.start || t;
     } else if (v.action === 'step.close') {
       if (!['ready', 'practice'].includes(r.status) || !r.teacher.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};

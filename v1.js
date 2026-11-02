@@ -185,7 +185,7 @@
     const o = e.target.closest('[data-org-tog],[data-org-pick]');
     if (o) {
       if (o.hasAttribute('data-org-tog')) { const id = o.dataset.orgTog; orgOpen.has(id) ? orgOpen.delete(id) : orgOpen.add(id); drawOrgSheet(); $('v1Sheet').querySelector(`[data-org-tog="${CSS.escape(id)}"]`).focus(); }
-      else { orgSel = o.dataset.orgPick; closeSheet(); view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); }
+      else { orgSel = o.dataset.orgPick; homeTab = 'org'; closeSheet(); view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); }
       return;
     }
     const t = e.target.closest('[data-pick],[data-sheet-apply],[data-sheet-close]');
@@ -220,7 +220,7 @@
       $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
     }
     $('v1Who').hidden = branch && !profile();
-    $('v1Org').hidden = !(view === 'home' && chart());
+    $('v1Org').hidden = !(view === 'home' && chart() && homeTabNow() === 'org');  // 주소록은 전체 교육생 탭에서만
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
@@ -324,8 +324,17 @@
     // 직책순(WORKS 직책 표시 순서, 받지 못하면 직책 이름순, 직책 없음은 맨 뒤) → 같은 직책 안에서는 이름순. 교육 시작·미접속은 섞는다
     const order = (chart() && chart().positions) || [], rank = p => !p ? [2, 0, ''] : order.includes(p) ? [0, order.indexOf(p), ''] : [1, 0, p];
     const byPos = (a, b) => { const x = rank(a.position), y = rank(b.position); return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2], 'ko') || by(a, b); };
+    // 11/02 교육 현황 = 위쪽 탭 [나의 교육생 | 전체 교육생(부서별)]. 나의 교육생 = 내가 한 번이라도 체크한 사람(체크를 풀어도 남는다, 부서 무관)
+    const trainees = traineesOf().sort(byPos), tab = homeTabNow();
+    if (chart() && (!orgSel || !orgOf(orgSel))) orgSel = chart().mine && orgOf(chart().mine) ? chart().mine : null;
+    const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-home-tab="${k}">${label}</button>`;
+    const seg = `<div class="v1-hseg" role="tablist" aria-label="교육 현황 보기">${segBtn('mine', `나의 교육생 <b>${trainees.length}</b>`)}${segBtn('org', '전체 교육생')}</div>`;
+    if (tab === 'mine') return seg + (trainees.length
+      ? `<ul class="v1-plist">${trainees.map(x => row(Object.assign({}, x, {position: [x.position, x.org].filter(Boolean).join(' · ')}))).join('')}</ul>`
+      : '<p class="v1-muted v1-hempty">내가 체크한 교육생이 여기에 모여요.<br>전체 교육생 탭에서 구성원을 골라 교육 내용을 체크해 보세요.</p>');
+    return seg + orgHtml();
+    function orgHtml() {
     if (chart()) {  // 주소록이 있으면: 고른 부서(처음엔 내 주 부서)에 직접 속한 사람(주 부서 기준)
-      if (!orgSel || !orgOf(orgSel)) orgSel = chart().mine && orgOf(chart().mine) ? chart().mine : null;
       if (!orgSel) return '<p class="v1-muted v1-orghead">내 부서를 찾지 못했어요. 오른쪽 위 주소록에서 부서를 골라 주세요.</p>';
       const path = orgPath(orgSel), unit = path[path.length - 1];
       const ppl = membersOf(orgSel).filter(m => m.id !== me);
@@ -339,7 +348,13 @@
     const names = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'ko'));
     return names.length ? names.map(g => `<h3 class="v1-pcat">${esc(g || '부서 미확인')} · ${groups[g].length}명</h3><ul class="v1-plist">${groups[g].sort(byPos).map(x => row(x)).join('')}</ul>`).join('')
       : '<p class="v1-muted">아직 교육을 시작한 구성원이 없어요.</p>';
+    }
   }
+
+  // 교육 현황 탭: 처음엔 나의 교육생이 있으면 '나의 교육생', 없으면 '부서'. 고른 탭은 화면을 오가도 유지(새로고침하면 다시 처음 규칙)
+  let homeTab = null;
+  const traineesOf = () => (cloud.educationSummary || []).filter(x => x.trainedByMe && x.id !== cloud.user.id);
+  const homeTabNow = () => homeTab || (traineesOf().length ? 'mine' : 'org');
 
   function enrolNotice() {
     if (canWrite() || mentee()) return '';
@@ -554,6 +569,7 @@
     const fo = app.querySelector('[data-filter-open]'), fc = app.querySelector('[data-filter-clear]');
     if (fo) fo.onclick = openSheet;
     if (fc) fc.onclick = () => setFilter(null);
+    app.querySelectorAll('[data-home-tab]').forEach(b => b.onclick = () => { homeTab = b.dataset.homeTab; keepFocus = `[data-home-tab="${homeTab}"]`; render(); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = async () => { try { cloud = await api('GET', null, b.dataset.person); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { toast(e.message); } });
     // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동
     app.querySelectorAll('[data-close-src]').forEach(b => b.onclick = () => {

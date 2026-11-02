@@ -160,7 +160,12 @@ img{max-width:100%}
 .v1-org-btn[hidden]{display:none}
 .v1-org-btn svg{width:var(--spacing-16);height:var(--spacing-16)}
 .v1-orghead{margin:var(--spacing-20) 0 var(--spacing-4)}
-.v1-main>.v1-orghead:first-child{margin-top:var(--spacing-4)}
+.v1-hseg{display:flex;gap:var(--spacing-2);padding:var(--spacing-2);margin:var(--spacing-4) 0 var(--spacing-8);border-radius:var(--radius-lg);background:var(--surface-subtle)}
+.v1-hseg button{appearance:none;flex:1;min-width:0;height:var(--spacing-36);padding:0 var(--spacing-8);border:0;border-radius:var(--radius-md);background:transparent;color:var(--text-muted);font:var(--body-md);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v1-hseg button b{margin-left:var(--spacing-2)}
+.v1-hseg button.on{background:var(--surface-default);color:var(--text-default);font:var(--body-md-bold);box-shadow:var(--shadow-sm)}
+.v1-hseg+.v1-orghead{margin-top:var(--spacing-16)}
+.v1-hempty{margin:var(--spacing-24) 0;text-align:center;line-height:1.6}
 .v1-orghead small{display:block;color:var(--text-muted);font:var(--label-sm)}
 .v1-orghead h2{margin:0;font:var(--title-xs-bold)}
 .v1-orghead h2 span{color:var(--text-muted);font:var(--label-sm)}
