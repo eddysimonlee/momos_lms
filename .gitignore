@@ -15,3 +15,5 @@ node_modules/
 source_index*.json
 v1_preview.html
 /source_images/
+# Drive docs-check result (file ids) kept local for linking.
+docs_check*.json

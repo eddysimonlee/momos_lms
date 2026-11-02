@@ -256,12 +256,12 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view.startsWith('log:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view.startsWith('log:') ? '반영 기록' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -282,7 +282,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'admin' ? adminView() : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
+    app.innerHTML = view === 'admin' ? adminView() : view.startsWith('log:') ? logView(view.slice(4)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
@@ -444,31 +444,93 @@
     const admins = (cloud.lmsAdmins || []).map(a => `<li><span class="v1-admin-mail">${esc(a.email)}${a.email === me ? ' <small class="v1-muted">(나)</small>' : ''}</span>` +
       (canEdit && !a.seed && a.email !== me ? `<span class="v1-admin-ctl">${tag('admin')}<button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">해제</button></span>` : tag('admin')) + '</li>').join('');
     // 보낸 의견: 멘티(의견을 보낸 교육 화면의 주인) · 체크한 사람(그 교육을 체크·완료한 사람) · 보낸사람 · 시간 · 교육 과정 · 의견
-    const rows = (cloud.feedback || []).map(f => `<tr><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}</td></tr>`).join('');
-    return `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
-      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
-      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>' +
-      sourceLogCard();
+    const fbAll = cloud.feedback || [], fbPage = pageOf('fb', fbAll);
+    const rows = fbPage.items.map(f => `<tr><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}</td></tr>`).join('');
+    const adminsHtml = `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
+      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>';
+    const fbHtml = `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+    // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
+    const tab = adminTab, n = {fb: (cloud.feedback || []).length, log: (cloud.sourceLog || []).length};
+    const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-admin-tab="${k}">${label}</button>`;
+    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('fb', `보낸 의견 <b>${n.fb}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}</div>` +
+      (tab === 'fb' ? fbHtml : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : adminsHtml);
   }
-  // 11/02 반영 기록: 교육 내용에 반영한 업무문서(폴더/파일·이전 근거·상태)와 교육 내용별 AS-IS/TO-BE. 최근 기록만 펼쳐 둔다
+  let adminTab = 'admins';
+  // 11/03 페이지네이션: 보낸 의견·반영 기록 20개씩(최근 순). 상세에 갔다 와도 보던 페이지 유지
+  const PAGE = 20, adminPage = {fb: 1, log: 1};
+  function pageOf(k, all) {
+    const pages = Math.max(1, Math.ceil(all.length / PAGE)), cur = adminPage[k] = Math.min(Math.max(1, adminPage[k] || 1), pages);
+    const items = all.slice((cur - 1) * PAGE, cur * PAGE);
+    if (pages <= 1) return {items, nav: ''};
+    const nums = [...new Set([1, cur - 2, cur - 1, cur, cur + 1, cur + 2, pages])].filter(x => x >= 1 && x <= pages).sort((a, b) => a - b);
+    const btn = (x, label, dis, cls = '') => `<button type="button" class="v1-pg${cls}" data-page="${k}:${x}"${dis ? ' disabled' : ''}${x === cur && !label ? ' aria-current="page"' : ''} aria-label="${label || x + '페이지'}">${label ? (label === '이전 페이지' ? '‹' : '›') : x}</button>`;
+    const parts = []; nums.forEach((x, i) => { if (i && x - nums[i - 1] > 1) parts.push('<span class="v1-pg-gap">…</span>'); parts.push(btn(x, '', false, x === cur ? ' on' : '')); });
+    return {items, nav: `<nav class="v1-pager" aria-label="페이지"><small class="v1-muted">${(cur - 1) * PAGE + 1}–${(cur - 1) * PAGE + items.length} / ${all.length}개</small><span>${btn(cur - 1, '이전 페이지', cur === 1)}${parts.join('')}${btn(cur + 1, '다음 페이지', cur === pages)}</span></nav>`};
+  }
+  // 11/03 반영 기록: 받은 폴더·파일 1건 = 행 1개(최근 순). 행을 누르면 상세(log:<id>) — 받은 것·결과·바뀐 교육(AS-IS/TO-BE)·문서별 상태
+  // 11/03 드라이브 주소 복사: 폴더 뷰어 주소에 파일의 resourceKey(드라이브 fileId)를 넣으면 그 파일이 열린다.
+  // 링크로 열면(다른 페이지에서 들어가면) 드라이브가 권한 오류를 내서, 주소를 복사해 주소창에 붙여 넣게 한다. 권한은 드라이브 권한 그대로
+  const driveUrl = key => `https://drive.worksmobile.com/drive/web/share/folder/viewer?resourceKey=${encodeURIComponent(key)}&resourceLocation=24101`;
+  const driveLink = key => `<button type="button" class="v1-tbtn v1-drive" data-drive-copy="${esc(driveUrl(key))}" aria-label="드라이브 원본 주소 복사">드라이브 주소 복사</button>`;
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-drive-copy]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    const url = b.dataset.driveCopy;
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; } catch {
+      const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch {} t.remove();
+    }
+    toast(ok ? '드라이브 주소를 복사했어요. 새 탭 주소창에 붙여 넣으세요.' : '복사하지 못했어요. 다시 눌러 주세요.');
+  }, true);
+  const driveOf = file => { const d = Object.values(content.documents || {}).find(x => x.file === file); return d && d.drive; };
+  const LOG_ST = {'바뀌어 교육 반영': 'b', '새 문서로 교육 반영': 'g', '바뀌었지만 교육 영향 없음': 'n', '바뀐 것 없음': 'n', '근거에서 뺌': 'r'};
+  const logCount = e => { const ds = e.docs || [], n = k => ds.filter(d => d.status === k).length;
+    return {changed: n('바뀌어 교육 반영'), added: n('새 문서로 교육 반영'), noImpact: n('바뀌었지만 교육 영향 없음'), same: n('바뀐 것 없음'), removed: (e.removed || []).length, docs: ds.length, lessons: (e.lessons || []).length}; };
+  // 11/03 칩: 무엇을 세는지 앞에 적는다 — 교육(전체 중 수정한 수) / 문서(확인한 수와 상태별 수) / 근거에서 뺀 옛 문서
+  const logChips = c => { const all = liveSteps().length;
+    return `<span class="v1-lchip b">교육 ${c.lessons}/${all}개 수정</span><span class="v1-lchip">문서 ${c.docs}개 확인: 교육 반영 ${c.changed + c.added}${c.noImpact ? ' · 영향 없음 ' + c.noImpact : ''}${c.same ? ' · 그대로 ' + c.same : ''}</span>` +
+      (c.removed ? `<span class="v1-lchip r">옛 문서 ${c.removed}개 뺌</span>` : ''); };
+  const logSummary = c => { const all = liveSteps().length, chip = (k, cls, label) => c[k] ? `<span class="v1-lchip ${cls}">${label} ${c[k]}</span>` : '';
+    return `<dl class="v1-lsum"><dt>교육</dt><dd><span class="v1-lchip b">${all}개 중 ${c.lessons}개 수정</span></dd>` +
+      `<dt>문서</dt><dd><span class="v1-lsum-n">${c.docs}개 확인 →</span>${chip('changed', 'b', '바뀌어 교육 반영')}${chip('added', 'g', '새 문서로 교육 반영')}${chip('noImpact', '', '바뀌었지만 교육 영향 없음')}${chip('same', '', '바뀐 것 없음')}</dd>` +
+      (c.removed ? `<dt></dt><dd><span class="v1-lchip r">근거에서 뺀 옛 문서 ${c.removed}</span></dd>` : '') + '</dl>'; };
   function sourceLogCard() {
     const list = cloud.sourceLog || [];
     if (!list.length) return '';
-    const ST = {'판 바뀜': 'b', '내용 바뀜': 'b', '내용 같음': 'n', '새로 사용': 'g', '근거 제외': 'r'};
-    const cnt = (xs, s) => xs.filter(d => d.status === s).length;
-    const entry = (e, i) => { const docs = e.docs || [], ls = e.lessons || [], b = e.basis || {};
-      const docRows = docs.map(d => `<tr><td><span class="v1-lst ${ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${esc(d.path || '—')}${d.note ? `<small>${esc(d.note)}</small>` : ''}</td><td>${esc(d.prev || '')}</td></tr>`).join('');
-      const lessonHtml = ls.map(l => `<div class="v1-lles"><b>${l.no}번 ${esc(l.title)}</b>` + (l.changes || []).map(c =>
-        `<div class="v1-lchg"><small>${esc(c.item)}${c.cite ? ' · 근거: ' + esc(c.cite) : ''}</small><div class="v1-lab"><div><i>AS-IS</i>${esc(c.asis)}</div><div><i>TO-BE</i>${esc(c.tobe)}</div></div>${c.note ? `<small class="v1-muted">${esc(c.note)}</small>` : ''}</div>`).join('') + '</div>').join('');
-      const more = [...(e.skipped || []).map(x => '· ' + esc(x)), ...(e.pending || []).map(x => '· 다음 반영 예정 — ' + esc(x))];
-      return `<details class="v1-log"${i === 0 ? ' open' : ''}><summary><b>${esc(e.at)} · ${esc(e.title)}</b><small>${esc(b.kind || '')}: ${esc(b.label || '')}${b.scope ? ' · ' + esc(b.scope) : ''}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</small>` +
-        `<span>${[`<span class="v1-lchip b">교육 ${ls.length}개 수정</span>`, `<span class="v1-lchip">문서 ${docs.length}개</span>`, cnt(docs, '판 바뀜') ? `<span class="v1-lchip b">판 바뀜 ${cnt(docs, '판 바뀜')}</span>` : '', cnt(docs, '내용 같음') ? `<span class="v1-lchip">내용 같음 ${cnt(docs, '내용 같음')}</span>` : '', cnt(docs, '새로 사용') ? `<span class="v1-lchip g">새로 사용 ${cnt(docs, '새로 사용')}</span>` : '', cnt(docs, '근거 제외') ? `<span class="v1-lchip r">근거 제외 ${cnt(docs, '근거 제외')}</span>` : ''].join('')}</span></summary>` +
-        (b.origin ? `<p class="v1-muted v1-lorigin">원본 폴더: ${esc(b.origin)}${b.copy ? ' · 받은 사본: ' + esc(b.copy) : ''}${(e.rules || []).length ? '<br>규칙: ' + e.rules.map(esc).join(' / ') : ''}</p>` : '') +
-        (ls.length ? `<h3>바뀐 교육</h3>${lessonHtml}<p class="v1-muted">체크: ${esc(e.checks || '')}</p>` : '') +
-        (docs.length ? `<h3>사용한 문서 (폴더 / 파일)</h3><div class="v1-table"><table class="v1-ltable"><thead><tr><th>상태</th><th>이번 근거</th><th>이전 근거</th></tr></thead><tbody>${docRows}</tbody></table></div>` : '') +
-        (more.length ? `<h3>비교했지만 반영하지 않은 것 · 다음 예정</h3><p class="v1-muted v1-lmore">${more.join('<br>')}</p>` : '') + '</details>'; };
-    return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">교육 내용에 반영한 업무문서와 바뀐 교육 내용이에요. 최근 순.</p>${list.map(entry).join('')}</section>`;
+    const lp = pageOf('log', list);
+    const rows = lp.items.map(e => { const b = e.basis || {}, c = logCount(e);
+      return `<tr class="v1-lrow" data-log="${esc(e.id)}" tabindex="0" role="link" aria-label="${esc(e.at + ' ' + e.title)} 상세 보기"><td class="v1-nowrap">${esc(String(e.at).slice(0, 10).replace(/-/g, '.'))}</td>` +
+        `<td><span class="v1-lkind">${esc(b.kind || '')}</span> <b>${esc(e.title)}</b><small>${esc(b.origin || '')}${b.at ? ' · 드라이브 ' + esc(b.at) + ' 기준' : ''}</small></td>` +
+        `<td>${logChips(c)}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
+    return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">업무문서(폴더·파일)를 받아 교육 내용에 반영한 기록이에요. 행을 누르면 무엇이 어떻게 바뀌었는지 볼 수 있어요.</p>` +
+      `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>반영일</th><th>받은 문서</th><th>바뀐 내용</th><th>승인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${lp.nav}</section>`;
   }
+  function logView(id) {
+    const e = (cloud.sourceLog || []).find(x => x.id === id);
+    if (!e) return '<section class="v1-card"><p class="v1-muted">반영 기록을 찾지 못했어요.</p></section>';
+    const b = e.basis || {}, c = logCount(e), ds = e.docs || [], rm = e.removed || [];
+    const result = b.kind === '폴더 전체'
+      ? `드라이브 최신판 문서 ${c.docs}개를 모두 확인 — LMS 근거 문서 ${e.basisCount || c.docs}개 모두 이 폴더의 최신판`
+      : `받은 문서 ${c.docs}개 확인 — 교육 ${c.lessons}개 수정${e.basisCount ? ` · 반영 후 LMS 근거 문서 ${e.basisCount}개` : ''}`;
+    const meta = [['받은 것', b.kind], ['폴더', b.origin], b.at ? ['드라이브 기준', b.at] : null, ['받은 방식', b.copy], ['범위', b.range], b.driveCheck ? ['드라이브 대조', b.driveCheck] : null,
+      (e.rules || []).length ? ['비교 규칙', e.rules.join(' / ')] : null, e.work ? ['작업 메모', e.work] : null].filter(x => x && x[1]);
+    const lessonHtml = (e.lessons || []).map(l => `<div class="v1-lles"><b>${l.no}번 ${esc(l.title)}</b>` + (l.changes || []).map(x =>
+      `<div class="v1-lchg"><small>${esc(x.item)}${x.cite ? ' · 근거: ' + esc(x.cite) : ''}</small><div class="v1-lab"><div><i>AS-IS</i>${esc(x.asis)}</div><div><i>TO-BE</i>${esc(x.tobe)}</div></div>${x.note ? `<small class="v1-muted">${esc(x.note)}</small>` : ''}</div>`).join('') + '</div>').join('');
+    const folders = [...new Set(ds.map(d => d.folder))];
+    const docRows = folders.map(f => (folders.length > 1 ? `<tr class="v1-sfold"><td colspan="3">${esc(f)} <small>${ds.filter(d => d.folder === f).length}개</small></td></tr>` : '') + ds.filter(d => d.folder === f).map(d =>
+      `<tr><td><span class="v1-lst ${LOG_ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${esc(d.file)}${driveOf(d.file) ? ' ' + driveLink(driveOf(d.file)) : ''}${d.prev || d.note ? `<small>${d.prev ? '이전: ' + esc(d.prev) : ''}${d.prev && d.note ? ' · ' : ''}${esc(d.note || '')}</small>` : ''}</td><td class="v1-nowrap">${(d.lessons || []).length ? d.lessons.join('·') + '번' : '—'}</td></tr>`).join('')).join('');
+    return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(b.kind || '')}</span><h2>${esc(e.title)}</h2><p class="v1-muted">반영 ${esc(e.at)}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</p>` +
+      `<p class="v1-snap-result">${esc(result)}</p>${logSummary(c)}` +
+      `<dl class="v1-snap-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>` +
+      (lessonHtml ? `<section class="v1-card v1-logd"><h2>바뀐 교육 <small class="v1-muted">${c.lessons}개</small></h2>${lessonHtml}${(e.checks || []).length ? `<p class="v1-muted">체크 기록: ${e.checks.map(esc).join(' / ')}</p>` : ''}</section>` : '') +
+      (ds.length ? `<section class="v1-card v1-logd"><h2>확인한 문서 <small class="v1-muted">${ds.length}개</small></h2><div class="v1-table"><table class="v1-ltable"><thead><tr><th>상태</th><th>파일</th><th>바뀐 교육</th></tr></thead><tbody>${docRows}</tbody></table></div></section>` : '') +
+      (rm.length ? `<section class="v1-card v1-logd"><h2>근거에서 뺀 문서 <small class="v1-muted">${rm.length}개</small></h2><ul class="v1-srm">${rm.map(r => `<li>${esc(r.file)}<small>${esc(r.note || '')}</small></li>`).join('')}</ul></section>` : '') +
+      ((e.skipped || []).length ? `<section class="v1-card v1-logd"><h2>비교했지만 반영하지 않은 것</h2><p class="v1-muted v1-lmore">${e.skipped.map(x => '· ' + esc(x)).join('<br>')}</p></section>` : '');
+  }
+  const openLog = id => { view = 'log:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  $('app').addEventListener('click', e => { const t = e.target.closest('[data-log]'); if (t && view === 'admin') openLog(t.dataset.log); });
+  $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-log]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openLog(t.dataset.log); } });
 
   const listItem = s => {
     const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
@@ -564,7 +626,7 @@
       const doc = content.documents[sec.doc] || {};
       return `<section class="v1-inline">` +
         `<h3>${esc(sec.no)} ${esc(sec.title)}${sec.partLabel ? ` <span class="v1-part">· ${esc(sec.partLabel)}</span>` : ''}</h3>${sec.paragraphs.map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}${sec.tables.map(table).join('')}` +
-        `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}</p></section>`;
+        `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}${doc.drive ? ` ${driveLink(doc.drive)}` : ''}</p></section>`;
     };
     const hint = '<span class="v1-toggle"><span class="when-closed">본문 펼치기</span><span class="when-open">본문 접기</span><svg class="v1-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
     const body = keys => `<div class="v1-src-body" role="region">${keys.map(inlineSource).join('')}<div class="v1-src-end"><button type="button" class="v1-tbtn" data-close-src>본문 접기</button></div></div>`;
@@ -651,6 +713,8 @@
     if (fo) fo.onclick = openSheet;
     if (fc) fc.onclick = () => setFilter(null);
     app.querySelectorAll('[data-org-open]').forEach(b => b.onclick = () => openOrgSheet());
+    app.querySelectorAll('[data-page]').forEach(b => b.onclick = () => { const [k, x] = b.dataset.page.split(':'); adminPage[k] = Number(x); render(); b.closest('.v1-card').scrollIntoView({block: 'start', behavior: 'instant'}); });
+    app.querySelectorAll('[data-admin-tab]').forEach(b => b.onclick = () => { adminTab = b.dataset.adminTab; keepFocus = `[data-admin-tab="${adminTab}"]`; render(); });
     app.querySelectorAll('[data-home-tab]').forEach(b => b.onclick = () => { homeTab = b.dataset.homeTab; keepFocus = `[data-home-tab="${homeTab}"]`; render(); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = async () => { try { cloud = await api('GET', null, b.dataset.person); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { toast(e.message); } });
     // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동

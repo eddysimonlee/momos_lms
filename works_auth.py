@@ -648,7 +648,8 @@ def docs_download(token, drive, file_id, limit=50_000_000):
 
 
 def docs_check(user_id):
-    """확인용(admin): 업무문서 폴더를 찾고, 파일 목록과 docx 하나 받기가 되는지 본다. 파일 내용은 돌려주지 않는다."""
+    """확인용(admin): 업무문서 폴더를 찾고, 파일 목록(경로·크기·수정일·fileId)과 docx 하나 받기가 되는지 본다. 파일 내용은 돌려주지 않는다.
+    fileId 는 드라이브 웹 링크의 resourceKey 와 같다 — 반영할 때 source_manifest.json 의 driveKey 로 옮긴다."""
     try:
         token = _token_for(user_id)
     except DirectoryUnavailable as e:
@@ -662,7 +663,7 @@ def docs_check(user_id):
             return out
         step = 'tree'
         tree = docs_tree(token, drive, folder)
-        out.update(files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified']] for x in tree[:400]])
+        out.update(files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:400]])
         sample = next((x for x in tree if x['path'].lower().endswith('.docx')), None)
         if sample:
             step = 'download'
