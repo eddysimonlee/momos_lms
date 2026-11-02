@@ -68,6 +68,11 @@ MOCK = r'''
   const target6 = h => { if (!h) return null; const [y, m, d] = h.split('-').map(Number); const t = m - 1 + 6, Y = y + Math.floor(t / 12), M = t % 12;
     const last = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate(); return `${Y}-${String(M + 1).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`; };
   const dates = id => ({hiredDate: HIRED[id] || null, targetDate: target6(HIRED[id])});
+  // 미리보기용 직급(WORKS levelName 대신). '전체 멘티' = 직급이 정확히 '사원' + 2026-01-01 이후 입사 → 체험 교육생만 해당
+  const LEVEL = {'u-staff': '매니저', 'u-learner': '사원', 'u-newbie': '사원'};
+  const menteeOk = id => (LEVEL[id] || '') === '사원' && !!HIRED[id] && HIRED[id] >= '2026-01-01';
+  const mentorIds = room => { const s = new Set(), take = x => { (x.teacherBy || []).forEach(w => w && s.add(w)); if (x.completedBy) s.add(x.completedBy); };
+    Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return s; };
   const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
   // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
@@ -75,7 +80,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-13';
+  const KEY = 'momos-v1-preview-14';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -116,7 +121,7 @@ MOCK = r'''
     const isStaffId = id => { const a = ACCOUNTS.find(x => x.id === id); return !!(a && isLms(a)); };  // 관리자는 멘티 목록에서 뺀다
     const mentorsOf = id => { const out = new Map(), take = x => { (x.teacherBy || []).forEach((w, k) => { if (w && !out.has(w)) out.set(w, (x.teacherName || [])[k] || nameOf(w)); }); if (x.completedBy && !out.has(x.completedBy)) out.set(x.completedBy, x.completedByName || nameOf(x.completedBy)); };
       const room = state.rooms[id]; if (room) Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return [...out.values()]; };
-    const educationSummary = roster.filter(r => state.learners[r.id] && !isStaffId(r.id)).map(r => { const recs = state.rooms[r.id].records;
+    const educationSummary = roster.filter(r => state.learners[r.id] && !isStaffId(r.id) && (r.id === u.id || !isLms(u) || menteeOk(r.id) || mentorIds(state.rooms[r.id]).has(u.id))).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
       return {...r, ...dates(r.id), states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
     const lms = isLms(u);
@@ -153,6 +158,7 @@ MOCK = r'''
     const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
     const teacher = ['step.mark', 'step.close', 'step.reopen'].includes(v.action);
     if (teacher && !p.trainer) throw {status: 403, error: '배정된 교육자·평가자만 확인합니다. 자기 승인은 허용하지 않습니다.'};
+    if (teacher && !menteeOk(target) && !mentorIds(l).has(u.id)) throw {status: 403, error: '전체 멘티(직급 사원·2026년 이후 입사)에 해당하는 구성원이나 나의 멘티만 체크할 수 있어요.'};
     if (!teacher) throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
     const r = l.records[d.step]; if (!r) throw {status: 400, error: '배정된 교육 단계를 선택하세요.'};
     const t = today();

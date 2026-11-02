@@ -184,6 +184,30 @@ def blank(join):
 
 
 TARGET_MONTHS = 6
+# '전체 멘티' 조건(11/02 모모스 확인): WORKS 직급이 정확히 '사원'(가장 낮은 직급) 이고, (PoC 한정) 2026-01-01 이후 입사.
+# 직급·입사일은 각자 로그인할 때 WORKS 에서 읽어 둔 값이다(매일 밤 다시 판정하는 배치는 나중에 — BACKLOG).
+MENTEE_LEVEL = '사원'
+MENTEE_HIRED_FROM = '2026-01-01'
+# 11/02 '나의 멘티'·'전체 멘티' 초기화: 배포 뒤 처음 한 번 모든 사람의 교육 체크·완료 기록을 비운다(교육 등록·관리자·의견·사진·입사일은 남긴다)
+MENTEE_RESET = 'mentee-reset-2026-11-02'
+
+
+def mentee_ok(profile):
+    """'전체 멘티'에 보일 사람인가: 직급이 정확히 '사원' 이고 입사일이 2026-01-01 이후. 둘 중 하나라도 모르면 아니다."""
+    return bool(profile) and (profile.get('level') or '').strip() == MENTEE_LEVEL and bool(profile.get('hiredDate')) and profile['hiredDate'] >= MENTEE_HIRED_FROM
+
+
+def mentor_ids(learner):
+    """그 멘티의 멘토 id: 교육 내용을 한 번이라도 체크했거나 완료한 사람(체크 해제·완료 취소 이력 포함)."""
+    out = set()
+    def take(x):
+        out.update(w for w in x.get('teacherBy') or [] if w)
+        if x.get('completedBy'): out.add(x['completedBy'])
+    for x in learner['records'].values():
+        take(x)
+        for h in x.get('history') or []:
+            if isinstance(h, dict): take(h)
+    return out
 
 
 def target_date(start):
@@ -201,7 +225,7 @@ class Service:
         root = projects.Rooms.read(db, ROOT)
         if root is None:
             return dict(format=FORMAT,revision=0,learners={},technical=[],content=[],
-                        tickets=[],requests=[],audit=[])
+                        tickets=[],requests=[],audit=[],menteeReset=MENTEE_RESET)
         if root.get('format') != FORMAT:
             raise ValueError('교육 저장 영역의 기존 형식이 다릅니다. 운영자 확인이 필요합니다.')
         return root
@@ -254,7 +278,25 @@ class Service:
         p = self.roles(root,user,target)
         return target==user['id'] or p['trainer'] or p['assessor'] or p['admin']
 
+    def reset_mentees_once(self):
+        """11/02 초기화(한 번만): 모든 교육생의 체크·완료·이력을 비우고 '나의 멘티'를 비운다. 새로 만든 저장소는 처음부터 표시가 있어 건너뛴다."""
+        with self.store.connect() as db:
+            root = projects.Rooms.read(db, ROOT)
+            if root is None or root.get('menteeReset') == MENTEE_RESET: return
+            db.execute('BEGIN IMMEDIATE')
+            root = self.root(db)
+            if root.get('menteeReset') == MENTEE_RESET: return
+            for ident, entry in root['learners'].items():
+                old = projects.Rooms.read(db, entry['key']) or {}
+                start = entry.get('startDate', entry['join'])
+                fresh = blank(entry['join']); fresh['startDate'] = start; fresh['revision'] = int(old.get('revision') or 0) + 1
+                projects.Rooms.write(db, entry['key'], fresh)
+            root['menteeReset'] = MENTEE_RESET; root['revision'] += 1
+            root['audit'].append(dict(at=stamp(), actor=None, action='나의 멘티·전체 멘티 초기화(교육 체크·완료 기록 삭제)', learners=len(root['learners'])))
+            projects.Rooms.write(db, ROOT, root)
+
     def get(self, user, target=None):
+        self.reset_mentees_once()
         with self.store.connect() as db:
             return self.context(db,self.root(db),self.identity(db,user),target or user['id'])
 
@@ -291,6 +333,7 @@ class Service:
         import works_auth
         def dates(uid):  # 시작일 = WORKS 입사일(없으면 None → 화면에 N/A), 목표일 = 6개월 뒤
             h = works_auth.read_hired(db, uid); return dict(hiredDate=h, targetDate=target_date(h))
+        staff_view = self.lms_staff(root,user)
         summaries=[]
         staff_ids=self.staff_ids(db,root)  # 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다 → 멘티 목록에서 뺀다(예전에 생긴 교육 기록은 남아 있어도)
         for r in roster:
@@ -302,8 +345,9 @@ class Service:
             # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
             # '나의 교육생': 내가 한 번이라도 체크하거나 완료한 교육생(완료 취소 이력 포함)
-            touched=lambda x:user['id'] in (x.get('teacherBy') or []) or x.get('completedBy')==user['id']
-            mine=any(touched(x) or any(isinstance(h,dict) and touched(h) for h in x.get('history') or []) for x in records.values())
+            mine=user['id'] in mentor_ids(l)
+            # 관리자 화면의 멘티 목록: '전체 멘티' 조건(사원·2026년 이후 입사)에 맞는 사람 + 이미 내가 멘토인 사람(조건에서 벗어나도 남긴다)
+            if staff_view and r['id']!=user['id'] and not mine and not mentee_ok(works_auth.read_profile(db,r['id'])): continue
             summaries.append(dict(**r,**dates(r['id']),total=len(STEPS),done=done,waiting=waiting,states=states,trainedByMe=mine,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
@@ -452,6 +496,7 @@ class Service:
     def update(self, user, v):
         if not isinstance(v,dict) or len(json.dumps(v).encode()) > 120000:
             raise ValueError('교육 요청 크기를 확인하세요.')
+        self.reset_mentees_once()
         if set(v)-{'action','target','revision','rootRevision','requestId','data'}:
             raise ValueError('허용되지 않은 교육 요청입니다.')
         action = projects.text(v.get('action'),60,True)
@@ -510,6 +555,10 @@ class Service:
                 entry = root['learners'].get(target)
                 if not entry: raise ValueError('관리자가 교육생·입사일·교육자를 먼저 배정해야 합니다.')
                 learner = fit(projects.Rooms.read(db,entry['key']))
+                if action in ('step.mark','step.close','step.reopen') and target!=user['id'] and entry.get('trainer')!=user['id']:
+                    import works_auth  # 11/02: 체크·완료는 '전체 멘티' 조건(사원·2026년 이후 입사)에 맞는 사람이나 이미 내가 멘토인 사람에게만
+                    if user['id'] not in mentor_ids(learner) and not mentee_ok(works_auth.read_profile(db,target)):
+                        raise PermissionError('전체 멘티(직급 사원·2026년 이후 입사)에 해당하는 구성원이나 나의 멘티만 체크할 수 있어요.')
                 if not latest_ok and v['revision']!=learner['revision']:
                     raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
                 self.education(db,root,user,p,learner,action,data)

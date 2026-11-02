@@ -284,7 +284,7 @@
     // 10/30: 관리자는 교육을 듣지 않는다 → '내 교육' 줄 없음(서버도 관리자를 멘티 목록에서 뺀다)
     const others = sums.filter(x => x.id !== me), mineList = others.filter(x => x.trainedByMe), rest = others.filter(x => !x.trainedByMe);
     return `<h3 class="v1-pcat v1-pcat-top">나의 멘티 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 없어요. 전체 멘티에서 멘티를 골라 교육 내용을 체크하거나 완료하면 여기에 모여요.</p>') +
-      `<h3 class="v1-pcat">전체 멘티 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">아직 교육을 시작한 멘티가 없어요.</p>');
+      `<h3 class="v1-pcat">전체 멘티 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">조건(직급 사원 · 2026년 이후 입사)에 맞는 멘티가 아직 없어요. 멘티가 로그인하면 여기에 나타나요.</p>');
   }
 
   function enrolNotice() {

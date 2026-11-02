@@ -32,6 +32,7 @@ class EducationTests(unittest.TestCase):
     def add(self,name,company='momos'):
         u=self.auth.create(dict(name=name,email=uuid.uuid4().hex+'@example.test',password='TestOnlyPassword1!',company=company))
         with self.store.connect() as db:db.execute("UPDATE access_users SET status='active' WHERE id=?",(u['id'],))
+        import works_auth;works_auth.save_hired(self.store,u['id'],'2026-03-02','사원')  # 기본: '전체 멘티' 조건에 맞는 구성원
         return dict(u,status='active')
 
     def erp_snapshot(self):
@@ -361,7 +362,7 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(ob.target_date('2024-08-31'),'2025-02-28')  # 그 달에 없는 날은 말일
         self.assertIsNone(ob.target_date(None))
         self.assertIsNone(works_auth.valid_date('2026-13-01'));self.assertIsNone(works_auth.valid_date(''))
-        works_auth.save_hired(self.store,self.learner['id'],'2026-11-01')
+        works_auth.save_hired(self.store,self.learner['id'],'2026-11-01','사원')
         works_auth.save_hired(self.store,self.other['id'],None)  # WORKS 에 입사일이 비어 있음
         c=self.service.get(self.learner)
         self.assertEqual(c['myDates'],dict(hiredDate='2026-11-01',targetDate='2027-05-01'))
@@ -404,6 +405,36 @@ class EducationTests(unittest.TestCase):
         for i in range(len(ob.STEPS[ident]['checks'])):self.act(self.admin,'step.teacher',dict(step=ident,index=i,on=True),self.learner['id'])
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
+
+    def test_mentee_conditions_mentor_keep_and_one_time_reset(self):
+        # 11/02: '전체 멘티' = 직급이 정확히 '사원' + 2026-01-01 이후 입사. 체크하면 멘토, 조건에서 벗어나도 나의 멘티는 남는다
+        import works_auth
+        adm,men,mentee=self.admin,self.other,self.tech
+        with self.store.connect() as db:db.execute("UPDATE access_users SET company='momos' WHERE id=?",(mentee['id'],))
+        mentee=dict(mentee,company='momos');ident='welcome-prep'
+        ids=lambda u:[x['id'] for x in self.service.get(u)['educationSummary']]
+        with patch.object(ob,'LMS_ADMIN_SEED',[adm['email'].lower()]):
+            self.act(adm,'lms.admin',dict(email=men['email'],level='mentor'))
+            self.act(mentee,'config.selfEnrol',{})
+            for hired,level in (('2026-03-02','대리'),('2025-12-31','사원'),(None,'사원'),('2026-03-02',None),('2026-03-02','사원 ')):
+                works_auth.save_hired(self.store,mentee['id'],hired,level)
+                ok=ob.mentee_ok(dict(hiredDate=hired,level=level));self.assertEqual(mentee['id'] in ids(men),ok,(hired,level))
+                if not ok:
+                    with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])  # 조건에 맞을 때 체크 → 멘토
+            works_auth.save_hired(self.store,mentee['id'],'2026-03-02','대리')  # 이후 조건에서 벗어나도
+            s=next(x for x in self.service.get(men)['educationSummary'] if x['id']==mentee['id']);self.assertTrue(s['trainedByMe'])
+            self.act(men,'step.mark',dict(step=ident,index=1,on=True),mentee['id'])  # 내 멘티는 계속 체크할 수 있다
+            self.assertNotIn(mentee['id'],ids(adm))  # 다른 관리자에게는 '전체 멘티'에서 빠진다
+            # 배포 뒤 처음 한 번: 모든 체크·완료 기록과 멘토 관계 초기화(표시 없는 예전 저장소)
+            with self.store.connect() as db:
+                root=projects.Rooms.read(db,ob.ROOT);root.pop('menteeReset');projects.Rooms.write(db,ob.ROOT,root)
+            rec=self.service.get(mentee)['learner']['records'][ident];self.assertFalse(any(rec['teacher']));self.assertEqual(rec['status'],'ready')
+            self.assertNotIn(mentee['id'],ids(men))  # 나의 멘티도 비었다(지금은 조건에 맞지 않음)
+            self.assertIn(mentee['id'],self.service.get(adm)['configuration']['learners'])  # 교육 등록은 남는다
+            works_auth.save_hired(self.store,mentee['id'],'2026-03-02','사원')
+            self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+            self.assertTrue(self.service.get(mentee)['learner']['records'][ident]['teacher'][0])  # 한 번만 비운다
 
     def test_mentor_marking_scenarios(self):
         # LMS 의 핵심: 멘토가 멘티의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다

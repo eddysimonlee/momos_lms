@@ -176,8 +176,8 @@ def callback(handler, query):
         save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('photo', e)
-    try:  # 입사일(WORKS 구성원 정보 hiredDate): LMS 시작일·목표일 표시용. 읽지 못하면 저장해 둔 값을 그대로 둔다
-        save_hired(handler.server.store, user['id'], fetch_hired(token['access_token'], info['sub']))
+    try:  # 입사일·직급(WORKS 구성원 정보): 시작일·목표일 표시와 '전체 멘티' 조건 판정용. 읽지 못하면 저장해 둔 값을 그대로 둔다
+        save_hired(handler.server.store, user['id'], **fetch_profile(token['access_token'], info['sub']))
     except Exception as e:
         _log_failure('hired', e)
     remember_token(user['id'], token)  # LMS관리자 화면의 구성원 검색(주소록)에 쓴다. 서버 메모리에만, 화면·DB·로그로는 보내지 않는다
@@ -366,22 +366,42 @@ def valid_date(v):
         return None
 
 
-def fetch_hired(access_token, member_id):
-    """WORKS 구성원 입사일(GET /users/{userId} 의 hiredDate, 'YYYY-MM-DD'). 입력돼 있지 않으면 None."""
+def level_of(u):
+    """WORKS 구성원의 직급 이름(주 소속 organizations[].levelName). 없으면 None."""
+    orgs = u.get('organizations') or []
+    org = next((o for o in orgs if o.get('primary')), orgs[0] if orgs else {})
+    name = str(org.get('levelName') or '').strip()
+    return name[:100] or None
+
+
+def fetch_profile(access_token, member_id):
+    """WORKS 구성원 입사일(hiredDate, 'YYYY-MM-DD')과 직급(levelName). GET /users/{userId}. 입력돼 있지 않으면 None."""
     from urllib.parse import quote
-    return valid_date(_get_json(f'{API_BASE}/users/{quote(member_id, safe="")}', access_token).get('hiredDate'))
+    u = _get_json(f'{API_BASE}/users/{quote(member_id, safe="")}', access_token)
+    return dict(hired=valid_date(u.get('hiredDate')), level=level_of(u))
 
 
-def save_hired(store, user_id, hired):
+def fetch_hired(access_token, member_id):
+    return fetch_profile(access_token, member_id)['hired']
+
+
+def save_hired(store, user_id, hired, level=None):
     import lms_store as projects
     with store.connect() as db:
-        projects.Rooms.write(db, hired_key(user_id), dict(kind='hired', user=user_id, hiredDate=valid_date(hired), at=time.time()))
+        projects.Rooms.write(db, hired_key(user_id), dict(kind='hired', user=user_id, hiredDate=valid_date(hired),
+                                                          level=(str(level).strip()[:100] or None) if level else None, at=time.time()))
+
+
+def read_profile(db, user_id):
+    """로그인 때 저장해 둔 입사일·직급. 없으면 둘 다 None."""
+    import lms_store as projects
+    row = projects.Rooms.read(db, hired_key(user_id))
+    ok = row and row.get('kind') == 'hired' and row.get('user') == user_id
+    return dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, level=(row.get('level') or None) if ok else None)
 
 
 def read_hired(db, user_id):
-    import lms_store as projects
-    row = projects.Rooms.read(db, hired_key(user_id))
-    return valid_date(row.get('hiredDate')) if row and row.get('kind') == 'hired' and row.get('user') == user_id else None
+    return read_profile(db, user_id)['hiredDate']
 
 
 # --- 주소록(구성원 목록): LMS관리자 화면에서 관리자로 추가할 구성원을 검색할 때 쓴다 ---
