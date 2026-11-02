@@ -470,7 +470,24 @@
   // 11/03 반영 기록: 받은 폴더·파일 1건 = 행 1개(최근 순). 행을 누르면 상세(log:<id>) — 받은 것·결과·바뀐 교육(AS-IS/TO-BE)·문서별 상태
   // 11/03 드라이브 폴더 열기: 문서가 있는 폴더의 resourceKey(드라이브 fileId)로 폴더를 연다(파일을 바로 여는 주소는 없음). 권한은 드라이브 권한 그대로
   // 원본 파일 이름 자체가 링크(별도 버튼 없음). 키가 없으면 그냥 글자
-  const driveText = (key, text, file) => key ? `<a class="v1-drive" href="https://drive.worksmobile.com/drive/web/share/folder?resourceKey=${encodeURIComponent(key)}&amp;resourceLocation=24101" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="드라이브에서 폴더 열기 — ${esc(file || '')} 파일을 누르세요">${text}</a>` : text;
+  const DRIVE_LOC = '24101';  // 드라이브 instanceCode(웹 주소의 resourceLocation)
+  const driveWeb = key => `https://drive.worksmobile.com/drive/web/share/folder?resourceKey=${encodeURIComponent(key)}&resourceLocation=${DRIVE_LOC}`;
+  // 11/03 모바일: 드라이브 앱 스킴(공유 드라이브 폴더). 철자는 resourceLocation(위키 일부의 resouceLocation 은 앱이 못 읽음)
+  const driveApp = key => `worksdrive://folder?version=1&resourceLocation=${DRIVE_LOC}&driveType=SHARE_DRIVE&fileId=${encodeURIComponent(key)}`;
+  const isMobile = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const driveText = (key, text, file) => key ? `<a class="v1-drive" href="${esc(driveWeb(key))}" data-drive-key="${esc(key)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="드라이브에서 폴더 열기 — ${esc(file || '')} 파일을 누르세요">${text}</a>` : text;
+  // 모바일에서 누르면 드라이브 앱을 먼저 연다. 1.5초 안에 앱으로 넘어가지 않으면(앱 없음·막힘) 웹 드라이브를 연다
+  document.addEventListener('click', e => {
+    const a = e.target.closest('a[data-drive-key]'); if (!a || !isMobile()) return;
+    e.preventDefault(); e.stopPropagation();
+    const key = a.dataset.driveKey; let left = false;
+    const onHide = () => { if (document.hidden) left = true; };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onHide);
+    window.location.href = driveApp(key);
+    setTimeout(() => { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', onHide);
+      if (!left && !document.hidden) window.open(driveWeb(key), '_blank', 'noopener'); }, 1500);
+  }, true);
   const driveOf = file => { const d = Object.values(content.documents || {}).find(x => x.file === file); return d && d.drive; };
   const LOG_ST = {'바뀌어 교육 반영': 'b', '새 문서로 교육 반영': 'g', '바뀌었지만 교육 영향 없음': 'n', '바뀐 것 없음': 'n', '근거에서 뺌': 'r'};
   const logCount = e => { const ds = e.docs || [], n = k => ds.filter(d => d.status === k).length;
