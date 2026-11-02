@@ -164,6 +164,22 @@ img{max-width:100%}
 .v1-ptip{margin-top:var(--spacing-4)}
 /* 관리자 홈: 교육생 한 줄씩 */
 .v1-plist{list-style:none;margin:0;padding:0}
+.v1-search{position:fixed;inset:0;z-index:calc(var(--component-layout-z-index-gnb) + 2);display:flex;flex-direction:column;background:var(--surface-default)}
+.v1-search[hidden]{display:none}
+.v1-search-top{flex:none;display:flex;align-items:center;gap:var(--spacing-8);height:var(--component-gnb-height);padding:0 var(--spacing-8) 0 var(--spacing-16);box-shadow:var(--shadow-sm)}
+.v1-search-top>svg{flex:none;width:var(--spacing-20);height:var(--spacing-20);color:var(--icon-subtle)}
+.v1-search-top input{flex:1;min-width:0;height:var(--spacing-40);border:0;outline:none;background:transparent;color:var(--text-default);font:var(--body-lg)}
+.v1-search-top input::-webkit-search-cancel-button{display:none}
+.v1-search-list{flex:1;overflow-y:auto;width:100%;max-width:600px; /* wds-allow: 읽기 폭 상한과 같게 */margin:0 auto;padding:var(--spacing-8) var(--spacing-16) var(--spacing-32);box-sizing:border-box}
+.v1-search-list .v1-muted{margin:var(--spacing-24) 0;text-align:center}
+.v1-sres{appearance:none;display:block;width:100%;padding:var(--spacing-12) 0;border:0;border-bottom:var(--v1-hairline) solid var(--border-subtle);background:transparent;color:inherit;text-align:left;font:inherit;cursor:pointer}
+.v1-sres:hover,.v1-sres:focus-visible{background:var(--action-hover)}
+.v1-sres small{display:block;color:var(--text-muted);font:var(--label-sm)}
+.v1-sres strong{display:block;margin:var(--spacing-2) 0;font:var(--body-md-bold);color:var(--text-default)}
+.v1-sres span{display:block;color:var(--text-muted);font:var(--body-sm);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.v1-sres em{font-style:normal;font-weight:700;color:var(--text-primary);background:var(--surface-info-subtle);border-radius:var(--radius-sm)}
+.v1-sres .v1-sfield{display:inline;margin-right:var(--spacing-4);color:var(--text-primary);font:var(--label-xs-bold)}
+.v1-kc.v1-hit .v1-kcard{box-shadow:0 0 0 2px var(--surface-info)}
 .v1-org-btn{appearance:none;flex:none;display:inline-flex;align-items:center;gap:var(--spacing-4);height:var(--spacing-32);padding:0 var(--spacing-12);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-full);background:var(--surface-default);color:var(--text-default);font:var(--label-sm-bold);cursor:pointer}
 .v1-org-btn:hover{background:var(--action-hover)}
 .v1-org-btn[hidden]{display:none}
@@ -426,6 +442,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Ham" class="v1-icon-btn v1-ham" hidden aria-label="메뉴 열기" aria-controls="v1Nav"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 5.5h13M3.5 10h13M3.5 14.5h13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button><!-- wds-allow: mono/20/menu.svg 반입 전 임시 인라인 -->
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
+    <button id="v1Find" class="v1-icon-btn" type="button" hidden aria-label="교육 검색" aria-haspopup="dialog" aria-controls="v1Search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.6 12.6l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><!-- wds-allow: 돋보기 아이콘 자산 반입 전 임시 인라인 -->
     <span id="v1Who" class="v1-avatar v1-avatar-top" role="img"></span>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
@@ -436,6 +453,10 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
   <div id="v1Toast" class="v1-toast" role="status"></div>
   <div id="v1Nav" class="v1-nav" hidden><div class="v1-scrim" data-nav-close></div><nav class="v1-nav-panel" aria-label="메뉴"></nav></div>
   <div id="v1Pop" class="v1-pop" hidden><div class="v1-scrim" data-pop-close></div><div class="v1-pop-panel" role="dialog" aria-modal="true" aria-labelledby="v1PopTitle"></div></div>
+  <div id="v1Search" class="v1-search" hidden role="dialog" aria-modal="true" aria-label="교육 검색">
+    <div class="v1-search-top"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.6 12.6l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><input id="v1SearchInput" type="search" autocomplete="off" placeholder="교육 제목·목적·내용 검색" aria-label="검색어" aria-controls="v1SearchList"><button type="button" class="v1-icon-btn" data-search-close aria-label="검색 닫기"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
+    <div id="v1SearchList" class="v1-search-list" aria-live="polite"></div>
+  </div>
   <div id="v1Sheet" class="v1-sheet" hidden><div class="v1-scrim" data-sheet-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1SheetTitle"></div></div>
 </div>
 <div id="v1Print" class="v1-print" aria-hidden="true"></div>

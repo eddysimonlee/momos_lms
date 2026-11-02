@@ -196,6 +196,56 @@
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Sheet').hidden) closeSheet(); });
 
+  // --- 11/02 교육 검색(위쪽 바 돋보기): 교육 제목·교육 목적·교육 내용(체크 목록 포함)에서 찾는다. 근거 본문은 찾지 않는다.
+  // 띄어쓰기·대소문자 무시, 여러 단어는 모두 들어간 교육만. 순서: 제목에서 찾음 → 목적 → 내용. 근무조·포지션 필터는 적용하지 않는다(86개 전체).
+  // 결과를 누르면: 다른 사람의 교육을 보던 중이면 그 사람의 교육, 그 밖(교육 현황·LMS관리자 등)에서는 내 교육. 내용에서 찾았으면 그 항목까지 내려가 잠깐 강조
+  const norm = t => String(t || '').toLowerCase().replace(/\s+/g, '');
+  const reEsc = t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  function findSteps(q) {
+    const words = String(q || '').trim().split(/\s+/).filter(Boolean), ws = words.map(norm);
+    if (!ws.length) return {words, list: []};
+    const list = [];
+    liveSteps().forEach(s => {
+      const purpose = s.purpose || (s.copy || []).join(' '), items = checkItems(s).map(k => k.text);
+      const fields = [['title', s.title], ['purpose', purpose], ...items.map((t, i) => ['item', t, i])];
+      if (!ws.every(w => norm(fields.map(f => f[1]).join(' ')).includes(w))) return;
+      // 보여 줄 줄: 검색어가 가장 많이 들어간 칸(같으면 제목 → 목적 → 내용 순)
+      const score = f => ws.filter(w => norm(f[1]).includes(w)).length, best = Math.max(...fields.map(score)), hit = fields.find(f => score(f) === best);
+      list.push({s, rank: {title: 0, purpose: 1, item: 2}[hit[0]], field: hit[0], text: hit[1], kp: hit[0] === 'item' ? hit[2] : null});
+    });
+    list.sort((a, b) => a.rank - b.rank || stepIndex(a.s.id) - stepIndex(b.s.id));
+    return {words, list};
+  }
+  const mark = (text, words) => { let out = esc(text).replace(/\n/g, ' ');
+    const ok = words.filter(w => w.length).map(w => reEsc(esc(w))); return ok.length ? out.replace(new RegExp(`(${ok.join('|')})`, 'gi'), '<em>$1</em>') : out; };
+  function drawSearch() {
+    const {words, list} = findSteps($('v1SearchInput').value), box = $('v1SearchList');
+    if (!words.length) { box.innerHTML = '<p class="v1-muted">교육 제목·교육 목적·교육 내용에서 찾아요.</p>'; return; }
+    if (!list.length) { box.innerHTML = '<p class="v1-muted">찾는 교육이 없어요. 다른 낱말로 찾아보세요.</p>'; return; }
+    const LBL = {purpose: '교육 목적', item: '교육 내용'};
+    box.innerHTML = `<p class="v1-muted" style="margin:var(--spacing-8) 0;text-align:left">${list.length}개 교육</p>` + list.map(x => { const st = unitOf(x.s.id).stage;
+      return `<button type="button" class="v1-sres" data-sres="${esc(x.s.id)}"${x.kp !== null ? ` data-skp="${x.kp}"` : ''}><small>${stepIndex(x.s.id) + 1}번 · ${st.order}. ${esc(st.title)}</small>` +
+        `<strong>${mark(x.s.title, words)}</strong>${x.field === 'title' ? '' : `<span><b class="v1-sfield">${LBL[x.field]}</b>${mark(x.text, words)}</span>`}</button>`; }).join('');
+  }
+  function openSearch() { $('v1Search').hidden = false; document.body.style.overflow = 'hidden'; drawSearch(); $('v1SearchInput').focus(); $('v1SearchInput').select(); }
+  function closeSearch(focus = true) { $('v1Search').hidden = true; document.body.style.overflow = ''; if (focus) $('v1Find').focus({preventScroll: true}); }
+  $('v1Find').onclick = () => openSearch();
+  $('v1SearchInput').addEventListener('input', () => drawSearch());
+  $('v1SearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') { const b = $('v1SearchList').querySelector('[data-sres]'); if (b) { e.preventDefault(); b.click(); } } });
+  $('v1Search').addEventListener('click', async e => {
+    if (e.target.closest('[data-search-close]')) return closeSearch();
+    const b = e.target.closest('[data-sres]'); if (!b) return;
+    const id = b.dataset.sres, kp = b.dataset.skp;
+    const other = cloud.target !== cloud.user.id && (view === 'person' || view === 'all' || view.startsWith('step:'));
+    closeSearch(false);
+    if (!other && cloud.target !== cloud.user.id) { try { cloud = await api('GET'); } catch (err) { return toast(err.message); } }
+    if (!view.startsWith('step:')) returnView = other ? view : (cloud.target === cloud.user.id && (view === 'person' || view === 'all') ? view : view === 'home' || view === 'admin' ? view : 'home');
+    view = 'step:' + id; stageSel = unitOf(id).stage.order; render(); window.scrollTo({top: 0, behavior: 'instant'});
+    if (kp !== undefined) setTimeout(() => { const li = $('app').querySelector(`[data-kp="${kp}"]`); if (!li) return;
+      li.scrollIntoView({block: 'center', behavior: 'smooth'}); li.classList.add('v1-hit'); setTimeout(() => li.classList.remove('v1-hit'), 2400); }, 60);
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Search').hidden) closeSearch(); });
+
   // --- rendering
   function render() {
     if (!cloud || !content) return;
@@ -220,6 +270,7 @@
       $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
     }
     $('v1Who').hidden = branch && !profile();
+    $('v1Find').hidden = branch || !profile();
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
@@ -514,7 +565,7 @@
     };
     const keyPoints = items.length ? `<ol class="v1-kp">${items.map((k, n) => {
       const keys = [...new Set(k.cites || [])];
-      return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}"><div class="v1-kcard">${head(n)}${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
+      return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}" data-kp="${n}"><div class="v1-kcard">${head(n)}${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
         : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span></div>`}</div></li>`;
     }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const refDocs = (s.refDocs || []).map(d => `<p class="v1-inline-file">원고 문서: ${esc(d.title)} (${esc(d.ref)}) · ${esc(d.file)}</p>`).join('');
