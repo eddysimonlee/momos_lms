@@ -468,21 +468,9 @@
     return {items, nav: `<nav class="v1-pager" aria-label="페이지"><small class="v1-muted">${(cur - 1) * PAGE + 1}–${(cur - 1) * PAGE + items.length} / ${all.length}개</small><span>${btn(cur - 1, '이전 페이지', cur === 1)}${parts.join('')}${btn(cur + 1, '다음 페이지', cur === pages)}</span></nav>`};
   }
   // 11/03 반영 기록: 받은 폴더·파일 1건 = 행 1개(최근 순). 행을 누르면 상세(log:<id>) — 받은 것·결과·바뀐 교육(AS-IS/TO-BE)·문서별 상태
-  // 11/03 드라이브 주소 복사: 폴더 뷰어 주소에 파일의 resourceKey(드라이브 fileId)를 넣으면 그 파일이 열린다.
-  // 링크로 열면(다른 페이지에서 들어가면) 드라이브가 권한 오류를 내서, 주소를 복사해 주소창에 붙여 넣게 한다. 권한은 드라이브 권한 그대로
-  const driveUrl = key => `https://drive.worksmobile.com/drive/web/share/folder/viewer?resourceKey=${encodeURIComponent(key)}&resourceLocation=24101`;
-  const driveLink = key => `<button type="button" class="v1-tbtn v1-drive" data-drive-copy="${esc(driveUrl(key))}" aria-label="드라이브 원본 주소 복사">드라이브 주소 복사</button>`;
-  document.addEventListener('click', async e => {
-    const b = e.target.closest('[data-drive-copy]'); if (!b) return;
-    e.preventDefault(); e.stopPropagation();
-    const url = b.dataset.driveCopy;
-    let ok = false;
-    try { await navigator.clipboard.writeText(url); ok = true; } catch {
-      const t = document.createElement('textarea'); t.value = url; t.setAttribute('readonly', ''); t.style.position = 'fixed'; t.style.opacity = '0';
-      document.body.appendChild(t); t.select(); try { ok = document.execCommand('copy'); } catch {} t.remove();
-    }
-    toast(ok ? '드라이브 주소를 복사했어요. 새 탭 주소창에 붙여 넣으세요.' : '복사하지 못했어요. 다시 눌러 주세요.');
-  }, true);
+  // 11/03 드라이브 폴더 열기: 문서가 있는 폴더의 resourceKey(드라이브 fileId)로 폴더를 연다(파일을 바로 여는 주소는 없음). 권한은 드라이브 권한 그대로
+  // 원본 파일 이름 자체가 링크(별도 버튼 없음). 키가 없으면 그냥 글자
+  const driveText = (key, text, file) => key ? `<a class="v1-drive" href="https://drive.worksmobile.com/drive/web/share/folder?resourceKey=${encodeURIComponent(key)}&amp;resourceLocation=24101" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" title="드라이브에서 폴더 열기 — ${esc(file || '')} 파일을 누르세요">${text}</a>` : text;
   const driveOf = file => { const d = Object.values(content.documents || {}).find(x => x.file === file); return d && d.drive; };
   const LOG_ST = {'바뀌어 교육 반영': 'b', '새 문서로 교육 반영': 'g', '바뀌었지만 교육 영향 없음': 'n', '바뀐 것 없음': 'n', '근거에서 뺌': 'r'};
   const logCount = e => { const ds = e.docs || [], n = k => ds.filter(d => d.status === k).length;
@@ -519,7 +507,7 @@
       `<div class="v1-lchg"><small>${esc(x.item)}${x.cite ? ' · 근거: ' + esc(x.cite) : ''}</small><div class="v1-lab"><div><i>AS-IS</i>${esc(x.asis)}</div><div><i>TO-BE</i>${esc(x.tobe)}</div></div>${x.note ? `<small class="v1-muted">${esc(x.note)}</small>` : ''}</div>`).join('') + '</div>').join('');
     const folders = [...new Set(ds.map(d => d.folder))];
     const docRows = folders.map(f => (folders.length > 1 ? `<tr class="v1-sfold"><td colspan="3">${esc(f)} <small>${ds.filter(d => d.folder === f).length}개</small></td></tr>` : '') + ds.filter(d => d.folder === f).map(d =>
-      `<tr><td><span class="v1-lst ${LOG_ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${esc(d.file)}${driveOf(d.file) ? ' ' + driveLink(driveOf(d.file)) : ''}${d.prev || d.note ? `<small>${d.prev ? '이전: ' + esc(d.prev) : ''}${d.prev && d.note ? ' · ' : ''}${esc(d.note || '')}</small>` : ''}</td><td class="v1-nowrap">${(d.lessons || []).length ? d.lessons.join('·') + '번' : '—'}</td></tr>`).join('')).join('');
+      `<tr><td><span class="v1-lst ${LOG_ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${driveText(driveOf(d.file), esc(d.file), d.file)}${d.prev || d.note ? `<small>${d.prev ? '이전: ' + esc(d.prev) : ''}${d.prev && d.note ? ' · ' : ''}${esc(d.note || '')}</small>` : ''}</td><td class="v1-nowrap">${(d.lessons || []).length ? d.lessons.join('·') + '번' : '—'}</td></tr>`).join('')).join('');
     return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(b.kind || '')}</span><h2>${esc(e.title)}</h2><p class="v1-muted">반영 ${esc(e.at)}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</p>` +
       `<p class="v1-snap-result">${esc(result)}</p>${logSummary(c)}` +
       `<dl class="v1-snap-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>` +
@@ -626,7 +614,7 @@
       const doc = content.documents[sec.doc] || {};
       return `<section class="v1-inline">` +
         `<h3>${esc(sec.no)} ${esc(sec.title)}${sec.partLabel ? ` <span class="v1-part">· ${esc(sec.partLabel)}</span>` : ''}</h3>${sec.paragraphs.map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')}${sec.tables.map(table).join('')}` +
-        `<p class="v1-inline-file">원본 파일: ${esc(doc.folder ? doc.folder + ' / ' : '')}${esc(doc.file || '')}${doc.drive ? ` ${driveLink(doc.drive)}` : ''}</p></section>`;
+        `<p class="v1-inline-file">원본 파일: ${driveText(doc.drive, esc(doc.folder ? doc.folder + ' / ' : '') + esc(doc.file || ''), doc.file)}</p></section>`;
     };
     const hint = '<span class="v1-toggle"><span class="when-closed">본문 펼치기</span><span class="when-open">본문 접기</span><svg class="v1-chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
     const body = keys => `<div class="v1-src-body" role="region">${keys.map(inlineSource).join('')}<div class="v1-src-end"><button type="button" class="v1-tbtn" data-close-src>본문 접기</button></div></div>`;

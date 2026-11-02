@@ -622,13 +622,14 @@ def docs_folder(token, path=None):
     return None, None, drives
 
 
-def docs_tree(token, drive, folder, depth=8, cap=3000):
-    """폴더 아래 모든 파일(하위 폴더 포함): [{path, fileId, size, modified, type}]."""
+def docs_tree(token, drive, folder, depth=8, cap=3000, folders=None):
+    """폴더 아래 모든 파일(하위 폴더 포함): [{path, fileId, size, modified, type}]. folders 를 주면 하위 폴더 [path, fileId] 도 담는다."""
     out = []
     def walk(fid, prefix, level):
         for f in _children(token, drive, fid):
             name = _nfc(f.get('fileName'))
             if f.get('fileType') == 'FOLDER':
+                if folders is not None: folders.append([prefix + name, f['fileId']])
                 if level < depth: walk(f['fileId'], prefix + name + '/', level + 1)
             elif len(out) < cap:
                 out.append(dict(path=prefix + name, fileId=f['fileId'], size=f.get('fileSize'), modified=f.get('modifiedTime'), type=f.get('fileType')))
@@ -649,7 +650,8 @@ def docs_download(token, drive, file_id, limit=50_000_000):
 
 def docs_check(user_id):
     """확인용(admin): 업무문서 폴더를 찾고, 파일 목록(경로·크기·수정일·fileId)과 docx 하나 받기가 되는지 본다. 파일 내용은 돌려주지 않는다.
-    fileId 는 드라이브 웹 링크의 resourceKey 와 같다 — 반영할 때 source_manifest.json 의 driveKey 로 옮긴다."""
+    폴더 fileId 는 드라이브 웹 폴더 주소(/drive/web/share/folder?resourceKey=)의 resourceKey 와 같다 — 반영할 때 source_manifest.json 의 folderKey 로 옮긴다.
+    (파일 fileId 로 파일을 바로 여는 주소는 없다: 11/03 확인)"""
     try:
         token = _token_for(user_id)
     except DirectoryUnavailable as e:
@@ -662,8 +664,9 @@ def docs_check(user_id):
             print(f'works docs check: folder not found drives={len(drives)}', flush=True)
             return out
         step = 'tree'
-        tree = docs_tree(token, drive, folder)
-        out.update(files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:400]])
+        subs = []
+        tree = docs_tree(token, drive, folder, folders=subs)
+        out.update(folders=sorted(subs), files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:400]])
         sample = next((x for x in tree if x['path'].lower().endswith('.docx')), None)
         if sample:
             step = 'download'

@@ -208,9 +208,9 @@ def main():
             units.append(dict(id=unit['id'], title=unit['title'], summary=unit['summary'], plan=unit['plan'], stage=stage_of[unit['id']],
                               steps=[lesson_step(s) for s in unit['steps']]))
         extra, curriculum = [], None
-    # 11/03 드라이브 링크: source_manifest.json 의 driveKey(= 드라이브 API fileId = resourceKey). 그 판의 파일을 드라이브에서 바로 연다
+    # 11/03 드라이브 링크: source_manifest.json 의 folderKey(= 문서가 있는 폴더의 드라이브 fileId = 웹 주소 resourceKey). 그 폴더를 드라이브에서 연다
     try:
-        drive_keys = {x['id']: x['driveKey'] for x in json.loads((APP / 'source_manifest.json').read_text(encoding='utf-8'))['documents'] if x.get('driveKey')}
+        drive_keys = {x['id']: x['folderKey'] for x in json.loads((APP / 'source_manifest.json').read_text(encoding='utf-8'))['documents'] if x.get('folderKey')}
     except (OSError, ValueError, KeyError):
         drive_keys = {}
     out = dict(
