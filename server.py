@@ -454,6 +454,15 @@ class Handler(BaseHTTPRequestHandler):
                     source,name,preview=education.get_asset(user,ident)
                     return self.file(source,name,preview=preview)
                 raise FileNotFoundError()
+            if path == '/api/works/orgunits-check' and method == 'GET':
+                # 11/02 확인용(admin 만): WORKS 조직 목록 API 를 읽을 수 있는지. 브라우저 주소창에서 열어 본다
+                import onboarding, works_auth
+                education = onboarding.Service(store)
+                with store.connect() as db:
+                    me = education.identity(db, user); level = education.lms_level(education.root(db), me)
+                if level != 'admin':
+                    raise PermissionError('조직 목록 확인은 LMS관리자 admin 만 할 수 있습니다.')
+                return self.send(200, works_auth.orgunits_check(user['id']))
             if path == '/api/works/members' and method == 'GET':
                 # LMS관리자 화면: 관리자로 추가할 구성원 검색(WORKS 주소록). admin 만, 20명까지
                 import onboarding
