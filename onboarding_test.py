@@ -32,7 +32,7 @@ class EducationTests(unittest.TestCase):
     def add(self,name,company='momos'):
         u=self.auth.create(dict(name=name,email=uuid.uuid4().hex+'@example.test',password='TestOnlyPassword1!',company=company))
         with self.store.connect() as db:db.execute("UPDATE access_users SET status='active' WHERE id=?",(u['id'],))
-        import works_auth;works_auth.save_hired(self.store,u['id'],'2026-03-02','사원')  # 기본: '전체 멘티' 조건에 맞는 구성원
+        import works_auth;works_auth.save_hired(self.store,u['id'],'2026-03-02','사원','온천 본점')
         return dict(u,status='active')
 
     def erp_snapshot(self):
@@ -117,7 +117,8 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(self.erp_snapshot(),self.erp_before)
 
     def test_cross_employee_admin_self_and_revoked_educator_are_blocked(self):
-        with self.assertRaises(PermissionError):self.service.get(self.other,self.learner['id'])
+        self.service.get(self.other,self.learner['id'])  # 11/02: 모모스 직원은 다른 사람의 교육을 본다
+        with self.assertRaises(PermissionError):self.service.get(self.tech,self.learner['id'])  # 모모스 계정이 아니면 못 본다
         # 1차: 관리자는 배정 없이도 확인 담당이다. 권한은 통과하고 단계 상태 검사(ValueError)만 남는다. 자기 기록은 확인 못 한다.
         with self.assertRaises(ValueError):self.act(self.admin,'step.teacher',dict(step=next(iter(ob.STEPS)),index=0,on=True),self.learner['id'])
         self.act(self.admin,'config.selfEnrol',{})
@@ -254,9 +255,9 @@ class EducationTests(unittest.TestCase):
                 self.assertEqual(mreq(mark(3),ms['csrfToken'],{'Origin':None,'Referer':f'http://127.0.0.1:{httpd.server_port}/v1'})[0],200)
                 code,body=mreq(mark(4),ms['csrfToken'],{'Origin':None});self.assertEqual((code,body.get('code')),(403,'origin'))
                 code,body=mreq(mark(4),ms['csrfToken'],{'Origin':'https://evil.example','Sec-Fetch-Site':'cross-site'});self.assertEqual(code,403)
-                cs,ct=self.auth.new_session(self.content)  # 멘토가 아닌 구성원
+                cs,ct=self.auth.new_session(self.tech)  # 모모스 계정이 아닌 구성원
                 code,body=mreq(mark(4),cs['csrfToken'],{'Cookie':'erp_session='+ct})
-                self.assertEqual((code,body.get('code')),(403,'permission'));self.assertIn('멘티',body.get('error'))  # 권한 문제는 원인 문구로
+                self.assertEqual((code,body.get('code')),(403,'permission'));self.assertIn('모모스 구성원',body.get('error'))  # 권한 문제는 원인 문구로
                 t=self.service.get(self.learner)['learner']['records']['welcome-prep']['teacher'];self.assertEqual(t[:5],[True,True,True,True,False])
             self.assertEqual(req('GET','/api/works/members?q=x')[0],403)  # 구성원 검색은 LMS관리자 admin 만
             with patch.object(ob,'LMS_ADMIN_SEED',[self.learner['email'].lower()]):
@@ -316,7 +317,7 @@ class EducationTests(unittest.TestCase):
 
     def test_profile_branch_role_saved_and_staff_can_confirm_but_not_configure(self):
         c=self.service.get(self.other);self.assertIsNone(c['profile'])
-        with self.assertRaises(PermissionError): self.service.get(self.other,self.learner['id'])  # 고르기 전: 다른 교육생 기록 못 봄
+        self.assertTrue(self.service.get(self.other,self.learner['id'])['permissions']['trainer'])  # 11/02: 고르기 전에도 모모스 직원은 보고 체크한다
         for bad in (dict(branch='yeongdo',role='staff'),dict(branch='oncheon',role='admin'),dict(branch='oncheon')):
             with self.assertRaises(ValueError): self.act(self.other,'profile.set',bad)
         with self.assertRaises(PermissionError): self.act(self.other,'profile.set',dict(branch='oncheon',role='staff'))  # 지정되지 않으면 관리자 불가
@@ -406,140 +407,127 @@ class EducationTests(unittest.TestCase):
         c=self.act(self.admin,'step.complete',dict(step=ident),self.learner['id']);self.assertEqual(c['learner']['records'][ident]['status'],'done')
         old=dict(records={},planDates={},join=ob.today());ob.fit(old);self.assertEqual(set(old['records']),set(ob.STEPS))  # 예전 기록에 새 세션 칸을 더한다
 
-    def test_works_position_from_primary_org_unit(self):
-        # 11/02: '전체 멘티' 조건은 직급(levelName)이 아니라 직책(positionName) — 주 소속 조직의 주 부서 기준
+    def test_works_position_and_org_from_primary_org_unit(self):
+        # 11/02: 직책(positionName)·부서(orgUnitName)는 주 소속 조직의 주 부서 기준
         import works_auth
-        u=dict(organizations=[dict(primary=False,levelName='사원',orgUnits=[dict(primary=True,positionName='매니저')]),
-                              dict(primary=True,levelName='대리',orgUnits=[dict(primary=False,positionName='팀장'),dict(primary=True,positionName=' 사원 ')])])
-        self.assertEqual(works_auth.position_of(u),'사원')
+        u=dict(organizations=[dict(primary=False,levelName='사원',orgUnits=[dict(primary=True,positionName='매니저',orgUnitName='영도점')]),
+                              dict(primary=True,levelName='대리',orgUnits=[dict(primary=False,positionName='팀장',orgUnitName='본사'),dict(primary=True,positionName=' 사원 ',orgUnitName=' 온천 본점 ')])])
+        self.assertEqual((works_auth.position_of(u),works_auth.org_of(u)),('사원','온천 본점'))
         u['organizations'][1]['orgUnits'][1].pop('positionName');self.assertEqual(works_auth.position_of(u),'팀장')  # 주 부서에 직책이 없으면 다른 부서
+        u['organizations'][1]['orgUnits'][1]['primary']=False;self.assertEqual(works_auth.org_of(u),'본사')  # 주 부서 표시가 없으면 첫 부서
         self.assertIsNone(works_auth.position_of(dict(organizations=[dict(primary=True,levelName='사원',orgUnits=[])])))  # 직급만 있으면 없음
-        self.assertIsNone(works_auth.position_of({}))
-        works_auth.save_hired(self.store,self.learner['id'],'2026-03-02','사원')
-        with self.store.connect() as db:self.assertEqual(works_auth.read_profile(db,self.learner['id']),dict(hiredDate='2026-03-02',position='사원'))
-        self.assertTrue(ob.mentee_ok(dict(hiredDate='2026-03-02',position='사원')));self.assertFalse(ob.mentee_ok(dict(hiredDate='2026-03-02',level='사원')))
+        self.assertIsNone(works_auth.position_of({}));self.assertIsNone(works_auth.org_of({}))
+        works_auth.save_hired(self.store,self.learner['id'],'2026-03-02','사원','온천 본점')
+        with self.store.connect() as db:
+            self.assertEqual(works_auth.read_profile(db,self.learner['id']),dict(hiredDate='2026-03-02',position='사원',org='온천 본점'))
+            self.assertTrue(works_auth.profile_saved(db,self.learner['id']))
+            projects.Rooms.write(db,works_auth.hired_key(self.learner['id']),dict(kind='hired',user=self.learner['id'],hiredDate='2026-03-02',position='사원'))
+            self.assertFalse(works_auth.profile_saved(db,self.learner['id']))  # 부서를 읽기 전 저장값 → 다시 로그인해서 채운다
+            self.assertIsNone(works_auth.read_profile(db,self.learner['id'])['org'])
 
-    def test_mentee_conditions_mentor_keep_and_one_time_reset(self):
-        # 11/02: '전체 멘티' = 직책이 정확히 '사원' + 2026-01-01 이후 입사. 체크하면 멘토, 조건에서 벗어나도 나의 멘티는 남는다
+    def test_org_table_everyone_marks_others_and_one_time_reset(self):
+        # 11/02: 첫 화면 = 부서별 구성원 표(교육을 시작한 사람). 모모스 직원이면 누구나 다른 사람을 체크, 본인은 못 한다
         import works_auth
-        adm,men,mentee=self.admin,self.other,self.tech
-        with self.store.connect() as db:db.execute("UPDATE access_users SET company='momos' WHERE id=?",(mentee['id'],))
-        mentee=dict(mentee,company='momos');ident='welcome-prep'
-        ids=lambda u:[x['id'] for x in self.service.get(u)['educationSummary']]
-        with patch.object(ob,'LMS_ADMIN_SEED',[adm['email'].lower()]):
-            self.act(adm,'lms.admin',dict(email=men['email'],level='mentor'))
-            self.act(mentee,'config.selfEnrol',{})
-            for hired,level in (('2026-03-02','대리'),('2025-12-31','사원'),(None,'사원'),('2026-03-02',None),('2026-03-02','사원 ')):
-                works_auth.save_hired(self.store,mentee['id'],hired,level)
-                ok=ob.mentee_ok(dict(hiredDate=hired,position=level));self.assertEqual(mentee['id'] in ids(men),ok,(hired,level))
-                if not ok:
-                    with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
-            self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])  # 조건에 맞을 때 체크 → 멘토
-            works_auth.save_hired(self.store,mentee['id'],'2026-03-02','대리')  # 이후 조건에서 벗어나도
-            s=next(x for x in self.service.get(men)['educationSummary'] if x['id']==mentee['id']);self.assertTrue(s['trainedByMe'])
-            self.act(men,'step.mark',dict(step=ident,index=1,on=True),mentee['id'])  # 내 멘티는 계속 체크할 수 있다
-            self.assertNotIn(mentee['id'],ids(adm))  # 다른 관리자에게는 '전체 멘티'에서 빠진다
-            # 배포 뒤 처음 한 번: 모든 체크·완료 기록과 멘토 관계 초기화(표시 없는 예전 저장소)
-            with self.store.connect() as db:
-                root=projects.Rooms.read(db,ob.ROOT);root.pop('menteeReset');projects.Rooms.write(db,ob.ROOT,root)
-            rec=self.service.get(mentee)['learner']['records'][ident];self.assertFalse(any(rec['teacher']));self.assertEqual(rec['status'],'ready')
-            self.assertNotIn(mentee['id'],ids(men))  # 나의 멘티도 비었다(지금은 조건에 맞지 않음)
-            self.assertIn(mentee['id'],self.service.get(adm)['configuration']['learners'])  # 교육 등록은 남는다
-            works_auth.save_hired(self.store,mentee['id'],'2026-03-02','사원')
-            self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
-            self.assertTrue(self.service.get(mentee)['learner']['records'][ident]['teacher'][0])  # 한 번만 비운다
+        adm,a,b=self.admin,self.other,self.content;ident='welcome-prep'
+        works_auth.save_hired(self.store,b['id'],'2025-05-01','매니저',None)
+        for u in (a,b):self.act(u,'config.selfEnrol',{})
+        rows={x['id']:x for x in self.service.get(a)['educationSummary']}
+        self.assertEqual(set(rows),{self.learner['id'],a['id'],b['id']})  # 본인도 표에 있다(화면은 '내 교육' 줄로 뺀다)
+        self.assertEqual((rows[a['id']]['org'],rows[a['id']]['position']),('온천 본점','사원'))
+        self.assertEqual((rows[b['id']]['org'],rows[b['id']]['position'],rows[b['id']]['hiredDate']),(None,'매니저','2025-05-01'))
+        self.assertTrue(rows[b['id']]['canConfirm']);self.assertFalse(rows[a['id']]['canConfirm'])
+        self.assertNotIn('trainedByMe',rows[b['id']])
+        self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])  # 직책·입사일 조건 없이 체크
+        self.act(b,'step.mark',dict(step=ident,index=0,on=True),a['id'])  # 서로 체크해도 된다
+        with self.assertRaises(PermissionError):self.act(a,'step.mark',dict(step=ident,index=1,on=True))  # 본인 기록은 못 한다
+        self.assertFalse(self.service.get(a)['profileMissing'])  # WORKS 로그인이 꺼져 있으면 다시 로그인하지 않는다
+        # 배포 뒤 처음 한 번: 모든 체크·완료 기록 초기화(표시 없는 예전 저장소)
+        with self.store.connect() as db:
+            root=projects.Rooms.read(db,ob.ROOT);root.pop('menteeReset');projects.Rooms.write(db,ob.ROOT,root)
+        rec=self.service.get(b)['learner']['records'][ident];self.assertFalse(any(rec['teacher']));self.assertEqual(rec['status'],'ready')
+        self.assertIn(b['id'],self.service.get(adm)['configuration']['learners'])  # 교육 등록은 남는다
+        self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])
+        self.assertTrue(self.service.get(b)['learner']['records'][ident]['teacher'][0])  # 한 번만 비운다
 
-    def test_mentor_marking_scenarios(self):
-        # LMS 의 핵심: 멘토가 멘티의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다
-        adm,men,men2,mentee=self.admin,self.other,self.content,self.tech
-        with self.store.connect() as db:db.execute("UPDATE access_users SET company='momos' WHERE id=?",(mentee['id'],))
-        mentee=dict(mentee,company='momos')
-        with patch.object(ob,'LMS_ADMIN_SEED',[adm['email'].lower()]):
-            # 대소문자가 섞인 이메일로 지정해도 멘토가 된다
-            self.act(adm,'lms.admin',dict(email=men['email'].upper(),level='mentor'))
-            self.act(adm,'lms.admin',dict(email=men2['email'],level='mentor'))
-            self.assertEqual(self.service.get(men)['lmsLevel'],'mentor')
-            # 스스로 교육을 시작한 멘티(배정된 교육자 없음)
-            self.act(mentee,'config.selfEnrol',{})
-            ident='welcome-prep';n=len(ob.STEPS[ident]['checks'])
-            c=self.service.get(men,mentee['id']);self.assertTrue(c['permissions']['trainer'])
-            # 화면이 같은 판본(revision)으로 연달아 보내도(빠른 연속 체크) 모두 저장된다
-            base=self.payload(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
-            for i in range(n):
-                v=dict(base,data=dict(step=ident,index=i,on=True),requestId=str(uuid.uuid4()))
-                self.service.update(men,v)
-            r=self.service.get(mentee)['learner']['records'][ident]
-            self.assertTrue(all(r['teacher']));self.assertEqual(set(r['teacherName']),{men['name']});self.assertTrue(all(r['teacherWhen']))
-            # 같은 요청을 두 번 보내도(재시도) 한 번만 반영된다
-            v=self.payload(men,'step.mark',dict(step=ident,index=0,on=False),mentee['id']);self.service.update(men,v);self.service.update(men,v)
-            self.assertFalse(self.service.get(mentee)['learner']['records'][ident]['teacher'][0])
-            # 다른 멘토가 이어서 체크하고 완료
-            self.act(men2,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
-            r=self.act(men2,'step.close',dict(step=ident),mentee['id'])['learner']['records'][ident]
-            self.assertEqual((r['status'],r['teacherName'][0],r['teacherName'][1]),('done',men2['name'],men['name']))
-            # 완료 후 체크 변경은 막히고, 완료 취소 뒤에는 다시 된다
-            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
-            self.act(men,'step.reopen',dict(step=ident),mentee['id'])
-            self.act(men,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
-            # 첫날 OJT(교육 내용 대신 체크 목록 17개)도 마지막 칸까지 체크된다
-            self.act(men,'step.mark',dict(step='welcome-ojt',index=16,on=True),mentee['id'])
-            # 잘못된 입력
-            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=n,on=True),mentee['id'])
-            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=0,on='yes'),mentee['id'])
-            # 막혀야 할 때: 멘티 본인, 지정 안 된 구성원, 본인 기록, 삭제된 멘토
-            with self.assertRaises(PermissionError):self.act(mentee,'step.mark',dict(step=ident,index=0,on=True))
-            with self.assertRaises(PermissionError):self.act(self.learner,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
-            # 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다 — 교육 시작이 되지 않고, 멘티 목록에도 나오지 않는다
-            self.act(men,'config.selfEnrol',{})
-            self.assertFalse(self.service.get(men)['enrolled'])
-            with self.assertRaises(ValueError):self.act(men,'step.mark',dict(step=ident,index=0,on=True))
-            self.assertNotIn(men['id'],[x['id'] for x in self.service.get(men2)['educationSummary']])
-            # 예전에 생긴 관리자 본인 교육 기록이 있어도 '교육 과정'은 체크 없는 원본
-            self.act(adm,'lms.admin',dict(email=mentee['email'],level='mentor'))
-            self.assertFalse(any(any(r['teacher']) for r in self.service.get(mentee)['learner']['records'].values()))
-            self.act(adm,'lms.admin',dict(email=mentee['email'],level=None))
-            self.assertTrue(any(any(r['teacher']) for r in self.service.get(mentee)['learner']['records'].values()))
-            self.act(adm,'lms.admin',dict(email=men['email'],level=None))
-            with self.assertRaises(PermissionError):self.act(men,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+    def test_marking_scenarios(self):
+        # LMS 의 핵심: 구성원이 다른 사람의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다
+        a,b,mentee=self.other,self.content,self.trainer
+        # 스스로 교육을 시작한 사람(배정된 교육자 없음)
+        self.act(mentee,'config.selfEnrol',{})
+        ident='welcome-prep';n=len(ob.STEPS[ident]['checks'])
+        c=self.service.get(a,mentee['id']);self.assertTrue(c['permissions']['trainer'])
+        # 화면이 같은 판본(revision)으로 연달아 보내도(빠른 연속 체크) 모두 저장된다
+        base=self.payload(a,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+        for i in range(n):
+            v=dict(base,data=dict(step=ident,index=i,on=True),requestId=str(uuid.uuid4()))
+            self.service.update(a,v)
+        r=self.service.get(mentee)['learner']['records'][ident]
+        self.assertTrue(all(r['teacher']));self.assertEqual(set(r['teacherName']),{a['name']});self.assertTrue(all(r['teacherWhen']))
+        # 같은 요청을 두 번 보내도(재시도) 한 번만 반영된다
+        v=self.payload(a,'step.mark',dict(step=ident,index=0,on=False),mentee['id']);self.service.update(a,v);self.service.update(a,v)
+        self.assertFalse(self.service.get(mentee)['learner']['records'][ident]['teacher'][0])
+        # 다른 구성원이 이어서 체크하고 완료
+        self.act(b,'step.mark',dict(step=ident,index=0,on=True),mentee['id'])
+        r=self.act(b,'step.close',dict(step=ident),mentee['id'])['learner']['records'][ident]
+        self.assertEqual((r['status'],r['teacherName'][0],r['teacherName'][1]),('done',b['name'],a['name']))
+        # 완료 후 체크 변경은 막히고, 완료 취소 뒤에는 다시 된다
+        with self.assertRaises(ValueError):self.act(a,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
+        self.act(a,'step.reopen',dict(step=ident),mentee['id'])
+        self.act(a,'step.mark',dict(step=ident,index=1,on=False),mentee['id'])
+        # 첫날 OJT(교육 내용 대신 체크 목록 17개)도 마지막 칸까지 체크된다
+        self.act(a,'step.mark',dict(step='welcome-ojt',index=16,on=True),mentee['id'])
+        # 잘못된 입력
+        with self.assertRaises(ValueError):self.act(a,'step.mark',dict(step=ident,index=n,on=True),mentee['id'])
+        with self.assertRaises(ValueError):self.act(a,'step.mark',dict(step=ident,index=0,on='yes'),mentee['id'])
+        # 막혀야 할 때: 본인 기록, 모모스 계정이 아닌 구성원
+        with self.assertRaises(PermissionError):self.act(mentee,'step.mark',dict(step=ident,index=0,on=True))
+        with self.assertRaises(PermissionError):self.service.update(self.tech,dict(base,data=dict(step=ident,index=0,on=True),requestId=str(uuid.uuid4())))
+        # admin 도 '내 교육'을 듣는다(교육 시작이 된다) — 본인 것은 체크 못 한다
+        with patch.object(ob,'LMS_ADMIN_SEED',[a['email'].lower()]):
+            self.act(a,'config.selfEnrol',{})
+            self.assertTrue(self.service.get(a)['enrolled'])
+            with self.assertRaises(PermissionError):self.act(a,'step.mark',dict(step=ident,index=0,on=True))
+            self.act(b,'step.mark',dict(step=ident,index=0,on=True),a['id'])
+            self.assertIn(a['id'],[x['id'] for x in self.service.get(b)['educationSummary']])
 
     def test_lms_admin_marks_closes_reopens_and_manages_admins(self):
-        # 10/30: 체크·완료는 지정된 LMS관리자만(교육생 화면에는 체크·완료 없음). 누가 체크했는지 남고 다른 관리자가 이어서 체크한다
+        # 11/02: LMS관리자 = admin 지정·해제와 보낸 의견 보기. 체크·완료는 모든 모모스 직원(본인 것 제외)
         ident='welcome-prep';n=len(ob.STEPS[ident]['checks'])
         self.assertEqual(ob.STEPS[ident]['checks'][0][:8],'첫 출근은 09')
         self.assertIn('jaehyun.eddy.lee@momos.co.kr',ob.LMS_ADMIN_SEED)
         a,b=self.other,self.content
         with patch.object(ob,'LMS_ADMIN_SEED',[a['email'].lower()]):
             self.assertTrue(self.service.get(a)['lmsAdmin']);self.assertFalse(self.service.get(b)['lmsAdmin'])
-            with self.assertRaises(PermissionError):self.act(b,'step.mark',dict(step=ident,index=0,on=True),self.learner['id'])  # 지정 안 된 구성원은 못 본다/못 체크
+            self.assertNotIn('feedback',self.service.get(b))  # 보낸 의견은 admin 만
             with self.assertRaises(PermissionError):self.act(self.learner,'step.mark',dict(step=ident,index=0,on=True))  # 본인 체크 불가
             r=self.act(a,'step.mark',dict(step=ident,index=0,on=True),self.learner['id'])['learner']['records'][ident]
             self.assertEqual((r['status'],r['teacherName'][0],r['teacherAt'][0]),('practice',a['name'],ob.today()))
             with self.assertRaises(ValueError):self.act(a,'step.close',dict(step=ident),self.learner['id'])  # 다 체크하지 않음
-            with self.assertRaises(PermissionError):self.act(b,'lms.admin',dict(email=b['email'],level='mentor'))  # 관리자만 관리자를 추가
-            c=self.act(a,'lms.admin',dict(email=b['email'],level='mentor'));self.assertIn((b['email'].lower(),'mentor'),[(x['email'],x['level']) for x in c['lmsAdmins']])
-            self.assertEqual(self.service.get(b)['lmsLevel'],'mentor')
-            with self.assertRaises(PermissionError):self.act(b,'lms.admin',dict(email=self.trainer['email'],level='mentor'))  # mentor 는 권한을 못 준다
-            for i in range(1,n):self.act(b,'step.mark',dict(step=ident,index=i,on=True),self.learner['id'])  # 다른 관리자가 이어서
+            for i in range(1,n):self.act(b,'step.mark',dict(step=ident,index=i,on=True),self.learner['id'])  # admin 이 아닌 직원이 이어서
             r=self.act(b,'step.close',dict(step=ident),self.learner['id'])['learner']['records'][ident]
             self.assertEqual((r['status'],r['completedByName'],r['teacherName'][0],r['teacherName'][1]),('done',b['name'],a['name'],b['name']))
             with self.assertRaises(ValueError):self.act(a,'step.mark',dict(step=ident,index=0,on=False),self.learner['id'])  # 완료 후 잠금
-            with self.assertRaises(PermissionError):self.act(self.learner,'step.reopen',dict(step=ident))  # 완료 취소도 관리자만
+            with self.assertRaises(PermissionError):self.act(self.learner,'step.reopen',dict(step=ident))  # 본인은 완료 취소 못 함
             r=self.act(a,'step.reopen',dict(step=ident),self.learner['id'])['learner']['records'][ident]
             self.assertEqual(r['status'],'practice');self.assertTrue(all(r['teacher']));self.assertEqual(r['history'][-1]['completedByName'],b['name'])
-            s=next(x for x in self.service.get(a)['educationSummary'] if x['id']==self.learner['id']);self.assertTrue(s['trainedByMe'])  # 나의 교육생
+            # admin 지정·해제
+            with self.assertRaises(PermissionError):self.act(b,'lms.admin',dict(email=b['email'],level='admin'))  # admin 만 지정
+            with self.assertRaises(ValueError):self.act(a,'lms.admin',dict(email=b['email'],level='mentor'))  # 권한은 admin 하나
             with self.assertRaises(ValueError):self.act(a,'lms.admin',dict(email=a['email'],level=None))  # 기본 admin·본인은 못 바꿈
-            self.act(a,'lms.admin',dict(email=b['email'],level='admin'));self.assertEqual(self.service.get(b)['lmsLevel'],'admin')
-            self.act(b,'lms.admin',dict(email=self.trainer['email'],level='mentor'));self.assertTrue(self.service.get(self.trainer)['lmsAdmin'])  # admin 이 되면 권한을 준다
+            c=self.act(a,'lms.admin',dict(email=b['email'].upper(),level='admin'));self.assertIn((b['email'].lower(),'admin'),[(x['email'],x['level']) for x in c['lmsAdmins']])
+            self.assertEqual(self.service.get(b)['lmsLevel'],'admin')
+            self.act(b,'lms.admin',dict(email=self.trainer['email'],level='admin'));self.assertTrue(self.service.get(self.trainer)['lmsAdmin'])
             self.act(a,'lms.admin',dict(email=b['email'],level=None));self.assertFalse(self.service.get(b)['lmsAdmin'])
-            with self.assertRaises(PermissionError):self.act(b,'profile.set',dict(branch='oncheon',role='staff'))  # 관리자 역할은 지정된 사람만
+            with self.store.connect() as db:  # 예전 'mentor' 지정은 권한 없음으로 본다
+                root=projects.Rooms.read(db,ob.ROOT);root['lmsAdmins'].append(dict(email=b['email'].lower(),level='mentor'));projects.Rooms.write(db,ob.ROOT,root)
+            self.assertFalse(self.service.get(b)['lmsAdmin'])
+            # 보낸 의견
             self.act(self.learner,'feedback.send',dict(step=ident,text='라벨 위치가 헷갈려요'))
             fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['text'],fb['step']),(self.learner['name'],'라벨 위치가 헷갈려요',ident))
-            self.assertEqual((fb['menteeName'],fb['mentors']),(self.learner['name'],[a['name'],b['name']]))  # 멘티 = 본인, 멘토 = 체크·완료한 관리자
-            self.act(a,'feedback.send',dict(step=ident,text='5번 문장 확인 필요'),self.learner['id'])  # 관리자는 멘티 교육 화면에서도 보낸다
-            fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['menteeName'],fb['text']),(a['name'],self.learner['name'],'5번 문장 확인 필요'))
-            self.act(a,'feedback.send',dict(step=ident,text='교육 과정에서'))  # 교육 과정(둘러보기)에서 보내면 멘티·멘토 없음
-            fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['mentee'],fb['menteeName'],fb['mentors']),(None,'',[]))
-            with self.assertRaises(PermissionError):self.act(self.learner,'feedback.send',dict(step=ident,text='x'),self.trainer['id'])  # 멘티는 남의 화면에서 못 보냄
+            self.assertEqual((fb['menteeName'],fb['mentors']),(self.learner['name'],[a['name'],b['name']]))  # 교육 주인 = 본인, 체크한 사람
+            self.act(b,'feedback.send',dict(step=ident,text='5번 문장 확인 필요'),self.learner['id'])  # 다른 사람 교육 화면에서도 보낸다
+            fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['menteeName'],fb['text']),(b['name'],self.learner['name'],'5번 문장 확인 필요'))
+            with self.assertRaises(PermissionError):self.act(self.tech,'feedback.send',dict(step=ident,text='x'),self.learner['id'])  # 모모스 계정이 아니면 못 보냄
 
     def test_old_check_records_are_reset_once_for_trainer_checks(self):
         ident='welcome-prep'
@@ -618,8 +606,9 @@ class EducationTests(unittest.TestCase):
     def test_role_overview_uses_only_visible_learner_records(self):
         u=self.add('별도 교육생');trainer2=self.add('별도 교육자')
         self.act(self.admin,'config.enrol',dict(learner=u['id'],trainer=trainer2['id'],assessor=trainer2['id'],join=ob.today()))
-        self.assertEqual({r['id'] for r in self.service.get(self.trainer)['educationSummary']},{self.learner['id']})
-        self.assertEqual({r['id'] for r in self.service.get(self.learner)['educationSummary']},{self.learner['id']})
+        everyone={self.learner['id'],u['id']}  # 11/02: 교육을 시작한 모든 사람이 부서별 표에 보인다
+        self.assertEqual({r['id'] for r in self.service.get(self.trainer)['educationSummary']},everyone)
+        self.assertEqual({r['id'] for r in self.service.get(self.learner)['educationSummary']},everyone)
         c=self.service.get(self.admin)
         self.assertEqual(len(c['educationSummary']),2)
         self.assertFalse(c['workspaceRoles']['learner']);self.assertTrue(c['workspaceRoles']['admin'])

@@ -82,7 +82,9 @@ class ItemTests(unittest.TestCase):
             self.assertEqual(len(self.service.context(self.editor,target)['comments']),3)
     def test_scope_revocation_and_resolver_permissions(self):
         with self.assertRaises(ValueError):self.apply(self.editor,self.payload(self.editor,self.targets[0],'block','확인',resolver=self.other['id']))
-        with self.assertRaises(PermissionError):self.service.context(self.viewer,self.targets[0])
+        self.service.context(self.viewer,self.targets[0])  # 11/02: 모모스 직원은 다른 사람의 교육을 본다
+        with self.store.connect() as db:db.execute("UPDATE access_users SET company='viewcs' WHERE id=?",(self.viewer['id'],))
+        with self.assertRaises(PermissionError):self.service.context(dict(self.viewer,company='viewcs'),self.targets[0])  # 모모스 계정이 아니면 못 본다
         self.apply(self.learner,self.payload(self.learner,self.targets[0]))
         with self.store.connect() as db:
             db.execute("UPDATE access_users SET status='revoked' WHERE id=?",(self.editor['id'],))

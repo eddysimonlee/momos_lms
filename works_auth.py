@@ -366,6 +366,16 @@ def valid_date(v):
         return None
 
 
+def org_of(u):
+    """WORKS 구성원의 주 소속 부서 이름: 주 소속 조직(organizations[].primary)의 주 부서(orgUnits[].primary) orgUnitName. 없으면 None."""
+    orgs = u.get('organizations') or []
+    org = next((o for o in orgs if o.get('primary')), orgs[0] if orgs else {})
+    units = org.get('orgUnits') or []
+    unit = next((x for x in units if x.get('primary')), units[0] if units else {})
+    name = str(unit.get('orgUnitName') or '').strip()
+    return name[:100] or None
+
+
 def position_of(u):
     """WORKS 구성원의 직책 이름: 주 소속 조직(organizations[].primary)의 주 부서(orgUnits[].primary) positionName.
     주 부서에 직책이 없으면 그 조직의 다른 부서 중 직책이 있는 첫 부서. 없으면 None.
@@ -379,29 +389,38 @@ def position_of(u):
 
 
 def fetch_profile(access_token, member_id):
-    """WORKS 구성원 입사일(hiredDate, 'YYYY-MM-DD')과 직책(positionName). GET /users/{userId}. 입력돼 있지 않으면 None."""
+    """WORKS 구성원 입사일(hiredDate, 'YYYY-MM-DD')·직책(positionName)·주 소속 부서(orgUnitName). GET /users/{userId}. 입력돼 있지 않으면 None."""
     from urllib.parse import quote
     u = _get_json(f'{API_BASE}/users/{quote(member_id, safe="")}', access_token)
-    return dict(hired=valid_date(u.get('hiredDate')), position=position_of(u))
+    return dict(hired=valid_date(u.get('hiredDate')), position=position_of(u), org=org_of(u))
 
 
 def fetch_hired(access_token, member_id):
     return fetch_profile(access_token, member_id)['hired']
 
 
-def save_hired(store, user_id, hired, position=None):
+def save_hired(store, user_id, hired, position=None, org=None):
     import lms_store as projects
     with store.connect() as db:
         projects.Rooms.write(db, hired_key(user_id), dict(kind='hired', user=user_id, hiredDate=valid_date(hired),
-                                                          position=(str(position).strip()[:100] or None) if position else None, at=time.time()))
+                                                          position=(str(position).strip()[:100] or None) if position else None,
+                                                          org=(str(org).strip()[:100] or None) if org else None, at=time.time()))
 
 
 def read_profile(db, user_id):
-    """로그인 때 저장해 둔 입사일·직책. 없으면 둘 다 None(예전에 저장한 직급 값은 쓰지 않는다)."""
+    """로그인 때 저장해 둔 입사일·직책·부서. 없으면 None(예전에 저장한 직급 값은 쓰지 않는다)."""
     import lms_store as projects
     row = projects.Rooms.read(db, hired_key(user_id))
     ok = row and row.get('kind') == 'hired' and row.get('user') == user_id
-    return dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, position=(row.get('position') or None) if ok else None)
+    return dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, position=(row.get('position') or None) if ok else None,
+                org=(row.get('org') or None) if ok else None)
+
+
+def profile_saved(db, user_id):
+    """이 버전(부서까지 읽는 로그인) 이후에 WORKS 구성원 정보를 읽어 둔 적이 있는가. 값이 비어 있어도 읽었으면 True."""
+    import lms_store as projects
+    row = projects.Rooms.read(db, hired_key(user_id))
+    return bool(row) and row.get('kind') == 'hired' and row.get('user') == user_id and 'org' in row
 
 
 def read_hired(db, user_id):
@@ -475,6 +494,41 @@ def directory(user_id, now=None):
     people.sort(key=lambda m: m['name'])
     _DIRECTORY['list'] = (now, people)
     return people
+
+
+def orgunits_check(user_id):
+    """11/02 확인용: 로그인한 admin 의 토큰(directory.read)으로 WORKS 조직 목록(GET /orgunits)을 읽을 수 있는지 본다.
+    부서 수·상위 부서 정보가 있는지·최상위 부서 이름 몇 개만 돌려준다. 로그에는 성공 여부와 개수만 남긴다."""
+    try:
+        token = _token_for(user_id)
+    except DirectoryUnavailable as e:
+        return dict(ok=False, reason=str(e))
+    units, cursor = [], ''
+    try:
+        for _ in range(30):  # 100개 × 30쪽까지
+            data = _get_json(f'{API_BASE}/orgunits?' + urlencode(dict(count=100, **({'cursor': cursor} if cursor else {}))), token)
+            units += data.get('orgUnits') or []
+            cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
+            if not cursor:
+                break
+    except HTTPError as e:
+        code = ''
+        try:
+            body = json.loads(e.read() or b'{}'); code = str(body.get('code') or body.get('error') or '')[:80]
+        except Exception:
+            pass
+        print(f'works login: orgunits check failed: status={e.code} error={code}', flush=True)
+        return dict(ok=False, status=e.code, code=code)
+    except (URLError, TimeoutError, ValueError) as e:
+        _log_failure('orgunits check', e)
+        return dict(ok=False, reason=type(e).__name__)
+    ids = {u.get('orgUnitId') for u in units}
+    with_parent = [u for u in units if u.get('parentOrgUnitId')]
+    top = [u for u in units if not u.get('parentOrgUnitId') or u.get('parentOrgUnitId') not in ids]
+    print(f'works orgunits check: ok count={len(units)} withParent={len(with_parent)}', flush=True)
+    return dict(ok=True, count=len(units), withParent=len(with_parent), fields=sorted({k for u in units[:20] for k in u}),
+                top=[str(u.get('orgUnitName') or '') for u in top[:15]],
+                sample=[dict(name=u.get('orgUnitName'), parent=next((str(x.get('orgUnitName')) for x in units if x.get('orgUnitId') == u.get('parentOrgUnitId')), None)) for u in units[:15]])
 
 
 def search(people, q, exclude_email='', limit=20):

@@ -108,7 +108,7 @@
   const checkItems = s => s.keyPoints && s.keyPoints.length ? s.keyPoints : (s.checks || []).map(text => ({text, cites: []}));  // 교육안 준비 중(추가·교체 세션): 수행 확인 없음
   // 서버에 아직 기록 칸이 없는 새 세션도 화면이 깨지지 않도록 빈 기록을 돌려준다.
   const EMPTY = {status: 'ready', self: [], teacher: [], selfAt: [], teacherAt: [], memo: '', feedback: ''};
-  const record = id => (browse() ? null : cloud.learner.records[id]) || EMPTY;  // 교육 과정(관리자 둘러보기)은 체크 없는 원본
+  const record = id => cloud.learner.records[id] || EMPTY;
   const statusOf = s => planned(s) ? 'planned' : record(s.id).status;
   const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
   const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
@@ -121,8 +121,8 @@
   const isStaff = () => Boolean(cloud.lmsAdmin);  // 10/30: 관리자 = 지정된 LMS관리자(이메일)만. 역할 선택은 없다
   const role = () => cloud.permissions.own ? 'learner' : isStaff() ? 'staff' : 'viewer';
   // 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다. 관리자의 '교육 과정' = 기록 없이 둘러보기(상태·체크 없음)
-  const browse = () => isStaff() && cloud.target === cloud.user.id;
-  const mentee = () => isStaff() && cloud.target !== cloud.user.id;
+  // 11/02: 멘토·멘티 관계 없음. 다른 사람 교육(체크 가능) / 내 교육(보기만)
+  const mentee = () => cloud.target !== cloud.user.id;
   const mayConfirm = () => Boolean(cloud.permissions.trainer);
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
 
@@ -171,12 +171,12 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view === 'person' || view === 'all' ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
-    $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '멘티 목록으로' : '이전 화면으로');
+    $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' || (view === 'all' && own()) ? '교육 현황' : view === 'person' || (view === 'all' && mentee()) ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' || view === 'all' ? (isStaff() ? '교육 과정' : view === 'stage' ? '교육 단계' : '전체 교육') : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -277,56 +277,59 @@
     return learnerBar() + enrolNotice() + countsBlock(c) + tiles +
       `<p class="v1-muted v1-ptip">칸을 누르면 그 교육으로 이동해요. 진행 중인 칸은 체크한 만큼 채워져요.</p>`;
   }
-  function staffHome() {
+  // 첫 화면(모든 직원): 맨 위 '내 교육' 줄 + 부서별 구성원 표(교육을 시작한 모든 사람). 누르면 그 사람의 교육
+  function homeHtml() {
     const sums = cloud.educationSummary || [], me = cloud.user.id;
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
-      return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">시작일: ${esc(x.hiredDate || 'N/A')} · 목표일: ${esc(x.targetDate || 'N/A')}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
-    // 10/30: 관리자는 교육을 듣지 않는다 → '내 교육' 줄 없음(서버도 관리자를 멘티 목록에서 뺀다)
-    const others = sums.filter(x => x.id !== me), mineList = others.filter(x => x.trainedByMe), rest = others.filter(x => !x.trainedByMe);
-    return `<h3 class="v1-pcat v1-pcat-top">나의 멘티 · ${mineList.length}명</h3>` + (mineList.length ? `<ul class="v1-plist">${mineList.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">멘티를 골라 교육 내용을 체크하거나 완료하면 여기에 모여요.</p>') +
-      `<h3 class="v1-pcat">전체 멘티 · ${rest.length}명</h3>` + (rest.length ? `<ul class="v1-plist">${rest.map(x => row(x)).join('')}</ul>` : '<p class="v1-muted">멘티(사원,2026년 이후 입사)가 로그인하면 여기에 나타나요</p>');
+      const meta = [label ? '' : x.position, `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
+      return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">${esc(meta)}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
+    const self = sums.find(x => x.id === me) || Object.assign({}, cloud.user, cloud.myDates || {}, {states: {}});
+    const others = sums.filter(x => x.id !== me);
+    const groups = {}; others.forEach(x => (groups[x.org || ''] = groups[x.org || ''] || []).push(x));
+    const names = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'ko'));
+    const by = (a, b) => a.name.localeCompare(b.name, 'ko');
+    return `<ul class="v1-plist v1-me">${row(self, '내 교육')}</ul>` +
+      (names.length ? names.map(g => `<h3 class="v1-pcat">${esc(g || '부서 미확인')} · ${groups[g].length}명</h3><ul class="v1-plist">${groups[g].sort(by).map(x => row(x)).join('')}</ul>`).join('')
+        : '<p class="v1-muted">아직 교육을 시작한 구성원이 없어요.</p>');
   }
 
   function enrolNotice() {
-    if (canWrite() || isStaff()) return '';
+    if (canWrite() || mentee()) return '';
     return `<div class="v1-note warn">교육 기록을 아직 시작하지 못했어요. 새로고침해 보세요.</div>`;
   }
 
-  function homeView() { return isStaff() ? staffHome() : progressView(); }
+  function homeView() { return homeHtml(); }
 
-  // 관리자가 다른 사람의 기록을 볼 때: 누구를 교육하고 있는지 항상 보이게(화면 위에 고정)
-  // 권한 표시 이름(저장 값 admin·mentor 는 그대로, 화면 글자만)
-  const LEVEL_LABEL = {admin: 'admin', mentor: '멘토'};
-  // 진행 현황 ↔ 전체 교육(목록·필터) 보기 전환: 오른쪽 위. 멘토가 보는 멘티 화면은 멘티 줄 안에, 멘티 본인은 화면 맨 위 줄에
-  const own = () => !isStaff() && cloud.target === cloud.user.id;
-  const viewSeg = () => { const prog = own() ? 'home' : 'person', list = view === 'all';
+  const LEVEL_LABEL = {admin: 'admin'};
+  // 진행 현황 ↔ 전체 교육(목록·필터) 보기 전환: 오른쪽 위. 다른 사람 교육은 이름 줄 안에, 내 교육은 화면 맨 위 줄에
+  const own = () => cloud.target === cloud.user.id;
+  const viewSeg = () => { const prog = 'person', list = view === 'all';
     return `<span class="v1-seg" role="group" aria-label="보기 방식"><button type="button" data-mview="${prog}" aria-pressed="${!list}" aria-label="진행 현황" title="진행 현황">${ICON_GRID}</button><button type="button" data-mview="all" aria-pressed="${list}" aria-label="전체 교육" title="전체 교육">${ICON_LIST}</button></span>`; };
   // wds-allow: 보기 전환 아이콘(진행 현황 = 칸 모아보기, 전체 교육 = 목록). WDS 아이콘 자산 반입 전 임시 인라인 SVG
   const ICON_GRID = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1.2"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1.2"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1.2"/></g></svg>';
   const ICON_LIST = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7.5 5h9.5M7.5 10h9.5M7.5 15h9.5"/></g><g fill="currentColor"><circle cx="3.8" cy="5" r="1.2"/><circle cx="3.8" cy="10" r="1.2"/><circle cx="3.8" cy="15" r="1.2"/></g></svg>';
-  const learnerBar = () => cloud.target === cloud.user.id ? (own() && (view === 'home' || view === 'all') ? `<div class="v1-seg-row">${viewSeg()}</div>` : '')
-    : `<div class="v1-learner-bar" role="status">${avatar({id: cloud.target, name: cloud.name})}<span>멘티 <strong>${esc(cloud.name)}</strong></span>` + (view === 'person' || view === 'all' ? viewSeg() : '') + '</div>';
+  const learnerBar = () => own() ? (view === 'person' || view === 'all' ? `<div class="v1-seg-row">${viewSeg()}</div>` : '')
+    : `<div class="v1-learner-bar" role="status">${avatar({id: cloud.target, name: cloud.name})}<span><strong>${esc(cloud.name)}</strong>님의 교육</span>` + (view === 'person' || view === 'all' ? viewSeg() : '') + '</div>';
 
   // LMS관리자: 관리자 지정(서로 추가·삭제) · 보낸 의견 표
   function adminView() {
     const titleOf = id => { const st = steps().find(x => x.id === id); return st ? `${stepIndex(id) + 1}. ${st.title}` : ''; };
     const me = String(cloud.user.email || '').toLowerCase(), canEdit = cloud.lmsLevel === 'admin';
     const tag = l => `<span class="v1-tag${l === 'admin' ? ' v1-tag-admin' : ''}">${LEVEL_LABEL[l] || l}</span>`;
+    // 11/02: LMS관리자 = admin. admin 지정·해제만(기본 admin 과 나는 해제할 수 없다)
     const admins = (cloud.lmsAdmins || []).map(a => `<li><span class="v1-admin-mail">${esc(a.email)}${a.email === me ? ' <small class="v1-muted">(나)</small>' : ''}</span>` +
-      (canEdit && !a.seed && a.email !== me
-        ? `<span class="v1-admin-ctl"><select class="v1-admin-level" data-admin-level="${esc(a.email)}" aria-label="${esc(a.email)} 권한"><option value="admin"${a.level === 'admin' ? ' selected' : ''}>admin</option><option value="mentor"${a.level === 'mentor' ? ' selected' : ''}>멘토</option></select><button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">삭제</button></span>`
-        : tag(a.level)) + '</li>').join('');
-    // 보낸 의견: 멘티(의견을 보낸 교육 화면의 주인) · 멘토(그 멘티를 체크·완료한 관리자) · 보낸사람 · 시간 · 교육 과정 · 의견
+      (canEdit && !a.seed && a.email !== me ? `<span class="v1-admin-ctl">${tag('admin')}<button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">해제</button></span>` : tag('admin')) + '</li>').join('');
+    // 보낸 의견: 멘티(의견을 보낸 교육 화면의 주인) · 체크한 사람(그 교육을 체크·완료한 사람) · 보낸사람 · 시간 · 교육 과정 · 의견
     const rows = (cloud.feedback || []).map(f => `<tr><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}</td></tr>`).join('');
-    return `<section class="v1-card"><h2>LMS관리자</h2><p class="v1-muted">admin·멘토 모두 멘티의 교육을 체크·완료할 수 있어요. 권한을 주고 빼는 것은 admin 만 할 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
-      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><select class="v1-admin-level" data-admin-new-level aria-label="권한"><option value="mentor">멘토</option><option value="admin">admin</option></select><button type="button" class="v1-btn" data-admin-add>추가</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
-      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>멘토</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+    return `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
+      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
+      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
   }
 
   const listItem = s => {
     const r = record(s.id), st = statusOf(s), n = stepIndex(s.id) + 1;
     const sub = st === 'done' ? ' · ' + dateLabel(r.done) + ((r.completedByName || (r.trainedBy && r.trainedBy.name)) ? ' · ' + (r.completedByName || r.trainedBy.name) : '') : '';
-    const ro = browse() && st !== 'planned';  // 교육 과정(둘러보기): 상태 없이 제목만
+    const ro = false;
     return `<li><button class="v1-item ${ro ? 'ready' : st}" data-step="${esc(s.id)}"><span class="v1-num">${n}</span><span class="v1-body"><strong>${esc(s.title)}</strong>${ro ? '' : `<small>${st === 'planned' ? '교육안 준비 중' : esc(STATUS[st] + sub)}</small>`}</span><span class="v1-chev">›</span></button></li>`;
   };
   const unitBlock = u => {
@@ -341,7 +344,7 @@
     const all = stages().map(g => Object.assign({}, g, {units: g.units.map(u => Object.assign({}, u, {steps: u.steps.filter(s => matches(s))})).filter(u => u.steps.length)})).filter(g => g.units.length);
     const count = all.reduce((n, g) => n + g.units.reduce((m, u) => m + u.steps.length, 0), 0);
     const extra = (content.extra || []).map(e => `<section class="v1-card v1-extra"><h2>${esc(e.title)}</h2><div class="v1-muted">${e.sessions.map(x => esc(x.title)).join(' · ')}${e.note ? ' — ' + esc(e.note) : ''}</div></section>`).join('');
-    return whoLine() + (mentee() || own() ? countsBlock(countsOf(s => record(s.id).status, liveSteps().filter(s => matches(s)))) : '')  /* 필터를 걸면 걸러진 교육만 센다 */ + `<div class="v1-prow v1-lhead${mentee() || own() ? '' : ' v1-lhead-top'}"><h2>전체 교육${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${count}개</small>` : `<small> · ${count}개</small>`}</h2>` +
+    return whoLine() + (true ? countsBlock(countsOf(s => record(s.id).status, liveSteps().filter(s => matches(s)))) : '')  /* 필터를 걸면 걸러진 교육만 센다 */ + `<div class="v1-prow v1-lhead"><h2>전체 교육${filt ? `<small> · ${esc(FKIND[filt.k])} ${esc(filt.v)} ${count}개</small>` : `<small> · ${count}개</small>`}</h2>` +
       (filt ? `<span class="v1-fgroup"><button type="button" class="v1-fchip on" data-filter-open aria-haspopup="dialog" aria-label="보기 필터: ${esc(filt.v)}">${esc(filt.v)} ▾</button><button type="button" class="v1-fchip on" data-filter-clear aria-label="필터 해제">✕</button></span>`
         : (content.filters && content.filters.position ? '<button type="button" class="v1-fchip" data-filter-open aria-haspopup="dialog">필터 ▾</button>' : '')) + '</div>' +
       all.map(g => `<h2 class="v1-stage">${g.order}. ${esc(g.title)}</h2>` + g.units.map(unitBlock).join('')).join('') +
@@ -367,15 +370,11 @@
   function drawNav() {
     const homeLabel = '교육 현황', inStage = view === 'stage';
     const item = (attrs, label, on, depth2) => `<button type="button" class="v1-nav-item${on ? ' on' : ''}${depth2 ? ' d2' : ''}" ${attrs} ${on ? 'aria-current="page"' : ''}>${label}</button>`;
-    const b = BRANCHES.find(x => x.id === (profile() && profile().branch)), r = isStaff() ? LEVEL_LABEL[cloud.lmsLevel || 'mentor'] : '멘티';
+    // 11/02: 지점 선택·변경과 '교육 과정'은 숨김(모든 조직이 같은 교육 자료를 쓴다). 메뉴 = 교육 현황 · (admin) LMS관리자
     $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
-      `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc([b && b.name, r].filter(Boolean).join(' · '))}</small></span></div>` +
-      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person' || (view === 'all' && !isStaff()))}` +
-      // '교육 과정'(관리자만): 글자를 누르면 전체 목록, 오른쪽 꺽쇠를 눌러야 1~6단계가 펼쳐진다. 멘티는 교육 현황의 '전체 교육' 보기로 본다
-      (isStaff() ? `<div class="v1-nav-cat${view === 'all' && !mentee() ? ' on' : ''}"><button type="button" class="v1-nav-cat-label" data-nav="all" ${view === 'all' ? 'aria-current="page"' : ''}>${isStaff() ? '교육 과정' : '교육 단계'}</button>` +
-      `<button type="button" class="v1-nav-cat-toggle" data-nav-toggle aria-expanded="${navStagesOpen}" aria-controls="v1NavStages" aria-label="${isStaff() ? '교육 과정' : '교육 단계'} ${navStagesOpen ? '접기' : '펼치기'}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>` +
-      `<div id="v1NavStages" ${navStagesOpen ? '' : 'hidden'}>${stages().map(g => item(`data-nav="stage" data-nav-stage="${g.order}"`, `<span class="v1-nav-no">${g.order}</span>${esc(g.title)}`, inStage && stageSel === g.order, true)).join('')}</div>` : '') + '</div>' +
-      `<div class="v1-nav-foot">${isStaff() ? item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger') : ''}${item('data-nav="branch"', '지점 변경')}</div>`;
+      `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc(isStaff() ? 'admin' : '')}</small></span></div>` +
+      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person' || view === 'all')}</div>` +
+      (isStaff() ? `<div class="v1-nav-foot">${item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger')}</div>` : '');
   }
   function openNav() { if (view === 'stage') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
   function closeNav() { $('v1Nav').hidden = true; document.body.style.overflow = ''; }
@@ -409,7 +408,7 @@
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
     const i = stepIndex(s.id), next = nextOf(s);
     // 10/30: 체크·완료는 관리자만 — 교육생 기록에 들어가서 한다. 교육생은 관리자가 체크한 상태를 보고, 의견만 보낸다
-    const editMark = staff && mayConfirm() && cloud.target !== cloud.user.id && (st === 'ready' || st === 'practice');
+    const editMark = mayConfirm() && cloud.target !== cloud.user.id && (st === 'ready' || st === 'practice');  // 11/02: 모든 직원이 다른 사람 교육을 체크(내 교육은 보기만)
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.trim() : key; };
     const table = t => `<div class="table-wrap"><table><thead><tr>${t.header.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r =>
       r.length === 1 && t.header.length > 1 ? `<tr><td class="v1-grp" colspan="${t.header.length}">${esc(r[0])}</td></tr>` : `<tr>${r.map(c => `<td>${esc(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
@@ -449,24 +448,24 @@
     const doneBy = r.completedByName || (r.trainedBy && r.trainedBy.name);
     if (st === 'done') status = `<div class="v1-note ok">${dateLabel(r.done)} 완료${doneBy ? ' · ' + esc(doneBy) : ''}</div>`;
     let actions = '';
-    const trainer = staff && mayConfirm() && cloud.target !== cloud.user.id;
+    const trainer = mayConfirm() && cloud.target !== cloud.user.id;
     if (trainer && (st === 'ready' || st === 'practice')) {
       const ready = items.length && items.every((_, k) => r.teacher[k]);
       actions = `<button class="v1-btn primary" data-close ${ready && !busy ? '' : 'disabled'}>완료</button>`;
     } else if (trainer && st === 'done') actions = `<button class="v1-btn" data-reopen ${busy ? 'disabled' : ''}>완료 취소</button>`;
     if (next) actions += `<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`;
     // 의견 보내기: 멘티는 본인 교육 화면에서, 관리자는 멘티의 교육 화면이나 교육 과정에서. 보내면 LMS관리자 화면의 표로 모인다
-    const memo = own || staff ? `<section class="v1-card"><h2>의견 보내기</h2>` +
-      `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="${staff ? '교육 내용에서 고칠 점이나 의견을 입력해주세요.' : '궁금하거나 이해가 어려운 점을 입력해주세요.'}"></textarea>` +
+    const memo = own || trainer ? `<section class="v1-card"><h2>의견 보내기</h2>` +
+      `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="${trainer ? '교육 내용에서 고칠 점이나 의견을 입력해주세요.' : '궁금하거나 이해가 어려운 점을 입력해주세요.'}"></textarea>` +
       `<div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-feedback-send>보내기</button></div></section>` : '';
     const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
     const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
       : '글을 누르면 근거 본문이 펼쳐져요.';
-    return learnerBar() + `<section class="v1-card">${browse() ? '' : `<span class="v1-pill ${st}">${esc(STATUS[st])}</span> `}<span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
+    return learnerBar() + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
-      (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${browse() ? '' : status}</section>` +
+      (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
       memo +
       (actions ? `<div class="v1-actions">${actions}</div>` : '');
@@ -498,10 +497,9 @@
         } catch (e) { if (seq === adminSeq) adminRes.innerHTML = `<div class="v1-note warn">${esc(e.message)}</div>`; }
       }, 250);
     };
-    if (adminRes) adminRes.onclick = e => { const b = e.target.closest('[data-admin-pick]'); if (!b) return; adminQ.value = adminQ.dataset.picked = b.dataset.adminPick; adminRes.innerHTML = ''; app.querySelector('[data-admin-new-level]').focus(); };
-    if (addBtn) addBtn.onclick = async () => { const email = app.querySelector('[data-admin-email]').value.trim(); if (!email) return; if (await act('lms.admin', {email, level: app.querySelector('[data-admin-new-level]').value})) toast('LMS관리자를 추가했습니다.'); };
-    app.querySelectorAll('[data-admin-level]').forEach(x => x.onchange = async () => { if (await act('lms.admin', {email: x.dataset.adminLevel, level: x.value})) toast(`${LEVEL_LABEL[x.value]} 권한으로 바꿨습니다.`); });
-    app.querySelectorAll('[data-admin-del]').forEach(b => b.onclick = async () => { if (await act('lms.admin', {email: b.dataset.adminDel, level: null})) toast('LMS관리자에서 삭제했습니다.'); });
+    if (adminRes) adminRes.onclick = e => { const b = e.target.closest('[data-admin-pick]'); if (!b) return; adminQ.value = adminQ.dataset.picked = b.dataset.adminPick; adminRes.innerHTML = ''; if (addBtn) addBtn.focus(); };
+    if (addBtn) addBtn.onclick = async () => { const email = app.querySelector('[data-admin-email]').value.trim(); if (!email) return; if (await act('lms.admin', {email, level: 'admin'})) toast('admin으로 지정했습니다.'); };
+    app.querySelectorAll('[data-admin-del]').forEach(b => b.onclick = async () => { if (await act('lms.admin', {email: b.dataset.adminDel, level: null})) toast('admin에서 해제했습니다.'); });
     app.querySelectorAll('[data-mview]').forEach(b => b.onclick = () => { if (view === b.dataset.mview) return; homeScroll = null; view = b.dataset.mview; render(); window.scrollTo({top: 0, behavior: 'instant'}); });
     app.querySelectorAll('[data-stage]').forEach(b => b.onclick = () => { stageSel = Number(b.dataset.stage); render(); window.scrollTo(0, 0); });
     const fo = app.querySelector('[data-filter-open]'), fc = app.querySelector('[data-filter-clear]');
@@ -692,11 +690,15 @@
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
     cloud = await api('GET');
-    // 지점·역할을 이미 골랐으면 바로 홈. 처음이면 지점 → 역할 화면(교육 시작·첫 교육생 열기는 역할을 고른 뒤)
-    if (profile()) {
-      view = 'home';
-      if (!isStaff() && !cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일
+    // WORKS 부서·직책을 아직 못 읽은 사람(이 버전 이전에 로그인한 채로 들어온 경우): WORKS 로그인을 한 번 자동으로 거친다(같은 탭에서 한 번만)
+    if (cloud.profileMissing) {
+      let tried = true; try { tried = sessionStorage.getItem('v1.relogin') === '1'; if (!tried) sessionStorage.setItem('v1.relogin', '1'); } catch {}
+      if (!tried) { location.replace('/auth/works/login'); return; }
     }
+    // 11/02: 지점 선택은 숨김(모든 조직이 같은 교육 자료) → 처음 들어오면 온천 본점으로 저장하고 바로 교육 현황
+    if (!profile()) await act('profile.set', {branch: BRANCHES[0].id, role: isStaff() ? 'staff' : 'learner'});
+    view = 'home';
+    if (!cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일(admin 도 교육을 듣는다)
     render();
   }).catch(e => { $('app').innerHTML = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(e.message)}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button></div>`; });
 })();

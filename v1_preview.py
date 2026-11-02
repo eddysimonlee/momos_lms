@@ -68,11 +68,9 @@ MOCK = r'''
   const target6 = h => { if (!h) return null; const [y, m, d] = h.split('-').map(Number); const t = m - 1 + 6, Y = y + Math.floor(t / 12), M = t % 12;
     const last = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate(); return `${Y}-${String(M + 1).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`; };
   const dates = id => ({hiredDate: HIRED[id] || null, targetDate: target6(HIRED[id])});
-  // 미리보기용 직책(WORKS positionName 대신). '전체 멘티' = 직책이 정확히 '사원' + 2026-01-01 이후 입사 → 체험 교육생만 해당
-  const LEVEL = {'u-staff': '매니저', 'u-learner': '사원', 'u-newbie': '사원'};
-  const menteeOk = id => (LEVEL[id] || '') === '사원' && !!HIRED[id] && HIRED[id] >= '2026-01-01';
-  const mentorIds = room => { const s = new Set(), take = x => { (x.teacherBy || []).forEach(w => w && s.add(w)); if (x.completedBy) s.add(x.completedBy); };
-    Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return s; };
+  // 미리보기용 직책·부서(WORKS positionName·orgUnitName 대신). 체험 신입은 부서를 못 읽은 경우 → '부서 미확인'
+  const POSITION = {'u-staff': '매니저', 'u-learner': '사원', 'u-newbie': '사원'};
+  const ORG = {'u-staff': '온천장 본점 바리스타팀', 'u-learner': '온천장 본점 바리스타팀'};
   const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
   // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
@@ -80,7 +78,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-14';
+  const KEY = 'momos-v1-preview-15';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -100,11 +98,11 @@ MOCK = r'''
   let current = 'u-learner'; try { current = sessionStorage.getItem(KEY + '-who') || current; } catch (e) {}
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
-  const levels = () => { const m = {}; for (const x of state.lmsAdmins || []) if (x && x.email) m[x.email] = x.level; for (const e of SEED) m[e] = 'admin'; return m; };
+  const levels = () => { const m = {}; for (const x of state.lmsAdmins || []) if (x && x.email && x.level === 'admin') m[x.email] = 'admin'; for (const e of SEED) m[e] = 'admin'; return m; };
   const levelOf = u => levels()[u.email] || null;
-  const isLms = u => Boolean(levelOf(u));  // onboarding.lms_staff: 지정된 이메일(admin·mentor)만 관리자
-  function roles(u, target) {
-    const entry = state.learners[target]; const own = u.id === target && !!entry; const staff = isLms(u);
+  const isLms = u => Boolean(levelOf(u));  // onboarding.lms_staff: 지정된 이메일(admin)만 LMS관리자
+  function roles(u, target) {  // 11/02: 모든 직원이 다른 사람 교육을 보고 체크(본인 제외)
+    const entry = state.learners[target]; const own = u.id === target && !!entry; const staff = true;
     return {own, trainer: !!entry && !own && staff, assessor: !!entry && !own && staff, admin: false};
   }
   function context(u, target) {
@@ -116,18 +114,16 @@ MOCK = r'''
     const roster = Object.entries(state.learners).filter(([i]) => i === u.id || roles(u, i).trainer)
       .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate}));
     if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null});
-    const touched = x => (x.teacherBy || []).includes(u.id) || x.completedBy === u.id;
     const nameOf = id => ACCOUNTS.find(a => a.id === id)?.name || id;
-    const isStaffId = id => { const a = ACCOUNTS.find(x => x.id === id); return !!(a && isLms(a)); };  // 관리자는 멘티 목록에서 뺀다
     const mentorsOf = id => { const out = new Map(), take = x => { (x.teacherBy || []).forEach((w, k) => { if (w && !out.has(w)) out.set(w, (x.teacherName || [])[k] || nameOf(w)); }); if (x.completedBy && !out.has(x.completedBy)) out.set(x.completedBy, x.completedByName || nameOf(x.completedBy)); };
       const room = state.rooms[id]; if (room) Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return [...out.values()]; };
-    const educationSummary = roster.filter(r => state.learners[r.id] && !isStaffId(r.id) && (r.id === u.id || !isLms(u) || menteeOk(r.id) || mentorIds(state.rooms[r.id]).has(u.id))).map(r => { const recs = state.rooms[r.id].records;
+    const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
-      return {...r, ...dates(r.id), states, trainedByMe: Object.values(recs).some(x => touched(x) || (x.history || []).some(h => h && touched(h)))}; });
+      return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
-      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), lmsAdmin: lms, lmsLevel: levelOf(u),
-      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => (a[1] !== 'admin') - (b[1] !== 'admin') || a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
+      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, lmsAdmin: lms, lmsLevel: levelOf(u),
+      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {
@@ -139,18 +135,18 @@ MOCK = r'''
       save(); return context(u, target);
     }
     if (v.action === 'config.selfEnrol') {
-      if (!state.learners[u.id] && !isLms(u)) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
+      if (!state.learners[u.id]) { const t = today(); state.learners[u.id] = {join: t, startDate: t, trainer: null, assessor: null}; state.rooms[u.id] = blank(t); state.rootRevision++; }
       save(); return context(u, target);
     }
     if (v.action === 'lms.admin') {
       if (levelOf(u) !== 'admin') throw {status: 403, error: 'LMS관리자 권한은 admin 만 바꿀 수 있습니다.'};
       const email = String(d.email || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw {status: 400, error: '이메일 주소를 확인해 주세요.'};
       if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
-      state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level ? [{email, level: d.level}] : []); state.rootRevision++; save(); return context(u, target);
+      state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level === 'admin' ? [{email, level: 'admin'}] : []); state.rootRevision++; save(); return context(u, target);
     }
     if (v.action === 'feedback.send') {
-      if (target !== u.id && !(isLms(u) && p.trainer)) throw {status: 403, error: '본인 교육 화면이나 멘티의 교육 화면에서만 의견을 보낼 수 있어요.'};
-      const mentee = isLms(u) && target === u.id ? null : target;
+      if (target !== u.id && !p.trainer) throw {status: 403, error: '본인 교육 화면이나 구성원의 교육 화면에서만 의견을 보낼 수 있어요.'};
+      const mentee = target;
       const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '입력 내용의 길이와 필수 항목을 확인해 주세요.'};
       (state.feedback = state.feedback || []).push({id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString(), user: u.id, name: u.name, email: u.email, step: d.step, text: text.slice(0, 2000), mentee, menteeName: mentee ? (ACCOUNTS.find(a => a.id === mentee)?.name || mentee) : ''});
       state.rootRevision++; save(); return context(u, target);
@@ -158,7 +154,6 @@ MOCK = r'''
     const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
     const teacher = ['step.mark', 'step.close', 'step.reopen'].includes(v.action);
     if (teacher && !p.trainer) throw {status: 403, error: '배정된 교육자·평가자만 확인합니다. 자기 승인은 허용하지 않습니다.'};
-    if (teacher && !menteeOk(target) && !mentorIds(l).has(u.id)) throw {status: 403, error: '전체 멘티(직책 사원·2026년 이후 입사)에 해당하는 구성원이나 나의 멘티만 체크할 수 있어요.'};
     if (!teacher) throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
     const r = l.records[d.step]; if (!r) throw {status: 400, error: '배정된 교육 단계를 선택하세요.'};
     const t = today();
