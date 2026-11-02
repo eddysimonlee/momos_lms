@@ -425,6 +425,15 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(works_auth.profile_saved(db,self.learner['id']))  # 부서를 읽기 전 저장값 → 다시 로그인해서 채운다
             self.assertIsNone(works_auth.read_profile(db,self.learner['id'])['org'])
 
+    def test_added_key_points_keep_done_steps_done(self):
+        # 11/02 교육 내용 추가(맨 뒤): 완료한 교육은 새 칸도 체크된 것으로, 진행 중인 교육은 빈 칸
+        n=len(ob.STEPS['orders-cake']['checks']);self.assertEqual(n,6)
+        mk=lambda st,t:dict(status=st,self=[False]*4,teacher=t,teacherAt=[None]*4,checkBasis=ob.CHECK_BASIS)
+        L=dict(join='2026-11-01',planDates={},records={'orders-cake':mk('done',[True]*4)})
+        self.assertEqual(ob.fit(L)['records']['orders-cake']['teacher'],[True]*6)
+        L=dict(join='2026-11-01',planDates={},records={'orders-cake':mk('practice',[True,False,True,False])})
+        self.assertEqual(ob.fit(L)['records']['orders-cake']['teacher'],[True,False,True,False,False,False])
+
     def test_removed_key_point_keeps_later_checks_in_place(self):
         # 11/02 stock-beans 3번(1kg 예외) 삭제: 예전 4칸 기록의 4번 체크가 새 3번으로 옮겨지고, 한 번만 옮긴다
         self.assertEqual(len(ob.STEPS['stock-beans']['checks']),3)

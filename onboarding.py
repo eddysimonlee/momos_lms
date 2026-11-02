@@ -170,7 +170,9 @@ def fit(learner):
             r['kpMoves'] = (r.get('kpMoves') or []) + [move[0]]
         for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None), ('teacherName', None), ('teacherWhen', None)):
             if key in r and len(r[key]) != n:
-                r[key] = (list(r[key]) + [empty] * n)[:n]
+                # 교육 내용이 늘어나면 빈 칸을 붙인다. 이미 완료한 교육은 완료 그대로 — 새 칸도 체크된 것으로 둔다
+                fill = True if key == 'teacher' and r.get('status') == 'done' else empty
+                r[key] = (list(r[key]) + [fill] * n)[:n]
     return learner
 
 

@@ -144,7 +144,7 @@ def layout_parts(table):
         for child in c._tc.iterchildren():
             if child.tag == W + 'p':
                 t = _text(child)
-                if t and not has_pic:
+                if t and (not has_pic or re.search(r'다[.)」]?$', t) or re.match(r'[①-⑳㉑-㉟]', t)):  # 사진 칸의 짧은 설명은 빼고, 절차 단계(①…)·문장(…한다.)은 남긴다
                     out['paragraphs'].append(t)
             elif child.tag == W + 'tbl':
                 inner = Table(child, c)
@@ -255,7 +255,7 @@ def parse(path):
         if text == doc['title'] and cur is None:
             continue  # 본문 앞의 문서명 반복
         mnum = NUMBERED.match(text)
-        is_heading = bool(text) and (style in HEADING_STYLES or (mnum and len(text) < 70 and style in ('Normal', 'SOP 본문')
+        is_heading = bool(text) and (style in HEADING_STYLES or style.startswith('GUI 소제목') or (mnum and len(text) < 70 and style in ('Normal', 'SOP 본문')
                                                                       and not text.endswith(('.', '다', '요'))))
         if is_heading:
             if mnum:
