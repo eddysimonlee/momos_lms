@@ -180,7 +180,7 @@
       `<div class="v1-actions"><button type="button" class="v1-btn primary" data-sheet-apply>${n(sheetPick)}개 보기</button></div>`;
   }
   function openSheet() { sheetMode = 'filter'; sheetPick = filt; drawSheet(); $('v1Sheet').hidden = false; document.body.style.overflow = 'hidden'; $('v1Sheet').querySelector('[data-sheet-apply]').focus(); }
-  function closeSheet() { $('v1Sheet').hidden = true; document.body.style.overflow = ''; const b = sheetMode === 'org' ? $('v1Org') : $('app').querySelector('[data-filter-open]'); if (b && !b.hidden) b.focus({preventScroll: true}); }
+  function closeSheet() { $('v1Sheet').hidden = true; document.body.style.overflow = ''; const b = sheetMode === 'org' ? $('app').querySelector('[data-org-open]') : $('app').querySelector('[data-filter-open]'); if (b && !b.hidden) b.focus({preventScroll: true}); }
   $('v1Sheet').addEventListener('click', e => {
     const o = e.target.closest('[data-org-tog],[data-org-pick]');
     if (o) {
@@ -220,7 +220,6 @@
       $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
     }
     $('v1Who').hidden = branch && !profile();
-    $('v1Org').hidden = !(view === 'home' && chart() && homeTabNow() === 'org');  // 주소록은 전체 교육생 탭에서만
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
@@ -334,13 +333,15 @@
       : '<p class="v1-muted v1-hempty">내가 체크한 교육생이 여기에 모여요.<br>전체 교육생 탭에서 구성원을 골라 교육 내용을 체크해 보세요.</p>');
     return seg + orgHtml();
     function orgHtml() {
+    // 주소록 버튼: 전체 교육생 탭의 부서 이름 줄 오른쪽(탭 아래 내용이 부서에 따라 바뀌므로 그 자리에서 고른다)
+    const orgBtn = `<button type="button" class="v1-org-btn" data-org-open aria-haspopup="dialog"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7.5 3.5h5v4h-5zM2.5 12.5h5v4h-5zM12.5 12.5h5v4h-5zM10 7.5V10M5 12.5V10h10v2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>주소록</button>`;  // wds-allow: 조직도 아이콘 자산 없음, 임시 인라인
     if (chart()) {  // 주소록이 있으면: 고른 부서(처음엔 내 주 부서)에 직접 속한 사람(주 부서 기준)
-      if (!orgSel) return '<p class="v1-muted v1-orghead">내 부서를 찾지 못했어요. 오른쪽 위 주소록에서 부서를 골라 주세요.</p>';
+      if (!orgSel) return `<div class="v1-orghead"><p class="v1-muted">내 부서를 찾지 못했어요. 주소록에서 부서를 골라 주세요.</p>${orgBtn}</div>`;
       const path = orgPath(orgSel), unit = path[path.length - 1];
       const ppl = membersOf(orgSel).filter(m => m.id !== me);
       const list = ppl.map(m => ({m, s: m.id && sums.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
       const offRow = m => `<li class="v1-prow-off"><span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').trim().slice(0, 1))}</span></span><span class="v1-pbody"><strong>${esc(m.name)}</strong>${m.position ? ` <small class="v1-pdates">${esc(m.position)}</small>` : ''}</span><span class="v1-off">미접속</span></li>`;
-      return `<div class="v1-orghead">${path.length > 1 ? `<small>${path.slice(0, -1).map(u => esc(u.name)).join(' › ')}</small>` : ''}<h2>${esc(unit.name)} <span>· ${ppl.length}명</span></h2></div>` +
+      return `<div class="v1-orghead"><div>${path.length > 1 ? `<small>${path.slice(0, -1).map(u => esc(u.name)).join(' › ')}</small>` : ''}<h2>${esc(unit.name)} <span>· ${ppl.length}명</span></h2></div>${orgBtn}</div>` +
         (ppl.length ? `<ul class="v1-plist">${list.map(({m, s}) => s ? row(Object.assign({}, s, {position: m.position || s.position})) : offRow(m)).join('')}</ul>` : '<p class="v1-muted">이 부서에 직접 속한 구성원이 없어요. 주소록에서 하위 부서를 골라 보세요.</p>');
     }
     const others = sums.filter(x => x.id !== me);
@@ -569,6 +570,7 @@
     const fo = app.querySelector('[data-filter-open]'), fc = app.querySelector('[data-filter-clear]');
     if (fo) fo.onclick = openSheet;
     if (fc) fc.onclick = () => setFilter(null);
+    app.querySelectorAll('[data-org-open]').forEach(b => b.onclick = () => openOrgSheet());
     app.querySelectorAll('[data-home-tab]').forEach(b => b.onclick = () => { homeTab = b.dataset.homeTab; keepFocus = `[data-home-tab="${homeTab}"]`; render(); });
     app.querySelectorAll('[data-person]').forEach(b => b.onclick = async () => { try { cloud = await api('GET', null, b.dataset.person); view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); } catch (e) { toast(e.message); } });
     // 본문 끝의 '본문 접기': 접은 뒤 요약 줄이 화면 밖이면 그 줄까지만(가장 가까운 위치로) 바로 이동
@@ -702,7 +704,6 @@
     if (to === 'home' && view === 'person' && cloud.target !== cloud.user.id) { try { cloud = await api('GET'); } catch {} }  // 교육생 목록으로: 내 기록으로 돌아온다
     view = to; render(); };
   $('v1Ham').onclick = openNav;
-  $('v1Org').onclick = () => openOrgSheet();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
