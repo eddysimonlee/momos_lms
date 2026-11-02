@@ -425,6 +425,15 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(works_auth.profile_saved(db,self.learner['id']))  # 부서를 읽기 전 저장값 → 다시 로그인해서 채운다
             self.assertIsNone(works_auth.read_profile(db,self.learner['id'])['org'])
 
+    def test_removed_key_point_keeps_later_checks_in_place(self):
+        # 11/02 stock-beans 3번(1kg 예외) 삭제: 예전 4칸 기록의 4번 체크가 새 3번으로 옮겨지고, 한 번만 옮긴다
+        self.assertEqual(len(ob.STEPS['stock-beans']['checks']),3)
+        L=dict(join='2026-11-01',planDates={},records={'stock-beans':dict(status='practice',self=[False]*4,teacher=[True,False,True,False],teacherAt=['d1',None,'d3',None],
+              teacherBy=['a',None,'c',None],teacherName=['A',None,'C',None],teacherWhen=[1,None,3,None],checkBasis=ob.CHECK_BASIS)})
+        r=ob.fit(L)['records']['stock-beans'];self.assertEqual((r['teacher'],r['teacherBy']),([True,False,False],['a',None,None]))
+        r['teacher'][2]=True;self.assertEqual(ob.fit(L)['records']['stock-beans']['teacher'],[True,False,True])  # 다시 옮기지 않는다
+        fresh=ob.fit(dict(join='2026-11-01',planDates={},records={}))['records']['stock-beans'];self.assertEqual(len(fresh['teacher']),3)
+
     def test_org_chart_links_works_directory_to_education(self):
         # 11/02 주소록: WORKS 부서·구성원 저장본 + LMS 교육 기록. 교육을 시작하지 않은 사람은 id 없음(미접속)
         import works_auth

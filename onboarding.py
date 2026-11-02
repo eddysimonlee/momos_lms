@@ -30,6 +30,9 @@ STEPS = {s['id']: dict(s, unit=u['id'], plan=s.get('defaultDays', u['plan'])) fo
 _LESSONS = Path(__file__).with_name('v1_lessons.json')
 # 2026-10-29: '수행 확인'을 없애고 교육 내용(keyPoints) 항목마다 체크한다. 교육 내용이 없는 항목(첫날 OJT 17항목)만 기존 체크 목록.
 CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관리자)만. 교육생 체크는 쓰지 않는다
+# 교육 내용(체크 항목)을 중간에서 지웠을 때 이미 저장된 체크가 한 칸씩 밀리지 않도록, 남는 항목의 예전 번호를 적어 둔다(한 번만 옮긴다).
+# {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호)}
+KP_MOVES = {'stock-beans': ('kp-2026-11-02-1kg', 4, [0, 1, 3])}  # 11/02: 3번 '1kg 예외' 삭제(이카운트 SOP 분리·MD 교대 절차 기준)
 def _check_texts(l):
     kps = [k['text'] for k in l.get('keyPoints') or []]
     return kps or [c['text'] if isinstance(c, dict) else c for c in l.get('checks') or []]
@@ -159,6 +162,12 @@ def fit(learner):
                      teacher=[done] * n, teacherAt=[r.get('done') if done else None] * n, teacherBy=[None] * n, teacherName=[None] * n, checkBasis=CHECK_BASIS)
             if r.get('status') in ('review', 'practice'):
                 r['status'] = 'ready'
+        move = KP_MOVES.get(ident)
+        if move and move[0] not in (r.get('kpMoves') or []):
+            if len(r.get('teacher') or []) == move[1]:  # 지우기 전 길이로 저장된 기록만 옮긴다(새 기록은 이미 새 순서)
+                for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                    if key in r and len(r[key]) == move[1]: r[key] = [r[key][i] for i in move[2]]
+            r['kpMoves'] = (r.get('kpMoves') or []) + [move[0]]
         for key, empty in (('self', False), ('teacher', False), ('selfAt', None), ('teacherAt', None), ('selfBy', None), ('teacherBy', None), ('teacherName', None), ('teacherWhen', None)):
             if key in r and len(r[key]) != n:
                 r[key] = (list(r[key]) + [empty] * n)[:n]
