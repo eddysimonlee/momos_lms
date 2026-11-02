@@ -131,6 +131,35 @@
   const FILTER_KEY = 'v1.filter', FKIND = {shift: '근무조', position: '포지션'};
   // 필터는 '전체 교육' 보기 안에서만 유지(거기서 들어간 항목 포함). 다른 화면으로 벗어나면 초기화한다(멘토·멘티 모두, 저장하지 않음)
   let filt = null, sheetPick = null;
+  let sheetMode = 'filter';
+
+  // --- 11/02 주소록(조직도): WORKS 부서 목록. 첫 화면은 내 주 부서, 부서를 고르면 그 부서에 직접 속한 사람(주 부서 기준)
+  const NOORG = '__none';  // 주소록에서 부서를 찾지 못한 사람
+  let orgSel = null; const orgOpen = new Set();
+  const chart = () => cloud && cloud.orgChart;
+  const unitsOf = () => { const c = chart(), ids = new Set(c.units.map(u => u.id));
+    const lost = c.members.some(m => !m.org || !ids.has(m.org));
+    return lost ? c.units.concat([{id: NOORG, name: '부서 미확인', parent: null, order: 1e9}]) : c.units; };
+  const orgOf = id => unitsOf().find(u => u.id === id);
+  const membersOf = id => { const ids = new Set(chart().units.map(u => u.id));
+    return chart().members.filter(m => id === NOORG ? !m.org || !ids.has(m.org) : m.org === id); };
+  const orgPath = id => { const out = []; let u = orgOf(id); while (u && out.length < 20) { out.unshift(u); u = u.parent && orgOf(u.parent); } return out; };
+  const childrenOf = id => unitsOf().filter(u => (u.parent || null) === id || (id === null && u.parent && !orgOf(u.parent))).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, 'ko'));
+  function drawOrgSheet() {
+    const node = u => { const kids = childrenOf(u.id), open = orgOpen.has(u.id), n = membersOf(u.id).filter(m => m.id !== cloud.user.id).length;  // 첫 화면 표와 같게 나는 빼고 센다
+      const mine = chart().mine === u.id ? ' <span class="v1-mine">내 부서</span>' : '';
+      return `<li><div class="v1-onode"><button type="button" class="v1-otog${kids.length ? '' : ' leaf'}" ${kids.length ? `data-org-tog="${esc(u.id)}" aria-expanded="${open}" aria-label="${esc(u.name)} ${open ? '접기' : '펼치기'}"` : 'tabindex="-1" aria-hidden="true"'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
+        `<button type="button" class="v1-opick${orgSel === u.id ? ' on' : ''}" data-org-pick="${esc(u.id)}"${orgSel === u.id ? ' aria-current="true"' : ''}><span>${esc(u.name)}${mine}</span><small>${n}명</small></button></div>` +
+        (kids.length && open ? `<ul>${kids.map(node).join('')}</ul>` : '') + '</li>'; };
+    $('v1Sheet').querySelector('.v1-sheet-panel').innerHTML = '<div class="v1-sheet-grab" aria-hidden="true"></div><h2 id="v1SheetTitle">주소록</h2>' +
+      '<p class="v1-muted">부서를 누르면 그 부서 구성원의 교육 현황을 볼 수 있어요.</p>' +
+      `<ul class="v1-otree">${childrenOf(null).map(node).join('')}</ul>`;
+  }
+  function openOrgSheet() {
+    sheetMode = 'org'; orgPath(orgSel).slice(0, -1).forEach(u => orgOpen.add(u.id));  // 지금 보는 부서까지 펼쳐 둔다
+    drawOrgSheet(); $('v1Sheet').hidden = false; document.body.style.overflow = 'hidden';
+    const on = $('v1Sheet').querySelector('.v1-opick.on') || $('v1Sheet').querySelector('.v1-opick'); if (on) { on.focus(); on.scrollIntoView({block: 'nearest'}); }
+  }
   try { localStorage.removeItem(FILTER_KEY); } catch {}
   const validFilter = f => f && f.k in FKIND && ((content.filters || {})[f.k] || []).includes(f.v) ? {k: f.k, v: f.v} : null;
   const matches = (s, f = filt) => !f || (s[f.k] || []).includes(f.v);
@@ -150,9 +179,15 @@
       `<div class="v1-fwrap" style="margin-top:var(--spacing-16)">${chip(null)}</div>${group('shift')}${group('position')}` +
       `<div class="v1-actions"><button type="button" class="v1-btn primary" data-sheet-apply>${n(sheetPick)}개 보기</button></div>`;
   }
-  function openSheet() { sheetPick = filt; drawSheet(); $('v1Sheet').hidden = false; document.body.style.overflow = 'hidden'; $('v1Sheet').querySelector('[data-sheet-apply]').focus(); }
-  function closeSheet() { $('v1Sheet').hidden = true; document.body.style.overflow = ''; const b = $('app').querySelector('[data-filter-open]'); if (b) b.focus({preventScroll: true}); }
+  function openSheet() { sheetMode = 'filter'; sheetPick = filt; drawSheet(); $('v1Sheet').hidden = false; document.body.style.overflow = 'hidden'; $('v1Sheet').querySelector('[data-sheet-apply]').focus(); }
+  function closeSheet() { $('v1Sheet').hidden = true; document.body.style.overflow = ''; const b = sheetMode === 'org' ? $('v1Org') : $('app').querySelector('[data-filter-open]'); if (b && !b.hidden) b.focus({preventScroll: true}); }
   $('v1Sheet').addEventListener('click', e => {
+    const o = e.target.closest('[data-org-tog],[data-org-pick]');
+    if (o) {
+      if (o.hasAttribute('data-org-tog')) { const id = o.dataset.orgTog; orgOpen.has(id) ? orgOpen.delete(id) : orgOpen.add(id); drawOrgSheet(); $('v1Sheet').querySelector(`[data-org-tog="${CSS.escape(id)}"]`).focus(); }
+      else { orgSel = o.dataset.orgPick; closeSheet(); view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); }
+      return;
+    }
     const t = e.target.closest('[data-pick],[data-sheet-apply],[data-sheet-close]');
     if (!t) return;
     if (t.hasAttribute('data-pick')) { const [k, v] = t.dataset.pick.split('|'); sheetPick = t.dataset.pick ? {k, v} : null; drawSheet(); }
@@ -171,7 +206,7 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : view === 'person' || view === 'all' ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
@@ -185,6 +220,7 @@
       $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
     }
     $('v1Who').hidden = branch && !profile();
+    $('v1Org').hidden = !(view === 'home' && chart());
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
@@ -280,17 +316,29 @@
   // 첫 화면(모든 직원): 맨 위 '내 교육' 줄 + 부서별 구성원 표(교육을 시작한 모든 사람). 누르면 그 사람의 교육
   function homeHtml() {
     const sums = cloud.educationSummary || [], me = cloud.user.id;
+    const by = (a, b) => a.name.localeCompare(b.name, 'ko');
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
       const meta = [label ? '' : x.position, `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
       return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">${esc(meta)}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
-    const self = sums.find(x => x.id === me) || Object.assign({}, cloud.user, cloud.myDates || {}, {states: {}});
+    // 11/02: '내 교육'은 왼쪽 메뉴로 옮겼다
+    // 직책순(WORKS 직책 표시 순서, 받지 못하면 직책 이름순, 직책 없음은 맨 뒤) → 같은 직책 안에서는 이름순. 교육 시작·미접속은 섞는다
+    const order = (chart() && chart().positions) || [], rank = p => !p ? [2, 0, ''] : order.includes(p) ? [0, order.indexOf(p), ''] : [1, 0, p];
+    const byPos = (a, b) => { const x = rank(a.position), y = rank(b.position); return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2], 'ko') || by(a, b); };
+    if (chart()) {  // 주소록이 있으면: 고른 부서(처음엔 내 주 부서)에 직접 속한 사람(주 부서 기준)
+      if (!orgSel || !orgOf(orgSel)) orgSel = chart().mine && orgOf(chart().mine) ? chart().mine : null;
+      if (!orgSel) return '<p class="v1-muted v1-orghead">내 부서를 찾지 못했어요. 오른쪽 위 주소록에서 부서를 골라 주세요.</p>';
+      const path = orgPath(orgSel), unit = path[path.length - 1];
+      const ppl = membersOf(orgSel).filter(m => m.id !== me);
+      const list = ppl.map(m => ({m, s: m.id && sums.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
+      const offRow = m => `<li class="v1-prow-off"><span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').trim().slice(0, 1))}</span></span><span class="v1-pbody"><strong>${esc(m.name)}</strong>${m.position ? ` <small class="v1-pdates">${esc(m.position)}</small>` : ''}</span><span class="v1-off">미접속</span></li>`;
+      return `<div class="v1-orghead">${path.length > 1 ? `<small>${path.slice(0, -1).map(u => esc(u.name)).join(' › ')}</small>` : ''}<h2>${esc(unit.name)} <span>· ${ppl.length}명</span></h2></div>` +
+        (ppl.length ? `<ul class="v1-plist">${list.map(({m, s}) => s ? row(Object.assign({}, s, {position: m.position || s.position})) : offRow(m)).join('')}</ul>` : '<p class="v1-muted">이 부서에 직접 속한 구성원이 없어요. 주소록에서 하위 부서를 골라 보세요.</p>');
+    }
     const others = sums.filter(x => x.id !== me);
     const groups = {}; others.forEach(x => (groups[x.org || ''] = groups[x.org || ''] || []).push(x));
     const names = Object.keys(groups).sort((a, b) => (a === '') - (b === '') || a.localeCompare(b, 'ko'));
-    const by = (a, b) => a.name.localeCompare(b.name, 'ko');
-    return `<ul class="v1-plist v1-me">${row(self, '내 교육')}</ul>` +
-      (names.length ? names.map(g => `<h3 class="v1-pcat">${esc(g || '부서 미확인')} · ${groups[g].length}명</h3><ul class="v1-plist">${groups[g].sort(by).map(x => row(x)).join('')}</ul>`).join('')
-        : '<p class="v1-muted">아직 교육을 시작한 구성원이 없어요.</p>');
+    return names.length ? names.map(g => `<h3 class="v1-pcat">${esc(g || '부서 미확인')} · ${groups[g].length}명</h3><ul class="v1-plist">${groups[g].sort(byPos).map(x => row(x)).join('')}</ul>`).join('')
+      : '<p class="v1-muted">아직 교육을 시작한 구성원이 없어요.</p>';
   }
 
   function enrolNotice() {
@@ -370,10 +418,10 @@
   function drawNav() {
     const homeLabel = '교육 현황', inStage = view === 'stage';
     const item = (attrs, label, on, depth2) => `<button type="button" class="v1-nav-item${on ? ' on' : ''}${depth2 ? ' d2' : ''}" ${attrs} ${on ? 'aria-current="page"' : ''}>${label}</button>`;
-    // 11/02: 지점 선택·변경과 '교육 과정'은 숨김(모든 조직이 같은 교육 자료를 쓴다). 메뉴 = 교육 현황 · (admin) LMS관리자
+    // 11/02: 지점 선택·변경과 '교육 과정'은 숨김(모든 조직이 같은 교육 자료를 쓴다). 메뉴 = 내 교육 · 교육 현황 · (admin) LMS관리자(첫 화면은 교육 현황)
     $('v1Nav').querySelector('.v1-nav-panel').innerHTML =
       `<div class="v1-nav-head">${avatar(cloud.user)}<span><strong>${esc(cloud.user.name)}</strong><small>${esc(isStaff() ? 'admin' : '')}</small></span></div>` +
-      `<div class="v1-nav-body">${item('data-nav="home"', esc(homeLabel), view === 'home' || view === 'person' || view === 'all')}</div>` +
+      `<div class="v1-nav-body">${item('data-nav="mine"', '내 교육', (view === 'person' || view === 'all') && own())}${item('data-nav="home"', esc(homeLabel), view === 'home' || ((view === 'person' || view === 'all') && !own()))}</div>` +
       (isStaff() ? `<div class="v1-nav-foot">${item('data-nav="admin"', 'LMS관리자', view === 'admin').replace('class="v1-nav-item', 'class="v1-nav-item v1-nav-danger')}</div>` : '');
   }
   function openNav() { if (view === 'stage') navStagesOpen = true; drawNav(); $('v1Nav').hidden = false; document.body.style.overflow = 'hidden'; $('v1Nav').querySelector('.v1-nav-item').focus(); }
@@ -387,6 +435,7 @@
     if (cloud.target !== cloud.user.id && to !== 'branch') { try { cloud = await api('GET'); } catch {} }  // 메뉴는 항상 '나' 기준
     if (to === 'all') { homeScroll = null; view = 'all'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'stage') { stageSel = Number(t.dataset.navStage); homeScroll = null; view = 'stage'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    if (to === 'mine') { homeScroll = null; view = 'person'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'home') { view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'admin') { view = 'admin'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'branch') { pickBranch = null; view = 'branch'; render(); return; }
@@ -637,6 +686,7 @@
     if (to === 'home' && view === 'person' && cloud.target !== cloud.user.id) { try { cloud = await api('GET'); } catch {} }  // 교육생 목록으로: 내 기록으로 돌아온다
     view = to; render(); };
   $('v1Ham').onclick = openNav;
+  $('v1Org').onclick = () => openOrgSheet();
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });

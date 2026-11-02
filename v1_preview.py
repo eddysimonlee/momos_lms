@@ -70,7 +70,13 @@ MOCK = r'''
   const dates = id => ({hiredDate: HIRED[id] || null, targetDate: target6(HIRED[id])});
   // 미리보기용 직책·부서(WORKS positionName·orgUnitName 대신). 체험 신입은 부서를 못 읽은 경우 → '부서 미확인'
   const POSITION = {'u-staff': '매니저', 'u-learner': '사원', 'u-newbie': '사원'};
-  const ORG = {'u-staff': '온천장 본점 바리스타팀', 'u-learner': '온천장 본점 바리스타팀'};
+  const ORG = {'u-staff': '온천본점', 'u-learner': '온천본점'};
+  // 미리보기용 주소록(WORKS 부서·구성원 대신). 체험 미접속 구성원은 교육을 시작하지 않은 사람
+  const UNITS = [['exec', '임원실', null], ['brand', '브랜드전략사업부', null], ['brand-plan', '브랜드기획팀', 'brand'], ['ecom', '이커머스파트', 'brand-plan'],
+    ['store', '매장사업부', null], ['bakery', '베이커리팀', 'store'], ['oncheon', '온천본점', 'store'], ['marine', '마린점', 'store'], ['yeongdo', '영도점', 'store'],
+    ['bean', '생두사업부', null], ['tech', '기술부', null], ['qa', '품질개발팀', 'tech'], ['ops', '경영지원실', null]].map(([id, name, parent], order) => ({id, name, parent, order}));
+  const UNIT_OF = {'u-staff': 'oncheon', 'u-learner': 'oncheon'};
+  const OFFLINE = [['체험 바리스타', 'oncheon', '사원'], ['가나 바리스타', 'oncheon', '사원'], ['체험 점장', 'oncheon', '점장'], ['체험 매니저', 'oncheon', '매니저'], ['체험 베이커', 'bakery', '사원'], ['체험 마린', 'marine', '매니저'], ['체험 본부장', 'store', '본부장']];
   const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
   // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
@@ -78,7 +84,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-15';
+  const KEY = 'momos-v1-preview-17';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -122,7 +128,7 @@ MOCK = r'''
       return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
-      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, lmsAdmin: lms, lmsLevel: levelOf(u),
+      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['본부장', '점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }

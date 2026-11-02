@@ -366,13 +366,17 @@ def valid_date(v):
         return None
 
 
-def org_of(u):
-    """WORKS 구성원의 주 소속 부서 이름: 주 소속 조직(organizations[].primary)의 주 부서(orgUnits[].primary) orgUnitName. 없으면 None."""
+def primary_unit(u):
+    """WORKS 구성원의 주 부서: 주 소속 조직(organizations[].primary)의 주 부서(orgUnits[].primary). 표시가 없으면 첫 조직·첫 부서."""
     orgs = u.get('organizations') or []
     org = next((o for o in orgs if o.get('primary')), orgs[0] if orgs else {})
     units = org.get('orgUnits') or []
-    unit = next((x for x in units if x.get('primary')), units[0] if units else {})
-    name = str(unit.get('orgUnitName') or '').strip()
+    return next((x for x in units if x.get('primary')), units[0] if units else {})
+
+
+def org_of(u):
+    """WORKS 구성원의 주 소속 부서 이름(orgUnitName). 없으면 None."""
+    name = str(primary_unit(u).get('orgUnitName') or '').strip()
     return name[:100] or None
 
 
@@ -496,39 +500,80 @@ def directory(user_id, now=None):
     return people
 
 
-def orgunits_check(user_id):
-    """11/02 확인용: 로그인한 admin 의 토큰(directory.read)으로 WORKS 조직 목록(GET /orgunits)을 읽을 수 있는지 본다.
-    부서 수·상위 부서 정보가 있는지·최상위 부서 이름 몇 개만 돌려준다. 로그에는 성공 여부와 개수만 남긴다."""
-    try:
-        token = _token_for(user_id)
-    except DirectoryUnavailable as e:
-        return dict(ok=False, reason=str(e))
-    units, cursor = [], ''
-    try:
-        for _ in range(30):  # 100개 × 30쪽까지
-            data = _get_json(f'{API_BASE}/orgunits?' + urlencode(dict(count=100, **({'cursor': cursor} if cursor else {}))), token)
-            units += data.get('orgUnits') or []
-            cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
-            if not cursor:
-                break
+# --- 조직도(11/02): 첫 화면의 '주소록'. WORKS 부서 목록(GET /orgunits)과 구성원(GET /users)을 읽어 DB 에 한 장으로 저장한다.
+# 화면이 열릴 때(GET /api/onboarding) 그 사람의 토큰으로 10분마다 다시 받는다(처음 한 번만 기다리고, 이후에는 뒤에서).
+# 저장하는 것: 부서 id·이름·상위 부서·순서, 구성원 이메일(LMS 계정과 맞추는 용도)·이름·주 부서 id·직책. 토큰은 저장하지 않는다.
+ORG_KEY = 30_000_000_000
+ORG_SECONDS = 600
+_ORG_LOCK = __import__('threading').Lock()
+
+
+def _pages(url, token, key, limit=50):
+    items, cursor = [], ''
+    for _ in range(limit):
+        data = _get_json(url + '?' + urlencode(dict(count=100, **({'cursor': cursor} if cursor else {}))), token)
+        items += data.get(key) or []
+        cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
+        if not cursor:
+            break
+    return items
+
+
+def fetch_org(token, allowed):
+    units = [dict(id=str(x['orgUnitId']), name=str(x.get('orgUnitName') or '').strip()[:100], parent=str(x.get('parentOrgUnitId') or '') or None,
+                  order=int(x.get('displayOrder') or 0)) for x in _pages(f'{API_BASE}/orgunits', token, 'orgUnits', 30)
+             if x.get('orgUnitId') and x.get('visible') is not False]
+    members = []
+    for u in _pages(f'{API_BASE}/users', token, 'users'):
+        m = _member(u, allowed)
+        if m:
+            members.append(dict(email=m['email'], name=m['name'], org=str(primary_unit(u).get('orgUnitId') or '') or None, position=position_of(u)))
+    positions = None
+    try:  # 직책 표시 순서(GET /directory/positions). WORKS 관리자 권한이 필요하면 403 → 없음(화면은 직책 이름순)
+        rows = _pages(f'{API_BASE}/directory/positions', token, 'positions', 10)
+        positions = [str(x.get('positionName') or '').strip() for x in sorted(rows, key=lambda x: int(x.get('displayOrder') or 0)) if x.get('positionName')]
     except HTTPError as e:
-        code = ''
-        try:
-            body = json.loads(e.read() or b'{}'); code = str(body.get('code') or body.get('error') or '')[:80]
-        except Exception:
-            pass
-        print(f'works login: orgunits check failed: status={e.code} error={code}', flush=True)
-        return dict(ok=False, status=e.code, code=code)
+        print(f'works org: positions unavailable status={e.code}', flush=True)
     except (URLError, TimeoutError, ValueError) as e:
-        _log_failure('orgunits check', e)
-        return dict(ok=False, reason=type(e).__name__)
-    ids = {u.get('orgUnitId') for u in units}
-    with_parent = [u for u in units if u.get('parentOrgUnitId')]
-    top = [u for u in units if not u.get('parentOrgUnitId') or u.get('parentOrgUnitId') not in ids]
-    print(f'works orgunits check: ok count={len(units)} withParent={len(with_parent)}', flush=True)
-    return dict(ok=True, count=len(units), withParent=len(with_parent), fields=sorted({k for u in units[:20] for k in u}),
-                top=[str(u.get('orgUnitName') or '') for u in top[:15]],
-                sample=[dict(name=u.get('orgUnitName'), parent=next((str(x.get('orgUnitName')) for x in units if x.get('orgUnitId') == u.get('parentOrgUnitId')), None)) for u in units[:15]])
+        _log_failure('positions', e)
+    return dict(kind='works-org', at=time.time(), units=units, members=members, positions=positions)
+
+
+def read_org(db):
+    import lms_store as projects
+    row = projects.Rooms.read(db, ORG_KEY)
+    return row if row and row.get('kind') == 'works-org' else None
+
+
+def refresh_org(store, user_id, now=None):
+    """조직도가 없거나 10분이 지났으면 이 사람의 토큰으로 다시 받는다. 토큰이 없거나 실패하면 저장된 것을 그대로 쓴다."""
+    import lms_store as projects
+    if not enabled() or user_id not in _TOKENS:
+        return
+    with store.connect() as db:
+        old = read_org(db)
+    if old and (now or time.time()) - float(old.get('at') or 0) < ORG_SECONDS:
+        return
+    def run():
+        if not _ORG_LOCK.acquire(blocking=False):
+            return
+        try:
+            snap = fetch_org(_token_for(user_id), config()['allowed'])
+            with store.connect() as db:
+                projects.Rooms.write(db, ORG_KEY, snap)
+            print(f'works org: units={len(snap["units"])} members={len(snap["members"])} positions={len(snap["positions"]) if snap["positions"] is not None else "none"}', flush=True)
+        except HTTPError as e:
+            _log_failure('org', e)
+            if e.code == 401:
+                _TOKENS.pop(user_id, None)
+        except Exception as e:
+            _log_failure('org', e)
+        finally:
+            _ORG_LOCK.release()
+    if old:
+        __import__('threading').Thread(target=run, daemon=True).start()
+    else:
+        run()
 
 
 def search(people, q, exclude_email='', limit=20):

@@ -425,6 +425,35 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(works_auth.profile_saved(db,self.learner['id']))  # 부서를 읽기 전 저장값 → 다시 로그인해서 채운다
             self.assertIsNone(works_auth.read_profile(db,self.learner['id'])['org'])
 
+    def test_org_chart_links_works_directory_to_education(self):
+        # 11/02 주소록: WORKS 부서·구성원 저장본 + LMS 교육 기록. 교육을 시작하지 않은 사람은 id 없음(미접속)
+        import works_auth
+        self.assertIsNone(self.service.get(self.other)['orgChart'])  # 저장본이 없으면(로컬·WORKS 꺼짐) 이름별 묶음
+        units=[dict(id='a',name='매장사업부',parent=None,order=1),dict(id='b',name='온천 본점',parent='a',order=1)]
+        members=[dict(email=self.learner['email'].lower(),name='교육생',org='b',position='사원'),
+                 dict(email=self.other['email'].lower(),name='다른 직원',org='b',position='매니저'),
+                 dict(email='nobody@example.test',name='미접속자',org='a',position=None)]
+        with self.store.connect() as db:projects.Rooms.write(db,works_auth.ORG_KEY,dict(kind='works-org',at=0,units=units,members=members))
+        self.act(self.content,'config.selfEnrol',{})  # 주소록에 없는 LMS 계정 → 저장된 부서 이름으로
+        c=self.service.get(self.other)['orgChart']
+        self.assertEqual((c['units'],c['mine'],c['positions']),(units,'b',None))
+        got={m['name']:(m['id'],m['org']) for m in c['members']}
+        self.assertEqual(got['교육생'],(self.learner['id'],'b'))
+        self.assertEqual(got['다른 직원'],(None,'b'))  # 교육을 시작하지 않았으면 미접속
+        self.assertEqual(got['미접속자'],(None,'a'))
+        self.assertEqual(got[self.content['name']],(self.content['id'],'b'))  # 저장된 부서 이름 '온천 본점'으로 찾는다
+        self.assertNotIn('email',c['members'][0])
+        with patch.object(works_auth,'enabled',lambda:False):works_auth.refresh_org(self.store,self.other['id'])  # 꺼져 있으면 아무것도 안 한다
+        snap={'orgUnits':[{'orgUnitId':'a','orgUnitName':'매장사업부','displayOrder':2},{'orgUnitId':'z','orgUnitName':'숨김','visible':False}]}
+        users={'users':[{'userId':'1','email':'x@momos.co.kr','userName':{'lastName':'김','firstName':'철수'},'organizations':[{'primary':True,'orgUnits':[{'primary':True,'orgUnitId':'a','positionName':'사원'}]}]}]}
+        pos={'positions':[{'positionName':'사원','displayOrder':3},{'positionName':'점장','displayOrder':1}]}
+        with patch.object(works_auth,'_get_json',side_effect=[snap,users,pos]):r=works_auth.fetch_org('t',['momos.co.kr'])
+        self.assertEqual(r['units'],[dict(id='a',name='매장사업부',parent=None,order=2)]);self.assertEqual(r['positions'],['점장','사원'])
+        import urllib.error
+        with patch.object(works_auth,'_get_json',side_effect=[snap,users,urllib.error.HTTPError('u',403,'x',{},None)]):
+            self.assertIsNone(works_auth.fetch_org('t',['momos.co.kr'])['positions'])  # 직책 목록 권한이 없으면 없음
+        self.assertEqual([(m['email'],m['org'],m['position']) for m in r['members']],[('x@momos.co.kr','a','사원')])
+
     def test_org_table_everyone_marks_others_and_one_time_reset(self):
         # 11/02: 첫 화면 = 부서별 구성원 표(교육을 시작한 사람). 모모스 직원이면 누구나 다른 사람을 체크, 본인은 못 한다
         import works_auth

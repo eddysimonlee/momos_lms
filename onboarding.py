@@ -325,13 +325,27 @@ class Service:
             summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),total=len(STEPS),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
+        # 11/02 조직도(주소록): WORKS 부서·구성원 저장본에 LMS 교육 기록을 잇는다. 교육을 시작하지 않은 사람은 id 없음(화면에 '미접속')
+        org_chart=None; org=works_auth.read_org(db)
+        if org and user.get('company')=='momos':
+            emails={str(r['email'] or '').lower():r['id'] for r in db.execute("SELECT id,email FROM access_users WHERE status='active' AND company='momos'").fetchall()}
+            enrolled={x['id'] for x in summaries}; by_name={}
+            for u in org['units']: by_name.setdefault(u['name'],u['id'])
+            members,seen=[],set()
+            for m in org['members']:
+                lid=emails.get(m['email']); lid=lid if lid in enrolled and lid not in seen else None
+                if lid: seen.add(lid)
+                members.append(dict(id=lid,name=m['name'],position=m['position'],org=m['org']))
+            members+=[dict(id=x['id'],name=x['name'],position=x.get('position'),org=by_name.get(x.get('org'))) for x in summaries if x['id'] not in seen]  # 주소록에 없는 LMS 계정
+            mine=next((m['org'] for m in org['members'] if m['email']==str(user.get('email') or '').lower()),None) or by_name.get(works_auth.read_profile(db,user['id']).get('org'))
+            org_chart=dict(units=org['units'],members=members,mine=mine,positions=org.get('positions'))
         reviews=self.system_reviews(root) if review_access else []
         # Static teaching caveats only; processing comments, attachments and history stay restricted.
         lesson_notes=[{k:copy.deepcopy(r[k]) for k in ('id','title','category','step','relatedSteps','needed','evidence','sourceFile','sourceVersion','checkedAt') if k in r} for r in SYSTEM_REVIEWS if root.get('systemReviews',{}).get(r['id'],{}).get('status')!='applied']
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
-                    myDates=dates(user['id']), profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
+                    myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
