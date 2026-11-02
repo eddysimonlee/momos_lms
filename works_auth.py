@@ -92,7 +92,7 @@ def login(handler, query=None):
     state, nonce = secrets.token_urlsafe(24), secrets.token_urlsafe(16)
     nxt = ((query or {}).get('next') or ['v1'])[0]
     nxt = nxt if nxt in NEXT else 'v1'
-    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read directory.read',  # user.read: 구성원 사진
+    params = dict(client_id=cfg['client_id'], redirect_uri=_redirect_url(handler, cfg), scope='openid email profile user.read directory.read file.read',  # user.read: 구성원 사진
                   response_type='code', state=state, nonce=nonce)
     if cfg['domain']:
         params['domain'] = cfg['domain']
@@ -574,6 +574,113 @@ def refresh_org(store, user_id, now=None):
         __import__('threading').Thread(target=run, daemon=True).start()
     else:
         run()
+
+
+# --- 업무문서 폴더(11/02 연동): LMS 교육의 근거 문서는 WORKS 드라이브의 이 폴더(하위 폴더 포함)만 쓴다.
+# 공용 드라이브 › SOP › ST_매장사업부 › ST-002_온천본점 › 업무문서. 첫 이름이 공유 드라이브 이름이면 그 드라이브 안에서, 아니면 각 드라이브 맨 위부터 찾는다.
+# 로그인한 admin 의 토큰(file.read)으로 읽는다. 토큰은 서버 메모리에만. 주기적으로 확인하지는 않는다(요청할 때만).
+DOCS_PATH = [x for x in os.environ.get('WORKS_DOCS_PATH', 'SOP/ST_매장사업부/ST-002_온천본점/업무문서').split('/') if x.strip()]
+
+
+def _nfc(t):
+    import unicodedata
+    return unicodedata.normalize('NFC', str(t or '')).strip()
+
+
+def _drive_list(token, url, key='files', limit=50):
+    items, cursor = [], ''
+    for _ in range(limit):
+        data = _get_json(url + ('&' if '?' in url else '?') + urlencode(dict(count=200, **({'cursor': cursor} if cursor else {}))), token)
+        items += data.get(key) or []
+        cursor = (data.get('responseMetaData') or {}).get('nextCursor') or ''
+        if not cursor:
+            break
+    return items
+
+
+def _children(token, drive, folder=None):
+    from urllib.parse import quote
+    base = f'{API_BASE}/sharedrives/{quote(drive, safe="@")}/files'
+    return _drive_list(token, base if folder is None else f'{base}/{quote(folder, safe="")}/children')
+
+
+def docs_folder(token, path=None):
+    """업무문서 폴더 찾기 → (공유 드라이브 id, 폴더 id, 드라이브 목록). 못 찾으면 폴더 id 는 None."""
+    path = [_nfc(x) for x in (path or DOCS_PATH)]
+    drives = [dict(id=str(d.get('sharedriveId') or d.get('id') or ''), name=_nfc(d.get('sharedriveName') or d.get('name'))) for d in _drive_list(token, f'{API_BASE}/sharedrives', 'sharedrives', 10)]
+    for d in sorted(drives, key=lambda d: d['name'] != path[0]):  # 이름이 같은 드라이브부터
+        rest = path[1:] if d['name'] == path[0] else path
+        folder = None
+        for name in rest:
+            hit = next((f for f in _children(token, d['id'], folder) if f.get('fileType') == 'FOLDER' and _nfc(f.get('fileName')) == name), None)
+            if not hit:
+                folder = None
+                break
+            folder = hit['fileId']
+        if folder:
+            return d['id'], folder, drives
+    return None, None, drives
+
+
+def docs_tree(token, drive, folder, depth=8, cap=3000):
+    """폴더 아래 모든 파일(하위 폴더 포함): [{path, fileId, size, modified, type}]."""
+    out = []
+    def walk(fid, prefix, level):
+        for f in _children(token, drive, fid):
+            name = _nfc(f.get('fileName'))
+            if f.get('fileType') == 'FOLDER':
+                if level < depth: walk(f['fileId'], prefix + name + '/', level + 1)
+            elif len(out) < cap:
+                out.append(dict(path=prefix + name, fileId=f['fileId'], size=f.get('fileSize'), modified=f.get('modifiedTime'), type=f.get('fileType')))
+    walk(folder, '', 0)
+    return sorted(out, key=lambda x: x['path'])
+
+
+def docs_download(token, drive, file_id, limit=50_000_000):
+    """파일 받기(GET …/download → 302 파일 주소). 너무 크면 ValueError."""
+    from urllib.parse import quote
+    req = Request(f'{API_BASE}/sharedrives/{quote(drive, safe="@")}/files/{quote(file_id, safe="")}/download', headers={**UA, 'Authorization': 'Bearer ' + token, 'Accept': '*/*'})
+    with urlopen(req, timeout=30) as r:
+        raw = r.read(limit + 1)
+    if len(raw) > limit:
+        raise ValueError('파일이 너무 커요.')
+    return raw
+
+
+def docs_check(user_id):
+    """확인용(admin): 업무문서 폴더를 찾고, 파일 목록과 docx 하나 받기가 되는지 본다. 파일 내용은 돌려주지 않는다."""
+    try:
+        token = _token_for(user_id)
+    except DirectoryUnavailable as e:
+        return dict(ok=False, reason=str(e))
+    step = 'sharedrives'
+    try:
+        drive, folder, drives = docs_folder(token)
+        out = dict(ok=bool(folder), path='/'.join(DOCS_PATH), drives=drives, sharedriveId=drive, folderId=folder)
+        if not folder:
+            print(f'works docs check: folder not found drives={len(drives)}', flush=True)
+            return out
+        step = 'tree'
+        tree = docs_tree(token, drive, folder)
+        out.update(files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified']] for x in tree[:400]])
+        sample = next((x for x in tree if x['path'].lower().endswith('.docx')), None)
+        if sample:
+            step = 'download'
+            raw = docs_download(token, drive, sample['fileId'])
+            out['download'] = dict(path=sample['path'], bytes=len(raw), isDocx=raw[:2] == b'PK')
+        print(f'works docs check: ok files={len(tree)}', flush=True)
+        return out
+    except HTTPError as e:
+        code = ''
+        try:
+            body = json.loads(e.read() or b'{}'); code = str(body.get('code') or body.get('error') or '')[:80]
+        except Exception:
+            pass
+        print(f'works docs check: {step} failed status={e.code} error={code}', flush=True)
+        return dict(ok=False, step=step, status=e.code, code=code)
+    except (URLError, TimeoutError, ValueError, KeyError) as e:
+        _log_failure('docs ' + step, e)
+        return dict(ok=False, step=step, reason=type(e).__name__)
 
 
 def search(people, q, exclude_email='', limit=20):
