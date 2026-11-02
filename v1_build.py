@@ -209,10 +209,22 @@ def main():
                               steps=[lesson_step(s) for s in unit['steps']]))
         extra, curriculum = [], None
     # 11/03 드라이브 링크: source_manifest.json 의 folderKey(= 문서가 있는 폴더의 드라이브 fileId = 웹 주소 resourceKey). 그 폴더를 드라이브에서 연다
-    try:
-        drive_keys = {x['id']: x['folderKey'] for x in json.loads((APP / 'source_manifest.json').read_text(encoding='utf-8'))['documents'] if x.get('folderKey')}
-    except (OSError, ValueError, KeyError):
-        drive_keys = {}
+    # 빠지거나 어긋나면 빌드를 멈춘다: 근거 문서마다 manifest 항목·folderKey 가 있고, 폴더·파일 이름이 index 와 같고, 같은 폴더는 같은 키
+    manifest = {x['id']: x for x in json.loads((APP / 'source_manifest.json').read_text(encoding='utf-8'))['documents']}
+    problems, folder_key = [], {}
+    for k in sorted(used_docs):
+        d, m = docs[k], manifest.get(k)
+        if not m:
+            problems.append(f'{k}: source_manifest.json 에 없음'); continue
+        if not m.get('folderKey'):
+            problems.append(f'{k}: folderKey(드라이브 폴더 링크) 없음 — docs-check 결과로 채울 것')
+        if m.get('folder') != d.get('folder', '') or m.get('file') != d['file']:
+            problems.append(f"{k}: manifest {m.get('folder')}/{m.get('file')} ≠ index {d.get('folder', '')}/{d['file']}")
+        if m.get('folderKey') and folder_key.setdefault(m['folder'], m['folderKey']) != m['folderKey']:
+            problems.append(f"{k}: 같은 폴더 '{m['folder']}' 인데 folderKey 가 다름")
+    if problems:
+        raise SystemExit('드라이브 링크 검사 실패:\n  ' + '\n  '.join(problems))
+    drive_keys = {k: manifest[k]['folderKey'] for k in used_docs}
     out = dict(
         format='momos-lms-v1-content',
         courseVersion=course['version'], sourceIndexedAt=index['generated_at'],

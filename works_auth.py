@@ -21,6 +21,7 @@ import secrets
 import time
 from http.cookies import SimpleCookie
 from html import escape
+from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -648,6 +649,40 @@ def docs_download(token, drive, file_id, limit=50_000_000):
     return raw
 
 
+def link_report(manifest_docs, folders, tree):
+    """11/03 링크 확인: LMS 근거 문서(source_manifest.json)의 폴더 키가 지금 드라이브와 맞는지.
+    folders = [[경로, fileId]], tree = [{path, ...}]. 파일 내용·토큰은 다루지 않는다."""
+    by_key = {fid: path for path, fid in folders}
+    paths = {x['path'] for x in tree}
+    used = {}
+    for d in manifest_docs:
+        used.setdefault(d.get('folderKey') or '', []).append(d)
+    gone, moved, nokey = [], [], []
+    for key, ds in used.items():
+        names = sorted({d['folder'] for d in ds})
+        if not key:
+            nokey += [f"{d['folder']}/{d['file']}" for d in ds]
+        elif key not in by_key:
+            gone.append(dict(folder=' · '.join(names), docs=len(ds)))
+        elif by_key[key] not in names:
+            moved.append(dict(folder=' · '.join(names), now=by_key[key], docs=len(ds)))
+    # 링크로 들어간 폴더(키가 가리키는 실제 폴더) 안에 그 파일 이름이 실제로 있어야 한다 — 폴더 이름이 아니라 키 기준
+    missing = [f"{d['folder']}/{d['file']}" for d in manifest_docs
+               if d.get('folderKey') in by_key and f"{by_key[d['folderKey']]}/{d['file']}" not in paths]
+    keys = [k for k in used if k]
+    ok = not (gone or moved or nokey or missing)
+    summary = (f"링크 정상 {len(keys) - len(gone) - len(moved)} / 없어진 폴더 {len(gone)} / 이름·위치 바뀐 폴더 {len(moved)}"
+               f" / 폴더 키 없는 문서 {len(nokey)} / 링크 폴더에 없는 파일 {len(missing)}")
+    return dict(ok=ok, summary=summary, folders=len(keys), docs=len(manifest_docs), goneFolders=gone, movedFolders=moved, noKeyDocs=nokey, missingDocs=missing)
+
+
+def _manifest_docs():
+    try:
+        return json.loads(Path(__file__).with_name('source_manifest.json').read_text(encoding='utf-8')).get('documents', [])
+    except (OSError, ValueError):
+        return []
+
+
 def docs_check(user_id):
     """확인용(admin): 업무문서 폴더를 찾고, 파일 목록(경로·크기·수정일·fileId)과 docx 하나 받기가 되는지 본다. 파일 내용은 돌려주지 않는다.
     폴더 fileId 는 드라이브 웹 폴더 주소(/drive/web/share/folder?resourceKey=)의 resourceKey 와 같다 — 반영할 때 source_manifest.json 의 folderKey 로 옮긴다.
@@ -667,12 +702,13 @@ def docs_check(user_id):
         subs = []
         tree = docs_tree(token, drive, folder, folders=subs)
         out.update(folders=sorted(subs), files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:400]])
+        out['links'] = link_report(_manifest_docs(), subs, tree)
         sample = next((x for x in tree if x['path'].lower().endswith('.docx')), None)
         if sample:
             step = 'download'
             raw = docs_download(token, drive, sample['fileId'])
             out['download'] = dict(path=sample['path'], bytes=len(raw), isDocx=raw[:2] == b'PK')
-        print(f'works docs check: ok files={len(tree)}', flush=True)
+        print(f"works docs check: ok files={len(tree)} links_ok={out['links']['ok']}", flush=True)
         return out
     except HTTPError as e:
         code = ''
