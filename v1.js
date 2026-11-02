@@ -297,7 +297,16 @@
   const ratioBar = (c, cls = '') => { const n = c.none + c.prog + c.done || 1;
     return `<span class="v1-pbar ${cls}" aria-hidden="true"><i class="done" style="width:${c.done / n * 100}%"></i><i class="prog" style="width:${c.prog / n * 100}%"></i></span>`; };
   // 완료·진행 중·시작 전 숫자 + 비중 막대(멘티의 진행 현황·전체 교육 보기 위쪽에 같은 모양으로)
-  const countsBlock = c => `<div class="v1-counts"><div><b>${c.done}</b><span><i class="v1-dot done"></i>완료</span></div><div><b>${c.prog}</b><span><i class="v1-dot prog"></i>진행 중</span></div><div><b>${c.none}</b><span><i class="v1-dot none"></i>시작 전</span></div></div>` + ratioBar(c, 'lg');
+  // 11/02 진행 현황 위쪽: '시작일 ~ 목표일' 한 줄 → 완료·진행 중·시작 전 숫자 → 완료율(완료 ÷ 전체)·목표율(시작일~목표일 중 오늘까지 지난 비율) 두 막대
+  const datesOf = id => id === cloud.user.id ? (cloud.myDates || {}) : ((cloud.educationSummary || []).find(x => x.id === id) || {});
+  const dayNo = d => Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10)) / 864e5;
+  const goalRate = (from, to, now) => !from || !to || !now || dayNo(to) <= dayNo(from) ? null : Math.max(0, Math.min(100, Math.round((dayNo(now) - dayNo(from)) / (dayNo(to) - dayNo(from)) * 100)));
+  const countsBlock = c => { const d = datesOf(cloud.target), n = c.none + c.prog + c.done || 1, done = Math.round(c.done / n * 100);
+    const goal = goalRate(d.hiredDate, d.targetDate, cloud.today);
+    return `<p class="v1-period">시작일 <b>${esc(d.hiredDate || 'N/A')}</b> ~ 목표일 <b>${esc(d.targetDate || 'N/A')}</b></p>` +
+      `<div class="v1-counts"><div><b>${c.done}</b><span><i class="v1-dot done"></i>완료</span></div><div><b>${c.prog}</b><span><i class="v1-dot prog"></i>진행 중</span></div><div><b>${c.none}</b><span><i class="v1-dot none"></i>시작 전</span></div></div>` +
+      `<div class="v1-rates"><div class="v1-rate"><span>완료율</span>${ratioBar(c)}<b>${done}%</b></div>` +
+      (goal === null ? '' : `<div class="v1-rate"><span>목표율</span><span class="v1-gbar" aria-hidden="true"><i style="width:${goal}%"></i></span><b>${goal}%</b></div>`) + '</div>'; };
   function progressView() {
     const mine = cloud.target === cloud.user.id, c = countsOf(s => record(s.id).status);
     const tiles = stages().map(g => {
@@ -323,7 +332,7 @@
     // 직책순(WORKS 직책 표시 순서, 받지 못하면 직책 이름순, 직책 없음은 맨 뒤) → 같은 직책 안에서는 이름순. 교육 시작·미접속은 섞는다
     const order = (chart() && chart().positions) || [], rank = p => !p ? [2, 0, ''] : order.includes(p) ? [0, order.indexOf(p), ''] : [1, 0, p];
     const byPos = (a, b) => { const x = rank(a.position), y = rank(b.position); return x[0] - y[0] || x[1] - y[1] || x[2].localeCompare(y[2], 'ko') || by(a, b); };
-    // 11/02 교육 현황 = 위쪽 탭 [나의 교육생 | 전체 교육생(부서별)]. 나의 교육생 = 내가 한 번이라도 체크한 사람(체크를 풀어도 남는다, 부서 무관)
+    // 11/02 교육 현황 = 위쪽 탭 [나의 교육생 | 전체 교육생(부서별)]. 나의 교육생 = 지금 내가 체크해 둔(또는 완료한) 교육이 있는 사람(체크를 풀면 빠진다, 부서 무관)
     const trainees = traineesOf().sort(byPos), tab = homeTabNow();
     if (chart() && (!orgSel || !orgOf(orgSel))) orgSel = chart().mine && orgOf(chart().mine) ? chart().mine : null;
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-home-tab="${k}">${label}</button>`;

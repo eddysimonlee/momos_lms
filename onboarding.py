@@ -190,15 +190,11 @@ MENTEE_RESET = 'mentee-reset-2026-11-02'
 
 
 def checker_ids(learner):
-    """그 교육생의 교육 내용을 한 번이라도 체크했거나 완료한 사람 id(체크 해제·완료 취소 이력 포함). '나의 교육생' 판정용."""
+    """'나의 교육생' 판정: 지금 체크돼 있는 교육 내용을 체크한 사람 + 완료 처리한 사람. 체크를 풀면 빠진다(이력은 보지 않는다)."""
     out = set()
-    def take(x):
-        out.update(w for w in (x.get('teacherBy') or []) + (x.get('checkedBy') or []) if w)
-        if x.get('completedBy'): out.add(x['completedBy'])
     for x in learner['records'].values():
-        take(x)
-        for h in x.get('history') or []:
-            if isinstance(h, dict): take(h)
+        out.update(w for w in x.get('teacherBy') or [] if w)
+        if x.get('status') == 'done' and x.get('completedBy'): out.add(x['completedBy'])
     return out
 
 
@@ -872,7 +868,6 @@ class Service:
             for k in ('teacherBy','teacherName','teacherWhen'):r.setdefault(k,[None]*n)
             r['teacher'][i]=d['on'];r['teacherAt'][i]=today() if d['on'] else None;r['teacherWhen'][i]=stamp() if d['on'] else None  # 화면에는 체크한 관리자와 일시
             r['teacherBy'][i]=user['id'] if d['on'] else None;r['teacherName'][i]=user['name'] if d['on'] else None
-            if d['on'] and user['id'] not in r.setdefault('checkedBy',[]):r['checkedBy'].append(user['id'])  # 한 번이라도 체크한 사람(체크를 풀어도 남는다, '나의 교육생')
             r['status']='practice' if any(r['teacher']) else 'ready';r['start']=r['start'] or today()
         elif action=='step.close':
             if r['status'] not in ('ready','practice') or not all(r['teacher']):raise ValueError('교육 내용을 모두 체크한 뒤 완료할 수 있어요.')

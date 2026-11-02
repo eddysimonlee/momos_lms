@@ -471,7 +471,7 @@ class EducationTests(unittest.TestCase):
         rows={x['id']:x for x in self.service.get(a)['educationSummary']}
         self.assertTrue(rows[b['id']]['trainedByMe']);self.assertFalse(rows[self.learner['id']]['trainedByMe'])  # 내가 체크한 사람 = 나의 교육생
         self.act(a,'step.mark',dict(step=ident,index=0,on=False),b['id'])
-        self.assertTrue({x['id']:x for x in self.service.get(a)['educationSummary']}[b['id']]['trainedByMe'])  # 체크를 풀어도 남는다
+        self.assertFalse({x['id']:x for x in self.service.get(a)['educationSummary']}[b['id']]['trainedByMe'])  # 체크를 풀면 빠진다
         self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])
         with self.assertRaises(PermissionError):self.act(a,'step.mark',dict(step=ident,index=1,on=True))  # 본인 기록은 못 한다
         self.assertFalse(self.service.get(a)['profileMissing'])  # WORKS 로그인이 꺼져 있으면 다시 로그인하지 않는다

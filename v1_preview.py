@@ -64,7 +64,7 @@ MOCK = r'''
     {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
     {id: 'u-newbie', name: '체험 신입', email: 'newbie@local.test', role: 'member'}];
   // 미리보기용 입사일(WORKS hiredDate 대신). 체험 신입은 비어 있음 → N/A
-  const HIRED = {'u-staff': '2024-08-31', 'u-learner': '2026-11-02'};
+  const HIRED = {'u-staff': '2024-08-31', 'u-learner': '2026-09-15'};
   const target6 = h => { if (!h) return null; const [y, m, d] = h.split('-').map(Number); const t = m - 1 + 6, Y = y + Math.floor(t / 12), M = t % 12;
     const last = new Date(Date.UTC(Y, M + 1, 0)).getUTCDate(); return `${Y}-${String(M + 1).padStart(2, '0')}-${String(Math.min(d, last)).padStart(2, '0')}`; };
   const dates = id => ({hiredDate: HIRED[id] || null, targetDate: target6(HIRED[id])});
@@ -84,7 +84,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-18';
+  const KEY = 'momos-v1-preview-19';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -125,7 +125,7 @@ MOCK = r'''
       const room = state.rooms[id]; if (room) Object.values(room.records).forEach(x => { take(x); (x.history || []).forEach(h => h && take(h)); }); return [...out.values()]; };
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
-      const ever = Object.values(recs).some(x => (x.checkedBy || []).includes(u.id) || (x.teacherBy || []).includes(u.id) || x.completedBy === u.id || (x.history || []).some(h => h && ((h.teacherBy || []).includes(u.id) || h.completedBy === u.id)));
+      const ever = Object.values(recs).some(x => (x.teacherBy || []).includes(u.id) || (x.status === 'done' && x.completedBy === u.id));  // 지금 체크·완료한 것만(체크를 풀면 빠진다)
       return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
@@ -167,7 +167,7 @@ MOCK = r'''
     if (v.action === 'step.mark') {
       if (!['ready', 'practice'].includes(r.status)) throw {status: 400, error: '완료한 교육은 체크를 바꿀 수 없어요. 완료를 취소한 뒤 바꿔 주세요.'};
       for (const k of ['teacherBy', 'teacherName', 'teacherWhen']) if (!r[k]) r[k] = r.teacher.map(() => null);
-      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null; if (d.on) { r.checkedBy = r.checkedBy || []; if (!r.checkedBy.includes(u.id)) r.checkedBy.push(u.id); }
+      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null;
       r.status = r.teacher.some(Boolean) ? 'practice' : 'ready'; r.start = r.start || t;
     } else if (v.action === 'step.close') {
       if (!['ready', 'practice'].includes(r.status) || !r.teacher.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};
