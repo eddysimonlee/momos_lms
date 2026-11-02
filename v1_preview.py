@@ -38,7 +38,8 @@ def main():
     page = re.sub(r'<link rel="icon"[^>]*>\s*', '', page)
     page = re.sub(r'<link rel="apple-touch-icon"[^>]*>\s*', '', page)
     data = json.dumps(content, ensure_ascii=False).replace('</', '<\\/')
-    mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';')
+    log = json.dumps(json.loads((APP / 'source_log.json').read_text(encoding='utf-8')).get('entries', []), ensure_ascii=False).replace('</', '<\\/') if (APP / 'source_log.json').exists() else '[]'
+    mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';const SOURCE_LOG=' + log + ';')
     page = page.replace('<script src="/auth.js"></script>', '<script>' + mock + '</script>')
     page = page.replace('<script src="/v1.js"></script>', '<script>' + (APP / 'v1.js').read_text(encoding='utf-8').replace('</script', '<\\/script') + '</script>')
     page = page.replace('<body class="auth-pending">', '<body class="auth-pending">' + BANNER, 1)
@@ -130,7 +131,7 @@ MOCK = r'''
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['본부장', '점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
-      ...(lms ? {lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
+      ...(lms ? {sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {

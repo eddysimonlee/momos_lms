@@ -447,7 +447,27 @@
     const rows = (cloud.feedback || []).map(f => `<tr><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}</td></tr>`).join('');
     return `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
       (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>' +
-      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+      `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>' +
+      sourceLogCard();
+  }
+  // 11/02 반영 기록: 교육 내용에 반영한 업무문서(폴더/파일·이전 근거·상태)와 교육 내용별 AS-IS/TO-BE. 최근 기록만 펼쳐 둔다
+  function sourceLogCard() {
+    const list = cloud.sourceLog || [];
+    if (!list.length) return '';
+    const ST = {'판 바뀜': 'b', '내용 바뀜': 'b', '내용 같음': 'n', '새로 사용': 'g', '근거 제외': 'r'};
+    const cnt = (xs, s) => xs.filter(d => d.status === s).length;
+    const entry = (e, i) => { const docs = e.docs || [], ls = e.lessons || [], b = e.basis || {};
+      const docRows = docs.map(d => `<tr><td><span class="v1-lst ${ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${esc(d.path || '—')}${d.note ? `<small>${esc(d.note)}</small>` : ''}</td><td>${esc(d.prev || '')}</td></tr>`).join('');
+      const lessonHtml = ls.map(l => `<div class="v1-lles"><b>${l.no}번 ${esc(l.title)}</b>` + (l.changes || []).map(c =>
+        `<div class="v1-lchg"><small>${esc(c.item)}${c.cite ? ' · 근거: ' + esc(c.cite) : ''}</small><div class="v1-lab"><div><i>AS-IS</i>${esc(c.asis)}</div><div><i>TO-BE</i>${esc(c.tobe)}</div></div>${c.note ? `<small class="v1-muted">${esc(c.note)}</small>` : ''}</div>`).join('') + '</div>').join('');
+      const more = [...(e.skipped || []).map(x => '· ' + esc(x)), ...(e.pending || []).map(x => '· 다음 반영 예정 — ' + esc(x))];
+      return `<details class="v1-log"${i === 0 ? ' open' : ''}><summary><b>${esc(e.at)} · ${esc(e.title)}</b><small>${esc(b.kind || '')}: ${esc(b.label || '')}${b.scope ? ' · ' + esc(b.scope) : ''}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</small>` +
+        `<span>${[`<span class="v1-lchip b">교육 ${ls.length}개 수정</span>`, `<span class="v1-lchip">문서 ${docs.length}개</span>`, cnt(docs, '판 바뀜') ? `<span class="v1-lchip b">판 바뀜 ${cnt(docs, '판 바뀜')}</span>` : '', cnt(docs, '내용 같음') ? `<span class="v1-lchip">내용 같음 ${cnt(docs, '내용 같음')}</span>` : '', cnt(docs, '새로 사용') ? `<span class="v1-lchip g">새로 사용 ${cnt(docs, '새로 사용')}</span>` : '', cnt(docs, '근거 제외') ? `<span class="v1-lchip r">근거 제외 ${cnt(docs, '근거 제외')}</span>` : ''].join('')}</span></summary>` +
+        (b.origin ? `<p class="v1-muted v1-lorigin">원본 폴더: ${esc(b.origin)}${b.copy ? ' · 받은 사본: ' + esc(b.copy) : ''}${(e.rules || []).length ? '<br>규칙: ' + e.rules.map(esc).join(' / ') : ''}</p>` : '') +
+        (ls.length ? `<h3>바뀐 교육</h3>${lessonHtml}<p class="v1-muted">체크: ${esc(e.checks || '')}</p>` : '') +
+        (docs.length ? `<h3>사용한 문서 (폴더 / 파일)</h3><div class="v1-table"><table class="v1-ltable"><thead><tr><th>상태</th><th>이번 근거</th><th>이전 근거</th></tr></thead><tbody>${docRows}</tbody></table></div>` : '') +
+        (more.length ? `<h3>비교했지만 반영하지 않은 것 · 다음 예정</h3><p class="v1-muted v1-lmore">${more.join('<br>')}</p>` : '') + '</details>'; };
+    return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">교육 내용에 반영한 업무문서와 바뀐 교육 내용이에요. 최근 순.</p>${list.map(entry).join('')}</section>`;
   }
 
   const listItem = s => {

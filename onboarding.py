@@ -198,6 +198,15 @@ TARGET_MONTHS = 6
 MENTEE_RESET = 'mentee-reset-2026-11-02'
 
 
+def source_log():
+    """11/02 반영 기록(source_log.json, 저장소에 함께 커밋): 교육 내용에 반영한 업무문서(폴더·파일)와 교육 내용별 AS-IS/TO-BE. admin 화면에만."""
+    p = Path(__file__).with_name('source_log.json')
+    try:
+        return json.loads(p.read_text(encoding='utf-8')).get('entries', [])[:50]
+    except (OSError, ValueError):
+        return []
+
+
 def checker_ids(learner):
     """'나의 교육생' 판정: 지금 체크돼 있는 교육 내용을 체크한 사람 + 완료 처리한 사람. 체크를 풀면 빠진다(이력은 보지 않는다)."""
     out = set()
@@ -684,7 +693,8 @@ class Service:
             return dict(f, stepTitle=steps.get(f.get('step'), ''), mentee=mentee, menteeName=f.get('menteeName', f.get('name')) if mentee else '',
                         mentors=mentors.get(mentee, []) if mentee else [])
         return dict(lmsAdmins=[dict(email=e, level=l, seed=e in seed) for e, l in sorted(levels.items())],
-                    feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])])
+                    feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
+                    sourceLog=source_log())
 
     def set_lms_admin(self, root, user, d):
         """admin 만 다른 admin 을 지정(level 'admin')·해제(level None)한다. 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
