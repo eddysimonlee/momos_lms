@@ -591,11 +591,18 @@ class EducationTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.act(a,'content.request',dict(req,target=dict(kind='item',id='nope',title='x')))
             c=self.act(a,'content.request',req);r=c['contentRequests'][0]
             self.assertEqual((r['status'],r['tobe'],r['target']['id'],r['name']),('요청','새 문장',ident,a['name']))
+            self.assertEqual(r['no'],'REQ-1');self.assertEqual(self.act(a,'content.request',req)['contentRequests'][0]['no'],'REQ-2')  # 티켓 번호는 차례로
             with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반려'))  # 반려는 사유 필요
             with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='xyz'))
-            c=self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='aa54099',note='5번 문장 수정'));r=c['contentRequests'][0]
+            c=self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='aa54099',note='5번 문장 수정'));r=next(x for x in c['contentRequests'] if x['no']=='REQ-1')
+            self.assertEqual(r['assignee'],a['name'])
             self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['요청','반영됨']))
             self.assertNotIn('contentRequests',self.service.get(b))
+            r2=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-2')
+            with self.assertRaises(ValueError):self.act(a,'content.delete',dict(id=r2['id']))  # 반려한 것만 지움
+            self.act(a,'content.status',dict(id=r2['id'],status='반려',note='중복'))
+            c=self.act(a,'content.delete',dict(id=r2['id']));self.assertEqual([x['no'] for x in c['contentRequests']],['REQ-1'])
+            self.assertEqual(self.act(a,'content.request',req)['contentRequests'][0]['no'],'REQ-3')  # 번호는 다시 쓰지 않음
 
     def test_old_check_records_are_reset_once_for_trainer_checks(self):
         ident='welcome-prep'

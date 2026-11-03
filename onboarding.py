@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'content.request','content.status','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -567,6 +567,8 @@ class Service:
                 self.content_request(root,user,data)
             elif action=='content.status':
                 self.content_status(root,user,data)
+            elif action=='content.delete':
+                self.content_delete(root,user,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -729,7 +731,10 @@ class Service:
         if not isinstance(t, dict) or set(t) != {'kind', 'id', 'title'} or t['kind'] not in ('item', 'doc'): raise ValueError('요청 대상을 확인해 주세요.')
         if t['kind'] == 'item' and t['id'] not in STEPS: raise ValueError('요청할 교육을 확인해 주세요.')
         if d['type'] not in CONTENT_REQUEST_TYPES: raise ValueError('요청 종류를 확인해 주세요.')
-        item = dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''),
+        # 11/03 티켓 번호: REQ-1, REQ-2 … (지우지 않고 계속 올라간다). 반영 기록(source_log.json)의 tickets 와 이어진다
+        seq = int(root.get('contentRequestSeq') or 0) + 1
+        root['contentRequestSeq'] = seq
+        item = dict(id=uuid.uuid4().hex, no=f'REQ-{seq}', at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''),
                     target=dict(kind=t['kind'], id=projects.text(t['id'], 120, True), title=projects.text(t['title'], 200, True)),
                     type=d['type'], field=projects.text(d.get('field', ''), 80), asis=projects.text(d.get('asis', ''), 4000),
                     tobe=projects.text(d['tobe'], 4000, True), note=projects.text(d.get('note', ''), 2000),
@@ -748,9 +753,20 @@ class Service:
         if commit and not re.fullmatch(r'[0-9a-f]{7,40}', commit): raise ValueError('커밋 번호(7자리 이상)를 확인해 주세요.')
         if d['status'] == '반려' and not note: raise ValueError('반려 사유를 적어 주세요.')
         item['status'] = d['status']
+        if d['status'] in ('처리 중', '반영됨') and not item.get('assignee'): item['assignee'] = user['name']  # 처음 맡은 사람
         if note: item['reply'] = note
         if commit: item['commit'] = commit
         item['history'] = (item.get('history') or []) + [dict(at=stamp(), by=user['name'], status=d['status'], **({'note': note} if note else {}), **({'commit': commit} if commit else {}))]
+
+    def content_delete(self, root, user, d):
+        """11/03 반려한 요청만 목록에서 지운다(번호는 다시 쓰지 않는다). 지운 기록은 audit 에 남긴다."""
+        if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청 삭제는 LMS관리자 admin 만 할 수 있어요.')
+        if not isinstance(d, dict) or set(d) != {'id'}: raise ValueError('지울 수정 요청을 확인해 주세요.')
+        item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
+        if not item: raise ValueError('수정 요청을 찾지 못했어요.')
+        if item.get('status') != '반려': raise ValueError('반려한 요청만 지울 수 있어요.')
+        root['contentRequests'] = [x for x in root['contentRequests'] if x['id'] != d['id']]
+        root['audit'].append(dict(at=stamp(), actor=user['id'], action='수정 요청 삭제', ticket=item.get('no') or item['id'], title=item['target']['title']))
 
     def name_of(self, db, ident):
         row = db.execute('SELECT name FROM access_users WHERE id=?', (ident,)).fetchone()

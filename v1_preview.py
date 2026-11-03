@@ -38,7 +38,12 @@ def main():
     page = re.sub(r'<link rel="icon"[^>]*>\s*', '', page)
     page = re.sub(r'<link rel="apple-touch-icon"[^>]*>\s*', '', page)
     data = json.dumps(content, ensure_ascii=False).replace('</', '<\\/')
-    log = json.dumps(json.loads((APP / 'source_log.json').read_text(encoding='utf-8')).get('entries', []), ensure_ascii=False).replace('</', '<\\/') if (APP / 'source_log.json').exists() else '[]'
+    entries = json.loads((APP / 'source_log.json').read_text(encoding='utf-8')).get('entries', []) if (APP / 'source_log.json').exists() else []
+    # 미리보기 전용 예시: 수정 요청 REQ-1 을 반영한 기록(티켓 연결 모습을 보이려고). 실제 source_log.json 에는 없다
+    entries = [dict(id='preview-req-1', at='2026-11-04 10:00', approvedBy='이재현', title='[예시] 수정 요청 REQ-1 반영', tickets=['REQ-1'],
+                    basis=dict(kind='수정 요청', origin='LMS관리자 › 수정 요청', range='REQ-1'), docs=[], removed=[], rules=[], checks=[], skipped=['미리보기 예시 기록이에요.'],
+                    lessons=[dict(no=86, id='stock-ecount', title='재고 전산 처리', changes=[dict(item='교육 제목 (REQ-1)', cite='', asis='재고 전산 처리', tobe='(요청한 TO-BE)', note='예시')])])] + entries
+    log = json.dumps(entries, ensure_ascii=False).replace('</', '<\\/')
     mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';const SOURCE_LOG=' + log + ';')
     page = page.replace('<script src="/auth.js"></script>', '<script>' + mock + '</script>')
     page = page.replace('<script src="/v1.js"></script>', '<script>' + (APP / 'v1.js').read_text(encoding='utf-8').replace('</script', '<\\/script') + '</script>')
@@ -162,17 +167,21 @@ MOCK = r'''
       if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
       state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level === 'admin' ? [{email, level: 'admin'}] : []); state.rootRevision++; save(); return context(u, target);
     }
-    if (v.action === 'content.request' || v.action === 'content.status') {  // 11/03 수정 요청(onboarding.content_request/status 와 같은 규칙)
+    if (v.action === 'content.request' || v.action === 'content.status' || v.action === 'content.delete') {  // 11/03 수정 요청(onboarding.content_request/status 와 같은 규칙)
       if (levelOf(u) !== 'admin') throw {status: 403, error: '수정 요청은 LMS관리자 admin 만 보낼 수 있어요.'};
       const at = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19) + '+09:00', list = state.contentRequests = state.contentRequests || [];
       if (v.action === 'content.request') {
         if (!String(d.tobe || '').trim()) throw {status: 400, error: '바꿀 내용을 적어 주세요.'};
-        list.push({id: String(Date.now()), at, user: u.id, name: u.name, email: u.email, target: d.target, type: d.type, field: d.field || '', asis: d.asis || '', tobe: d.tobe, note: d.note || '', status: '요청', history: [{at, by: u.name, status: '요청'}]});
+        state.contentRequestSeq = (state.contentRequestSeq || 0) + 1;
+        list.push({id: String(Date.now()), no: 'REQ-' + state.contentRequestSeq, at, user: u.id, name: u.name, email: u.email, target: d.target, type: d.type, field: d.field || '', asis: d.asis || '', tobe: d.tobe, note: d.note || '', status: '요청', history: [{at, by: u.name, status: '요청'}]});
+      } else if (v.action === 'content.delete') {
+        const r = list.find(x => x.id === d.id); if (!r || r.status !== '반려') throw {status: 400, error: '반려한 요청만 지울 수 있어요.'};
+        state.contentRequests = list.filter(x => x.id !== d.id);
       } else {
         const r = list.find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
         if (d.status === '반려' && !d.note) throw {status: 400, error: '반려 사유를 적어 주세요.'};
         if (d.commit && !/^[0-9a-f]{7,40}$/.test(d.commit)) throw {status: 400, error: '커밋 번호(7자리 이상)를 확인해 주세요.'};
-        r.status = d.status; if (d.note) r.reply = d.note; if (d.commit) r.commit = d.commit;
+        r.status = d.status; if ((d.status === '처리 중' || d.status === '반영됨') && !r.assignee) r.assignee = u.name; if (d.note) r.reply = d.note; if (d.commit) r.commit = d.commit;
         r.history = (r.history || []).concat([{at, by: u.name, status: d.status, ...(d.note ? {note: d.note} : {}), ...(d.commit ? {commit: d.commit} : {})}]);
       }
       state.rootRevision++; save(); return context(u, target);

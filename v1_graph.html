@@ -114,6 +114,8 @@ dialog.rq::backdrop{background:rgba(0,0,0,.35)}  /* wds-allow: 대화상자 뒤 
 .gtoast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;max-width:calc(100vw - 32px);background:var(--fg);color:var(--panel);border-radius:10px;padding:12px 16px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)}  /* wds-allow: 토스트 그림자(대응 토큰 없음) */
 .gtoast[hidden]{display:none}
 .reqs li.new{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.rq input[type=text]{font:inherit;font-size:14px;font-weight:400;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.rq .tobe2{display:flex;flex-direction:column;gap:10px}
 .rq .err{color:var(--text-danger,var(--warn));font-size:12px}
 @media (prefers-reduced-motion:no-preference){svg path.e,svg .node{transition:opacity .15s,stroke-opacity .15s}}
 </style>
@@ -325,7 +327,7 @@ function reqBlock(kind, id) {
 }
 // 종류별 대상: [field 라벨, AS-IS] 목록. 교육 내용이 없는 교육은 체크 항목이 교육 내용이다
 function targetsOf(kind, id, type) {
-  if (kind === 'doc') { const d = docs.get(id); return [[`${d.folder} / ${d.file}`, `${d.folder} / ${d.file}`]]; }
+  if (kind === 'doc') { const d = docs.get(id); return [['파일', d.file]]; }  // AS-IS 는 파일 이름만
   const s = stepOf(id), kps = (s.keyPoints || []).length ? s.keyPoints.map(k => ({text: k.text, cites: k.cites || []})) : (s.checks || []).map((t, i) => ({text: t, cites: (s.checkCites || [])[i] || []}));
   const L = (s.keyPoints || []).length ? '교육 내용' : '체크 항목';
   if (type === '문구 수정') return [['교육 제목', s.title], ['교육 목적', s.purpose || ''], ...kps.map((k, i) => [`${L} ${i + 1}`, k.text])];
@@ -338,30 +340,40 @@ function targetsOf(kind, id, type) {
 const TYPES = {item: ['문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '기타'], doc: ['원본 문서 변경 확인', '기타']};
 const TOBE_HINT = {'문구 수정': '바꿀 문장을 그대로 적어 주세요.', '문구 삭제': '지우는 이유를 아래 메모에 적어 주세요.', '교육 내용 추가': '새로 넣을 교육 내용을 적어 주세요.',
   '사진 교체': '원본 문서의 어느 사진으로 바꿀지 적어 주세요(예: 이카운트 SOP 5.2 두 번째 사진). 원본 문서에 있는 사진만 쓸 수 있어요.',
-  '원본 매핑 변경': '새로 근거로 삼을 원본 문서와 절을 적어 주세요(예: 매장 공간 안내 4.2).', '원본 문서 변경 확인': '무엇이 바뀌었는지 적어 주세요(예: 5.2 수량 기준 변경, 새 날짜판 업로드).', '기타': '요청 내용을 적어 주세요. 화면 구조 변경은 서비스 기획에서 따로 검토해요.'};
+  '원본 매핑 변경': '새로 근거로 삼을 원본 문서와 절을 적어 주세요(예: 매장 공간 안내 4.2).', '원본 문서 변경 확인': '새 파일에서 무엇이 바뀌었는지 적어 주세요(예: 5.2 수량 기준 변경, 4.3 절 추가).', '기타': '요청 내용을 적어 주세요. 화면 구조 변경은 서비스 기획에서 따로 검토해요.'};
 let RQ = null, NEW_REQ = null, toastTimer = null;
 function gtoast(msg) { const t = $('gtoast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4000); }
 function openReq(kind, id) {
   const title = kind === 'doc' ? shortDoc(docs.get(id)) : itemPath(items.get(id));  // 저장도 단계 › 단원 › 교육 경로로
-  RQ = {kind, id, title, type: TYPES[kind][0], field: 0, err: ''}; drawReq(); $('rq').showModal();
+  RQ = {kind, id, title, type: TYPES[kind][0], field: 0, err: '', file: kind === 'doc' ? docs.get(id).file : ''}; drawReq(); $('rq').showModal();
 }
 function drawReq() {
   const t = targetsOf(RQ.kind, RQ.id, RQ.type), cur = t[Math.min(RQ.field, t.length - 1)] || ['', ''], del = RQ.type === '문구 삭제';
   $('rqForm').innerHTML = `<h2 id="rqTitle">${RQ.kind === 'doc' ? '원본 문서 변경 알리기' : '수정 요청'}</h2><div class="sub">${RQ.kind === 'doc' ? esc(RQ.title) : itemHead(items.get(RQ.id))}</div>` +
     `<div><div class="hint" style="margin-bottom:6px">종류</div><div class="types" role="group" aria-label="요청 종류">${TYPES[RQ.kind].map(x => `<button type="button" data-type="${esc(x)}" aria-pressed="${x === RQ.type}">${esc(x)}</button>`).join('')}</div></div>` +
     (t.length > 1 || RQ.kind === 'item' && RQ.type !== '기타' ? `<label>대상<select id="rqField">${t.map((x, i) => `<option value="${i}"${i === RQ.field ? ' selected' : ''}>${esc(x[0])}</option>`).join('')}</select></label>` : '') +
-    (cur[1] ? `<label>지금 내용 (AS-IS)<div class="asis">${esc(cur[1])}</div></label>` : '') +
-    (del ? '' : `<label>바꿀 내용 (TO-BE)<textarea id="rqTobe" maxlength="4000" required>${esc(RQ.tobe || '')}</textarea><span class="hint">${esc(TOBE_HINT[RQ.type] || '')}</span></label>`) +
+    (cur[1] ? `<label>${RQ.type === '원본 문서 변경 확인' ? 'AS IS 원본' : '지금 내용 (AS-IS)'}<div class="asis">${esc(cur[1])}</div></label>` : '') +
+    // 11/03 원본 문서 변경: TO-BE = 새로 올린 파일 이름(바뀌었으면 고쳐 쓴다) + 바뀐 내용
+    (RQ.type === '원본 문서 변경 확인' ? `<div class="tobe2"><div class="hint" style="font-weight:600;color:var(--muted)">TO BE 원본</div>` +
+      `<label>새 파일 이름<input id="rqFile" type="text" maxlength="200" value="${esc(RQ.file || '')}" autocomplete="off"><span class="hint">${RQ.file && RQ.file !== docs.get(RQ.id).file ? '<b>파일 이름 바뀜</b> — ' : ''}파일명이 변경되었다면 그 이름으로 고쳐주세요. 그대로면 수정하지 않아도 됩니다.</span></label>` +
+      `<label>바뀐 내용<textarea id="rqTobe" maxlength="4000" required>${esc(RQ.tobe || '')}</textarea><span class="hint">${esc(TOBE_HINT[RQ.type] || '')}</span></label></div>`
+    : del ? '' : `<label>바꿀 내용 (TO-BE)<textarea id="rqTobe" maxlength="4000" required>${esc(RQ.tobe || '')}</textarea><span class="hint">${esc(TOBE_HINT[RQ.type] || '')}</span></label>`) +
     `<label>메모 (이유·근거, 선택)<textarea id="rqNote" maxlength="2000" style="min-height:56px">${esc(RQ.note || '')}</textarea></label>` +
     (RQ.err ? `<div class="err" role="alert">${esc(RQ.err)}</div>` : '') +
     `<div class="act"><button type="button" class="btn" data-close>닫기</button><button type="button" class="btn pri" data-send${RQ.busy ? ' disabled' : ''}>요청 보내기</button></div>`;
-  const f = $('rqForm'), keep = () => { const a = f.querySelector('#rqTobe'), b = f.querySelector('#rqNote'); if (a) RQ.tobe = a.value; if (b) RQ.note = b.value; };
+  const f = $('rqForm'), keep = () => { const a = f.querySelector('#rqTobe'), b = f.querySelector('#rqNote'), c = f.querySelector('#rqFile'); if (a) RQ.tobe = a.value; if (b) RQ.note = b.value; if (c) RQ.file = c.value; };
+  const fi = f.querySelector('#rqFile'); if (fi) fi.onchange = () => { keep(); drawReq(); };
   f.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { keep(); RQ.type = b.dataset.type; RQ.field = 0; RQ.err = ''; drawReq(); });
   const fs = f.querySelector('#rqField'); if (fs) fs.onchange = () => { keep(); RQ.field = Number(fs.value); drawReq(); };
   f.querySelector('[data-close]').onclick = () => $('rq').close();
   f.querySelector('[data-send]').onclick = async () => {
-    keep(); const tobe = del ? '(삭제)' : String(RQ.tobe || '').trim();
-    if (!tobe) { RQ.err = '바꿀 내용을 적어 주세요.'; return drawReq(); }
+    keep(); let tobe = del ? '(삭제)' : String(RQ.tobe || '').trim();
+    if (!tobe) { RQ.err = RQ.type === '원본 문서 변경 확인' ? '바뀐 내용을 적어 주세요.' : '바꿀 내용을 적어 주세요.'; return drawReq(); }
+    if (RQ.type === '원본 문서 변경 확인') {
+      const nf = String(RQ.file || '').trim(), old = docs.get(RQ.id).file;
+      if (!nf) { RQ.err = '새 파일 이름을 적어 주세요(그대로면 지금 이름).'; return drawReq(); }
+      tobe = `파일: ${nf}${nf === old ? ' (이름 그대로)' : ' (이름 바뀜)'}\n바뀐 내용: ${tobe}`;
+    }
     RQ.busy = true; drawReq();
     const uid = (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
     try {

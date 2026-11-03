@@ -494,11 +494,11 @@
     return {changed: n('바뀌어 교육 반영'), added: n('새 문서로 교육 반영'), noImpact: n('바뀌었지만 교육 영향 없음'), same: n('바뀐 것 없음'), removed: (e.removed || []).length, docs: ds.length, lessons: (e.lessons || []).length}; };
   // 11/03 칩: 무엇을 세는지 앞에 적는다 — 교육(전체 중 수정한 수) / 문서(확인한 수와 상태별 수) / 근거에서 뺀 옛 문서
   const logChips = c => { const all = liveSteps().length;
-    return `<span class="v1-lchip b">교육 ${c.lessons}/${all}개 수정</span><span class="v1-lchip">문서 ${c.docs}개 확인: 교육 반영 ${c.changed + c.added}${c.noImpact ? ' · 영향 없음 ' + c.noImpact : ''}${c.same ? ' · 그대로 ' + c.same : ''}</span>` +
+    return `<span class="v1-lchip b">교육 ${c.lessons}/${all}개 수정</span>${c.docs ? `<span class="v1-lchip">문서 ${c.docs}개 확인: 교육 반영 ${c.changed + c.added}${c.noImpact ? ' · 영향 없음 ' + c.noImpact : ''}${c.same ? ' · 그대로 ' + c.same : ''}</span>` : ''}` +
       (c.removed ? `<span class="v1-lchip r">옛 문서 ${c.removed}개 뺌</span>` : ''); };
   const logSummary = c => { const all = liveSteps().length, chip = (k, cls, label) => c[k] ? `<span class="v1-lchip ${cls}">${label} ${c[k]}</span>` : '';
     return `<dl class="v1-lsum"><dt>교육</dt><dd><span class="v1-lchip b">${all}개 중 ${c.lessons}개 수정</span></dd>` +
-      `<dt>문서</dt><dd><span class="v1-lsum-n">${c.docs}개 확인 →</span>${chip('changed', 'b', '바뀌어 교육 반영')}${chip('added', 'g', '새 문서로 교육 반영')}${chip('noImpact', '', '바뀌었지만 교육 영향 없음')}${chip('same', '', '바뀐 것 없음')}</dd>` +
+      (c.docs ? `<dt>문서</dt><dd><span class="v1-lsum-n">${c.docs}개 확인 →</span>${chip('changed', 'b', '바뀌어 교육 반영')}${chip('added', 'g', '새 문서로 교육 반영')}${chip('noImpact', '', '바뀌었지만 교육 영향 없음')}${chip('same', '', '바뀐 것 없음')}</dd>` : '') +
       (c.removed ? `<dt></dt><dd><span class="v1-lchip r">근거에서 뺀 옛 문서 ${c.removed}</span></dd>` : '') + '</dl>'; };
   function sourceLogCard() {
     const list = cloud.sourceLog || [];
@@ -507,7 +507,7 @@
     const rows = lp.items.map(e => { const b = e.basis || {}, c = logCount(e);
       return `<tr class="v1-lrow" data-log="${esc(e.id)}" tabindex="0" role="link" aria-label="${esc(e.at + ' ' + e.title)} 상세 보기"><td class="v1-nowrap">${esc(String(e.at).slice(0, 10).replace(/-/g, '.'))}</td>` +
         `<td><span class="v1-lkind">${esc(b.kind || '')}</span> <b>${esc(e.title)}</b><small>${esc(b.origin || '')}${b.at ? ' · 드라이브 ' + esc(b.at) + ' 기준' : ''}</small></td>` +
-        `<td>${logChips(c)}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
+        `<td>${logChips(c)}${(e.tickets || []).length ? `<span class="v1-lchip">티켓 ${e.tickets.map(esc).join(' · ')}</span>` : ''}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
     return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">업무문서(폴더·파일)를 받아 교육 내용에 반영한 기록이에요. 행을 누르면 무엇이 어떻게 바뀌었는지 볼 수 있어요.</p>` +
       `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>반영일</th><th>받은 문서</th><th>바뀐 내용</th><th>승인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${lp.nav}</section>`;
   }
@@ -515,7 +515,8 @@
     const e = (cloud.sourceLog || []).find(x => x.id === id);
     if (!e) return '<section class="v1-card"><p class="v1-muted">반영 기록을 찾지 못했어요.</p></section>';
     const b = e.basis || {}, c = logCount(e), ds = e.docs || [], rm = e.removed || [];
-    const result = b.kind === '폴더 전체'
+    const result = b.kind === '수정 요청' ? `수정 요청 ${(e.tickets || []).length}건 반영 — 교육 ${c.lessons}개 수정`
+      : b.kind === '폴더 전체'
       ? `드라이브 최신판 문서 ${c.docs}개를 모두 확인 — LMS 근거 문서 ${e.basisCount || c.docs}개 모두 이 폴더의 최신판`
       : `받은 문서 ${c.docs}개 확인 — 교육 ${c.lessons}개 수정${e.basisCount ? ` · 반영 후 LMS 근거 문서 ${e.basisCount}개` : ''}`;
     const meta = [['받은 것', b.kind], ['폴더', b.origin], b.at ? ['드라이브 기준', b.at] : null, ['받은 방식', b.copy], ['범위', b.range], b.driveCheck ? ['드라이브 대조', b.driveCheck] : null,
@@ -527,7 +528,8 @@
       `<tr><td><span class="v1-lst ${LOG_ST[d.status] || 'n'}">${esc(d.status)}</span></td><td>${driveText(driveOf(d.file), esc(d.file), d.file)}${d.prev || d.note ? `<small>${d.prev ? '이전: ' + esc(d.prev) : ''}${d.prev && d.note ? ' · ' : ''}${esc(d.note || '')}</small>` : ''}</td><td class="v1-nowrap">${(d.lessons || []).length ? d.lessons.join('·') + '번' : '—'}</td></tr>`).join('')).join('');
     return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(b.kind || '')}</span><h2>${esc(e.title)}</h2><p class="v1-muted">반영 ${esc(e.at)}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</p>` +
       `<p class="v1-snap-result">${esc(result)}</p>${logSummary(c)}` +
-      `<dl class="v1-snap-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl></section>` +
+      `<dl class="v1-snap-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}` +
+      ((e.tickets || []).length ? `<dt>수정 요청</dt><dd>${e.tickets.map(k => { const r = reqOfKey(k); return r ? `<button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}">${esc(k)}</button> <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : `${esc(k)} <small class="v1-muted">(지운 요청)</small>`; }).join(' · ')}</dd>` : '') + `</dl></section>` +
       (lessonHtml ? `<section class="v1-card v1-logd"><h2>바뀐 교육 <small class="v1-muted">${c.lessons}개</small></h2>${lessonHtml}${(e.checks || []).length ? `<p class="v1-muted">체크 기록: ${e.checks.map(esc).join(' / ')}</p>` : ''}</section>` : '') +
       (ds.length ? `<section class="v1-card v1-logd"><h2>확인한 문서 <small class="v1-muted">${ds.length}개</small></h2><div class="v1-table"><table class="v1-ltable"><thead><tr><th>상태</th><th>파일</th><th>바뀐 교육</th></tr></thead><tbody>${docRows}</tbody></table></div></section>` : '') +
       (rm.length ? `<section class="v1-card v1-logd"><h2>근거에서 뺀 문서 <small class="v1-muted">${rm.length}개</small></h2><ul class="v1-srm">${rm.map(r => `<li>${esc(r.file)}<small>${esc(r.note || '')}</small></li>`).join('')}</ul></section>` : '') +
@@ -538,30 +540,56 @@
   // 교육 요청의 대상은 '단계 › 단원 › 교육' 경로로 저장된다: 앞은 작게, 교육 이름은 크게
   const reqHead = r => { const parts = String(r.target.title).split(' › '), last = parts.pop(); return {path: parts.join(' › '), name: last}; };
   const fmtAt = a => String(a || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.');
+  // 11/03 티켓 보드: 번호(REQ-n)·상태 필터·담당·연결된 반영 기록. 반영 기록(source_log.json)의 tickets 로 서로 이어진다
+  const tkey = r => r.no || 'REQ-?';
+  const logsOf = r => (cloud.sourceLog || []).filter(e => (e.tickets || []).includes(r.no));
+  const reqOfKey = k => (cloud.contentRequests || []).find(x => x.no === k);
+  let reqFilter = 'open';
+  const REQ_FILTERS = [['open', '진행 중', r => r.status === '요청' || r.status === '처리 중'], ['요청', '요청', r => r.status === '요청'], ['처리 중', '처리 중', r => r.status === '처리 중'],
+    ['반영됨', '반영됨', r => r.status === '반영됨'], ['반려', '반려', r => r.status === '반려'], ['all', '전체', () => true]];
   function reqListCard() {
-    const all = cloud.contentRequests || [], rp = pageOf('req', all);
-    const rows = rp.items.map(r => `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(r.target.title + ' ' + r.type)} 상세 보기"><td class="v1-nowrap">${esc(fmtAt(r.at).slice(0, 10))}</td>` +
-      `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}</small></td><td class="v1-nowrap">${esc(r.name)}</td>` +
-      `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`).join('');
-    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">모모스 담당자가 <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a>에서 교육이나 문서를 눌러 보낸 수정 요청이에요. 저장소에 반영하면 커밋 번호와 함께 '반영됨'으로 바꾸고, 반영 기록에도 남겨요.</p>` +
-      (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>요청일</th><th>대상 · 종류</th><th>요청자</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}` +
-        `<p class="v1-muted v1-reqx">처리할 요청 목록(JSON): <a class="v1-link" href="/api/content-requests?open=1" target="_blank" rel="noopener">열기</a> — 저장해서 Claude 세션에 주면 한 번에 반영해요.</p>`
-        : '<p class="v1-muted">아직 수정 요청이 없어요.</p>') + '</section>';
+    const all = cloud.contentRequests || [], f = REQ_FILTERS.find(x => x[0] === reqFilter) || REQ_FILTERS[0], list = all.filter(f[2]), rp = pageOf('req', list);
+    const chips = REQ_FILTERS.map(([k, label, fn]) => `<button type="button" class="v1-fchip${k === reqFilter ? ' on' : ''}" data-req-filter="${esc(k)}" aria-pressed="${k === reqFilter}">${esc(label)} <b>${all.filter(fn).length}</b></button>`).join('');
+    const rows = rp.items.map(r => { const logs = logsOf(r);
+      return `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(tkey(r) + ' ' + reqHead(r).name)} 상세 보기"><td class="v1-nowrap"><b class="v1-tkey">${esc(tkey(r))}</b></td>` +
+        `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}</small></td>` +
+        `<td class="v1-nowrap">${esc(r.name)}<small>${esc(fmtAt(r.at).slice(0, 10))}</small></td><td class="v1-nowrap">${esc(r.assignee || '—')}</td>` +
+        `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`; }).join('');
+    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">모모스 담당자가 <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a>에서 보낸 요청이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` +
+      `<div class="v1-fbar" role="group" aria-label="상태 필터">${chips}</div>` +
+      (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist v1-tlist"><thead><tr><th>티켓</th><th>대상 · 종류</th><th>요청</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}`
+        : `<p class="v1-muted">${all.length ? '이 상태의 요청이 없어요.' : '아직 수정 요청이 없어요.'}</p>`) +
+      (all.length ? `<p class="v1-muted v1-reqx">처리할 요청 목록(JSON): <a class="v1-link" href="/api/content-requests?open=1" target="_blank" rel="noopener">열기</a> — 저장해서 Claude 세션에 주면 한 번에 반영해요.</p>` : '') + '</section>';
   }
   function reqView(id) {
     const r = (cloud.contentRequests || []).find(x => x.id === id);
     if (!r) return '<section class="v1-card"><p class="v1-muted">수정 요청을 찾지 못했어요.</p></section>';
     const hist = (r.history || []).map(h => `<li><span class="v1-lst ${REQ_ST[h.status] || 'n'}">${esc(h.status)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}${h.commit ? ' · 커밋 ' + esc(h.commit) : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</li>`).join('');
-    const open = r.status === '요청' || r.status === '처리 중';
-    return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(r.type)}</span>${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2><p class="v1-muted">${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''} · 요청 ${esc(fmtAt(r.at))} · ${esc(r.name)}</p>` +
-      `<p class="v1-snap-chips"><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p>` +
+    const open = r.status === '요청' || r.status === '처리 중', logs = logsOf(r);
+    return `<section class="v1-card v1-logd"><p class="v1-snap-chips"><b class="v1-tkey">${esc(tkey(r))}</b><span class="v1-lkind">${esc(r.type)}</span><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p>` +
+      `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
+      `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
       (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? `<p class="v1-muted">처리 메모: ${esc(r.reply)}</p>` : '') + '</section>' +
+      `<section class="v1-card v1-logd"><h2>반영 기록 <small class="v1-muted">${logs.length}건</small></h2>` + (logs.length
+        ? `<ul class="v1-srm v1-tlogs">${logs.map(e => `<li><button type="button" class="v1-link v1-tlink" data-open-log="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</button></li>`).join('')}</ul>`
+        : `<p class="v1-muted">${r.status === '반영됨' ? '커밋은 됐지만 반영 기록에 이 티켓이 아직 없어요.' : '반영하면 여기에 반영 기록이 이어져요.'}</p>`) + '</section>' +
       (cloud.lmsLevel === 'admin' ? `<section class="v1-card v1-logd"><h2>처리</h2>` +
         `<div class="v1-reqform"><input type="text" class="v1-pop-input" data-req-commit placeholder="커밋 번호 (반영됨일 때, 예: aa54099)" maxlength="40" aria-label="커밋 번호"><textarea class="v1-pop-input" data-req-note maxlength="2000" rows="2" placeholder="처리 메모 (반려 시 사유 필수)" aria-label="처리 메모"></textarea>` +
-        `<div class="v1-actions v1-actions-inline">${open ? '' : '<button type="button" class="v1-btn" data-req-set="요청">다시 열기</button>'}${r.status !== '처리 중' && open ? '<button type="button" class="v1-btn" data-req-set="처리 중">처리 중</button>' : ''}<button type="button" class="v1-btn" data-req-set="반려">반려</button><button type="button" class="v1-btn primary" data-req-set="반영됨">반영됨</button></div></div></section>` : '') +
+        `<div class="v1-actions v1-actions-inline">${r.status === '반려' ? '<button type="button" class="v1-btn v1-danger" data-req-del>삭제</button>' : ''}${open ? '' : '<button type="button" class="v1-btn" data-req-set="요청">다시 열기</button>'}${r.status !== '처리 중' && open ? '<button type="button" class="v1-btn" data-req-set="처리 중">처리 중</button>' : ''}${r.status !== '반려' ? '<button type="button" class="v1-btn" data-req-set="반려">반려</button>' : ''}${r.status !== '반영됨' ? '<button type="button" class="v1-btn primary" data-req-set="반영됨">반영됨</button>' : ''}</div></div></section>` : '') +
       (hist ? `<section class="v1-card v1-logd"><h2>이력</h2><ul class="v1-srm v1-reqhist">${hist}</ul></section>` : '');
   }
+  $('app').addEventListener('click', e => {
+    const f = e.target.closest('[data-req-filter]'); if (f && view === 'admin') { reqFilter = f.dataset.reqFilter; adminPage.req = 1; keepFocus = `[data-req-filter="${reqFilter}"]`; render(); return; }
+    const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
+    const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) { view = 'req:' + r.id; render(); window.scrollTo({top: 0, behavior: 'instant'}); } }
+  });
+  $('app').addEventListener('click', async e => {
+    const b = e.target.closest('[data-req-del]'); if (!b || !view.startsWith('req:')) return;
+    if (!confirm('반려한 요청을 목록에서 지울까요? 티켓 번호는 다시 쓰지 않아요.')) return;
+    const id = view.slice(4); view = 'admin';
+    if (await act('content.delete', {id})) toast('반려한 요청을 지웠어요.'); else { view = 'req:' + id; render(); }
+  });
   const openReqView = id => { view = 'req:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   $('app').addEventListener('click', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin') openReqView(t.dataset.req); });
   $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openReqView(t.dataset.req); } });
