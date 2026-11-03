@@ -256,12 +256,12 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : view.startsWith('log:') || view.startsWith('req:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view.startsWith('log:') || view.startsWith('req:') || view.startsWith('fb:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view.startsWith('log:') ? '반영 기록' : view.startsWith('req:') ? '수정 요청' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view.startsWith('log:') ? '반영 기록' : view.startsWith('req:') ? '수정 요청' : view.startsWith('fb:') ? '보낸 의견' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -282,7 +282,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'admin' ? adminView() : view.startsWith('log:') ? logView(view.slice(4)) : view.startsWith('req:') ? reqView(view.slice(4)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
+    app.innerHTML = view === 'admin' ? adminView() : view.startsWith('log:') ? logView(view.slice(4)) : view.startsWith('req:') ? reqView(view.slice(4)) : view.startsWith('fb:') ? fbView(view.slice(3)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
@@ -445,10 +445,10 @@
       (canEdit && !a.seed && a.email !== me ? `<span class="v1-admin-ctl">${tag('admin')}<button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">해제</button></span>` : tag('admin')) + '</li>').join('');
     // 보낸 의견: 멘티(의견을 보낸 교육 화면의 주인) · 체크한 사람(그 교육을 체크·완료한 사람) · 보낸사람 · 시간 · 교육 과정 · 의견
     const fbAll = cloud.feedback || [], fbPage = pageOf('fb', fbAll);
-    const rows = fbPage.items.map(f => `<tr><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}</td></tr>`).join('');
+    const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.menteeName || '-')}</td><td class="v1-nowrap">${(f.mentors || []).map(esc).join('<br>') || '-'}</td><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${(f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
     const adminsHtml = `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
       (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>';
-    const fbHtml = `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+    const fbHtml = `<section class="v1-card"><h2>보낸 의견</h2><p class="v1-muted">교육 › 의견 보내기에서 구성원들이 보내 주신 의견이에요. 댓글을 달고, 개선에 반영할 때는 수정 요청 티켓(REQ-n)과 이어서 진행 상황을 관리해요.</p>` + (rows ? `<div class="v1-table"><table class="v1-llist"><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견 · 티켓</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
     // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
     const tab = adminTab, n = {fb: (cloud.feedback || []).length, log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '요청' || r.status === '처리 중').length};
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-admin-tab="${k}">${label}</button>`;
@@ -552,7 +552,7 @@
     const chips = REQ_FILTERS.map(([k, label, fn]) => `<button type="button" class="v1-fchip${k === reqFilter ? ' on' : ''}" data-req-filter="${esc(k)}" aria-pressed="${k === reqFilter}">${esc(label)} <b>${all.filter(fn).length}</b></button>`).join('');
     const rows = rp.items.map(r => { const logs = logsOf(r);
       return `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(tkey(r) + ' ' + reqHead(r).name)} 상세 보기"><td class="v1-nowrap"><b class="v1-tkey">${esc(tkey(r))}</b></td>` +
-        `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}</small></td>` +
+        `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}${fbsOf(r).length ? ' · 의견 ' + fbsOf(r).length : ''}</small></td>` +
         `<td class="v1-nowrap">${esc(r.name)}<small>${esc(fmtAt(r.at).slice(0, 10))}</small></td><td class="v1-nowrap">${esc(r.assignee || '—')}</td>` +
         `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`; }).join('');
     return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">모모스 담당자가 <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a>에서 보낸 요청이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` +
@@ -571,6 +571,7 @@
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
       (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? `<p class="v1-muted">처리 메모: ${esc(r.reply)}</p>` : '') + '</section>' +
+      (fbsOf(r).length ? `<section class="v1-card v1-logd"><h2>연결된 의견 <small class="v1-muted">${fbsOf(r).length}건</small></h2><ul class="v1-srm v1-tlogs">${fbsOf(r).map(f => `<li><button type="button" class="v1-link v1-tlink" data-open-fb="${esc(f.id)}">${esc(f.name)} · ${esc(String(f.text).slice(0, 60))}</button></li>`).join('')}</ul></section>` : '') +
       `<section class="v1-card v1-logd"><h2>반영 기록 <small class="v1-muted">${logs.length}건</small></h2>` + (logs.length
         ? `<ul class="v1-srm v1-tlogs">${logs.map(e => `<li><button type="button" class="v1-link v1-tlink" data-open-log="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</button></li>`).join('')}</ul>`
         : `<p class="v1-muted">${r.status === '반영됨' ? '커밋은 됐지만 반영 기록에 이 티켓이 아직 없어요.' : '반영하면 여기에 반영 기록이 이어져요.'}</p>`) + '</section>' +
@@ -579,6 +580,36 @@
         `<div class="v1-actions v1-actions-inline">${r.status === '반려' ? '<button type="button" class="v1-btn v1-danger" data-req-del>삭제</button>' : ''}${open ? '' : '<button type="button" class="v1-btn" data-req-set="요청">다시 열기</button>'}${r.status !== '처리 중' && open ? '<button type="button" class="v1-btn" data-req-set="처리 중">처리 중</button>' : ''}${r.status !== '반려' ? '<button type="button" class="v1-btn" data-req-set="반려">반려</button>' : ''}${r.status !== '반영됨' ? '<button type="button" class="v1-btn primary" data-req-set="반영됨">반영됨</button>' : ''}</div></div></section>` : '') +
       (hist ? `<section class="v1-card v1-logd"><h2>이력</h2><ul class="v1-srm v1-reqhist">${hist}</ul></section>` : '');
   }
+  // 11/03 보낸 의견 상세(fb:<id>): 의견 · 댓글 · 연결된 수정 요청 티켓
+  const fbsOf = r => (cloud.feedback || []).filter(f => (f.tickets || []).includes(r.no));
+  function fbView(id) {
+    const f = (cloud.feedback || []).find(x => x.id === id);
+    if (!f) return '<section class="v1-card"><p class="v1-muted">의견을 찾지 못했어요.</p></section>';
+    const st = steps().find(x => x.id === f.step), at = x => esc(String(x || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'));
+    const linked = (f.tickets || []).map(k => { const r = reqOfKey(k); return `<li><button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}"><b class="v1-tkey">${esc(k)}</b> ${r ? esc(reqHead(r).name) : '(지운 요청)'}</button>${r ? ` <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : ''}${cloud.lmsLevel === 'admin' ? ` <button type="button" class="v1-tbtn" data-fb-unlink="${esc(k)}" aria-label="${esc(k)} 연결 해제">연결 해제</button>` : ''}</li>`; }).join('');
+    const options = (cloud.contentRequests || []).filter(r => r.no && !(f.tickets || []).includes(r.no)).map(r => `<option value="${esc(r.no)}">${esc(r.no)} · ${esc(r.status)} · ${esc(reqHead(r).name)}</option>`).join('');
+    const comments = (f.comments || []).map(c => `<li><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small><div>${esc(c.text).replace(/\n/g, '<br>')}</div></li>`).join('');
+    return `<section class="v1-card v1-logd"><p class="v1-muted v1-reqpath">${esc(st ? `${stepIndex(st.id) + 1}. ${st.title}` : f.stepTitle || '')}</p><h2>${esc(f.name)}님의 의견</h2>` +
+      `<dl class="v1-snap-meta"><dt>멘티</dt><dd>${esc(f.menteeName || '-')}</dd><dt>체크한 사람</dt><dd>${(f.mentors || []).map(esc).join(', ') || '-'}</dd><dt>보낸 시간</dt><dd>${at(f.at)}</dd></dl>` +
+      `<div class="v1-fbq">${esc(f.text).replace(/\n/g, '<br>')}</div></section>` +
+      `<section class="v1-card v1-logd"><h2>수정 요청 티켓 <small class="v1-muted">${(f.tickets || []).length}건</small></h2><p class="v1-muted">이 의견을 개선에 반영하는 작업을 티켓으로 이어 두면, 티켓 화면에서도 이 의견이 보여요.</p>` +
+      (linked ? `<ul class="v1-srm v1-tlogs">${linked}</ul>` : '') +
+      (cloud.lmsLevel === 'admin' ? (options ? `<div class="v1-admin-add"><select class="v1-pop-input" data-fb-ticket aria-label="연결할 티켓">${options}</select><button type="button" class="v1-btn" data-fb-link>티켓 연결</button></div>`
+        : `<p class="v1-muted">연결할 티켓이 없어요. <a class="v1-link" href="/v1/graph">연결도</a>에서 수정 요청을 먼저 만들어 주세요.</p>`) : '') + '</section>' +
+      `<section class="v1-card v1-logd"><h2>댓글 <small class="v1-muted">${(f.comments || []).length}개</small></h2>${comments ? `<ul class="v1-fbc">${comments}</ul>` : '<p class="v1-muted">아직 댓글이 없어요.</p>'}` +
+      (cloud.lmsLevel === 'admin' ? `<div class="v1-reqform"><textarea class="v1-pop-input" data-fb-comment maxlength="2000" rows="2" placeholder="댓글 (예: REQ-3 으로 반영 중이에요)" aria-label="댓글"></textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn primary" data-fb-send>댓글 달기</button></div></div>` : '') + '</section>';
+  }
+  const openFb = id => { view = 'fb:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  $('app').addEventListener('click', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'admin') openFb(t.dataset.fb); const o = e.target.closest('[data-open-fb]'); if (o) openFb(o.dataset.openFb); });
+  $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFb(t.dataset.fb); } });
+  $('app').addEventListener('click', async e => {
+    if (!view.startsWith('fb:')) return;
+    const id = view.slice(3), app = $('app');
+    if (e.target.closest('[data-fb-send]')) { const box = app.querySelector('[data-fb-comment]'), text = (box && box.value || '').trim(); if (!text) return toast('댓글을 적어 주세요.');
+      if (await act('feedback.comment', {id, text})) toast('댓글을 달았어요.'); return; }
+    if (e.target.closest('[data-fb-link]')) { const sel = app.querySelector('[data-fb-ticket]'); if (sel && await act('feedback.link', {id, ticket: sel.value, on: true})) toast(sel.value + ' 티켓과 이었어요.'); return; }
+    const u = e.target.closest('[data-fb-unlink]'); if (u && await act('feedback.link', {id, ticket: u.dataset.fbUnlink, on: false})) toast(u.dataset.fbUnlink + ' 연결을 풀었어요.');
+  });
   $('app').addEventListener('click', e => {
     const f = e.target.closest('[data-req-filter]'); if (f && view === 'admin') { reqFilter = f.dataset.reqFilter; adminPage.req = 1; keepFocus = `[data-req-filter="${reqFilter}"]`; render(); return; }
     const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }

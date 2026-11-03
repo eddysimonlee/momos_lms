@@ -603,6 +603,15 @@ class EducationTests(unittest.TestCase):
             self.act(a,'content.status',dict(id=r2['id'],status='반려',note='중복'))
             c=self.act(a,'content.delete',dict(id=r2['id']));self.assertEqual([x['no'] for x in c['contentRequests']],['REQ-1'])
             self.assertEqual(self.act(a,'content.request',req)['contentRequests'][0]['no'],'REQ-3')  # 번호는 다시 쓰지 않음
+            # 보낸 의견: admin 댓글·티켓 연결
+            self.act(self.learner,'feedback.send',dict(step=ident,text='라벨 위치가 헷갈려요'))
+            fid=self.service.get(a)['feedback'][0]['id']
+            with self.assertRaises(PermissionError):self.act(b,'feedback.comment',dict(id=fid,text='확인할게요'))
+            c=self.act(a,'feedback.comment',dict(id=fid,text='REQ-1 로 반영 중이에요'));f=c['feedback'][0]
+            self.assertEqual((f['comments'][0]['text'],f['comments'][0]['name']),('REQ-1 로 반영 중이에요',a['name']))
+            with self.assertRaises(ValueError):self.act(a,'feedback.link',dict(id=fid,ticket='REQ-99',on=True))
+            self.assertEqual(self.act(a,'feedback.link',dict(id=fid,ticket='REQ-1',on=True))['feedback'][0]['tickets'],['REQ-1'])
+            self.assertEqual(self.act(a,'feedback.link',dict(id=fid,ticket='REQ-1',on=False))['feedback'][0]['tickets'],[])
 
     def test_old_check_records_are_reset_once_for_trainer_checks(self):
         ident='welcome-prep'

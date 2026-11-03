@@ -186,6 +186,15 @@ MOCK = r'''
       }
       state.rootRevision++; save(); return context(u, target);
     }
+    if (v.action === 'feedback.comment' || v.action === 'feedback.link') {  // 11/03 보낸 의견 댓글·티켓 연결(admin)
+      if (levelOf(u) !== 'admin') throw {status: 403, error: '보낸 의견 관리는 LMS관리자 admin 만 할 수 있어요.'};
+      const f = (state.feedback || []).find(x => x.id === d.id); if (!f) throw {status: 400, error: '의견을 찾지 못했어요.'};
+      if (v.action === 'feedback.comment') { const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '댓글을 적어 주세요.'};
+        f.comments = (f.comments || []).concat([{id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19), user: u.id, name: u.name, text}]); }
+      else { if (d.on && !(state.contentRequests || []).some(x => x.no === d.ticket)) throw {status: 400, error: d.ticket + ' 티켓을 찾지 못했어요.'};
+        f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []); }
+      state.rootRevision++; save(); return context(u, target);
+    }
     if (v.action === 'feedback.send') {
       if (target !== u.id && !p.trainer) throw {status: 403, error: '본인 교육 화면이나 구성원의 교육 화면에서만 의견을 보낼 수 있어요.'};
       const mentee = target;
