@@ -45,6 +45,16 @@ def main():
     page = page.replace('<body class="auth-pending">', '<body class="auth-pending">' + BANNER, 1)
     page = page.replace('</head>', '<style>' + BANNER_CSS + '</style></head>', 1)
     (APP / 'v1_preview.html').write_text(page, encoding='utf-8')
+    # 11/03 연결도(/v1/graph) 미리보기: 같은 가짜 서버를 넣고 '체험 담당자(admin)'로 연다. 수정 요청은 v1_preview 와 같은 기록(localStorage)에 쌓인다
+    g = (APP / 'v1_graph.html').read_text(encoding='utf-8')
+    g = g.replace('<link rel="stylesheet" href="/wds/web/variables.css">', '<style>' + inline_file(APP / 'wds/web/variables.css') + '</style>')
+    g = re.sub(r'<link rel="icon"[^>]*>\s*', '', g)
+    if font.exists():
+        g = g.replace("url('/assets/PretendardVariable.woff2')", "url(data:font/woff2;base64,%s)" % base64.b64encode(font.read_bytes()).decode())
+    who = "<script>try{sessionStorage.setItem('" + re.search(r"const KEY = '([^']+)'", MOCK).group(1) + "-who','u-staff')}catch(e){}</script>"
+    g = g.replace('<script>', who + '<script>' + mock + '</script><script>', 1)
+    g = g.replace('href="/v1"', 'href="v1_preview.html"')
+    (APP / 'v1_graph_preview.html').write_text(g, encoding='utf-8')
     print('v1_preview.html:', sum(len(u['steps']) for u in content['units']), 'steps —', (APP / 'v1_preview.html').resolve())
 
 
@@ -131,7 +141,7 @@ MOCK = r'''
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['본부장', '점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
-      ...(lms ? {sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
+      ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {
@@ -151,6 +161,21 @@ MOCK = r'''
       const email = String(d.email || '').trim().toLowerCase(); if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw {status: 400, error: '이메일 주소를 확인해 주세요.'};
       if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
       state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level === 'admin' ? [{email, level: 'admin'}] : []); state.rootRevision++; save(); return context(u, target);
+    }
+    if (v.action === 'content.request' || v.action === 'content.status') {  // 11/03 수정 요청(onboarding.content_request/status 와 같은 규칙)
+      if (levelOf(u) !== 'admin') throw {status: 403, error: '수정 요청은 LMS관리자 admin 만 보낼 수 있어요.'};
+      const at = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19) + '+09:00', list = state.contentRequests = state.contentRequests || [];
+      if (v.action === 'content.request') {
+        if (!String(d.tobe || '').trim()) throw {status: 400, error: '바꿀 내용을 적어 주세요.'};
+        list.push({id: String(Date.now()), at, user: u.id, name: u.name, email: u.email, target: d.target, type: d.type, field: d.field || '', asis: d.asis || '', tobe: d.tobe, note: d.note || '', status: '요청', history: [{at, by: u.name, status: '요청'}]});
+      } else {
+        const r = list.find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
+        if (d.status === '반려' && !d.note) throw {status: 400, error: '반려 사유를 적어 주세요.'};
+        if (d.commit && !/^[0-9a-f]{7,40}$/.test(d.commit)) throw {status: 400, error: '커밋 번호(7자리 이상)를 확인해 주세요.'};
+        r.status = d.status; if (d.note) r.reply = d.note; if (d.commit) r.commit = d.commit;
+        r.history = (r.history || []).concat([{at, by: u.name, status: d.status, ...(d.note ? {note: d.note} : {}), ...(d.commit ? {commit: d.commit} : {})}]);
+      }
+      state.rootRevision++; save(); return context(u, target);
     }
     if (v.action === 'feedback.send') {
       if (target !== u.id && !p.trainer) throw {status: 403, error: '본인 교육 화면이나 구성원의 교육 화면에서만 의견을 보낼 수 있어요.'};

@@ -19,3 +19,13 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
    - 링크 주소: PC `https://drive.worksmobile.com/drive/web/share/folder?resourceKey=<folderKey>&resourceLocation=24101`, 모바일 `worksdrive://folder?version=1&resourceLocation=24101&driveType=SHARE_DRIVE&fileId=<folderKey>`(철자 `resourceLocation`). 파일 fileId 로 파일을 바로 여는 웹 주소는 없다.
 5. **기록**: `source_log.json` 에 받은 것 1건 = 기록 1건(받은 것·폴더·드라이브 기준 시각·범위·문서별 상태·바뀐 교육 AS-IS/TO-BE·근거에서 뺀 문서·링크 갱신)을 남기고, `source_manifest.json` 의 문서별 기준을 갱신한다. 문서 상태 이름: 바뀌어 교육 반영 / 새 문서로 교육 반영 / 바뀌었지만 교육 영향 없음 / 바뀐 것 없음 / 근거에서 뺌.
 6. **확인 후 커밋**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 미리보기를 보여 주고 승인 후 커밋한다. 배포는 이재현이 push 한다(`github` = Render, `origin` = 사내 OSS).
+
+## 콘텐츠 수정 요청 처리 (11/03)
+
+역할: 모모스커피 담당자 = 콘텐츠 기획(무엇을 바꿀지 정한다), 이재현(NAVER WORKS) = 서비스 기획(화면·기능).
+
+1. 모모스 담당자(LMS관리자 admin)가 `/v1/graph` 에서 교육이나 원본 문서를 눌러 '수정 요청'을 보낸다. 종류: 문구 수정 · 문구 삭제 · 교육 내용 추가 · 사진 교체 · 원본 매핑 변경 · 원본 문서 변경 확인 · 기타. AS-IS 는 화면에서 자동으로 채워진다.
+2. 처리 세션은 `/api/content-requests?open=1` 결과(`content_requests.json`, 커밋하지 않음)를 받아 요청마다 반영안을 보여 주고 승인 후 `v1_lessons.json` 등을 고친다.
+3. **지금 화면 틀 안의 수정만** 반영한다. 사진은 그 교육이 인용하는 원본 문서의 사진만, 매핑은 원본 문서의 절로만. 화면 구조·기능·디자인을 바꿔야 하는 요청(기타 포함)은 고치지 않고 '서비스 기획 확인 필요'로 이재현에게 넘긴다.
+4. '원본 문서 변경 확인'은 위 '업무문서 반영 절차'로 처리한다(스냅샷·docs-check 필요).
+5. 반영하면 `source_log.json` 에 기록 1건(받은 것 = '수정 요청 n건', 요청 id·요청자·AS-IS/TO-BE)을 남기고, 커밋 후 LMS관리자 › 수정 요청에서 커밋 번호와 함께 '반영됨'으로 바꾼다(반려는 사유 필수).

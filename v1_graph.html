@@ -46,7 +46,7 @@ header p{margin:4px 0 0;color:var(--muted);word-break:keep-all}  /* 넓은 화�
 .side{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:sticky;top:max(12px,env(safe-area-inset-top,0px));max-height:calc(100vh - 24px);overflow:auto;min-width:0}
 @media (max-width:900px){.side{position:static;max-height:none;order:-1}}
 svg .node:focus{outline:none}svg .node:focus-visible circle{stroke:var(--accent);stroke-width:3}
-.side h2{font-size:16px;margin:0 0 4px;text-wrap:balance}
+.side h2{font-size:16px;margin:0 0 4px;text-wrap:balance;overflow-wrap:anywhere}
 .side .meta{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
 .side h3{font-size:12px;letter-spacing:.06em;color:var(--muted);margin:16px 0 6px;font-weight:600}
 .chip{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-right:4px}
@@ -55,8 +55,12 @@ svg .node:focus{outline:none}svg .node:focus-visible circle{stroke:var(--accent)
 .rel li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;cursor:pointer}
 .rel li:hover{border-color:var(--accent)}
 .rel .t{font-weight:600;font-size:13px}
-.rel .n{font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.rel .n{font-size:12px;color:var(--fg);margin-top:2px}
 .rel .s{font-size:12px;color:var(--muted);margin-top:2px}
+.secs{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:1px 8px;margin-top:6px;font-size:12px;color:var(--muted)}
+.secs .sh{grid-column:1/-1;font-weight:600;margin-bottom:2px}
+.secs .wide{grid-column:1/-1}.secs .no{font-variant-numeric:tabular-nums;color:var(--fg)}
+.crumb{margin-bottom:4px}.unit{font-size:13px;color:var(--muted);margin-bottom:2px}.rel .unit{font-size:12px}.rq .sub .t{font-weight:600;color:var(--fg);font-size:14px}
 .rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
 .rank li{display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:8px;align-items:center;cursor:pointer;padding:3px 4px;border-radius:6px;font-size:12px}
 .rank li:hover{background:var(--accent-soft)}
@@ -83,6 +87,34 @@ svg.focus .node.on{opacity:1}
 svg .node.sel text{font-weight:700}
 svg .node.hit text{fill:var(--accent);font-weight:700}
 .foot{font-size:12px;color:var(--muted)}
+/* 11/03 콘텐츠 수정 요청(admin): 패널의 '수정 요청' 버튼 → 대화상자(AS-IS 자동, TO-BE 입력) */
+.reqbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--surface-default)}
+.reqs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.reqs li{border:1px dashed var(--line);border-radius:8px;padding:6px 10px;font-size:12px}
+.reqs .h{display:flex;gap:6px;align-items:center;flex-wrap:wrap;color:var(--muted)}
+.reqs .b{margin-top:2px;overflow-wrap:anywhere}
+.st{font-size:11px;padding:0 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.st.done{background:var(--component-tag-color-success-surface);color:var(--component-tag-color-success-text-color)}
+.st.no{background:var(--component-tag-color-error-surface);color:var(--component-tag-color-error-text-color)}
+dialog.rq{border:1px solid var(--line);border-radius:14px;padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px);background:var(--panel);color:var(--fg)}
+dialog.rq::backdrop{background:rgba(0,0,0,.35)}  /* wds-allow: 대화상자 뒤 배경(대응 토큰 없음) */
+.rq form{display:flex;flex-direction:column;gap:12px;padding:18px}
+.rq h2{font-size:16px;margin:0}
+.rq .sub{font-size:12px;color:var(--muted);margin-top:-8px}
+.rq label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
+.rq select,.rq textarea{font:inherit;font-size:14px;font-weight:400;color:var(--fg);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.rq textarea{min-height:84px;resize:vertical}
+.rq .types{display:flex;flex-wrap:wrap;gap:6px}
+.rq .types button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer}
+.rq .types button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rq .asis{font-size:13px;font-weight:400;color:var(--fg);background:var(--bg);border-radius:8px;padding:8px 10px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:160px;overflow:auto}
+.rq .hint{font-size:12px;color:var(--muted);font-weight:400}
+.rq .act{display:flex;justify-content:flex-end;gap:8px}
+.gtoast{position:fixed;left:50%;bottom:max(24px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:20;max-width:calc(100vw - 32px);background:var(--fg);color:var(--panel);border-radius:10px;padding:12px 16px;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.18)}  /* wds-allow: 토스트 그림자(대응 토큰 없음) */
+.gtoast[hidden]{display:none}
+.reqs li.new{border-style:solid;border-color:var(--accent);background:var(--accent-soft)}
+.rq .err{color:var(--text-danger,var(--warn));font-size:12px}
 @media (prefers-reduced-motion:no-preference){svg path.e,svg .node{transition:opacity .15s,stroke-opacity .15s}}
 </style>
 
@@ -106,6 +138,8 @@ svg .node.hit text{fill:var(--accent);font-weight:700}
   </div>
   <p class="foot" id="foot"></p>
 </div>
+<div class="gtoast" id="gtoast" role="status" aria-live="polite" hidden></div>
+<dialog class="rq" id="rq" aria-labelledby="rqTitle"><form method="dialog" id="rqForm"></form></dialog>
 
 <script>
 // 로그인: 교육 화면(/v1)과 같다. WORKS 로그인 서버는 새로 열 때마다 WORKS 에 다시 확인하고, 로그인 후 이 화면으로 돌아온다.
@@ -136,15 +170,16 @@ function buildGraph(c) {
   for (const u of c.units) for (const s of u.steps) {
     no++;
     items.push({id: s.id, no, title: s.title, unit: `${u.no} ${u.title}`, stage: u.stage.order, stageTitle: u.stage.title});
-    const add = (key, kind) => {
+    // kp/check/photo = 인용 횟수(선 굵기), at = 그 문서를 근거로 쓴 자리(교육 내용 n칸·체크 n개·사진 n장, 중복 없이)
+    const add = (key, kind, idx) => {
       const sec = c.sections[key]; if (!sec) return;
       const k = s.id + '|' + sec.doc;
-      if (!edges.has(k)) edges.set(k, {item: s.id, doc: sec.doc, kp: 0, check: 0, photo: 0, secs: new Set()});
-      const e = edges.get(k); e[kind]++; e.secs.add((sec.no ? sec.no + ' ' : '') + sec.title);
+      if (!edges.has(k)) edges.set(k, {item: s.id, doc: sec.doc, kp: 0, check: 0, photo: 0, at: {kp: new Set(), check: new Set(), photo: new Set()}, secs: new Set()});
+      const e = edges.get(k); e[kind]++; e.at[kind].add(idx); e.secs.add((sec.no ? sec.no + ' ' : '') + sec.title);
     };
-    (s.keyPoints || []).forEach(k => k.cites.forEach(x => add(x, 'kp')));
-    (s.checkCites || []).forEach(cs => cs.forEach(x => add(x, 'check')));
-    (s.photos || []).forEach(p => { const ph = c.photos[p]; if (ph && ph.cite) add(ph.cite, 'photo'); });
+    (s.keyPoints || []).forEach((k, i) => k.cites.forEach(x => add(x, 'kp', i)));
+    (s.checkCites || []).forEach((cs, i) => cs.forEach(x => add(x, 'check', i)));
+    (s.photos || []).forEach(p => { const ph = c.photos[p]; if (ph && ph.cite) add(ph.cite, 'photo', p); });
   }
   const used = new Set([...edges.values()].map(e => e.doc));
   const docs = Object.entries(c.documents).filter(([k]) => used.has(k)).map(([id, d]) => ({id, title: d.title, type: d.type, folder: d.folder || '', file: d.file, version: d.version}));
@@ -155,7 +190,15 @@ function buildGraph(c) {
 await autoLogin();
 const res = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
 if (!res.ok) { document.querySelector('.main').innerHTML = '<div class="msg">로그인이 필요해요. <a href="/auth/works/login?next=graph">NAVER WORKS 로 로그인</a>한 뒤 다시 열어 주세요.</div>'; return; }
-const G = buildGraph(await res.json());
+const C = await res.json();
+const G = buildGraph(C);
+// 11/03 수정 요청: LMS관리자(admin)에게만 '수정 요청' 버튼. 요청은 /api/onboarding(content.request)에 저장된다
+let ME = null, CSRF = '';
+try {
+  const st = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json()); CSRF = st.csrfToken || '';
+  const r = await fetch('/api/onboarding', {credentials: 'same-origin', cache: 'no-store'}); if (r.ok) ME = await r.json();
+} catch {}
+const canReq = () => !!(ME && ME.lmsLevel === 'admin');
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const docs = new Map(G.docs.map(d => [d.id, d])), items = new Map(G.items.map(i => [i.id, i]));
@@ -165,7 +208,10 @@ for (const e of G.edges) { (byDoc.get(e.doc) || byDoc.set(e.doc, []).get(e.doc))
 const stages = [...new Map(G.items.map(i => [i.stage, i.stageTitle]))].sort((a, b) => a[0] - b[0]);
 const stageColor = n => `var(--stage${n})`;
 const folderState = f => /수정중|생성중/.test(f) ? (f.match(/수정중|생성중/)[0]) : (/1차완료/.test(f) ? '1차완료' : '');
-const shortDoc = d => d.title.replace(/ · 검토본.*$/, '').replace(/^본점\s*/, '');
+// 11/03: 문서 이름 = 드라이브 파일 이름(확장자 제외). 근거가 모두 드라이브 최신판이라 드라이브에서 보는 이름과 맞춘다(예전엔 표지 제목을 줄여 썼다)
+const shortDoc = d => String(d.file || d.title).replace(/\.docx$/i, '');
+// 좁은 자리에서는 가운데를 줄여 끝의 날짜(YYMMDD)가 보이게
+const midTrim = (t, n) => t.length <= n ? t : t.slice(0, n - 16) + '…' + t.slice(-15);
 
 // 문서 순서: 폴더별로 묶고, 연결된 교육항목 번호의 평균(무게중심)으로 정렬해 선 교차를 줄인다.
 const bary = id => { const es = byDoc.get(id) || []; return es.reduce((s, e) => s + items.get(e.item).no * w(e), 0) / Math.max(1, es.reduce((s, e) => s + w(e), 0)); };
@@ -184,7 +230,7 @@ $('foot').textContent = `기준: 교육과정 ${G.meta.curriculum} · 원본 색
 
 // --- SVG 그리기
 const ROW = 17, TOP = 74;  // 위쪽 50px 는 열 제목
-const W = 980, LX = 330, RX = W - 330;
+const W = 1080, LX = 430, RX = W - 330;  // 왼쪽 열을 넓혀 파일 이름을 보인다
 let y = TOP; const docPos = new Map(), docRows = [];
 const itemRows = []; let yi = TOP; const itemPos = new Map();
 for (const [n, t] of stages) { itemRows.push({type: 'g', y: yi, label: `${n}단계 ${t}`, n}); yi += ROW + 4; for (const it of G.items.filter(i => i.stage === n)) { itemPos.set(it.id, yi); itemRows.push({type: 'i', y: yi, it}); yi += ROW; } yi += 8; }
@@ -209,7 +255,7 @@ for (const e of G.edges) {
 for (const r of docRows) {
   if (r.type === 'g') { const st = folderState(r.label); svg += `<text class="grp" x="${LX + 8}" y="${r.y + 4}" text-anchor="end">${esc(r.label)}</text>`; continue; }
   const d = r.d, n = (byDoc.get(d.id) || []).length, warn = /수정중|생성중/.test(d.folder);
-  svg += `<g class="node" data-kind="d" data-id="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(shortDoc(d))}, 교육항목 ${n}개"><text x="${LX - 34}" y="${r.y + 4}" text-anchor="end">${esc(shortDoc(d).length > 26 ? shortDoc(d).slice(0, 25) + '…' : shortDoc(d))}</text>` +
+  svg += `<g class="node" data-kind="d" data-id="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(shortDoc(d))}, 교육항목 ${n}개"><title>${esc(shortDoc(d))}</title><text x="${LX - 34}" y="${r.y + 4}" text-anchor="end">${esc(midTrim(shortDoc(d), 36))}</text>` +
     `<text class="cnt" x="${LX - 8}" y="${r.y + 4}" text-anchor="end">${n}</text><circle cx="${LX + 4}" cy="${r.y}" r="${3 + Math.sqrt(n)}" fill="${warn ? 'var(--warn)' : 'var(--accent)'}"/></g>`;
 }
 for (const r of itemRows) {
@@ -235,27 +281,100 @@ function highlight(kind, id) {
     S.querySelector(`.node[data-kind="${kind === 'd' ? 'i' : 'd'}"][data-id="${CSS.escape(kind === 'd' ? e.item : e.doc)}"]`)?.classList.add('on');
   }
 }
-const counts = e => [e.kp && `내용 ${e.kp}`, e.check && `확인 ${e.check}`, e.photo && `사진 ${e.photo}`].filter(Boolean).join(' · ');
+// 11/03: '내용 3 · 확인 2' 대신 무엇을 세는지 풀어 쓴다 — 이 문서를 근거로 쓴 교육 내용 칸·체크 항목·사진 수
+// 11/03 교육 표시(어디서든 같게): 큰 단계 → 단원 → 교육. big=패널 제목용
+const itemHead = (it, big) => `<div class="crumb"><span class="chip" style="color:${stageColor(it.stage)}">${it.stage}단계 · ${esc(it.stageTitle)}</span></div><div class="unit">${esc(it.unit)}</div>` +
+  (big ? `<h2>${it.no}. ${esc(it.title)}</h2>` : `<div class="t">${it.no}. ${esc(it.title)}</div>`);
+const itemPath = it => `${it.stage}단계 ${it.stageTitle} › ${it.unit} › ${it.no}. ${it.title}`;
+// 인용한 절: 한 줄에 하나, 절 번호 열과 제목 열을 맞춘다
+const secList = secs => `<div class="secs"><div class="sh">인용한 절</div>${secs.map(x => { const m = /^([\d.]+)\s+(.*)$/.exec(x); return m ? `<span class="no">${esc(m[1])}</span><span>${esc(m[2])}</span>` : `<span class="wide">${esc(x)}</span>`; }).join('')}</div>`;
+const counts = e => '근거로 쓴 곳: ' + [e.at.kp.size && `교육 내용 ${e.at.kp.size}칸`, e.at.check.size && `체크 ${e.at.check.size}개`, e.at.photo.size && `사진 ${e.at.photo.size}장`].filter(Boolean).join(' · ');
 function panel() {
   const side = $('side');
   if (!sel) {
     const rows = G.docs.map(d => ({d, n: (byDoc.get(d.id) || []).length})).sort((a, b) => b.n - a.n);
     const max = rows[0].n;
     side.innerHTML = `<h2>문서별 영향 범위</h2><p class="meta">각 문서를 인용하는 교육항목 수. 누르면 연결된 항목을 봅니다.</p><h3>${G.docs.length}개 문서</h3><ul class="rank">${rows.map(r =>
-      `<li data-pick="d:${esc(r.d.id)}"><span class="lbl">${/수정중|생성중/.test(r.d.folder) ? '<span class="chip warn">' + esc(folderState(r.d.folder)) + '</span>' : ''}${esc(shortDoc(r.d))}</span><span class="v">${r.n}</span><span class="track"><i style="width:${r.n / max * 100}%"></i></span></li>`).join('')}</ul>`;
+      `<li data-pick="d:${esc(r.d.id)}"><span class="lbl">${/수정중|생성중/.test(r.d.folder) ? '<span class="chip warn">' + esc(folderState(r.d.folder)) + '</span>' : ''}<span title="${esc(shortDoc(r.d))}">${esc(midTrim(shortDoc(r.d), 34))}</span></span><span class="v">${r.n}</span><span class="track"><i style="width:${r.n / max * 100}%"></i></span></li>`).join('')}</ul>`;
   } else if (sel.kind === 'd') {
     const d = docs.get(sel.id), es = (byDoc.get(d.id) || []).slice().sort((a, b) => items.get(a.item).no - items.get(b.item).no);
     const st = folderState(d.folder);
-    side.innerHTML = `<h2>${esc(shortDoc(d))}</h2><div class="meta"><span class="chip ${/수정중|생성중/.test(st) ? 'warn' : ''}">${esc(d.type || '')} ${esc(d.version || '')}</span>${esc(d.folder)} / ${esc(d.file)}</div>` +
-      `<h3>이 문서를 인용하는 교육항목 ${es.length}개 · 인용 ${es.reduce((s, e) => s + w(e), 0)}</h3><ul class="rel">${es.map(e => { const it = items.get(e.item);
-        return `<li data-pick="i:${esc(it.id)}"><div class="t"><span style="color:${stageColor(it.stage)}">●</span> ${it.no}. ${esc(it.title)}</div><div class="n">${esc(it.unit)} · ${counts(e)}</div><div class="s">${e.secs.map(esc).join(' / ')}</div></li>`; }).join('')}</ul>`;
+    side.innerHTML = `<h2>${esc(shortDoc(d))}</h2><div class="meta">${/수정중|생성중/.test(st) ? `<span class="chip warn">${esc(st)}</span>` : ''}</div>` + reqBlock('doc', d.id) +
+      `<h3>이 문서를 근거로 쓰는 교육 ${es.length}개</h3><ul class="rel">${es.map(e => { const it = items.get(e.item);
+        return `<li data-pick="i:${esc(it.id)}">${itemHead(it)}<div class="n">${counts(e)}</div>${secList(e.secs)}</li>`; }).join('')}</ul>`;
   } else {
     const it = items.get(sel.id), es = (byItem.get(it.id) || []).slice().sort((a, b) => w(b) - w(a));
-    side.innerHTML = `<h2>${it.no}. ${esc(it.title)}</h2><div class="meta"><span class="chip" style="color:${stageColor(it.stage)}">${it.stage}단계</span>${esc(it.unit)}</div>` +
-      `<h3>근거 문서 ${es.length}개 · 인용 ${es.reduce((s, e) => s + w(e), 0)}</h3><ul class="rel">${es.map(e => { const d = docs.get(e.doc);
-        return `<li data-pick="d:${esc(d.id)}"><div class="t">${/수정중|생성중/.test(d.folder) ? '<span class="chip warn">' + esc(folderState(d.folder)) + '</span>' : ''}${esc(shortDoc(d))}</div><div class="n">${counts(e)}</div><div class="s">${e.secs.map(esc).join(' / ')}</div></li>`; }).join('')}</ul>`;
+    // 11/03: 큰 단계 → 단원 → 교육 순서로 위에서 아래로
+    side.innerHTML = itemHead(it, true) + reqBlock('item', it.id) +
+      `<h3>이 교육의 근거 문서 ${es.length}개</h3><ul class="rel">${es.map(e => { const d = docs.get(e.doc);
+        return `<li data-pick="d:${esc(d.id)}"><div class="t">${/수정중|생성중/.test(d.folder) ? '<span class="chip warn">' + esc(folderState(d.folder)) + '</span>' : ''}${esc(shortDoc(d))}</div><div class="n">${counts(e)}</div>${secList(e.secs)}</li>`; }).join('')}</ul>`;
   }
   side.querySelectorAll('[data-pick]').forEach(li => li.onclick = () => { const [k, ...rest] = li.dataset.pick.split(':'); pick(k, rest.join(':')); });
+  const rb = side.querySelector('[data-req]'); if (rb) rb.onclick = () => openReq(rb.dataset.req.split(':')[0], rb.dataset.req.split(':').slice(1).join(':'));
+}
+// --- 11/03 콘텐츠 수정 요청 ---------------------------------------------------------------
+const stepOf = id => C.units.flatMap(u => u.steps).find(s => s.id === id);
+const citeLabel = k => { const sec = C.sections[k], d = sec && C.documents[sec.doc]; return sec ? `${d ? d.title : sec.doc} ${sec.no || ''} ${sec.title || ''}`.replace(/\s+/g, ' ').trim() : k; };
+const ST_CLS = {'반영됨': 'done', '반려': 'no'};
+function reqBlock(kind, id) {
+  if (!canReq()) return '';
+  const mine = (ME.contentRequests || []).filter(r => r.target && r.target.kind === kind && r.target.id === id);
+  return `<div class="reqbar"><button type="button" class="btn pri" data-req="${kind}:${esc(id)}">${kind === 'doc' ? '원본 문서 변경 알리기' : '수정 요청'}</button>` +
+    (mine.length ? `<span class="meta">이 ${kind === 'doc' ? '문서' : '교육'}의 요청 ${mine.length}건</span>` : '') + '</div>' +
+    (mine.length ? `<ul class="reqs">${mine.slice(0, 5).map(r => `<li${r.id === NEW_REQ ? ' class="new"' : ''}><div class="h">${r.id === NEW_REQ ? '<b>방금 보냄</b> · ' : ''}<span class="st ${ST_CLS[r.status] || ''}">${esc(r.status)}</span>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''} · ${esc(String(r.at).slice(5, 16).replace('T', ' '))}</div><div class="b">${esc(r.tobe).slice(0, 120)}</div></li>`).join('')}</ul>` : '');
+}
+// 종류별 대상: [field 라벨, AS-IS] 목록. 교육 내용이 없는 교육은 체크 항목이 교육 내용이다
+function targetsOf(kind, id, type) {
+  if (kind === 'doc') { const d = docs.get(id); return [[`${d.folder} / ${d.file}`, `${d.folder} / ${d.file}`]]; }
+  const s = stepOf(id), kps = (s.keyPoints || []).length ? s.keyPoints.map(k => ({text: k.text, cites: k.cites || []})) : (s.checks || []).map((t, i) => ({text: t, cites: (s.checkCites || [])[i] || []}));
+  const L = (s.keyPoints || []).length ? '교육 내용' : '체크 항목';
+  if (type === '문구 수정') return [['교육 제목', s.title], ['교육 목적', s.purpose || ''], ...kps.map((k, i) => [`${L} ${i + 1}`, k.text])];
+  if (type === '문구 삭제') return kps.map((k, i) => [`${L} ${i + 1}`, k.text]);
+  if (type === '교육 내용 추가') return [[`${L} 맨 앞에 추가`, kps[0] ? `(지금 1번) ${kps[0].text}` : '(교육 내용 없음)'], ...kps.map((k, i) => [`${L} ${i + 1}번 뒤에 추가`, `(지금 ${i + 1}번) ${k.text}`])];
+  if (type === '사진 교체') return [...(s.photos || []).map((p, i) => { const ph = C.photos[p] || {}; return [`사진 ${i + 1}`, `${ph.caption || '(설명 없음)'}${ph.cite ? '\n원본: ' + citeLabel(ph.cite) : ''}`]; }), ['사진 추가', '(새 사진)']];
+  if (type === '원본 매핑 변경') return kps.map((k, i) => [`${L} ${i + 1}의 근거`, `${k.text}\n근거: ${k.cites.map(citeLabel).join(' / ') || '(없음)'}`]);
+  return [['기타', '']];
+}
+const TYPES = {item: ['문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '기타'], doc: ['원본 문서 변경 확인', '기타']};
+const TOBE_HINT = {'문구 수정': '바꿀 문장을 그대로 적어 주세요.', '문구 삭제': '지우는 이유를 아래 메모에 적어 주세요.', '교육 내용 추가': '새로 넣을 교육 내용을 적어 주세요.',
+  '사진 교체': '원본 문서의 어느 사진으로 바꿀지 적어 주세요(예: 이카운트 SOP 5.2 두 번째 사진). 원본 문서에 있는 사진만 쓸 수 있어요.',
+  '원본 매핑 변경': '새로 근거로 삼을 원본 문서와 절을 적어 주세요(예: 매장 공간 안내 4.2).', '원본 문서 변경 확인': '무엇이 바뀌었는지 적어 주세요(예: 5.2 수량 기준 변경, 새 날짜판 업로드).', '기타': '요청 내용을 적어 주세요. 화면 구조 변경은 서비스 기획에서 따로 검토해요.'};
+let RQ = null, NEW_REQ = null, toastTimer = null;
+function gtoast(msg) { const t = $('gtoast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 4000); }
+function openReq(kind, id) {
+  const title = kind === 'doc' ? shortDoc(docs.get(id)) : itemPath(items.get(id));  // 저장도 단계 › 단원 › 교육 경로로
+  RQ = {kind, id, title, type: TYPES[kind][0], field: 0, err: ''}; drawReq(); $('rq').showModal();
+}
+function drawReq() {
+  const t = targetsOf(RQ.kind, RQ.id, RQ.type), cur = t[Math.min(RQ.field, t.length - 1)] || ['', ''], del = RQ.type === '문구 삭제';
+  $('rqForm').innerHTML = `<h2 id="rqTitle">${RQ.kind === 'doc' ? '원본 문서 변경 알리기' : '수정 요청'}</h2><div class="sub">${RQ.kind === 'doc' ? esc(RQ.title) : itemHead(items.get(RQ.id))}</div>` +
+    `<div><div class="hint" style="margin-bottom:6px">종류</div><div class="types" role="group" aria-label="요청 종류">${TYPES[RQ.kind].map(x => `<button type="button" data-type="${esc(x)}" aria-pressed="${x === RQ.type}">${esc(x)}</button>`).join('')}</div></div>` +
+    (t.length > 1 || RQ.kind === 'item' && RQ.type !== '기타' ? `<label>대상<select id="rqField">${t.map((x, i) => `<option value="${i}"${i === RQ.field ? ' selected' : ''}>${esc(x[0])}</option>`).join('')}</select></label>` : '') +
+    (cur[1] ? `<label>지금 내용 (AS-IS)<div class="asis">${esc(cur[1])}</div></label>` : '') +
+    (del ? '' : `<label>바꿀 내용 (TO-BE)<textarea id="rqTobe" maxlength="4000" required>${esc(RQ.tobe || '')}</textarea><span class="hint">${esc(TOBE_HINT[RQ.type] || '')}</span></label>`) +
+    `<label>메모 (이유·근거, 선택)<textarea id="rqNote" maxlength="2000" style="min-height:56px">${esc(RQ.note || '')}</textarea></label>` +
+    (RQ.err ? `<div class="err" role="alert">${esc(RQ.err)}</div>` : '') +
+    `<div class="act"><button type="button" class="btn" data-close>닫기</button><button type="button" class="btn pri" data-send${RQ.busy ? ' disabled' : ''}>요청 보내기</button></div>`;
+  const f = $('rqForm'), keep = () => { const a = f.querySelector('#rqTobe'), b = f.querySelector('#rqNote'); if (a) RQ.tobe = a.value; if (b) RQ.note = b.value; };
+  f.querySelectorAll('[data-type]').forEach(b => b.onclick = () => { keep(); RQ.type = b.dataset.type; RQ.field = 0; RQ.err = ''; drawReq(); });
+  const fs = f.querySelector('#rqField'); if (fs) fs.onchange = () => { keep(); RQ.field = Number(fs.value); drawReq(); };
+  f.querySelector('[data-close]').onclick = () => $('rq').close();
+  f.querySelector('[data-send]').onclick = async () => {
+    keep(); const tobe = del ? '(삭제)' : String(RQ.tobe || '').trim();
+    if (!tobe) { RQ.err = '바꿀 내용을 적어 주세요.'; return drawReq(); }
+    RQ.busy = true; drawReq();
+    const uid = (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16)));
+    try {
+      const r = await fetch('/api/onboarding', {method: 'POST', credentials: 'same-origin', cache: 'no-store', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': CSRF},
+        body: JSON.stringify({action: 'content.request', target: ME.target, revision: ME.learner && ME.learner.revision, rootRevision: ME.rootRevision, requestId: uid,
+          data: {target: {kind: RQ.kind, id: RQ.id, title: RQ.title}, type: RQ.type, field: RQ.type === '기타' && RQ.kind === 'item' ? '' : cur[0], asis: cur[1], tobe, note: String(RQ.note || '').trim()}})});
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || '요청을 보내지 못했어요.');
+      const before = new Set((ME.contentRequests || []).map(x => x.id));
+      ME = j; $('rq').close(); NEW_REQ = ((ME.contentRequests || []).find(x => !before.has(x.id)) || {}).id || null; panel();
+      gtoast(`수정 요청을 보냈어요 · ${RQ.type}${cur[0] && RQ.kind === 'item' ? ' · ' + cur[0] : ''}. LMS관리자 › 수정 요청에서 처리 상태를 볼 수 있어요.`);
+    } catch (e) { RQ.busy = false; RQ.err = e.message; drawReq(); }
+  };
 }
 function pick(kind, id) {
   sel = id ? {kind, id} : null; highlight(kind, id); panel();

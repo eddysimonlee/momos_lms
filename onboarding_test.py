@@ -581,6 +581,22 @@ class EducationTests(unittest.TestCase):
             fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['menteeName'],fb['text']),(b['name'],self.learner['name'],'5번 문장 확인 필요'))
             with self.assertRaises(PermissionError):self.act(self.tech,'feedback.send',dict(step=ident,text='x'),self.learner['id'])  # 모모스 계정이 아니면 못 보냄
 
+    def test_content_requests_from_graph(self):
+        # 11/03 /v1/graph 콘텐츠 수정 요청: admin 만 보내고 처리 상태를 바꾼다
+        a,b=self.other,self.content;ident='welcome-prep'
+        with patch.object(ob,'LMS_ADMIN_SEED',[a['email'].lower()]):
+            req=dict(target=dict(kind='item',id=ident,title='1. 첫 출근 준비'),type='문구 수정',field='교육 내용 1',asis='옛 문장',tobe='새 문장',note='SOP 5.2 기준')
+            with self.assertRaises(PermissionError):self.act(b,'content.request',req)  # admin 이 아니면 못 보냄
+            with self.assertRaises(ValueError):self.act(a,'content.request',dict(req,type='화면 바꾸기'))  # 종류 제한
+            with self.assertRaises(ValueError):self.act(a,'content.request',dict(req,target=dict(kind='item',id='nope',title='x')))
+            c=self.act(a,'content.request',req);r=c['contentRequests'][0]
+            self.assertEqual((r['status'],r['tobe'],r['target']['id'],r['name']),('요청','새 문장',ident,a['name']))
+            with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반려'))  # 반려는 사유 필요
+            with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='xyz'))
+            c=self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='aa54099',note='5번 문장 수정'));r=c['contentRequests'][0]
+            self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['요청','반영됨']))
+            self.assertNotIn('contentRequests',self.service.get(b))
+
     def test_old_check_records_are_reset_once_for_trainer_checks(self):
         ident='welcome-prep'
         with self.store.connect() as db:

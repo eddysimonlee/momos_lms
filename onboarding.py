@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'content.request','content.status','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -198,6 +198,8 @@ TARGET_MONTHS = 6
 # 11/02 '나의 멘티'·'전체 멘티' 초기화: 배포 뒤 처음 한 번 모든 사람의 교육 체크·완료 기록을 비운다(교육 등록·관리자·의견·사진·입사일은 남긴다)
 # (같은 날 멘토·멘티 관계와 '사원' 조건은 없앴다: 첫 화면은 부서별 구성원 표, 체크는 모든 직원)
 MENTEE_RESET = 'mentee-reset-2026-11-02'
+CONTENT_REQUEST_TYPES = ('문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '원본 문서 변경 확인', '기타')
+CONTENT_REQUEST_STATUS = ('요청', '처리 중', '반영됨', '반려')
 
 
 def source_log():
@@ -536,7 +538,7 @@ class Service:
             if old:
                 if old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
                 return self.context(db,root,user,target)
-            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.','lms.','feedback.'))
+            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.','lms.','feedback.','content.'))
             if type(v.get('rootRevision' if root_action else 'revision')) is not int:
                 raise ValueError('서버 판본을 확인하세요.')
             # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
@@ -561,6 +563,10 @@ class Service:
                 self.set_lms_admin(root,user,data)
             elif action=='feedback.send':
                 self.send_feedback(db,root,user,target,data)
+            elif action=='content.request':
+                self.content_request(root,user,data)
+            elif action=='content.status':
+                self.content_status(root,user,data)
             elif action.startswith('config.'):
                 if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
                 self.configure(db,root,user,action,data)
@@ -696,7 +702,8 @@ class Service:
                         mentors=mentors.get(mentee, []) if mentee else [])
         return dict(lmsAdmins=[dict(email=e, level=l, seed=e in seed) for e, l in sorted(levels.items())],
                     feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
-                    sourceLog=source_log())
+                    sourceLog=source_log(),
+                    contentRequests=list(reversed((root.get('contentRequests') or [])[-300:])))
 
     def set_lms_admin(self, root, user, d):
         """admin 만 다른 admin 을 지정(level 'admin')·해제(level None)한다. 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
@@ -711,6 +718,39 @@ class Service:
         rest = [x for x in root.get('lmsAdmins') or [] if (x.get('email') if isinstance(x, dict) else x) != email]
         root['lmsAdmins'] = rest + ([dict(email=email, level=d['level'])] if d['level'] else [])
         root['audit'].append(dict(at=stamp(), actor=user['id'], action='LMS관리자 ' + (d['level'] or '삭제'), email=email))
+
+    # 11/03 콘텐츠 수정 요청(/v1/graph 에서 보냄): 모모스 담당자가 '지금 화면 틀 안의' 수정을 AS-IS/TO-BE 로 요청하고,
+    # LMS관리자 '수정 요청' 탭에서 처리 상태를 바꾼다. 실제 반영은 저장소(v1_lessons.json)에서 하고 커밋 번호를 남긴다.
+    def content_request(self, root, user, d):
+        if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청은 LMS관리자 admin 만 보낼 수 있어요.')
+        keys = {'target', 'type', 'field', 'asis', 'tobe', 'note'}
+        if not isinstance(d, dict) or set(d) - keys or not {'target', 'type', 'tobe'} <= set(d): raise ValueError('수정 요청 내용을 확인해 주세요.')
+        t = d['target']
+        if not isinstance(t, dict) or set(t) != {'kind', 'id', 'title'} or t['kind'] not in ('item', 'doc'): raise ValueError('요청 대상을 확인해 주세요.')
+        if t['kind'] == 'item' and t['id'] not in STEPS: raise ValueError('요청할 교육을 확인해 주세요.')
+        if d['type'] not in CONTENT_REQUEST_TYPES: raise ValueError('요청 종류를 확인해 주세요.')
+        item = dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], email=str(user.get('email') or ''),
+                    target=dict(kind=t['kind'], id=projects.text(t['id'], 120, True), title=projects.text(t['title'], 200, True)),
+                    type=d['type'], field=projects.text(d.get('field', ''), 80), asis=projects.text(d.get('asis', ''), 4000),
+                    tobe=projects.text(d['tobe'], 4000, True), note=projects.text(d.get('note', ''), 2000),
+                    status='요청', history=[dict(at=stamp(), by=user['name'], status='요청')])
+        items = root.setdefault('contentRequests', [])
+        items.append(item)
+        root['contentRequests'] = items[-2000:]
+
+    def content_status(self, root, user, d):
+        if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청 처리는 LMS관리자 admin 만 할 수 있어요.')
+        if not isinstance(d, dict) or set(d) - {'id', 'status', 'note', 'commit'} or not {'id', 'status'} <= set(d) or d['status'] not in CONTENT_REQUEST_STATUS:
+            raise ValueError('처리 상태를 확인해 주세요.')
+        item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
+        if not item: raise ValueError('수정 요청을 찾지 못했어요.')
+        note, commit = projects.text(d.get('note', ''), 2000), projects.text(d.get('commit', ''), 40)
+        if commit and not re.fullmatch(r'[0-9a-f]{7,40}', commit): raise ValueError('커밋 번호(7자리 이상)를 확인해 주세요.')
+        if d['status'] == '반려' and not note: raise ValueError('반려 사유를 적어 주세요.')
+        item['status'] = d['status']
+        if note: item['reply'] = note
+        if commit: item['commit'] = commit
+        item['history'] = (item.get('history') or []) + [dict(at=stamp(), by=user['name'], status=d['status'], **({'note': note} if note else {}), **({'commit': commit} if commit else {}))]
 
     def name_of(self, db, ident):
         row = db.execute('SELECT name FROM access_users WHERE id=?', (ident,)).fetchone()

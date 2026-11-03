@@ -256,12 +256,12 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : view.startsWith('log:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view.startsWith('log:') || view.startsWith('req:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
-    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view.startsWith('log:') ? '반영 기록' : '모모스 온보딩';
+    $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view.startsWith('log:') ? '반영 기록' : view.startsWith('req:') ? '수정 요청' : '모모스 온보딩';
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -282,7 +282,7 @@
     // 기준점: 방금 누른 체크박스. 그 위쪽 내용 높이가 바뀌어도(상태 문구 등) 화면에서 같은 자리에 머물게 한다.
     const anchorSel = same && (focusSel || keepFocus), anchor = anchorSel && app.querySelector(anchorSel);
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
-    app.innerHTML = view === 'admin' ? adminView() : view.startsWith('log:') ? logView(view.slice(4)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
+    app.innerHTML = view === 'admin' ? adminView() : view.startsWith('log:') ? logView(view.slice(4)) : view.startsWith('req:') ? reqView(view.slice(4)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
@@ -450,14 +450,14 @@
       (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>';
     const fbHtml = `<section class="v1-card"><h2>보낸 의견</h2>` + (rows ? `<div class="v1-table"><table><thead><tr><th>멘티</th><th>체크한 사람</th><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견</th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
     // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
-    const tab = adminTab, n = {fb: (cloud.feedback || []).length, log: (cloud.sourceLog || []).length};
+    const tab = adminTab, n = {fb: (cloud.feedback || []).length, log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '요청' || r.status === '처리 중').length};
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-admin-tab="${k}">${label}</button>`;
-    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('fb', `보낸 의견 <b>${n.fb}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}</div>` +
-      (tab === 'fb' ? fbHtml : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : adminsHtml);
+    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('fb', `보낸 의견 <b>${n.fb}</b>`)}${segBtn('req', `수정 요청 <b>${n.req}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}</div>` +
+      (tab === 'fb' ? fbHtml : tab === 'req' ? reqListCard() : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : adminsHtml);
   }
   let adminTab = 'admins';
   // 11/03 페이지네이션: 보낸 의견·반영 기록 20개씩(최근 순). 상세에 갔다 와도 보던 페이지 유지
-  const PAGE = 20, adminPage = {fb: 1, log: 1};
+  const PAGE = 20, adminPage = {fb: 1, log: 1, req: 1};
   function pageOf(k, all) {
     const pages = Math.max(1, Math.ceil(all.length / PAGE)), cur = adminPage[k] = Math.min(Math.max(1, adminPage[k] || 1), pages);
     const items = all.slice((cur - 1) * PAGE, cur * PAGE);
@@ -533,6 +533,44 @@
       (rm.length ? `<section class="v1-card v1-logd"><h2>근거에서 뺀 문서 <small class="v1-muted">${rm.length}개</small></h2><ul class="v1-srm">${rm.map(r => `<li>${esc(r.file)}<small>${esc(r.note || '')}</small></li>`).join('')}</ul></section>` : '') +
       ((e.skipped || []).length ? `<section class="v1-card v1-logd"><h2>비교했지만 반영하지 않은 것</h2><p class="v1-muted v1-lmore">${e.skipped.map(x => '· ' + esc(x)).join('<br>')}</p></section>` : '');
   }
+  // 11/03 콘텐츠 수정 요청: /v1/graph 에서 모모스 담당자가 보낸 요청(AS-IS/TO-BE). 행을 누르면 상세(req:<id>)에서 처리 상태를 바꾼다
+  const REQ_ST = {'요청': 'b', '처리 중': 'b', '반영됨': 'g', '반려': 'r'};
+  // 교육 요청의 대상은 '단계 › 단원 › 교육' 경로로 저장된다: 앞은 작게, 교육 이름은 크게
+  const reqHead = r => { const parts = String(r.target.title).split(' › '), last = parts.pop(); return {path: parts.join(' › '), name: last}; };
+  const fmtAt = a => String(a || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.');
+  function reqListCard() {
+    const all = cloud.contentRequests || [], rp = pageOf('req', all);
+    const rows = rp.items.map(r => `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(r.target.title + ' ' + r.type)} 상세 보기"><td class="v1-nowrap">${esc(fmtAt(r.at).slice(0, 10))}</td>` +
+      `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}</small></td><td class="v1-nowrap">${esc(r.name)}</td>` +
+      `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`).join('');
+    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">모모스 담당자가 <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a>에서 교육이나 문서를 눌러 보낸 수정 요청이에요. 저장소에 반영하면 커밋 번호와 함께 '반영됨'으로 바꾸고, 반영 기록에도 남겨요.</p>` +
+      (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>요청일</th><th>대상 · 종류</th><th>요청자</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}` +
+        `<p class="v1-muted v1-reqx">처리할 요청 목록(JSON): <a class="v1-link" href="/api/content-requests?open=1" target="_blank" rel="noopener">열기</a> — 저장해서 Claude 세션에 주면 한 번에 반영해요.</p>`
+        : '<p class="v1-muted">아직 수정 요청이 없어요.</p>') + '</section>';
+  }
+  function reqView(id) {
+    const r = (cloud.contentRequests || []).find(x => x.id === id);
+    if (!r) return '<section class="v1-card"><p class="v1-muted">수정 요청을 찾지 못했어요.</p></section>';
+    const hist = (r.history || []).map(h => `<li><span class="v1-lst ${REQ_ST[h.status] || 'n'}">${esc(h.status)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}${h.commit ? ' · 커밋 ' + esc(h.commit) : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</li>`).join('');
+    const open = r.status === '요청' || r.status === '처리 중';
+    return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(r.type)}</span>${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2><p class="v1-muted">${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''} · 요청 ${esc(fmtAt(r.at))} · ${esc(r.name)}</p>` +
+      `<p class="v1-snap-chips"><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p>` +
+      `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
+      (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? `<p class="v1-muted">처리 메모: ${esc(r.reply)}</p>` : '') + '</section>' +
+      (cloud.lmsLevel === 'admin' ? `<section class="v1-card v1-logd"><h2>처리</h2>` +
+        `<div class="v1-reqform"><input type="text" class="v1-pop-input" data-req-commit placeholder="커밋 번호 (반영됨일 때, 예: aa54099)" maxlength="40" aria-label="커밋 번호"><textarea class="v1-pop-input" data-req-note maxlength="2000" rows="2" placeholder="처리 메모 (반려 시 사유 필수)" aria-label="처리 메모"></textarea>` +
+        `<div class="v1-actions v1-actions-inline">${open ? '' : '<button type="button" class="v1-btn" data-req-set="요청">다시 열기</button>'}${r.status !== '처리 중' && open ? '<button type="button" class="v1-btn" data-req-set="처리 중">처리 중</button>' : ''}<button type="button" class="v1-btn" data-req-set="반려">반려</button><button type="button" class="v1-btn primary" data-req-set="반영됨">반영됨</button></div></div></section>` : '') +
+      (hist ? `<section class="v1-card v1-logd"><h2>이력</h2><ul class="v1-srm v1-reqhist">${hist}</ul></section>` : '');
+  }
+  const openReqView = id => { view = 'req:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  $('app').addEventListener('click', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin') openReqView(t.dataset.req); });
+  $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openReqView(t.dataset.req); } });
+  $('app').addEventListener('click', async e => {
+    const b = e.target.closest('[data-req-set]'); if (!b || !view.startsWith('req:')) return;
+    const app = $('app'), note = (app.querySelector('[data-req-note]') || {}).value || '', commit = ((app.querySelector('[data-req-commit]') || {}).value || '').trim();
+    const data = {id: view.slice(4), status: b.dataset.reqSet, ...(note.trim() ? {note: note.trim()} : {}), ...(commit && b.dataset.reqSet === '반영됨' ? {commit} : {})};
+    if (await act('content.status', data)) toast('처리 상태를 바꿨어요: ' + b.dataset.reqSet);
+  });
   const openLog = id => { view = 'log:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   $('app').addEventListener('click', e => { const t = e.target.closest('[data-log]'); if (t && view === 'admin') openLog(t.dataset.log); });
   $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-log]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openLog(t.dataset.log); } });

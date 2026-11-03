@@ -454,6 +454,19 @@ class Handler(BaseHTTPRequestHandler):
                     source,name,preview=education.get_asset(user,ident)
                     return self.file(source,name,preview=preview)
                 raise FileNotFoundError()
+            if path == '/api/content-requests' and method == 'GET':
+                # 11/03 콘텐츠 수정 요청 목록(admin 만): 브라우저로 열어 content_requests.json 으로 저장 → Claude 세션에서 처리.
+                # ?open=1 이면 처리 전(요청·처리 중)만
+                import onboarding
+                education = onboarding.Service(store)
+                with store.connect() as db:
+                    me = education.identity(db, user); root = education.root(db); level = education.lms_level(root, me)
+                if level != 'admin':
+                    raise PermissionError('수정 요청 목록은 LMS관리자 admin 만 볼 수 있습니다.')
+                items = root.get('contentRequests') or []
+                if query.get('open', [''])[0] == '1':
+                    items = [x for x in items if x.get('status') in ('요청', '처리 중')]
+                return self.send(200, {'format': 'momos-lms-content-requests', 'exportedAt': onboarding.stamp(), 'requests': items})
             if path == '/api/works/docs-check' and method == 'GET':
                 # 11/02 확인용(admin 만): WORKS 드라이브 업무문서 폴더 연동. 브라우저 주소창에서 열어 본다
                 import onboarding, works_auth
