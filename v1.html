@@ -59,7 +59,7 @@ img{max-width:100%}
 .v1-item:hover{background:var(--action-hover)}
 .v1-item:active{background:var(--surface-fill-pressed)}
 .v1-item .v1-num{flex:none;width:var(--spacing-28);height:var(--spacing-28);border-radius:var(--radius-full);display:grid;place-items:center;font:var(--label-sm-bold);background:var(--component-tag-color-neutral-surface);color:var(--component-tag-color-neutral-text-color)}
-.v1-item.practice .v1-num{background:var(--component-tag-color-info-surface);color:var(--component-tag-color-info-text-color)}
+.v1-item.practice .v1-num{background:var(--surface-warning-vivid);color:var(--text-static-dark)}  /* 11/03: 진행 중 = 진행률 막대·점과 같은 노란색 */
 .v1-item.review .v1-num{background:var(--component-tag-color-warning-surface);color:var(--component-tag-color-warning-text-color)}
 .v1-item.done .v1-num{background:var(--surface-success-vivid);color:var(--text-static-light)}
 .v1-item .v1-body{flex:1;min-width:0}
@@ -207,6 +207,7 @@ img{max-width:100%}
 .v1-tlink{appearance:none;border:0;background:none;padding:0;cursor:pointer;font:inherit;text-align:left}.v1-tlogs li{margin-bottom:var(--spacing-4)}.v1-tlist td small{display:block}
 .v1-fbtags{display:flex;flex-wrap:wrap;gap:var(--spacing-4);margin-top:var(--spacing-6)}.v1-fbq{margin-top:var(--spacing-12);padding:var(--spacing-12);border-radius:var(--radius-md);background:var(--surface-default);border:var(--v1-hairline) solid var(--border-subtle);font:var(--body-md);white-space:normal;overflow-wrap:anywhere}
 .v1-fbc{list-style:none;margin:0 0 var(--spacing-12);padding:0;display:flex;flex-direction:column;gap:var(--spacing-8)}.v1-fbc li{padding:var(--spacing-8) var(--spacing-12);border-radius:var(--radius-md);background:var(--surface-default);border:var(--v1-hairline) solid var(--border-subtle);font:var(--label-md)}.v1-fbc li div{margin-top:var(--spacing-4);overflow-wrap:anywhere}
+.v1-admin-add-top{margin:var(--spacing-12) 0 var(--spacing-8)}
 .v1-lmore{line-height:1.6}
 @media(max-width:520px){.v1-lab{grid-template-columns:1fr}}
 .v1-search{position:fixed;inset:0;z-index:calc(var(--component-layout-z-index-gnb) + 2);display:flex;flex-direction:column;background:var(--surface-default)}

@@ -441,13 +441,15 @@
     const me = String(cloud.user.email || '').toLowerCase(), canEdit = cloud.lmsLevel === 'admin';
     const tag = l => `<span class="v1-tag${l === 'admin' ? ' v1-tag-admin' : ''}">${LEVEL_LABEL[l] || l}</span>`;
     // 11/02: LMS관리자 = admin. admin 지정·해제만(기본 admin 과 나는 해제할 수 없다)
-    const admins = (cloud.lmsAdmins || []).map(a => `<li><span class="v1-admin-mail">${esc(a.email)}${a.email === me ? ' <small class="v1-muted">(나)</small>' : ''}</span>` +
+    const admins = (cloud.lmsAdmins || []).map(a => `<li><span class="v1-admin-mail">${a.name ? `${esc(a.name)} <span class="v1-muted">(${esc(a.email)})</span>` : esc(a.email)}${a.email === me ? ' <small class="v1-muted">(나)</small>' : ''}</span>` +
       (canEdit && !a.seed && a.email !== me ? `<span class="v1-admin-ctl">${tag('admin')}<button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">해제</button></span>` : tag('admin')) + '</li>').join('');
     // 보낸 의견(11/03): 보낸사람 · 시간 · 교육 과정 · 의견(+티켓·댓글). 멘티·체크한 사람 열은 뺐다
     const fbAll = cloud.feedback || [], fbPage = pageOf('fb', fbAll);
     const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${(f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
-    const adminsHtml = `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p><ul class="v1-admins">${admins}</ul>` +
-      (canEdit ? `<div class="v1-admin-add"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>admin 지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') + '</section>';
+    // 11/03: 지정 칸을 제목 바로 아래로(목록이 길어져도 스크롤 없이)
+    const adminsHtml = `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p>` +
+      (canEdit ? `<div class="v1-admin-add v1-admin-add-top"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') +
+      `<ul class="v1-admins">${admins}</ul></section>`;
     const fbHtml = `<section class="v1-card"><h2>보낸 의견</h2><p class="v1-muted">교육 › 의견 보내기에서 구성원들이 보내 주신 의견이에요.</p>` + (rows ? `<div class="v1-table"><table class="v1-llist"><thead><tr><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견 · 티켓</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
     // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
     const tab = adminTab, n = {fb: (cloud.feedback || []).length, log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '요청' || r.status === '처리 중').length};

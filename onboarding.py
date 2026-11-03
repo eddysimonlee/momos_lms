@@ -708,7 +708,18 @@ class Service:
             if mentee and mentee not in mentors: mentors[mentee] = self.mentors_of(db, root, mentee)
             return dict(f, stepTitle=steps.get(f.get('step'), ''), mentee=mentee, menteeName=f.get('menteeName', f.get('name')) if mentee else '',
                         mentors=mentors.get(mentee, []) if mentee else [])
-        return dict(lmsAdmins=[dict(email=e, level=l, seed=e in seed) for e, l in sorted(levels.items())],
+        # 11/03 admin 목록은 '이름(이메일)': 이름은 WORKS 주소록 → LMS 계정 순으로 찾는다
+        import works_auth
+        names = {}
+        try:
+            for r in db.execute('SELECT email,name FROM access_users').fetchall(): names[str(r['email'] or '').lower()] = r['name']
+        except Exception:
+            pass
+        org = works_auth.read_org(db) or {}
+        for m in org.get('members') or []:
+            if m.get('email') and m.get('name'): names[str(m['email']).lower()] = m['name']
+        admins = sorted((dict(email=e, name=names.get(e, ''), level=l, seed=e in seed) for e, l in levels.items()), key=lambda x: (not x['name'], x['name'], x['email']))
+        return dict(lmsAdmins=admins,
                     feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
                     sourceLog=source_log(),
                     contentRequests=list(reversed((root.get('contentRequests') or [])[-300:])))
