@@ -198,6 +198,8 @@ TARGET_MONTHS = 6
 # 11/02 '나의 멘티'·'전체 멘티' 초기화: 배포 뒤 처음 한 번 모든 사람의 교육 체크·완료 기록을 비운다(교육 등록·관리자·의견·사진·입사일은 남긴다)
 # (같은 날 멘토·멘티 관계와 '사원' 조건은 없앴다: 첫 화면은 부서별 구성원 표, 체크는 모든 직원)
 MENTEE_RESET = 'mentee-reset-2026-11-02'
+# 11/03 조직도 직책 순서(위가 먼저). 목록에 없는 직책은 그 뒤에 WORKS 순서·이름순
+POSITION_ORDER = ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원']
 CONTENT_REQUEST_TYPES = ('문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '원본 문서 변경 확인', '기타')
 CONTENT_REQUEST_STATUS = ('요청', '처리 중', '반영됨', '반려')
 
@@ -369,7 +371,7 @@ class Service:
                 members.append(dict(id=lid,name=m['name'],position=m['position'],org=m['org']))
             members+=[dict(id=x['id'],name=x['name'],position=x.get('position'),org=by_name.get(x.get('org'))) for x in summaries if x['id'] not in seen]  # 주소록에 없는 LMS 계정
             mine=next((m['org'] for m in org['members'] if m['email']==str(user.get('email') or '').lower()),None) or by_name.get(works_auth.read_profile(db,user['id']).get('org'))
-            org_chart=dict(units=org['units'],members=members,mine=mine,positions=org.get('positions'))
+            org_chart=dict(units=org['units'],members=members,mine=mine,positions=POSITION_ORDER+[p for p in org.get('positions') or [] if p not in POSITION_ORDER])
         reviews=self.system_reviews(root) if review_access else []
         # Static teaching caveats only; processing comments, attachments and history stay restricted.
         lesson_notes=[{k:copy.deepcopy(r[k]) for k in ('id','title','category','step','relatedSteps','needed','evidence','sourceFile','sourceVersion','checkedAt') if k in r} for r in SYSTEM_REVIEWS if root.get('systemReviews',{}).get(r['id'],{}).get('status')!='applied']

@@ -92,7 +92,7 @@ MOCK = r'''
     ['store', '매장사업부', null], ['bakery', '베이커리팀', 'store'], ['oncheon', '온천본점', 'store'], ['marine', '마린점', 'store'], ['yeongdo', '영도점', 'store'],
     ['bean', '생두사업부', null], ['tech', '기술부', null], ['qa', '품질개발팀', 'tech'], ['ops', '경영지원실', null]].map(([id, name, parent], order) => ({id, name, parent, order}));
   const UNIT_OF = {'u-staff': 'oncheon', 'u-learner': 'oncheon'};
-  const OFFLINE = [['체험 바리스타', 'oncheon', '사원'], ['가나 바리스타', 'oncheon', '사원'], ['체험 점장', 'oncheon', '점장'], ['체험 매니저', 'oncheon', '매니저'], ['체험 베이커', 'bakery', '사원'], ['체험 마린', 'marine', '매니저'], ['체험 본부장', 'store', '본부장']];
+  const OFFLINE = [['체험 바리스타', 'oncheon', '사원'], ['가나 바리스타', 'oncheon', '사원'], ['체험 점장', 'oncheon', '점장'], ['체험 매니저', 'oncheon', '매니저'], ['체험 부점장', 'oncheon', '부점장'], ['체험 베이커', 'bakery', '사원'], ['체험 마린', 'marine', '매니저'], ['체험 본부장', 'store', '본부장']];
   const SEED = ['staff@local.test'];  // 미리보기의 기본 LMS관리자
   // 미리보기 전용 주소록(WORKS 대신). 실제 서비스는 /api/works/members 가 NAVER WORKS 주소록을 검색한다(admin 만)
   const DIRECTORY = [
@@ -145,7 +145,7 @@ MOCK = r'''
       return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
-      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['본부장', '점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
+      workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).sort((a, b) => a[0].localeCompare(b[0])).map(([e, l]) => ({email: e, level: l, seed: SEED.includes(e)})), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }

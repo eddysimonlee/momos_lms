@@ -454,7 +454,7 @@ class EducationTests(unittest.TestCase):
         with self.store.connect() as db:projects.Rooms.write(db,works_auth.ORG_KEY,dict(kind='works-org',at=0,units=units,members=members))
         self.act(self.content,'config.selfEnrol',{})  # 주소록에 없는 LMS 계정 → 저장된 부서 이름으로
         c=self.service.get(self.other)['orgChart']
-        self.assertEqual((c['units'],c['mine'],c['positions']),(units,'b',None))
+        self.assertEqual((c['units'],c['mine'],c['positions']),(units,'b',ob.POSITION_ORDER))  # 11/03 직책 순서는 고정(WORKS 직책 목록이 없어도)
         got={m['name']:(m['id'],m['org']) for m in c['members']}
         self.assertEqual(got['교육생'],(self.learner['id'],'b'))
         self.assertEqual(got['다른 직원'],(None,'b'))  # 교육을 시작하지 않았으면 미접속
