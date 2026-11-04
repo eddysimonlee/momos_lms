@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'content.reply':'처리 메모 수정·삭제','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.log':'티켓 ↔ 반영 기록 연결','content.reply':'처리 메모 수정·삭제','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -573,6 +573,8 @@ class Service:
                 self.content_request(root,user,data)
             elif action=='content.status':
                 self.content_status(root,user,data)
+            elif action=='content.log':
+                self.content_log(root,user,data)
             elif action=='content.reply':
                 self.content_reply(root,user,data)
             elif action=='content.delete':
@@ -764,7 +766,7 @@ class Service:
 
     def content_status(self, root, user, d):
         if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청 처리는 LMS관리자 admin 만 할 수 있어요.')
-        if not isinstance(d, dict) or set(d) - {'id', 'status', 'note', 'commit'} or not {'id', 'status'} <= set(d) or d['status'] not in CONTENT_REQUEST_STATUS:
+        if not isinstance(d, dict) or set(d) - {'id', 'status', 'note', 'commit', 'log'} or not {'id', 'status'} <= set(d) or d['status'] not in CONTENT_REQUEST_STATUS:
             raise ValueError('처리 상태를 확인해 주세요.')
         item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
         if not item: raise ValueError('수정 요청을 찾지 못했어요.')
@@ -775,6 +777,7 @@ class Service:
         if d['status'] in ('처리 중', '반영됨') and not item.get('assignee'): item['assignee'] = user['name']  # 처음 맡은 사람
         if note: item['reply'] = note
         if commit: item['commit'] = commit
+        if d.get('log'): self._link_log(item, d['log'], True)
         item['history'] = (item.get('history') or []) + [dict(at=stamp(), by=user['name'], status=d['status'], **({'note': note} if note else {}), **({'commit': commit} if commit else {}))]
 
     # 11/03 보낸 의견: LMS관리자가 댓글을 달고, 개선 작업을 맡은 수정 요청 티켓(REQ-n)과 잇는다
@@ -797,6 +800,19 @@ class Service:
         if d['on'] and not any(x.get('no') == key for x in root.get('contentRequests') or []): raise ValueError(f'{key} 티켓을 찾지 못했어요.')
         rest = [k for k in f.get('tickets') or [] if k != key]
         f['tickets'] = rest + ([key] if d['on'] else [])
+
+    # 11/04 티켓 ↔ 반영 기록: 반영 기록(source_log.json)의 tickets 와 별개로, 화면에서 티켓 쪽에 반영 기록을 골라 잇는다
+    def _link_log(self, item, log_id, on):
+        log_id = projects.text(log_id, 80, True)
+        if on and not any(e.get('id') == log_id for e in source_log()): raise ValueError('반영 기록을 찾지 못했어요.')
+        item['logs'] = [x for x in item.get('logs') or [] if x != log_id] + ([log_id] if on else [])
+
+    def content_log(self, root, user, d):
+        if self.lms_level(root, user) != 'admin': raise PermissionError('반영 기록 연결은 LMS관리자 admin 만 할 수 있어요.')
+        if not isinstance(d, dict) or set(d) != {'id', 'log', 'on'} or not isinstance(d['on'], bool): raise ValueError('연결할 반영 기록을 확인해 주세요.')
+        item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
+        if not item: raise ValueError('수정 요청을 찾지 못했어요.')
+        self._link_log(item, d['log'], d['on'])
 
     def content_reply(self, root, user, d):
         """11/04 처리 메모 고치기(text) · 지우기(빈 text). 이력에 남은 같은 메모도 정리하고 '처리 메모 수정/삭제'만 남긴다."""

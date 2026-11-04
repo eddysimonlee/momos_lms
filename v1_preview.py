@@ -100,7 +100,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-20';
+  const KEY = 'momos-v1-preview-21';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -108,7 +108,11 @@ MOCK = r'''
     return {revision: 0, join, startDate: join, records};
   }
   function fresh() {
-    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}, lmsAdmins: [], feedback: []};
+    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}, lmsAdmins: [], feedback: [], contentRequestSeq: 2,
+      // 미리보기 전용 예시 티켓 2건: REQ-1 은 반영 기록 쪽 tickets 로 이어짐, REQ-2 는 화면에서 반영 기록을 골라 이어 볼 수 있다
+      contentRequests: [
+        {id: 'demo-1', no: 'REQ-1', at: '2026-11-03T10:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'item', id: 'stock-ecount', title: '6단계 에스프레소 › 6.9 재고 전산 처리 › 86. 재고 전산 처리'}, type: '문구 수정', field: '교육 제목', asis: '재고 전산 처리', tobe: '(예시)', note: '', status: '반영됨', assignee: '체험 담당자', commit: 'abc1234', history: [{at: '2026-11-03T10:00:00', by: '체험 담당자', status: '요청'}, {at: '2026-11-04T10:00:00', by: '체험 담당자', status: '반영됨', commit: 'abc1234'}]},
+        {id: 'demo-2', no: 'REQ-2', at: '2026-11-04T09:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'doc', id: '본점-신입-교육-안내', title: '본점_신입_교육_안내_GUI_261020'}, type: '원본 문서 변경 확인', field: '파일', asis: '본점_신입_교육_안내_GUI_261020.docx', tobe: '파일: 본점_신입_교육_안내_GUI_261104.docx (이름 바뀜)\n바뀐 내용: 5.3.1과 5.3.2의 표를 삭제하고 넘버링 문구로 정리', note: '', status: '요청', history: [{at: '2026-11-04T09:00:00', by: '체험 담당자', status: '요청'}]}]};
     st.learners['u-learner'] = {join: plus(today(), -4), startDate: plus(today(), -4), trainer: null, assessor: null};
     st.rooms['u-learner'] = blank(plus(today(), -4));
     return st;
@@ -167,6 +171,12 @@ MOCK = r'''
       if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
       state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level === 'admin' ? [{email, level: 'admin'}] : []); state.rootRevision++; save(); return context(u, target);
     }
+    if (v.action === 'content.log') {
+      if (levelOf(u) !== 'admin') throw {status: 403, error: '반영 기록 연결은 LMS관리자 admin 만 할 수 있어요.'};
+      const r = (state.contentRequests || []).find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
+      if (d.on && !SOURCE_LOG.some(e => e.id === d.log)) throw {status: 400, error: '반영 기록을 찾지 못했어요.'};
+      r.logs = (r.logs || []).filter(x => x !== d.log).concat(d.on ? [d.log] : []); state.rootRevision++; save(); return context(u, target);
+    }
     if (v.action === 'content.reply') {
       if (levelOf(u) !== 'admin') throw {status: 403, error: '처리 메모는 LMS관리자 admin 만 고칠 수 있어요.'};
       const r = (state.contentRequests || []).find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
@@ -191,7 +201,7 @@ MOCK = r'''
         const r = list.find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
         if (d.status === '반려' && !d.note) throw {status: 400, error: '반려 사유를 적어 주세요.'};
         if (d.commit && !/^[0-9a-f]{7,40}$/.test(d.commit)) throw {status: 400, error: '커밋 번호(7자리 이상)를 확인해 주세요.'};
-        r.status = d.status; if ((d.status === '처리 중' || d.status === '반영됨') && !r.assignee) r.assignee = u.name; if (d.note) r.reply = d.note; if (d.commit) r.commit = d.commit;
+        r.status = d.status; if ((d.status === '처리 중' || d.status === '반영됨') && !r.assignee) r.assignee = u.name; if (d.log) r.logs = (r.logs || []).filter(x => x !== d.log).concat([d.log]); if (d.note) r.reply = d.note; if (d.commit) r.commit = d.commit;
         r.history = (r.history || []).concat([{at, by: u.name, status: d.status, ...(d.note ? {note: d.note} : {}), ...(d.commit ? {commit: d.commit} : {})}]);
       }
       state.rootRevision++; save(); return context(u, target);

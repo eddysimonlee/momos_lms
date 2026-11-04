@@ -509,7 +509,7 @@
     const rows = lp.items.map(e => { const b = e.basis || {}, c = logCount(e);
       return `<tr class="v1-lrow" data-log="${esc(e.id)}" tabindex="0" role="link" aria-label="${esc(e.at + ' ' + e.title)} 상세 보기"><td class="v1-nowrap">${esc(String(e.at).slice(0, 10).replace(/-/g, '.'))}</td>` +
         `<td><span class="v1-lkind">${esc(b.kind || '')}</span> <b>${esc(e.title)}</b><small>${esc(b.origin || '')}${b.at ? ' · 드라이브 ' + esc(b.at) + ' 기준' : ''}</small></td>` +
-        `<td>${logChips(c)}${(e.tickets || []).length ? `<span class="v1-lchip">티켓 ${e.tickets.map(esc).join(' · ')}</span>` : ''}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
+        `<td>${logChips(c)}${ticketsOfLog(e).length ? `<span class="v1-lchip">티켓 ${ticketsOfLog(e).map(esc).join(' · ')}</span>` : ''}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
     return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">업무문서(폴더·파일)를 받아 교육 내용에 반영한 기록이에요. 행을 누르면 무엇이 어떻게 바뀌었는지 볼 수 있어요.</p>` +
       `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>반영일</th><th>받은 문서</th><th>바뀐 내용</th><th>승인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${lp.nav}</section>`;
   }
@@ -531,7 +531,7 @@
     return `<section class="v1-card v1-logd"><span class="v1-lkind">${esc(b.kind || '')}</span><h2>${esc(e.title)}</h2><p class="v1-muted">반영 ${esc(e.at)}${e.approvedBy ? ' · 승인 ' + esc(e.approvedBy) : ''}</p>` +
       `<p class="v1-snap-result">${esc(result)}</p>${logSummary(c)}` +
       `<dl class="v1-snap-meta">${meta.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}` +
-      ((e.tickets || []).length ? `<dt>수정 요청</dt><dd>${e.tickets.map(k => { const r = reqOfKey(k); return r ? `<button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}">${esc(k)}</button> <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : `${esc(k)} <small class="v1-muted">(지운 요청)</small>`; }).join(' · ')}</dd>` : '') + `</dl></section>` +
+      (ticketsOfLog(e).length ? `<dt>수정 요청</dt><dd>${ticketsOfLog(e).map(k => { const r = reqOfKey(k); return r ? `<button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}">${esc(k)}</button> <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : `${esc(k)} <small class="v1-muted">(지운 요청)</small>`; }).join(' · ')}</dd>` : '') + `</dl></section>` +
       (lessonHtml ? `<section class="v1-card v1-logd"><h2>바뀐 교육 <small class="v1-muted">${c.lessons}개</small></h2>${lessonHtml}${(e.checks || []).length ? `<p class="v1-muted">체크 기록: ${e.checks.map(esc).join(' / ')}</p>` : ''}</section>` : '') +
       (ds.length ? `<section class="v1-card v1-logd"><h2>확인한 문서 <small class="v1-muted">${ds.length}개</small></h2><div class="v1-table"><table class="v1-ltable"><thead><tr><th>상태</th><th>파일</th><th>바뀐 교육</th></tr></thead><tbody>${docRows}</tbody></table></div></section>` : '') +
       (rm.length ? `<section class="v1-card v1-logd"><h2>근거에서 뺀 문서 <small class="v1-muted">${rm.length}개</small></h2><ul class="v1-srm">${rm.map(r => `<li>${esc(r.file)}<small>${esc(r.note || '')}</small></li>`).join('')}</ul></section>` : '') +
@@ -544,7 +544,9 @@
   const fmtAt = a => String(a || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.');
   // 11/03 티켓 보드: 번호(REQ-n)·상태 필터·담당·연결된 반영 기록. 반영 기록(source_log.json)의 tickets 로 서로 이어진다
   const tkey = r => r.no || 'REQ-?';
-  const logsOf = r => (cloud.sourceLog || []).filter(e => (e.tickets || []).includes(r.no));
+  // 11/04 연결 = 반영 기록의 tickets(저장소) 또는 티켓의 logs(화면에서 고름) — 어느 쪽이든 양쪽에 보인다
+  const logsOf = r => (cloud.sourceLog || []).filter(e => (e.tickets || []).includes(r.no) || (r.logs || []).includes(e.id));
+  const ticketsOfLog = e => [...new Set([...(e.tickets || []), ...(cloud.contentRequests || []).filter(r => r.no && (r.logs || []).includes(e.id)).map(r => r.no)])];
   const reqOfKey = k => (cloud.contentRequests || []).find(x => x.no === k);
   let reqFilter = 'open';
   const REQ_FILTERS = [['open', '진행 중', r => r.status === '요청' || r.status === '처리 중'], ['요청', '요청', r => r.status === '요청'], ['처리 중', '처리 중', r => r.status === '처리 중'],
@@ -578,10 +580,12 @@
         : `<div class="v1-reply"><p class="v1-muted">처리 메모: ${esc(r.reply).replace(/\n/g, '<br>')}</p>${cloud.lmsLevel === 'admin' ? '<span class="v1-reply-ctl"><button type="button" class="v1-tbtn" data-reply-edit>수정</button><button type="button" class="v1-tbtn v1-danger" data-reply-del>삭제</button></span>' : ''}</div>`) : '') + '</section>' +
       (fbsOf(r).length ? `<section class="v1-card v1-logd"><h2>연결된 의견 <small class="v1-muted">${fbsOf(r).length}건</small></h2><ul class="v1-srm v1-tlogs">${fbsOf(r).map(f => `<li><button type="button" class="v1-link v1-tlink" data-open-fb="${esc(f.id)}">${esc(f.name)} · ${esc(String(f.text).slice(0, 60))}</button></li>`).join('')}</ul></section>` : '') +
       `<section class="v1-card v1-logd"><h2>반영 기록 <small class="v1-muted">${logs.length}건</small></h2>` + (logs.length
-        ? `<ul class="v1-srm v1-tlogs">${logs.map(e => `<li><button type="button" class="v1-link v1-tlink" data-open-log="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</button></li>`).join('')}</ul>`
-        : `<p class="v1-muted">${r.status === '반영됨' ? '커밋은 됐지만 반영 기록에 이 티켓이 아직 없어요.' : '반영하면 여기에 반영 기록이 이어져요.'}</p>`) + '</section>' +
+        ? `<ul class="v1-srm v1-tlogs">${logs.map(e => `<li><button type="button" class="v1-link v1-tlink" data-open-log="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</button>` +
+            ((r.logs || []).includes(e.id) && cloud.lmsLevel === 'admin' && !(e.tickets || []).includes(r.no) ? ` <button type="button" class="v1-tbtn" data-log-unlink="${esc(e.id)}">연결 해제</button>` : (e.tickets || []).includes(r.no) ? ' <small class="v1-muted">(반영 기록에 적힘)</small>' : '') + '</li>').join('')}</ul>`
+        : `<p class="v1-muted">${r.status === '반영됨' ? '아직 이어진 반영 기록이 없어요. 아래에서 골라 이어 주세요.' : '반영하면 여기에 반영 기록이 이어져요.'}</p>`) +
+      (cloud.lmsLevel === 'admin' && logPick(r) ? `<div class="v1-admin-add"><select class="v1-pop-input" data-log-pick aria-label="이을 반영 기록">${logPick(r)}</select><button type="button" class="v1-btn" data-log-link>반영 기록 연결</button></div>` : '') + '</section>' +
       (cloud.lmsLevel === 'admin' ? `<section class="v1-card v1-logd"><h2>처리</h2>` +
-        `<div class="v1-reqform"><input type="text" class="v1-pop-input" data-req-commit placeholder="커밋 번호 (반영됨일 때, 예: aa54099)" maxlength="40" aria-label="커밋 번호"><textarea class="v1-pop-input" data-req-note maxlength="2000" rows="2" placeholder="처리 메모 (반려 시 사유 필수)" aria-label="처리 메모"></textarea>` +
+        `<div class="v1-reqform"><input type="text" class="v1-pop-input" data-req-commit placeholder="커밋 번호 (반영됨일 때, 예: aa54099)" maxlength="40" aria-label="커밋 번호">${logPick(r) ? `<select class="v1-pop-input" data-req-log aria-label="반영 기록(반영됨일 때)"><option value="">반영 기록 고르기 (반영됨일 때, 선택)</option>${logPick(r)}</select>` : ''}<textarea class="v1-pop-input" data-req-note maxlength="2000" rows="2" placeholder="처리 메모 (반려 시 사유 필수)" aria-label="처리 메모"></textarea>` +
         `<div class="v1-actions v1-actions-inline">${r.status === '반려' ? '<button type="button" class="v1-btn v1-danger" data-req-del>삭제</button>' : ''}${open ? '' : '<button type="button" class="v1-btn" data-req-set="요청">다시 열기</button>'}${r.status !== '처리 중' && open ? '<button type="button" class="v1-btn" data-req-set="처리 중">처리 중</button>' : ''}${r.status !== '반려' ? '<button type="button" class="v1-btn" data-req-set="반려">반려</button>' : ''}${r.status !== '반영됨' ? '<button type="button" class="v1-btn primary" data-req-set="반영됨">반영됨</button>' : ''}</div></div></section>` : '') +
       (hist ? `<section class="v1-card v1-logd"><h2>이력</h2><ul class="v1-srm v1-reqhist">${hist}</ul></section>` : '');
   }
@@ -620,6 +624,14 @@
     const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) { view = 'req:' + r.id; render(); window.scrollTo({top: 0, behavior: 'instant'}); } }
   });
+  // 아직 이어지지 않은 반영 기록(최근 순) 고르기
+  const logPick = r => (cloud.sourceLog || []).filter(e => !logsOf(r).includes(e)).slice(0, 30).map(e => `<option value="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</option>`).join('');
+  $('app').addEventListener('click', async e => {
+    if (!view.startsWith('req:')) return;
+    const id = view.slice(4);
+    if (e.target.closest('[data-log-link]')) { const sel = $('app').querySelector('[data-log-pick]'); if (sel && await act('content.log', {id, log: sel.value, on: true})) toast('반영 기록을 이었어요.'); return; }
+    const u = e.target.closest('[data-log-unlink]'); if (u && await act('content.log', {id, log: u.dataset.logUnlink, on: false})) toast('반영 기록 연결을 풀었어요.');
+  });
   // 11/04 처리 메모 수정·삭제
   let reqEdit = null;
   $('app').addEventListener('click', async e => {
@@ -644,7 +656,8 @@
   $('app').addEventListener('click', async e => {
     const b = e.target.closest('[data-req-set]'); if (!b || !view.startsWith('req:')) return;
     const app = $('app'), note = (app.querySelector('[data-req-note]') || {}).value || '', commit = ((app.querySelector('[data-req-commit]') || {}).value || '').trim();
-    const data = {id: view.slice(4), status: b.dataset.reqSet, ...(note.trim() ? {note: note.trim()} : {}), ...(commit && b.dataset.reqSet === '반영됨' ? {commit} : {})};
+    const log = ((app.querySelector('[data-req-log]') || {}).value || '');
+    const data = {id: view.slice(4), status: b.dataset.reqSet, ...(note.trim() ? {note: note.trim()} : {}), ...(commit && b.dataset.reqSet === '반영됨' ? {commit} : {}), ...(log && b.dataset.reqSet === '반영됨' ? {log} : {})};
     if (await act('content.status', data)) toast('처리 상태를 바꿨어요: ' + b.dataset.reqSet);
   });
   const openLog = id => { view = 'log:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };

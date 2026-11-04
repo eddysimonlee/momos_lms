@@ -598,6 +598,11 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(r['assignee'],a['name'])
             self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['요청','반영됨']))
             self.assertNotIn('contentRequests',self.service.get(b))
+            # 티켓 ↔ 반영 기록(화면에서 고름)
+            lid=ob.source_log()[0]['id'];r1=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-1')
+            with self.assertRaises(ValueError):self.act(a,'content.log',dict(id=r1['id'],log='nope',on=True))
+            self.assertEqual(next(x for x in self.act(a,'content.log',dict(id=r1['id'],log=lid,on=True))['contentRequests'] if x['no']=='REQ-1')['logs'],[lid])
+            self.assertEqual(next(x for x in self.act(a,'content.log',dict(id=r1['id'],log=lid,on=False))['contentRequests'] if x['no']=='REQ-1')['logs'],[])
             # 처리 메모 수정·삭제: 이력의 같은 메모도 지우고 '처리 메모 삭제'만 남긴다
             r1=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-1')
             with self.assertRaises(PermissionError):self.act(b,'content.reply',dict(id=r1['id'],text=''))
