@@ -70,6 +70,7 @@ svg .node:focus{outline:none}svg .node:focus-visible circle{stroke:var(--accent)
 .rank .v{font:12px var(--mono);text-align:right;font-variant-numeric:tabular-nums}
 svg text{fill:var(--fg);font-family:var(--sans)}
 svg .grp{font-size:11px;font-weight:600;fill:var(--muted);letter-spacing:.04em}
+svg .top{font-size:12px;font-weight:700;fill:var(--fg)}
 h1 .asof{font-weight:500;color:var(--muted);font-size:.8em}
 /* 열 제목: 왼쪽 = 고객사 knowledge base(원본 문서), 오른쪽 = 그것으로 만든 LMS content(교육항목) */
 svg .colh{font-size:15px;font-weight:700;fill:var(--fg)}
@@ -219,7 +220,11 @@ const midTrim = (t, n) => t.length <= n ? t : t.slice(0, n - 16) + '…' + t.sli
 const bary = id => { const es = byDoc.get(id) || []; return es.reduce((s, e) => s + items.get(e.item).no * w(e), 0) / Math.max(1, es.reduce((s, e) => s + w(e), 0)); };
 const folders = [...new Set(G.docs.map(d => d.folder))].map(f => ({f, docs: G.docs.filter(d => d.folder === f).sort((a, b) => bary(a.id) - bary(b.id))}));
 folders.forEach(g => g.b = g.docs.reduce((s, d) => s + bary(d.id), 0) / g.docs.length);
-folders.sort((a, b) => a.b - b.b);
+// 11/04 기준 폴더가 ST_매장사업부 전체: 위 단계(매장사업부 공통 / ST-002_온천본점 / 업무문서 …)로 먼저 묶고, 그 안에서 무게중심 순
+const topOf = f => { const p = String(f || '').split('/'); return p.length > 1 ? p.slice(0, -1).join(' / ') : ''; };
+const subOf = f => String(f || '').split('/').pop();
+const tops = [...new Set(folders.map(g => topOf(g.f)))].map(t => ({t, b: Math.min(...folders.filter(g => topOf(g.f) === t).map(g => g.b))})).sort((a, b) => (a.t.startsWith('매장사업부') ? -1 : 0) - (b.t.startsWith('매장사업부') ? -1 : 0) || a.b - b.b);
+folders.sort((a, b) => tops.findIndex(x => x.t === topOf(a.f)) - tops.findIndex(x => x.t === topOf(b.f)) || a.b - b.b);
 
 $('stats').innerHTML = `<span><b>${G.docs.length}</b>원본 문서</span><span><b>${G.items.length}</b>교육항목</span><span><b>${G.edges.length}</b>연결(문서×항목)</span><span><b>${G.edges.reduce((s, e) => s + w(e), 0)}</b>인용</span>`;
 $('legend').innerHTML = stages.map(([n, t]) => `<span><i style="background:${stageColor(n)}"></i>${n}단계 ${esc(t)}</span>`).join('') + '<span><span class="chip warn">수정중·생성중</span>폴더가 아직 확정 전인 문서</span>';
@@ -238,9 +243,10 @@ const itemRows = []; let yi = TOP; const itemPos = new Map();
 for (const [n, t] of stages) { itemRows.push({type: 'g', y: yi, label: `${n}단계 ${t}`, n}); yi += ROW + 4; for (const it of G.items.filter(i => i.stage === n)) { itemPos.set(it.id, yi); itemRows.push({type: 'i', y: yi, it}); yi += ROW; } yi += 8; }
 const H = yi + 10;
 // 문서는 같은 높이에 고르게 퍼뜨린다
-const docCount = G.docs.length, gaps = folders.length;
+const docCount = G.docs.length, gaps = folders.length + tops.filter(x => x.t).length;  // 위 단계 제목 줄도 자리를 쓴다
 const dstep = (H - TOP - 10 - gaps * (ROW + 10)) / docCount;
-for (const g of folders) { docRows.push({type: 'g', y, label: g.f}); y += ROW + 4; for (const d of g.docs) { docPos.set(d.id, y); docRows.push({type: 'd', y, d}); y += dstep; } y += 6; }
+let lastTop = null;
+for (const g of folders) { if (topOf(g.f) !== lastTop) { lastTop = topOf(g.f); if (lastTop) { docRows.push({type: 't', y, label: lastTop}); y += ROW + 4; } } docRows.push({type: 'g', y, label: subOf(g.f)}); y += ROW + 4; for (const d of g.docs) { docPos.set(d.id, y); docRows.push({type: 'd', y, d}); y += dstep; } y += 6; }
 
 const svgNS = 'http://www.w3.org/2000/svg';
 let svg = `<svg id="svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="원본 문서와 교육항목 연결도">`;
@@ -255,6 +261,7 @@ for (const e of G.edges) {
   svg += `<path class="e" data-d="${esc(e.doc)}" data-i="${esc(e.item)}" stroke-width="${Math.min(6, 0.8 + w(e) * 0.45).toFixed(2)}" d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"/>`;
 }
 for (const r of docRows) {
+  if (r.type === 't') { svg += `<text class="top" x="${LX + 8}" y="${r.y + 4}" text-anchor="end">${esc(r.label)}</text>`; continue; }
   if (r.type === 'g') { const st = folderState(r.label); svg += `<text class="grp" x="${LX + 8}" y="${r.y + 4}" text-anchor="end">${esc(r.label)}</text>`; continue; }
   const d = r.d, n = (byDoc.get(d.id) || []).length, warn = /수정중|생성중/.test(d.folder);
   svg += `<g class="node" data-kind="d" data-id="${esc(d.id)}" tabindex="0" role="button" aria-label="${esc(shortDoc(d))}, 교육항목 ${n}개"><title>${esc(shortDoc(d))}</title><text x="${LX - 34}" y="${r.y + 4}" text-anchor="end">${esc(midTrim(shortDoc(d), 36))}</text>` +

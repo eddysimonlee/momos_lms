@@ -1,12 +1,12 @@
 {
   "format": "momos-lms-source-manifest",
-  "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다.",
-  "origin": "드라이브 SOP › ST_매장사업부 › ST-002_온천본점 › 업무문서",
+  "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
+  "origin": "공용 드라이브 › SOP › ST_매장사업부",
   "updated": "2026-11-04",
   "documents": [
     {
       "id": "고객-응대-기준",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "고객_응대_기준_GUI_261022.docx",
       "revised": "2026-09-30",
       "sha1": "c8fb467b5c693e7db9f7d438f5472fc3ec34b056",
@@ -15,7 +15,7 @@
     },
     {
       "id": "스마트오더-접수-전달",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "스마트오더_접수_전달_SOP_261023.docx",
       "revised": "2026-10-23",
       "sha1": "9ce86edf4414502012fd8cebdb00b965b549292a",
@@ -24,7 +24,7 @@
     },
     {
       "id": "주문-변경-취소-환불-처리",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "주문_변경_취소_환불_처리_SOP_261023.docx",
       "revised": "2026-10-23",
       "sha1": "a166f53b6f47f6ca8fd2489871e653c9ec575566",
@@ -33,16 +33,16 @@
     },
     {
       "id": "케이크-예약-픽업-처리",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "케이크_예약_픽업_처리_SOP_261023.docx",
-      "revised": "2026-10-23",
-      "sha1": "a4447e2036f17dbf6d492debf51c91daf274c147",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "revised": "2026-11-03",
+      "sha1": "c9bcc5598a41afd5e9372eb236e3906335e62080",
+      "basis": "ST_매장사업부 폴더(2026-11-04 연결)",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTExNjQyNXxEfDA"
     },
     {
       "id": "택배-주문-접수",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "택배_주문_접수_SOP_261023.docx",
       "revised": "2026-10-23",
       "sha1": "7569beeba62b2d3ef173e36f0737be8ddcecd529",
@@ -51,7 +51,7 @@
     },
     {
       "id": "포스-결제-및-선불결제-운영-기준",
-      "folder": "고객 응대·주문 처리",
+      "folder": "매장사업부 공통/고객 응대·주문 처리",
       "file": "포스_결제_및_선불결제_운영_기준_GUI_261023.docx",
       "revised": "2026-10-23",
       "sha1": "533fcc9fbb46052ed873961bcb3b0f15e32062b9",
@@ -60,7 +60,7 @@
     },
     {
       "id": "내-고객-만들기-교육-가이드",
-      "folder": "교육·평가",
+      "folder": "매장사업부 공통/교육·평가",
       "file": "내_고객_만들기_교육_가이드_GUI_261104.docx",
       "revised": "2026-11-04",
       "sha1": "0389f29f6e9f9862600e1d8ab7a45165f99387ac",
@@ -69,7 +69,7 @@
     },
     {
       "id": "메이킹-학습-실습-평가-기준",
-      "folder": "교육·평가",
+      "folder": "매장사업부 공통/교육·평가",
       "file": "메이킹_학습_실습_평가_기준_GUI_261026.docx",
       "revised": "2026-10-26",
       "sha1": "7048ebbddd3f8fd00b996cf3c6507870ec3024e4",
@@ -78,7 +78,7 @@
     },
     {
       "id": "브루잉-학습-실습-평가-기준",
-      "folder": "교육·평가",
+      "folder": "매장사업부 공통/교육·평가",
       "file": "브루잉_학습_실습_평가_기준_GUI_261026.docx",
       "revised": "2026-10-26",
       "sha1": "4c01dedceadf746c89615db907f66cd6c871ac6d",
@@ -87,7 +87,7 @@
     },
     {
       "id": "에스프레소-학습-실습-평가-기준",
-      "folder": "교육·평가",
+      "folder": "매장사업부 공통/교육·평가",
       "file": "에스프레소_학습_실습_평가_기준_GUI_261026.docx",
       "revised": "2026-10-26",
       "sha1": "9df69426e9edb1673ae13929512857edccac700a",
@@ -96,7 +96,7 @@
     },
     {
       "id": "포지션-테스트-운영-기준",
-      "folder": "교육·평가",
+      "folder": "매장사업부 공통/교육·평가",
       "file": "포지션_테스트_운영_기준_GUI_261026.docx",
       "revised": "2026-10-26",
       "sha1": "4ba92f5bf89b61c5cb5f2c7c14fb336c4ba0bfdc",
@@ -105,7 +105,7 @@
     },
     {
       "id": "OP2-원두-음료-재료-리테일-상품-보충-기준",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "OP2_원두_음료_재료_리테일_상품_보충_기준_GUI_261102.docx",
       "revised": "2026-10-08",
       "sha1": "c214c109762f8a77e38349cd2b86f5e891157ad0",
@@ -114,7 +114,7 @@
     },
     {
       "id": "라운딩-점검-기준",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "라운딩_점검_기준_GUI_261102.docx",
       "revised": "2026-10-13",
       "sha1": "555610059a22db82783b9fb1af76b8efb2657bfc",
@@ -123,7 +123,7 @@
     },
     {
       "id": "본점-MD-근무-및-영업-중-교대-절차",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_MD_근무_및_영업_중_교대_절차_SOP_261020 (1).docx",
       "revised": "2026-10-30",
       "sha1": "6fb28752aaa812131133250c1e18f6fa930c79bb",
@@ -132,7 +132,7 @@
     },
     {
       "id": "본점-OP3-오전-식사-전-소모품-비품-보충-기준",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_OP3_오전_식사_전_소모품_비품_보충_기준_GUI_261102.docx",
       "revised": "2026-10-26",
       "sha1": "337af4eeeb2a10d5e35e0e1f60b9cc74b11a3796",
@@ -141,7 +141,7 @@
     },
     {
       "id": "본점-근무조별-역할과-업무-배정",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_근무조별_역할과_업무_배정_GUI_261026.docx",
       "revised": "2026-10-26",
       "sha1": "4369993e4cc65a998dc43ab14215da0d1f970401",
@@ -150,7 +150,7 @@
     },
     {
       "id": "본점-마감조-근무-절차",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_마감조_근무_절차_SOP_261020.docx",
       "revised": "2026-10-12",
       "sha1": "2081254650f3237094be14d9778900e1380831a9",
@@ -159,7 +159,7 @@
     },
     {
       "id": "본점-오픈3-라운딩-체크리스트",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_오픈3_라운딩_체크리스트_FRM_261020.docx",
       "revised": "2026-10-15",
       "sha1": "3bb0ac1a683bc34e73b84fe64b2ed58513c5aa6c",
@@ -168,7 +168,7 @@
     },
     {
       "id": "본점-오픈조-퇴근-준비-절차",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_오픈조_퇴근_준비_절차_SOP_261020.docx",
       "revised": "2026-10-12",
       "sha1": "6d099dfc2349848dc699ee3933a3d05f79299e8d",
@@ -177,7 +177,7 @@
     },
     {
       "id": "오픈조-근무-절차",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "오픈조_근무_절차_SOP_261020.docx",
       "revised": "2026-10-20",
       "sha1": "743c5e682e42442177a4ba23472adc003c04996e",
@@ -186,7 +186,7 @@
     },
     {
       "id": "잔-접시-파손-기록-절차",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "잔·접시_파손_기록_절차_SOP_261026.docx",
       "revised": "2026-10-26",
       "sha1": "4c4b30ef624d2ad29ffe3d52543ba0c0ee94da21",
@@ -195,7 +195,7 @@
     },
     {
       "id": "주간-위생-업무",
-      "folder": "근무조별 운영",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "주간_위생_업무_SOP_261020.docx",
       "revised": "2026-10-13",
       "sha1": "7a9a6b6e7873a7c8ecac96a4a1e1964b1e08fdd2",
@@ -204,7 +204,7 @@
     },
     {
       "id": "매장-공간-안내",
-      "folder": "입사·근무 준비",
+      "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
       "file": "매장_공간_안내_GUI_261024.docx",
       "revised": "2026-10-24",
       "sha1": "1c564d0a69eb97aa766958f71c6f3e21113d29ef",
@@ -213,7 +213,7 @@
     },
     {
       "id": "본점-근무-준비-및-위생-정돈-기준",
-      "folder": "입사·근무 준비",
+      "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
       "file": "본점_근무_준비_및_위생_정돈_기준_GUI_261020.docx",
       "revised": "2026-09-30",
       "sha1": "b8cdc6a97ddfa2442f54cfda436079ba4ab199d9",
@@ -222,25 +222,25 @@
     },
     {
       "id": "본점-매뉴얼-이용안내",
-      "folder": "입사·근무 준비",
+      "folder": "매장사업부 공통/입사·근무 준비",
       "file": "본점_매뉴얼_이용안내_GUI_261017.docx",
       "revised": "2026-09-30",
       "sha1": "12c83ffc398fdaf3710ebea4fd47586367145ded",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc2NzYwMTkyOHxEfDA"
     },
     {
       "id": "본점-모모스의-일하는-방식",
-      "folder": "입사·근무 준비",
+      "folder": "매장사업부 공통/입사·근무 준비",
       "file": "본점_모모스의_일하는_방식_GUI_261020.docx",
       "revised": "2026-09-30",
       "sha1": "ba8c94e565a9a2da26ceede8b40fa3cd1cd904ce",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc2NzYwMTkyOHxEfDA"
     },
     {
       "id": "본점-시설-조작-및-관리",
-      "folder": "입사·근무 준비",
+      "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
       "file": "본점_시설_조작_및_관리_SOP_261026.docx",
       "revised": "2026-10-26",
       "sha1": "0e00f90e6078ae06e245d674b438b49a57e457d2",
@@ -249,16 +249,16 @@
     },
     {
       "id": "본점-신규-입사자-준비-및-첫날-교육-연계",
-      "folder": "입사·근무 준비",
+      "folder": "매장사업부 공통/입사·근무 준비",
       "file": "본점_신규_입사자_준비_및_첫날_교육_연계_SOP_261020.docx",
       "revised": "2026-09-30",
       "sha1": "026bda2d3d697586f2d834621c9099931d36fc47",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc2NzYwMTkyOHxEfDA"
     },
     {
       "id": "본점-신입-교육-안내",
-      "folder": "입사·근무 준비",
+      "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
       "file": "본점_신입_교육_안내_GUI_261104.docx",
       "revised": "2026-11-04",
       "sha1": "1dc1483f0197abd8586e24627fd71d798b562fc9",
@@ -267,7 +267,7 @@
     },
     {
       "id": "첫날-OJT-체크리스트",
-      "folder": "입사·근무 준비",
+      "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
       "file": "첫날_OJT_체크리스트_FRM_261020.docx",
       "revised": "2026-10-12",
       "sha1": "b380c8ab967e684e57fe5bad1b61e44b93ee54e4",
@@ -276,25 +276,25 @@
     },
     {
       "id": "VST-커피-굴절계-관리",
-      "folder": "장비·기기 관리",
+      "folder": "매장사업부 공통/장비 기기 관리",
       "file": "VST_커피_굴절계_관리_SOP_261020.docx",
       "revised": "2026-10-19",
       "sha1": "f4253430ab446a31248e6c072318464bc69d64b6",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc3NTI3Mzk5M3xEfDA"
     },
     {
       "id": "그라인더-날-분해-및-청소",
-      "folder": "장비·기기 관리",
+      "folder": "매장사업부 공통/장비 기기 관리",
       "file": "그라인더_날_분해_및_청소_SOP_261020.docx",
       "revised": "2026-10-18",
       "sha1": "0e2fdb1e14000ba6fc9aea0be7f0a794fa2ebb00",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc3NTI3Mzk5M3xEfDA"
     },
     {
       "id": "바리스타-전화기-통화불량-조치",
-      "folder": "장비·기기 관리",
+      "folder": "ST-002_온천본점/업무문서/장비·기기 관리",
       "file": "바리스타_전화기_통화불량_조치_SOP_261021.docx",
       "revised": null,
       "sha1": "966d87ebef1588011857688eefff72731263fff2",
@@ -303,25 +303,25 @@
     },
     {
       "id": "정수기-관리-및-필터-교체-절차",
-      "folder": "장비·기기 관리",
+      "folder": "매장사업부 공통/장비 기기 관리",
       "file": "정수기_관리_및_필터_교체_절차_SOP_261020.docx",
       "revised": "2026-10-19",
       "sha1": "0c4cc249ee38d9e3fbf9dfd53a9330aeb706f47f",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc3NTI3Mzk5M3xEfDA"
     },
     {
       "id": "제빙기-주간-청소",
-      "folder": "장비·기기 관리",
+      "folder": "매장사업부 공통/장비 기기 관리",
       "file": "제빙기_주간_청소_SOP_261021.docx",
       "revised": "2026-10-14",
       "sha1": "a3433e22f0b8d295a8703dd9089cc3802b35d73a",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc3NTI3Mzk5M3xEfDA"
     },
     {
       "id": "비품-재료-발주-요청-및-안전재고-기준",
-      "folder": "재고·전산 관리",
+      "folder": "ST-002_온천본점/업무문서/재고·전산 관리",
       "file": "비품_재료_발주_요청_및_안전재고_기준_GUI_261023.docx",
       "revised": "2026-10-23",
       "sha1": "8c910bc414088133ad37d0e43bc6f146e0f10076",
@@ -330,7 +330,7 @@
     },
     {
       "id": "이카운트-전산-처리",
-      "folder": "재고·전산 관리",
+      "folder": "ST-002_온천본점/업무문서/재고·전산 관리",
       "file": "이카운트_전산_처리_SOP_261023.docx",
       "revised": "2026.10.23",
       "sha1": "cb18329d4a5c423ccd7652fb19e9a05dcb7a806c",
@@ -339,7 +339,7 @@
     },
     {
       "id": "시음-커피-제조",
-      "folder": "제품 제조·품질 관리",
+      "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
       "file": "시음_커피_제조_SOP_261029.docx",
       "revised": "2026-10-19",
       "sha1": "617f18dd688295f336bb6ad462eb5fa8c7f69251",
@@ -348,7 +348,7 @@
     },
     {
       "id": "음료-레시피-제공-기준",
-      "folder": "제품 제조·품질 관리",
+      "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
       "file": "음료_레시피_제공_기준_GUI_261030.docx",
       "revised": "2026-10-30",
       "sha1": "a8058a447aa5c20c62fef79695606acf68f184b3",
@@ -357,16 +357,16 @@
     },
     {
       "id": "재료-제조-소분-라벨-부착-보관",
-      "folder": "제품 제조·품질 관리",
+      "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
       "file": "재료_제조_소분_라벨_부착_보관_SOP_261026.docx",
-      "revised": "2026-10-24",
-      "sha1": "c75be57fa1fef455a3b0bf3f357dd25368619ac5",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "revised": "2026-11-04",
+      "sha1": "1d0f6fed9f73e1b1a4324194f8299bf175b5833a",
+      "basis": "이재현이 보낸 파일 2026-11-04",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE5MzQ4MHxEfDA"
     },
     {
       "id": "매장-가구-관리-기준",
-      "folder": "청소·시설·집기 관리",
+      "folder": "ST-002_온천본점/업무문서/청소·시설·집기 관리",
       "file": "매장_가구_관리_기준_GUI_261025.docx",
       "revised": null,
       "sha1": "306e0b721b0cc51775930f204ed683277cc54840",
@@ -375,7 +375,7 @@
     },
     {
       "id": "매장-시설-기물-이상-및-QA-보고-절차",
-      "folder": "청소·시설·집기 관리",
+      "folder": "ST-002_온천본점/업무문서/청소·시설·집기 관리",
       "file": "매장_시설_기물_이상_및_QA_보고_절차_SOP_261029.docx",
       "revised": "2026-10-21",
       "sha1": "754b8ae567195bd620386d87f55cddfe8eda5874",
@@ -384,7 +384,7 @@
     },
     {
       "id": "매장-청소-작업-절차",
-      "folder": "청소·시설·집기 관리",
+      "folder": "ST-002_온천본점/업무문서/청소·시설·집기 관리",
       "file": "매장_청소_작업_절차_SOP_261021.docx",
       "revised": "2026-10-21",
       "sha1": "96937e9bc83eea705b5e20f919e7fd431d4ca3f4",
@@ -393,7 +393,7 @@
     },
     {
       "id": "그리터-포스-리테일",
-      "folder": "포지션별 업무",
+      "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "그리터·포스·리테일_GUI_261020.docx",
       "revised": "2026-10-16",
       "sha1": "4aa10ef141fd6c8ec51a2675392738494ce919ca",
@@ -402,7 +402,7 @@
     },
     {
       "id": "라운딩-정리",
-      "folder": "포지션별 업무",
+      "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "라운딩·정리_GUI_261020.docx",
       "revised": "2026-10-16",
       "sha1": "231bd8eef7a562ef8df7b53f7f262c3126b6d0e1",
@@ -411,7 +411,7 @@
     },
     {
       "id": "메이킹-브루잉-에스프레소",
-      "folder": "포지션별 업무",
+      "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "메이킹·브루잉·에스프레소_GUI_261020.docx",
       "revised": "2026-10-16",
       "sha1": "92571e97c7abd00a8e86a6b22993d119eb262ce9",
@@ -420,7 +420,7 @@
     },
     {
       "id": "픽업-빵포장",
-      "folder": "포지션별 업무",
+      "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "픽업_빵포장_GUI_261029.docx",
       "revised": "2026-10-16",
       "sha1": "6231c9f7262201d02796a018b6bfe3498d84668f",
