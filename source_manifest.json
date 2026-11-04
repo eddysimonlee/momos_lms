@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다.",
   "origin": "드라이브 SOP › ST_매장사업부 › ST-002_온천본점 › 업무문서",
-  "updated": "2026-11-03",
+  "updated": "2026-11-04",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -259,10 +259,10 @@
     {
       "id": "본점-신입-교육-안내",
       "folder": "입사·근무 준비",
-      "file": "본점_신입_교육_안내_GUI_261020.docx",
-      "revised": "2026-09-30",
-      "sha1": "bb10fed658c5b64726016bd4d2663a8a1fa075e3",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "file": "본점_신입_교육_안내_GUI_261104.docx",
+      "revised": "2026-11-04",
+      "sha1": "1dc1483f0197abd8586e24627fd71d798b562fc9",
+      "basis": "이재현이 보낸 파일 2026-11-04",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
     },
     {

@@ -28,7 +28,8 @@ SEP = ' › '
 
 
 def section_key(doc, ref, part=None):
-    """part: 표의 일부만 인용할 때 — 'r1', 'r1-3,5'(행), 'c2'(열), 표가 여럿이면 앞에 't2:'. 행·열 번호는 1부터, 머리행 제외."""
+    """part: 표의 일부만 인용할 때 — 'r1', 'r1-3,5'(행), 'c2'(열), 표가 여럿이면 앞에 't2:'. 행·열 번호는 1부터, 머리행 제외.
+    문단 일부는 'p6-10'(6~10번째 문단, 1부터)."""
     return f'{doc}|{ref}' + (f'#{part}' if part else '')
 
 
@@ -143,7 +144,13 @@ def main():
                 sec = find_section(docs[doc], no)
                 entry = dict(doc=doc, no=sec['no'], title=sec['title'], kind=sec['kind'], chars=sec['chars'],
                              images=sec['images'], paragraphs=sec['paragraphs'], tables=sec['tables'], hash=sec['hash'])
-                if part:  # 표의 몇 행(열)만 인용: 본문 펼치기에도 머리행 + 그 행(열)만
+                if part and part.startswith('p'):  # 11/04 문단 일부만 인용(표 대신 번호 문단으로 바뀐 절): 'p6-10' = 6~10번째 문단
+                    nums = _nums(part[1:])
+                    if not nums or not all(1 <= n <= len(sec['paragraphs']) for n in nums):
+                        raise KeyError(f'{sec["no"]} {sec["title"]}: "{part}" — 문단은 1~{len(sec["paragraphs"])}')
+                    paras = [sec['paragraphs'][n - 1] for n in nums]
+                    entry.update(paragraphs=paras[1:] if len(paras) > 1 else paras, tables=[], part=part, partLabel=paras[0][:40], base=section_key(doc, no))  # 첫 문단(① 소제목)은 제목 옆에만
+                elif part:  # 표의 몇 행(열)만 인용: 본문 펼치기에도 머리행 + 그 행(열)만
                     tab, label = table_part(sec, part)
                     entry.update(paragraphs=[], tables=[tab], part=part, partLabel=label, base=section_key(doc, no))
                 used_sections[key] = entry
