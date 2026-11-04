@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.reply':'처리 메모 수정·삭제','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -573,6 +573,8 @@ class Service:
                 self.content_request(root,user,data)
             elif action=='content.status':
                 self.content_status(root,user,data)
+            elif action=='content.reply':
+                self.content_reply(root,user,data)
             elif action=='content.delete':
                 self.content_delete(root,user,data)
             elif action.startswith('config.'):
@@ -795,6 +797,22 @@ class Service:
         if d['on'] and not any(x.get('no') == key for x in root.get('contentRequests') or []): raise ValueError(f'{key} 티켓을 찾지 못했어요.')
         rest = [k for k in f.get('tickets') or [] if k != key]
         f['tickets'] = rest + ([key] if d['on'] else [])
+
+    def content_reply(self, root, user, d):
+        """11/04 처리 메모 고치기(text) · 지우기(빈 text). 이력에 남은 같은 메모도 정리하고 '처리 메모 수정/삭제'만 남긴다."""
+        if self.lms_level(root, user) != 'admin': raise PermissionError('처리 메모는 LMS관리자 admin 만 고칠 수 있어요.')
+        if not isinstance(d, dict) or set(d) != {'id', 'text'} or not isinstance(d['text'], str): raise ValueError('처리 메모를 확인해 주세요.')
+        item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
+        if not item: raise ValueError('수정 요청을 찾지 못했어요.')
+        text = projects.text(d['text'], 2000) if d['text'].strip() else ''
+        old = item.get('reply') or ''
+        if not old and not text: raise ValueError('지울 처리 메모가 없어요.')
+        for h in item.get('history') or []:
+            if old and h.get('note') == old: h.pop('note', None)
+        if text: item['reply'] = text
+        else: item.pop('reply', None)
+        item['history'] = (item.get('history') or []) + [dict(at=stamp(), by=user['name'], status=item['status'], edit='처리 메모 ' + ('수정' if text else '삭제'))]
+        root['audit'].append(dict(at=stamp(), actor=user['id'], action='처리 메모 ' + ('수정' if text else '삭제'), ticket=item.get('no') or item['id']))
 
     def content_delete(self, root, user, d):
         """11/03 반려한 요청만 목록에서 지운다(번호는 다시 쓰지 않는다). 지운 기록은 audit 에 남긴다."""

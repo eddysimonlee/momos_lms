@@ -598,6 +598,13 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(r['assignee'],a['name'])
             self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['요청','반영됨']))
             self.assertNotIn('contentRequests',self.service.get(b))
+            # 처리 메모 수정·삭제: 이력의 같은 메모도 지우고 '처리 메모 삭제'만 남긴다
+            r1=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-1')
+            with self.assertRaises(PermissionError):self.act(b,'content.reply',dict(id=r1['id'],text=''))
+            r1=next(x for x in self.act(a,'content.reply',dict(id=r1['id'],text='고친 메모'))['contentRequests'] if x['no']=='REQ-1')
+            self.assertEqual(r1['reply'],'고친 메모');self.assertNotIn('5번 문장 수정',json.dumps(r1['history'],ensure_ascii=False))
+            r1=next(x for x in self.act(a,'content.reply',dict(id=r1['id'],text=''))['contentRequests'] if x['no']=='REQ-1')
+            self.assertNotIn('reply',r1);self.assertEqual(r1['history'][-1]['edit'],'처리 메모 삭제');self.assertEqual(r1['status'],'반영됨')
             r2=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-2')
             with self.assertRaises(ValueError):self.act(a,'content.delete',dict(id=r2['id']))  # 반려한 것만 지움
             self.act(a,'content.status',dict(id=r2['id'],status='반려',note='중복'))

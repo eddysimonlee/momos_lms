@@ -566,13 +566,16 @@
   function reqView(id) {
     const r = (cloud.contentRequests || []).find(x => x.id === id);
     if (!r) return '<section class="v1-card"><p class="v1-muted">수정 요청을 찾지 못했어요.</p></section>';
-    const hist = (r.history || []).map(h => `<li><span class="v1-lst ${REQ_ST[h.status] || 'n'}">${esc(h.status)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}${h.commit ? ' · 커밋 ' + esc(h.commit) : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</li>`).join('');
+    const hist = (r.history || []).map(h => h.edit ? `<li><span class="v1-lst n">${esc(h.edit)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}</li>`
+      : `<li><span class="v1-lst ${REQ_ST[h.status] || 'n'}">${esc(h.status)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}${h.commit ? ' · 커밋 ' + esc(h.commit) : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</li>`).join('');
     const open = r.status === '요청' || r.status === '처리 중', logs = logsOf(r);
     return `<section class="v1-card v1-logd"><p class="v1-snap-chips"><b class="v1-tkey">${esc(tkey(r))}</b><span class="v1-lkind">${esc(r.type)}</span><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p>` +
       `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
-      (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? `<p class="v1-muted">처리 메모: ${esc(r.reply)}</p>` : '') + '</section>' +
+      (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? (reqEdit === r.id
+        ? `<div class="v1-reqform v1-replyedit"><textarea class="v1-pop-input" data-reply-text maxlength="2000" rows="3" aria-label="처리 메모 고치기">${esc(r.reply)}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-reply-cancel>취소</button><button type="button" class="v1-btn primary" data-reply-save>저장</button></div></div>`
+        : `<div class="v1-reply"><p class="v1-muted">처리 메모: ${esc(r.reply).replace(/\n/g, '<br>')}</p>${cloud.lmsLevel === 'admin' ? '<span class="v1-reply-ctl"><button type="button" class="v1-tbtn" data-reply-edit>수정</button><button type="button" class="v1-tbtn v1-danger" data-reply-del>삭제</button></span>' : ''}</div>`) : '') + '</section>' +
       (fbsOf(r).length ? `<section class="v1-card v1-logd"><h2>연결된 의견 <small class="v1-muted">${fbsOf(r).length}건</small></h2><ul class="v1-srm v1-tlogs">${fbsOf(r).map(f => `<li><button type="button" class="v1-link v1-tlink" data-open-fb="${esc(f.id)}">${esc(f.name)} · ${esc(String(f.text).slice(0, 60))}</button></li>`).join('')}</ul></section>` : '') +
       `<section class="v1-card v1-logd"><h2>반영 기록 <small class="v1-muted">${logs.length}건</small></h2>` + (logs.length
         ? `<ul class="v1-srm v1-tlogs">${logs.map(e => `<li><button type="button" class="v1-link v1-tlink" data-open-log="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</button></li>`).join('')}</ul>`
@@ -616,6 +619,18 @@
     const f = e.target.closest('[data-req-filter]'); if (f && view === 'admin') { reqFilter = f.dataset.reqFilter; adminPage.req = 1; keepFocus = `[data-req-filter="${reqFilter}"]`; render(); return; }
     const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) { view = 'req:' + r.id; render(); window.scrollTo({top: 0, behavior: 'instant'}); } }
+  });
+  // 11/04 처리 메모 수정·삭제
+  let reqEdit = null;
+  $('app').addEventListener('click', async e => {
+    if (!view.startsWith('req:')) return;
+    const id = view.slice(4);
+    if (e.target.closest('[data-reply-edit]')) { reqEdit = id; keepFocus = '[data-reply-text]'; return render(); }
+    if (e.target.closest('[data-reply-cancel]')) { reqEdit = null; return render(); }
+    if (e.target.closest('[data-reply-save]')) { const t = ($('app').querySelector('[data-reply-text]') || {}).value || ''; reqEdit = null;
+      if (await act('content.reply', {id, text: t})) toast(t.trim() ? '처리 메모를 고쳤어요.' : '처리 메모를 지웠어요.'); return; }
+    if (e.target.closest('[data-reply-del]')) { if (!confirm('처리 메모를 지울까요? 이력에 남은 같은 메모도 함께 지워요.')) return;
+      if (await act('content.reply', {id, text: ''})) toast('처리 메모를 지웠어요.'); }
   });
   $('app').addEventListener('click', async e => {
     const b = e.target.closest('[data-req-del]'); if (!b || !view.startsWith('req:')) return;

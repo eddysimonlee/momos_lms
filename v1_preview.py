@@ -167,6 +167,16 @@ MOCK = r'''
       if (SEED.includes(email) || email === u.email) throw {status: 400, error: '기본 admin 과 본인의 권한은 바꿀 수 없어요.'};
       state.lmsAdmins = (state.lmsAdmins || []).filter(x => x.email !== email).concat(d.level === 'admin' ? [{email, level: 'admin'}] : []); state.rootRevision++; save(); return context(u, target);
     }
+    if (v.action === 'content.reply') {
+      if (levelOf(u) !== 'admin') throw {status: 403, error: '처리 메모는 LMS관리자 admin 만 고칠 수 있어요.'};
+      const r = (state.contentRequests || []).find(x => x.id === d.id); if (!r) throw {status: 400, error: '수정 요청을 찾지 못했어요.'};
+      const text = String(d.text || '').trim(), old = r.reply || '';
+      if (!old && !text) throw {status: 400, error: '지울 처리 메모가 없어요.'};
+      (r.history || []).forEach(h => { if (old && h.note === old) delete h.note; });
+      if (text) r.reply = text; else delete r.reply;
+      r.history = (r.history || []).concat([{at: new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19), by: u.name, status: r.status, edit: '처리 메모 ' + (text ? '수정' : '삭제')}]);
+      state.rootRevision++; save(); return context(u, target);
+    }
     if (v.action === 'content.request' || v.action === 'content.status' || v.action === 'content.delete') {  // 11/03 수정 요청(onboarding.content_request/status 와 같은 규칙)
       if (levelOf(u) !== 'admin') throw {status: 403, error: '수정 요청은 LMS관리자 admin 만 보낼 수 있어요.'};
       const at = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19) + '+09:00', list = state.contentRequests = state.contentRequests || [];
