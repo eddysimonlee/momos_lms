@@ -580,7 +580,8 @@ def refresh_org(store, user_id, now=None):
 # --- 업무문서 폴더(11/02 연동): LMS 교육의 근거 문서는 WORKS 드라이브의 이 폴더(하위 폴더 포함)만 쓴다.
 # 공용 드라이브 › SOP › ST_매장사업부 › ST-002_온천본점 › 업무문서. 첫 이름이 공유 드라이브 이름이면 그 드라이브 안에서, 아니면 각 드라이브 맨 위부터 찾는다.
 # 로그인한 admin 의 토큰(file.read)으로 읽는다. 토큰은 서버 메모리에만. 주기적으로 확인하지는 않는다(요청할 때만).
-DOCS_PATH = [x for x in os.environ.get('WORKS_DOCS_PATH', 'SOP/ST_매장사업부/ST-002_온천본점/업무문서').split('/') if x.strip()]
+# 11/04 기준 폴더를 ST_매장사업부 전체로(매장사업부 공통 + 매장별 폴더). source_manifest.json 의 folder 는 이 폴더 아래 경로
+DOCS_PATH = [x for x in os.environ.get('WORKS_DOCS_PATH', 'SOP/ST_매장사업부').split('/') if x.strip()]
 
 
 def _nfc(t):
@@ -701,7 +702,7 @@ def docs_check(user_id):
         step = 'tree'
         subs = []
         tree = docs_tree(token, drive, folder, folders=subs)
-        out.update(folders=sorted(subs), files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:400]])
+        out.update(folders=sorted(subs), files=len(tree), docx=sum(x['path'].lower().endswith('.docx') for x in tree), list=[[x['path'], x['size'], x['modified'], x['fileId']] for x in tree[:3000]])
         out['links'] = link_report(_manifest_docs(), subs, tree)
         sample = next((x for x in tree if x['path'].lower().endswith('.docx')), None)
         if sample:
