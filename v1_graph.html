@@ -88,6 +88,14 @@ svg.focus .node.on{opacity:1}
 svg .node.sel text{font-weight:700}
 svg .node.hit text{fill:var(--accent);font-weight:700}
 .foot{font-size:12px;color:var(--muted)}
+/* 11/05 프로필 메뉴(이름·이메일·로그아웃) — 교육 화면과 같은 동작 */
+.me{position:relative}
+.av{position:relative;width:32px;height:32px;border-radius:999px;border:0;padding:0;overflow:hidden;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font:700 13px var(--sans);cursor:pointer}
+.av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.me-menu{position:absolute;right:0;top:calc(100% + 4px);min-width:180px;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--component-popover-base-shadow,0 4px 16px rgba(0,0,0,.12));z-index:30}  /* wds-allow: 그림자 대체값 */
+.me-who{display:flex;flex-direction:column;padding:8px 12px;border-bottom:1px solid var(--line);margin-bottom:4px}.me-who b{font-size:13px}.me-who small{color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.me-menu button{display:block;width:100%;text-align:left;font:inherit;font-size:14px;border:0;background:none;color:var(--fg);padding:8px 12px;border-radius:6px;cursor:pointer}.me-menu button:hover{background:var(--accent-soft)}
+.out{max-width:360px;margin:48px auto;text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}.out h2{margin:0;font-size:18px}.out p{margin:0;color:var(--muted)}.out a{background:var(--accent);color:var(--panel);padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600}
 /* 11/03 콘텐츠 수정 요청(admin): 패널의 '수정 요청' 버튼 → 대화상자(AS-IS 자동, TO-BE 입력) */
 .reqbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--surface-default)}
@@ -125,7 +133,7 @@ dialog.rq::backdrop{background:rgba(0,0,0,.35)}  /* wds-allow: 대화상자 뒤 
 <body>
 <div class="wrap">
   <header>
-    <div class="top"><a href="/v1">← 교육 화면으로</a></div>
+    <div class="top"><a href="/v1">← 교육 화면으로</a><div class="me" id="me" hidden><button type="button" class="av" id="meBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="meMenu"></button><div class="me-menu" id="meMenu" role="menu" hidden><div class="me-who"><b id="meName"></b><small id="meMail"></small></div><button type="button" role="menuitem" id="meLogout">로그아웃</button></div></div></div>
     <h1>교육항목 ↔ 원본 문서 연결도 <span class="asof" id="asof">(10/22)</span></h1>
     <p>문서나 교육항목을 누르면 연결된 쪽과 인용한 절이 오른쪽에 나옵니다. 선이 굵을수록 인용 횟수가 많습니다.</p>
     <div class="stats" id="stats"></div>
@@ -151,6 +159,13 @@ async function autoLogin() {
   try {
     const status = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json());
     if (status.works) {
+      let out = false; try { out = sessionStorage.getItem('v1.loggedOut') === '1'; } catch {}
+      if (out && !status.user) {  // 11/05 방금 로그아웃: 자동 재로그인하지 않고 안내
+        document.querySelector('.wrap').innerHTML = '<div class="out"><h2>로그아웃했어요</h2><p>다시 들어오려면 NAVER WORKS로 로그인해 주세요.</p><a href="/auth/works/login?next=graph" id="relogin">NAVER WORKS로 로그인</a></div>';
+        document.getElementById('relogin').onclick = () => { try { sessionStorage.removeItem('v1.loggedOut'); sessionStorage.setItem('v1.worksVisit', '1'); } catch {} };
+        return new Promise(() => {});
+      }
+      try { sessionStorage.removeItem('v1.loggedOut'); } catch {}
       let checked = true; try { checked = sessionStorage.getItem('v1.worksVisit') === '1'; } catch {}
       if (!status.user || !checked) {
         try { sessionStorage.setItem('v1.worksVisit', '1'); } catch {}
@@ -202,8 +217,23 @@ try {
   const r = await fetch('/api/onboarding', {credentials: 'same-origin', cache: 'no-store'}); if (r.ok) ME = await r.json();
 } catch {}
 const canReq = () => !!(ME && ME.lmsLevel === 'admin');
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if (ME && ME.user) {
+  const u = ME.user, nm = String(u.name || '?').trim();
+  $('meBtn').innerHTML = `<span aria-hidden="true">${esc(nm.slice(0, 1))}</span><img src="/v1/avatar/${encodeURIComponent(u.id)}" alt="" loading="lazy" onerror="this.remove()">`;
+  $('meBtn').setAttribute('aria-label', nm + ' 님 — 계정 메뉴'); $('meName').textContent = nm + ' 님'; $('meMail').textContent = u.email || ''; $('me').hidden = false;
+  const closeMe = () => { $('meMenu').hidden = true; $('meBtn').setAttribute('aria-expanded', 'false'); };
+  $('meBtn').onclick = e => { e.stopPropagation(); const open = $('meMenu').hidden; $('meMenu').hidden = !open; $('meBtn').setAttribute('aria-expanded', String(open)); if (open) $('meLogout').focus(); };
+  document.addEventListener('click', e => { if (!$('me').contains(e.target)) closeMe(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('meMenu').hidden) { closeMe(); $('meBtn').focus(); } });
+  $('meLogout').onclick = async () => {
+    try { await fetch('/api/auth/logout', {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': CSRF}, body: '{}'}); } catch {}
+    try { sessionStorage.removeItem('v1.worksVisit'); sessionStorage.setItem('v1.loggedOut', '1'); } catch {}
+    location.replace('/v1/graph');
+  };
+}
 const docs = new Map(G.docs.map(d => [d.id, d])), items = new Map(G.items.map(i => [i.id, i]));
 const w = e => e.kp + e.check + e.photo;
 const byDoc = new Map(), byItem = new Map();
