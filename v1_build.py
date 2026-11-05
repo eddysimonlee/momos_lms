@@ -121,7 +121,9 @@ def main():
                 and '사진' in row['header'][row['col']] and any(c for c in row['cells'])
             if data_row and (not ph.get('caption') or ph['caption'].startswith(sec['title']) or ph['caption'].startswith(f"{sec['no']} {sec['title']}")):
                 name = next(c for c in row['cells'] if c)
-                caption = f"{name} ({ph['n']}/{len(items)})" if len(items) > 1 else name
+                # 11/05 captionCols: 같은 행의 다른 열도 설명에 붙인다(예: 접시 이름-제공 베이커리). 붙이면 (n/전체) 표시는 뺀다
+                extra = [row['cells'][row['header'].index(h)] for h in ph.get('captionCols') or [] if h in row['header'] and row['cells'][row['header'].index(h)]]
+                caption = f"{name}-{' · '.join(extra)}" if extra else (f"{name} ({ph['n']}/{len(items)})" if len(items) > 1 else name)
             photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
                                caption=caption, cite=section_key(doc, no), n=ph['n'], hideCaption=ph.get('showCaption') is False,  # 그림 안에 제목이 있으면 설명을 숨긴다(대체 글로만)
                                row=dict(header=row['header'], cells=row['cells']) if data_row else None,
