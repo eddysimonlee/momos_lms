@@ -47,6 +47,7 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
 - **원본 색인**: `source_index.json`·`source_images/` 는 레포에 없다. 작업 PC 에 받은 드라이브 `ST_매장사업부` 폴더로 만든다.
   `python3 source_parse.py --base <ST_매장사업부 폴더> --images source_images`
   `source_manifest.json` 의 문서만 읽고 순서·시각도 manifest 로 정하므로, 같은 원본이면 누구나 같은 색인·같은 `v1_content.json` 이 나온다. '기준과 내용이 다름'이 나오면 원본이 바뀐 것이다 — 작업 전에 채수민 님에게 알리고 업무문서 반영 절차로 처리한다(반영하면 manifest 의 sha1·updated 갱신).
+- **원본이 바뀐 경우(알파)**: 채수민 님이 바뀐 docx 를 주거나 PC 의 `ST_매장사업부` 폴더를 새로 받았다고 하면, 업무문서 반영 절차(비교 → AS-IS/TO-BE 확인 → 반영 → 기록)대로 처리한다. 문서가 **같은 폴더 안에서** 바뀐 것(같은 이름 내용 변경, 파일 이름 끝 날짜만 바뀐 새 판)이면 docs-check 없이 반영한다 — 폴더가 같으니 `folderKey` 는 그대로 두고 manifest 의 file·sha1·revised·updated 만 고친다. 받은 docx 는 PC 의 `ST_매장사업부` 같은 경로에 넣는다. 다른 폴더로 옮겨졌거나 새 폴더에 생긴 문서는 `folderKey` 가 필요하므로 반영하지 않고 이재현에게 넘긴다. 드라이브에서 빠진 문서·사진은 PC 에서 지우지 않아도 되며, 채수민 님이 쓰지 말라고 하면 교육 인용과 manifest 에서 뺀다.
 - **확인**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 로 만든 `v1_preview.html` 을 브라우저로 연다. 채수민 님은 주로 알파 주소에서 결과를 보므로, 바꾼 교육의 번호·제목과 어디서 보면 되는지를 쉬운 말로 알려 준다.
 - **실서비스 반영(이재현)**: 채수민 님이 요청한 알파 커밋만 `release/v1` 로 cherry-pick 한다. `v1_content.json` 충돌은 손으로 풀지 않고 `python3 v1_build.py` 를 다시 돌린다. 반영 기록에 실서비스 티켓이 있으면 `tickets` 에 넣는다.
 - **실서비스를 먼저 고친 경우(이재현)**: `release/v1` 커밋 뒤 바로 `release/v1 → alpha` 를 합친다. 충돌 처리는 위와 같다.
