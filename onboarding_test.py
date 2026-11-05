@@ -284,10 +284,10 @@ class EducationTests(unittest.TestCase):
             fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
             for s in steps:
                 self.assertTrue(set(s['shift'])<=set(fl['shift']) and set(s['position'])<=set(fl['position']),s['id'])
-            by={s['id']:s for s in steps};self.assertEqual(by['floor-tools']['position'],['정리','라운딩']);self.assertEqual(by['supplies-shortage']['position'],[])
+            by={s['id']:s for s in steps};self.assertEqual(by['floor-tools']['position'],['정리','라운딩']);self.assertEqual(by['supplies-op2']['position'],[])
             self.assertTrue(by['bar-supply']['title'].startswith('정리 포지션 ②'))
             course_ids=[s['id'] for u in ob.COURSE['units'] if u['id'] in ('welcome','space','safety','pickup','supplies','daily','menu','floor','orders','materials','stock','customer') for s in u['steps']]
-            course_ids=[i for i in course_ids if i!='materials-product-6']  # 10/26 재료 SOP 에서 후르츠봉봉 삭제 → 교육과정에서 뺌
+            course_ids=[i for i in course_ids if i not in ('materials-product-6','supplies-location','supplies-shortage')]  # 10/26 재료 SOP 에서 후르츠봉봉 삭제 → 교육과정에서 뺌 · 11/05 REQ-14 26·27 → OP2/OP3 비품 채우기로 교체
             self.assertEqual(sorted(s['id'] for s in steps if s['id'] in course_ids),sorted(course_ids))  # 기존 항목이 한 번씩
             planned=[s for s in steps if s['lessonStatus']=='planned'];live=[s for s in steps if s['lessonStatus']!='planned']
             self.assertEqual(len(planned),0)  # 86개 세션 모두 교육안이 있다(6단계 교육과정 기준)
@@ -681,7 +681,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),114)  # 기존 82 + 6단계 교육과정 새 세션 32(10-26 OP3 담당 구역과 오픈 준비, 10-27 입사 후 오리엔테이션 일정, 10-30 MD·CL 출근 직후 업무)
+        self.assertEqual(len(ob.STEPS),116)  # 기존 82 + 6단계 교육과정 새 세션 34(10-26 OP3 담당 구역과 오픈 준비, 10-27 입사 후 오리엔테이션 일정, 10-30 MD·CL 출근 직후 업무, 11-05 REQ-14 OP2·OP3 비품 채우기)
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

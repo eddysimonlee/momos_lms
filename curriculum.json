@@ -342,23 +342,26 @@
           "title": "비품·재료 보충",
           "sessions": [
             {
-              "kind": "기존",
-              "id": "supplies-location",
-              "from": [
-                17
-              ],
+              "kind": "교체",
+              "id": "supplies-op2",
+              "title": "OP2 비품 채우기",
+              "sources": "OP2 원두·음료 재료·리테일 상품 보충 기준 GUI 3",
+              "note": "REQ-14: 26·27 분리",
+              "shift": [
+                "OP"
+              ]
+            },
+            {
+              "kind": "교체",
+              "id": "supplies-op3",
+              "title": "OP3 비품 채우기",
+              "sources": "OP3 오전 식사 전 소모품·비품 보충 기준 GUI 3~5",
+              "note": "REQ-14: 26·27 분리",
               "shift": [
                 "OP"
               ],
               "position": [
                 "라운딩"
-              ]
-            },
-            {
-              "kind": "기존",
-              "id": "supplies-shortage",
-              "from": [
-                18
               ]
             }
           ]
