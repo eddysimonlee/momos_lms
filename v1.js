@@ -563,7 +563,7 @@
       `<div class="v1-fbar" role="group" aria-label="상태 필터">${chips}</div>` +
       (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist v1-tlist"><thead><tr><th>티켓</th><th>대상 · 종류</th><th>요청</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}`
         : `<p class="v1-muted">${all.length ? '이 상태의 요청이 없어요.' : '아직 수정 요청이 없어요.'}</p>`) +
-      (all.length ? `<p class="v1-muted v1-reqx">처리할 요청 목록(JSON): <a class="v1-link" href="/api/content-requests?open=1" target="_blank" rel="noopener">열기</a> — 저장해서 Claude 세션에 주면 한 번에 반영해요.</p>` : '') + '</section>';
+      (list.length ? `<p class="v1-muted v1-reqx"><button type="button" class="v1-tbtn" data-req-copy-all>지금 목록 ${list.length}건 텍스트로 복사</button> — Claude 대화에 붙여 넣으면 한 번에 반영해요.</p>` : '') + '</section>';
   }
   function reqView(id) {
     const r = (cloud.contentRequests || []).find(x => x.id === id);
@@ -571,7 +571,7 @@
     const hist = (r.history || []).map(h => h.edit ? `<li><span class="v1-lst n">${esc(h.edit)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}</li>`
       : `<li><span class="v1-lst ${REQ_ST[h.status] || 'n'}">${esc(h.status)}</span> ${esc(fmtAt(h.at))} · ${esc(h.by)}${h.commit ? ' · 커밋 ' + esc(h.commit) : ''}${h.note ? `<small>${esc(h.note)}</small>` : ''}</li>`).join('');
     const open = r.status === '요청' || r.status === '처리 중', logs = logsOf(r);
-    return `<section class="v1-card v1-logd"><p class="v1-snap-chips"><b class="v1-tkey">${esc(tkey(r))}</b><span class="v1-lkind">${esc(r.type)}</span><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p>` +
+    return `<section class="v1-card v1-logd"><div class="v1-reqtop"><p class="v1-snap-chips"><b class="v1-tkey">${esc(tkey(r))}</b><span class="v1-lkind">${esc(r.type)}</span><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p><button type="button" class="v1-tbtn" data-req-copy>텍스트로 복사</button></div>` +
       `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
@@ -623,6 +623,25 @@
     const f = e.target.closest('[data-req-filter]'); if (f && view === 'admin') { reqFilter = f.dataset.reqFilter; adminPage.req = 1; keepFocus = `[data-req-filter="${reqFilter}"]`; render(); return; }
     const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) { view = 'req:' + r.id; render(); window.scrollTo({top: 0, behavior: 'instant'}); } }
+  });
+  // 11/05 텍스트로 복사: 캡처 대신 Claude 세션에 붙여 넣기 좋게(티켓 번호·대상 id·AS-IS/TO-BE·메모)
+  const reqText = r => [`[${tkey(r)}] ${r.type} · ${r.status}`,
+    `대상: ${r.target.kind === 'doc' ? '원본 문서' : '교육'} — ${r.target.title} (id: ${r.target.id})`,
+    r.field ? `항목: ${r.field}` : '', `요청: ${r.name} · ${fmtAt(r.at)}`, r.assignee ? `담당: ${r.assignee}` : '',
+    `AS-IS:\n${r.asis || '(없음)'}`, `TO-BE:\n${r.tobe}`, r.note ? `메모: ${r.note}` : '', r.reply ? `처리 메모: ${r.reply}` : '',
+    r.commit ? `커밋: ${r.commit}` : '', logsOf(r).length ? `반영 기록: ${logsOf(r).map(e => e.id).join(', ')}` : ''].filter(Boolean).join('\n');
+  async function copyText(text, done) {
+    let ok = false;
+    try { await navigator.clipboard.writeText(text); ok = true; } catch {
+      const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); try { ok = document.execCommand('copy'); } catch {} ta.remove();
+    }
+    toast(ok ? done : '복사하지 못했어요. 다시 눌러 주세요.');
+  }
+  $('app').addEventListener('click', e => {
+    const one = e.target.closest('[data-req-copy]'); if (one && view.startsWith('req:')) { const r = (cloud.contentRequests || []).find(x => x.id === view.slice(4)); if (r) copyText(reqText(r), `${tkey(r)} 내용을 복사했어요. Claude 대화에 붙여 넣으세요.`); return; }
+    const all = e.target.closest('[data-req-copy-all]'); if (all && view === 'admin') { const f = REQ_FILTERS.find(x => x[0] === reqFilter) || REQ_FILTERS[0], list = (cloud.contentRequests || []).filter(f[2]);
+      copyText(list.map(reqText).join('\n\n----\n\n'), `${f[1]} 요청 ${list.length}건을 복사했어요. Claude 대화에 붙여 넣으세요.`); }
   });
   // 아직 이어지지 않은 반영 기록(최근 순) 고르기
   const logPick = r => (cloud.sourceLog || []).filter(e => !logsOf(r).includes(e)).slice(0, 30).map(e => `<option value="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</option>`).join('');
