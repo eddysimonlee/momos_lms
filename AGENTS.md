@@ -34,3 +34,17 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
 ## 작업 방식(11/04, 이재현 요청)
 
 수정 요청을 받으면 → **실제 LMS 화면 미리보기(v1_preview.html)를 오른쪽 패널에 띄운다** → 승인하면 커밋한다. 비교용 Word·HTML 보고서나 받은 docx 를 다시 내보내지 않는다(받은 파일은 연결된 업무문서 폴더에만 둔다).
+
+## 알파 환경 작업 (11/05, 이재현 결정)
+
+모모스커피 담당자는 알파 환경에서 ChatGPT Codex(로컬)로 수정 요청을 직접 반영해 본다. 실서비스에는 이재현이 diff 를 보고 머지한 것만 들어간다.
+
+- **브랜치**: `alpha` = 담당자 작업·확인용(Render 알파 서비스·알파 전용 DB). `release/v1` = 실서비스(이재현만 머지). 작업은 항상 최신 `alpha` 에서 시작해 작업 브랜치 → `alpha` 로 PR 한다. `release/v1` 로 push·PR 하지 않는다.
+- **DB 는 머지되지 않는다**: 서버마다 자기 DB 를 본다(Render 환경변수). 레포로 넘어가는 것은 교육 콘텐츠·교육과정·문서-콘텐츠 매핑·반영 기록·사진뿐이다. 알파의 티켓 상태·체크 기록은 실서비스로 가지 않는다.
+- **고칠 수 있는 파일**: `v1_lessons.json` · `curriculum.json` · `source_manifest.json` · `source_log.json` 과 빌드 결과(`v1_content.json` · `v1_photos/`). 그 밖(서버·화면 코드, `Dockerfile`, `deploy/`, 테스트)은 고치지 않고 '서비스 기획 확인 필요'로 남긴다.
+- **원본 색인**: `source_index.json`·`source_images/` 는 레포에 없다. 작업 PC 에 받은 드라이브 `ST_매장사업부` 폴더로 만든다.
+  `python3 source_parse.py --base <ST_매장사업부 폴더> --images source_images`
+  `source_manifest.json` 의 문서만 읽고 순서·시각도 manifest 로 정하므로, 같은 원본이면 누구나 같은 색인·같은 `v1_content.json` 이 나온다. '기준과 내용이 다름'이 나오면 원본이 바뀐 것이다 — 수정 요청보다 먼저 담당자에게 알리고 업무문서 반영 절차로 처리한다(반영하면 manifest 의 sha1·updated 갱신).
+- **확인**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 로 만든 `v1_preview.html` 을 브라우저로 열어 바뀐 교육을 담당자와 함께 본다. 승인 후 커밋·PR.
+- **반영 기록**: `approvedBy` = 승인한 사람 이름.
+- **실서비스를 먼저 고친 경우(이재현)**: `release/v1` 커밋 뒤 바로 `release/v1 → alpha` 를 합친다. `v1_content.json` 충돌은 손으로 풀지 않고 `python3 v1_build.py` 를 다시 돌린다.

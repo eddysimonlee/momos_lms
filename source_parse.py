@@ -1,6 +1,9 @@
 """원본 매뉴얼(docx)을 문서·절 단위로 읽어 JSON 색인을 만든다.
 
 사용법:  python3 source_parse.py <docx 폴더 또는 파일>... [-o source_index.json] [--summary]
+        python3 source_parse.py --base <드라이브 ST_매장사업부 폴더> [--images source_images]
+          → source_manifest.json 에 적힌 문서(폴더/파일)만 읽어 색인을 다시 만든다. 사람마다 같은 색인이 나온다.
+            파일이 없거나 내용(sha1)이 기준과 다르면 알려 준다(원본이 바뀌었다는 뜻 — 업무문서 반영 절차).
 
 모모스 본점 매뉴얼은 공통 템플릿(표지 → 개정 이력 → 메타데이터 → 목차 → 번호 절)을 따른다.
 이 스크립트는 그 뼈대를 그대로 읽어 다음을 뽑는다.
@@ -321,16 +324,41 @@ def parse(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split('\n')[0])
-    ap.add_argument('paths', nargs='+')
+    ap.add_argument('paths', nargs='*')
+    ap.add_argument('--base', help='드라이브 ST_매장사업부 폴더(로컬 사본). source_manifest.json 의 문서만 읽는다')
+    ap.add_argument('--manifest', default=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'source_manifest.json'))
     ap.add_argument('-o', '--out', default='source_index.json')
     ap.add_argument('--summary', action='store_true')
     ap.add_argument('--images', help='절별 사진을 <id>.jpg 로 꺼낼 폴더 (v1_build.py 가 교육 화면에 싣는다)')
     a = ap.parse_args()
+    if not a.paths and not a.base:
+        ap.error('docx 폴더·파일 또는 --base 를 주세요')
     global IMAGES_DIR
     if a.images:
         os.makedirs(a.images, exist_ok=True)
         IMAGES_DIR = a.images
-    files = []
+    files, folders, notes, manifest_updated = [], {}, [], ''
+    if a.base:
+        # 맥은 한글 파일 이름을 NFD 로 준다: NFC 로 맞춰 찾는다
+        found = {}
+        for r, _, fs in os.walk(a.base):
+            for f in fs:
+                found[nfc(os.path.relpath(os.path.join(r, f), a.base)).replace(os.sep, '/')] = os.path.join(r, f)
+        with open(a.manifest, encoding='utf-8') as fh:
+            mf = json.load(fh)
+        manifest, manifest_updated = mf['documents'], mf.get('updated', '')
+        for m in manifest:
+            rel = nfc(f"{m['folder']}/{m['file']}")
+            if rel not in found:
+                notes.append(f"없음: {rel}"); continue
+            with open(found[rel], 'rb') as fh:
+                if m.get('sha1') and hashlib.sha1(fh.read()).hexdigest() != m['sha1']:
+                    notes.append(f"기준과 내용이 다름(원본이 바뀜): {rel}")
+            files.append(found[rel]); folders[found[rel]] = nfc(m['folder'])
+        if notes:
+            print('\n'.join(notes), file=sys.stderr)
+        if any(n.startswith('없음') for n in notes):
+            sys.exit('source_manifest.json 의 문서가 폴더에 없습니다. 드라이브 폴더를 다시 받거나 이재현에게 알리세요.')
     for p in a.paths:
         if os.path.isdir(p):
             import zipfile  # 확장자가 빠진 docx 도 읽는다
@@ -339,7 +367,13 @@ def main():
         else:
             files.append(p)
     docs = [parse(f) for f in files]
+    for f, d in zip(files, docs):
+        if f in folders:
+            d['folder'] = folders[f]  # 기준 폴더 아래 경로(source_manifest 의 folder)
     out = {'generated_at': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'documents': docs}
+    if a.base:
+        # 사람마다 같은 색인: 문서 순서 = source_manifest.json 순서, 색인 시각 = manifest 의 updated(기준 폴더를 맞춘 날)
+        out['generated_at'] = manifest_updated
     with open(a.out, 'w', encoding='utf-8') as fh:
         json.dump(out, fh, ensure_ascii=False, indent=1)
     if a.summary:
