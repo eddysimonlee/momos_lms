@@ -267,9 +267,10 @@
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
     if ($('v1Who').dataset.id !== cloud.user.id) {  // 사람이 바뀔 때만 다시 그린다(사진을 매번 다시 받지 않게)
       $('v1Who').dataset.id = cloud.user.id; $('v1Who').innerHTML = avatarInner(cloud.user);
-      $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님'); $('v1Who').title = cloud.user.name + ' 님';
+      $('v1Who').setAttribute('aria-label', cloud.user.name + ' 님 — 계정 메뉴'); $('v1Who').title = cloud.user.name + ' 님';
+      $('v1MeName').textContent = cloud.user.name + ' 님'; $('v1MeMail').textContent = cloud.user.email || '';
     }
-    $('v1Who').hidden = branch && !profile();
+    $('v1Me').hidden = branch && !profile();
     $('v1Find').hidden = branch || !profile();
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
@@ -999,7 +1000,18 @@
     if (to === 'home' && view === 'person' && cloud.target !== cloud.user.id) { try { cloud = await api('GET'); } catch {} }  // 교육생 목록으로: 내 기록으로 돌아온다
     view = to; render(); };
   $('v1Ham').onclick = openNav;
-  $('v1MoreBtn').onclick = e => { e.stopPropagation(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
+  // 11/05 프로필(오른쪽 위 동그라미)을 누르면 이름·이메일과 로그아웃
+  const closeMe = () => { $('v1MeMenu').hidden = true; $('v1Who').setAttribute('aria-expanded', 'false'); };
+  $('v1Who').onclick = e => { e.stopPropagation(); const open = $('v1MeMenu').hidden; closeMenu(); $('v1MeMenu').hidden = !open; $('v1Who').setAttribute('aria-expanded', String(open)); if (open) $('v1Logout').focus(); };
+  document.addEventListener('click', e => { if (!$('v1Me').contains(e.target)) closeMe(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1MeMenu').hidden) { closeMe(); $('v1Who').focus(); } });
+  $('v1Logout').onclick = async () => {
+    closeMe();
+    try { await fetch('/api/auth/logout', {method: 'POST', credentials: 'same-origin', headers: {'Content-Type': 'application/json', 'X-CSRF-Token': (window.ERPAuth && ERPAuth.csrfToken) || ''}, body: '{}'}); } catch {}
+    try { sessionStorage.removeItem('v1.worksVisit'); sessionStorage.setItem('v1.loggedOut', '1'); } catch {}  // 다시 열 때 WORKS 로 자동 재로그인하지 않게
+    location.replace('/v1');
+  };
+  $('v1MoreBtn').onclick = e => { e.stopPropagation(); closeMe(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
@@ -1014,6 +1026,14 @@
         // LMS 로그인은 WORKS 와 따로 남아 있으므로, 새로 들어올 때(새 탭·MOMOS uni 를 다시 열 때)마다 WORKS 에 다시 확인한다.
         // WORKS 에 로그인돼 있으면 화면 전환 없이 곧바로 돌아오고, WORKS 에서 로그아웃했다면 WORKS 로그인 화면이 뜬다.
         // 같은 탭 안의 새로고침은 다시 묻지 않는다(sessionStorage).
+        let out = false; try { out = sessionStorage.getItem('v1.loggedOut') === '1'; } catch {}
+        if (out && !status.user) {  // 11/05 방금 로그아웃: WORKS 로 바로 다시 들어가지 않고 안내만
+          const gate = document.getElementById('authGate');
+          if (gate) gate.innerHTML = '<div class="v1-auth-out"><h1>로그아웃했어요</h1><p>다시 들어오려면 NAVER WORKS로 로그인해 주세요.</p><a class="v1-btn primary" href="/auth/works/login" id="v1Relogin">NAVER WORKS로 로그인</a></div>';
+          const re = document.getElementById('v1Relogin'); if (re) re.onclick = () => { try { sessionStorage.removeItem('v1.loggedOut'); sessionStorage.setItem('v1.worksVisit', '1'); } catch {} };
+          return new Promise(() => {});
+        }
+        try { sessionStorage.removeItem('v1.loggedOut'); } catch {}
         let checked = true; try { checked = sessionStorage.getItem('v1.worksVisit') === '1'; } catch {}  // 저장소를 못 쓰면 다시 묻지 않는다(무한 이동 방지)
         if (!status.user || !checked) {
           try { sessionStorage.setItem('v1.worksVisit', '1'); } catch {}

@@ -444,6 +444,9 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-icon-btn:active,.v1-icon-btn[aria-expanded="true"]{background:var(--component-icon-button-type-ghost-state-pressed-background)}
 .v1-icon-btn svg{width:var(--component-icon-button-type-ghost-size-md-round-default-icon-size);height:var(--component-icon-button-type-ghost-size-md-round-default-icon-size)}
 /* 메뉴 = popover 표면 + menu item */
+.v1-me{position:relative;flex:none;display:inline-flex}.v1-me>.v1-avatar{border:0;padding:0;cursor:pointer}.v1-me>.v1-avatar:focus-visible{outline:2px solid var(--border-focus,var(--text-primary));outline-offset:2px}
+.v1-me-who{display:flex;flex-direction:column;padding:var(--spacing-8) var(--spacing-12);border-bottom:var(--v1-hairline) solid var(--border-subtle);margin-bottom:var(--spacing-4)}.v1-me-who b{font:var(--label-md-bold)}.v1-me-who small{color:var(--text-muted);font:var(--label-sm);overflow-wrap:anywhere}
+.v1-auth-out{max-width:360px;margin:var(--spacing-48) auto;padding:var(--spacing-24);text-align:center;display:flex;flex-direction:column;gap:var(--spacing-12);align-items:center}.v1-auth-out h1{font:var(--title-md-bold);margin:0}.v1-auth-out p{margin:0;color:var(--text-muted)}
 .v1-menu{position:absolute;right:0;top:calc(100% + var(--spacing-4));min-width:168px; /* wds-allow: 메뉴 최소 폭 */padding:var(--spacing-4);background:var(--surface-default);border-radius:var(--component-popover-base-border-radius);box-shadow:var(--component-popover-base-shadow);z-index:var(--component-layout-z-index-gnb)}
 .v1-menu[hidden]{display:none}
 .v1-menu [hidden]{display:none}
@@ -491,7 +494,8 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
     <button id="v1Find" class="v1-icon-btn" type="button" hidden aria-label="교육 검색" aria-haspopup="dialog" aria-controls="v1Search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.6 12.6l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><!-- wds-allow: 돋보기 아이콘 자산 반입 전 임시 인라인 -->
-    <span id="v1Who" class="v1-avatar v1-avatar-top" role="img"></span>
+    <div id="v1Me" class="v1-me"><button id="v1Who" type="button" class="v1-avatar v1-avatar-top" aria-haspopup="menu" aria-expanded="false" aria-controls="v1MeMenu"></button>
+      <div id="v1MeMenu" class="v1-menu v1-me-menu" role="menu" hidden><div class="v1-me-who"><b id="v1MeName"></b><small id="v1MeMail"></small></div><button type="button" role="menuitem" id="v1Logout">로그아웃</button></div></div>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
       <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button></div>

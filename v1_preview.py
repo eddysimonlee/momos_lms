@@ -251,6 +251,7 @@ MOCK = r'''
       state = load();  // 다른 탭의 변경을 반영
       if (url.pathname === '/v1_content.json') return json(CONTENT);
       if (url.pathname === '/api/auth/status') return json({user: user(), works: false});
+      if (url.pathname === '/api/auth/logout') return json({status: 'signed_out'});
       if (url.pathname === '/api/dev/accounts') {
         if (method === 'POST') { const id = url.searchParams.get('id'); if (ACCOUNTS.some(a => a.id === id)) { setCurrent(id); return json({ok: true}); } return json({error: '없는 계정'}, 404); }
         return json({accounts: ACCOUNTS.map(a => ({id: a.id, name: a.name, email: a.email})), current});
