@@ -37,14 +37,16 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
 
 ## 알파 환경 작업 (11/05, 이재현 결정)
 
-모모스커피 담당자는 알파 환경에서 ChatGPT Codex(로컬)로 수정 요청을 직접 반영해 본다. 실서비스에는 이재현이 diff 를 보고 머지한 것만 들어간다.
+채수민 님(모모스커피)은 알파(테스트 서비스, https://momos-lms-alpha.onrender.com)에서 ChatGPT Codex(로컬)로 LMS 를 직접 고쳐 본다. 수정 요청 티켓 없이, 서비스를 둘러보며 본인 판단으로 바로 작업한다. 실서비스에는 채수민 님이 반영을 요청한 작업만 이재현이 가져간다.
 
-- **브랜치**: `alpha` = 담당자 작업·확인용(Render 알파 서비스·알파 전용 DB). `release/v1` = 실서비스(이재현만 머지). 작업은 항상 최신 `alpha` 에서 시작해 작업 브랜치 → `alpha` 로 PR 한다. `release/v1` 로 push·PR 하지 않는다.
-- **DB 는 머지되지 않는다**: 서버마다 자기 DB 를 본다(Render 환경변수). 레포로 넘어가는 것은 교육 콘텐츠·교육과정·문서-콘텐츠 매핑·반영 기록·사진뿐이다. 알파의 티켓 상태·체크 기록은 실서비스로 가지 않는다.
-- **고칠 수 있는 파일**: `v1_lessons.json` · `curriculum.json` · `source_manifest.json` · `source_log.json` 과 빌드 결과(`v1_content.json` · `v1_photos/`). 그 밖(서버·화면 코드, `Dockerfile`, `deploy/`, 테스트)은 고치지 않고 '서비스 기획 확인 필요'로 남긴다.
+- **브랜치**: `alpha` = 테스트 서비스(Render 알파 서비스·알파 전용 DB). `release/v1` = 실서비스(이재현만 바꿀 수 있음, GitHub Ruleset). 작업은 항상 최신 `alpha` 에서 시작해 작업 브랜치 → `alpha` 로 PR 하고 **Squash and merge** 한다(작업 1건 = 커밋 1개). `release/v1` 로 push·PR 하지 않는다.
+- **요청한 것만 바꾼다**: 애매하면 바꾸기 전에 묻는다. 한 작업에 한 가지만 — 나중에 골라서 실서비스에 반영할 수 있게.
+- **반영 기록**: 알파 작업도 `source_log.json` 에 기록 1건을 남긴다. `basis.kind` = '알파 작업', `tickets` = 빈 목록(티켓 없음), `approvedBy` = 채수민 님, 무엇을 왜 바꿨는지와 AS-IS/TO-BE. 교육 내용 칸 삭제·순서 변경·문항 교체가 있으면 `checks` 에 적는다(실서비스 체크 기록에 영향).
+- **DB 는 따라가지 않는다**: 서버마다 자기 DB 를 본다(Render 환경변수). 레포로 넘어가는 것은 교육 콘텐츠·교육과정·문서-콘텐츠 매핑·반영 기록·사진뿐이다.
+- **고칠 수 있는 파일**: `v1_lessons.json` · `curriculum.json` · `source_manifest.json` · `source_log.json` 과 빌드 결과(`v1_content.json` · `v1_photos/`). 그 밖(서버·화면 코드, `Dockerfile`, `deploy/`, 테스트)은 고치지 않고 '서비스 기획 확인 필요'로 이재현에게 넘긴다.
 - **원본 색인**: `source_index.json`·`source_images/` 는 레포에 없다. 작업 PC 에 받은 드라이브 `ST_매장사업부` 폴더로 만든다.
   `python3 source_parse.py --base <ST_매장사업부 폴더> --images source_images`
-  `source_manifest.json` 의 문서만 읽고 순서·시각도 manifest 로 정하므로, 같은 원본이면 누구나 같은 색인·같은 `v1_content.json` 이 나온다. '기준과 내용이 다름'이 나오면 원본이 바뀐 것이다 — 수정 요청보다 먼저 담당자에게 알리고 업무문서 반영 절차로 처리한다(반영하면 manifest 의 sha1·updated 갱신).
-- **확인**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 로 만든 `v1_preview.html` 을 브라우저로 열어 바뀐 교육을 담당자와 함께 본다. 승인 후 커밋·PR.
-- **반영 기록**: `approvedBy` = 승인한 사람 이름.
-- **실서비스를 먼저 고친 경우(이재현)**: `release/v1` 커밋 뒤 바로 `release/v1 → alpha` 를 합친다. `v1_content.json` 충돌은 손으로 풀지 않고 `python3 v1_build.py` 를 다시 돌린다.
+  `source_manifest.json` 의 문서만 읽고 순서·시각도 manifest 로 정하므로, 같은 원본이면 누구나 같은 색인·같은 `v1_content.json` 이 나온다. '기준과 내용이 다름'이 나오면 원본이 바뀐 것이다 — 작업 전에 채수민 님에게 알리고 업무문서 반영 절차로 처리한다(반영하면 manifest 의 sha1·updated 갱신).
+- **확인**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 로 만든 `v1_preview.html` 을 브라우저로 연다. 채수민 님은 주로 알파 주소에서 결과를 보므로, 바꾼 교육의 번호·제목과 어디서 보면 되는지를 쉬운 말로 알려 준다.
+- **실서비스 반영(이재현)**: 채수민 님이 요청한 작업 PR 의 squash 커밋만 `release/v1` 로 cherry-pick 한다. `v1_content.json` 충돌은 손으로 풀지 않고 `python3 v1_build.py` 를 다시 돌린다. 반영 기록에 실서비스 티켓이 있으면 `tickets` 에 넣는다.
+- **실서비스를 먼저 고친 경우(이재현)**: `release/v1` 커밋 뒤 바로 `release/v1 → alpha` 를 합친다. 충돌 처리는 위와 같다.
