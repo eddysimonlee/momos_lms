@@ -522,6 +522,7 @@
     if (!e) return '<section class="v1-card"><p class="v1-muted">반영 기록을 찾지 못했어요.</p></section>';
     const b = e.basis || {}, c = logCount(e), ds = e.docs || [], rm = e.removed || [];
     const result = b.kind === '수정 요청' ? `수정 요청 ${(e.tickets || []).length}건 반영 — 교육 ${c.lessons}개 수정`
+      : b.kind === '알파 작업' ? `알파 작업 — 교육 ${c.lessons}개 수정`
       : b.kind === '폴더 전체'
       ? `드라이브 최신판 문서 ${c.docs}개를 모두 확인 — LMS 근거 문서 ${e.basisCount || c.docs}개 모두 이 폴더의 최신판`
       : `받은 문서 ${c.docs}개 확인 — 교육 ${c.lessons}개 수정${e.basisCount ? ` · 반영 후 LMS 근거 문서 ${e.basisCount}개` : ''}`;
