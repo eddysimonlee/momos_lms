@@ -220,6 +220,9 @@ const canReq = () => !!(ME && ME.lmsLevel === 'admin');
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 서버 UTC ISO → 한국 시각 'YYYY-MM-DD HH:MM'
+const kstAt = a => { const v = String(a || ''); const t = /T.*(Z|[+-]\d\d:?\d\d)$/.test(v) && new Date(v);
+  return (t && !isNaN(t) ? new Date(t.getTime() + 9 * 3600e3).toISOString() : v).slice(0, 16).replace('T', ' '); };
 if (ME && ME.user) {
   const u = ME.user, nm = String(u.name || '?').trim();
   $('meBtn').innerHTML = `<span aria-hidden="true">${esc(nm.slice(0, 1))}</span><img src="/v1/avatar/${encodeURIComponent(u.id)}" alt="" loading="lazy" onerror="this.remove()">`;
@@ -360,7 +363,7 @@ function reqBlock(kind, id) {
   const mine = (ME.contentRequests || []).filter(r => r.target && r.target.kind === kind && r.target.id === id);
   return `<div class="reqbar"><button type="button" class="btn pri" data-req="${kind}:${esc(id)}">${kind === 'doc' ? '원본 문서 변경 알리기' : '수정 요청'}</button>` +
     (mine.length ? `<span class="meta">이 ${kind === 'doc' ? '문서' : '교육'}의 요청 ${mine.length}건</span>` : '') + '</div>' +
-    (mine.length ? `<ul class="reqs">${mine.slice(0, 5).map(r => `<li${r.id === NEW_REQ ? ' class="new"' : ''}><div class="h">${r.id === NEW_REQ ? '<b>방금 보냄</b> · ' : ''}<span class="st ${ST_CLS[r.status] || ''}">${esc(r.status)}</span>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''} · ${esc(String(r.at).slice(5, 16).replace('T', ' '))}</div><div class="b">${esc(r.tobe).slice(0, 120)}</div></li>`).join('')}</ul>` : '');
+    (mine.length ? `<ul class="reqs">${mine.slice(0, 5).map(r => `<li${r.id === NEW_REQ ? ' class="new"' : ''}><div class="h">${r.id === NEW_REQ ? '<b>방금 보냄</b> · ' : ''}<span class="st ${ST_CLS[r.status] || ''}">${esc(r.status)}</span>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''} · ${esc(kstAt(r.at).slice(5))}</div><div class="b">${esc(r.tobe).slice(0, 120)}</div></li>`).join('')}</ul>` : '');
 }
 // 종류별 대상: [field 라벨, AS-IS] 목록. 교육 내용이 없는 교육은 체크 항목이 교육 내용이다
 function targetsOf(kind, id, type) {

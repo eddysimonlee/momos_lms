@@ -6,6 +6,9 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const STATUS = {ready: '시작 전', practice: '진행 중', review: '담당자 확인 대기', done: '완료', planned: '준비 중'};
   const dateLabel = d => d ? d.replace(/-/g, '.') : '-';
+  // 서버 UTC ISO(…T…+00:00) → 한국 시각 '2026.11.05 15:46'. 시간대 없는 값(반영 기록 등 이미 KST)은 그대로
+  const kstAt = a => { const v = String(a || ''); const t = /T.*(Z|[+-]\d\d:?\d\d)$/.test(v) && new Date(v);
+    const k = t && !isNaN(t) ? new Date(t.getTime() + 9 * 3600e3).toISOString() : v; return k.slice(0, 16).replace('T', ' ').replace(/-/g, '.'); };
   // 체크 일시(서버 UTC ISO) → '10.30 14:05'(한국 시각). 일시가 없던 예전 기록은 날짜만
   const whenLabel = (iso, day) => { const t = iso && new Date(iso); if (!t || isNaN(t)) return day ? day.slice(5).replace('-', '.') : '';
     const k = new Date(t.getTime() + 9 * 3600e3).toISOString(); return `${k.slice(5, 7)}.${k.slice(8, 10)} ${k.slice(11, 16)}`; };
@@ -446,7 +449,7 @@
       (canEdit && !a.seed && a.email !== me ? `<span class="v1-admin-ctl">${tag('admin')}<button type="button" class="v1-tbtn v1-danger" data-admin-del="${esc(a.email)}">해제</button></span>` : tag('admin')) + '</li>').join('');
     // 보낸 의견(11/03): 보낸사람 · 시간 · 교육 과정 · 의견(+티켓·댓글). 멘티·체크한 사람 열은 뺐다
     const fbAll = cloud.feedback || [], fbPage = pageOf('fb', fbAll);
-    const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(String(f.at || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${(f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
+    const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(kstAt(f.at))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${(f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
     // 11/03: 지정 칸을 제목 바로 아래로(목록이 길어져도 스크롤 없이)
     const adminsHtml = `<section class="v1-card"><h2>admin 지정</h2><p class="v1-muted">admin은 다른 admin을 지정·해제하고 보낸 의견을 볼 수 있어요.</p>` +
       (canEdit ? `<div class="v1-admin-add v1-admin-add-top"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') +
@@ -542,7 +545,7 @@
   const REQ_ST = {'요청': 'b', '처리 중': 'b', '반영됨': 'g', '반려': 'r'};
   // 교육 요청의 대상은 '단계 › 단원 › 교육' 경로로 저장된다: 앞은 작게, 교육 이름은 크게
   const reqHead = r => { const parts = String(r.target.title).split(' › '), last = parts.pop(); return {path: parts.join(' › '), name: last}; };
-  const fmtAt = a => String(a || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.');
+  const fmtAt = kstAt;
   // 11/03 티켓 보드: 번호(REQ-n)·상태 필터·담당·연결된 반영 기록. 반영 기록(source_log.json)의 tickets 로 서로 이어진다
   const tkey = r => r.no || 'REQ-?';
   // 11/04 연결 = 반영 기록의 tickets(저장소) 또는 티켓의 logs(화면에서 고름) — 어느 쪽이든 양쪽에 보인다
@@ -595,7 +598,7 @@
   function fbView(id) {
     const f = (cloud.feedback || []).find(x => x.id === id);
     if (!f) return '<section class="v1-card"><p class="v1-muted">의견을 찾지 못했어요.</p></section>';
-    const st = steps().find(x => x.id === f.step), at = x => esc(String(x || '').slice(0, 16).replace('T', ' ').replace(/-/g, '.'));
+    const st = steps().find(x => x.id === f.step), at = x => esc(kstAt(x));
     const linked = (f.tickets || []).map(k => { const r = reqOfKey(k); return `<li><button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}"><b class="v1-tkey">${esc(k)}</b> ${r ? esc(reqHead(r).name) : '(지운 요청)'}</button>${r ? ` <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : ''}${cloud.lmsLevel === 'admin' ? ` <button type="button" class="v1-tbtn" data-fb-unlink="${esc(k)}" aria-label="${esc(k)} 연결 해제">연결 해제</button>` : ''}</li>`; }).join('');
     const options = (cloud.contentRequests || []).filter(r => r.no && !(f.tickets || []).includes(r.no)).map(r => `<option value="${esc(r.no)}">${esc(r.no)} · ${esc(r.status)} · ${esc(reqHead(r).name)}</option>`).join('');
     const comments = (f.comments || []).map(c => `<li><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small><div>${esc(c.text).replace(/\n/g, '<br>')}</div></li>`).join('');
