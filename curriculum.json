@@ -70,19 +70,6 @@
         },
         {
           "no": "1.3",
-          "title": "매뉴얼 이용",
-          "sessions": [
-            {
-              "kind": "기존",
-              "id": "welcome-manual",
-              "from": [
-                3
-              ]
-            }
-          ]
-        },
-        {
-          "no": "1.4",
           "title": "메뉴·상품 첫 소개",
           "sessions": [
             {
@@ -96,7 +83,7 @@
           ]
         },
         {
-          "no": "1.5",
+          "no": "1.4",
           "title": "일하는 방식",
           "sessions": [
             {
@@ -109,7 +96,7 @@
           ]
         },
         {
-          "no": "1.6",
+          "no": "1.5",
           "title": "서비스·안전·협업",
           "sessions": [
             {
@@ -131,6 +118,19 @@
               "id": "safety-report",
               "from": [
                 11
+              ]
+            }
+          ]
+        },
+        {
+          "no": "1.6",
+          "title": "매뉴얼 이용",
+          "sessions": [
+            {
+              "kind": "기존",
+              "id": "welcome-manual",
+              "from": [
+                3
               ]
             }
           ]
