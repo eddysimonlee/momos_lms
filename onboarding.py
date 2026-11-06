@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'content.log':'티켓 ↔ 반영 기록 연결','content.reply':'처리 메모 수정·삭제','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.log':'티켓 ↔ 반영 기록 연결','content.reply':'처리 메모 수정·삭제','feedback.resolve':'의견 반영 완료','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'feedback.resolve','content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -383,6 +383,7 @@ class Service:
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
                     notifications=self.notices(db,root,user,users),
+                    myFeedback=self.my_feedback(root,user),
                     assignments=self.assignments(learner, bool(entry)),
                     names={t['person']:t['author'] for t in tickets},
                     configuration=dict(learners=root['learners'],technical=root['technical'],content=root['content'],
@@ -556,7 +557,7 @@ class Service:
                 if any(i not in visible for i in data['ids']):
                     raise PermissionError('본인에게 보이는 알림만 읽음 처리할 수 있습니다.')
                 readers=root.setdefault('noticeReads',{})
-                readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))[-500:]
+                readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))
             elif action=='config.selfEnrol':
                 self.self_enrol(db,root,user,data)
             elif action=='profile.set':
@@ -567,6 +568,8 @@ class Service:
                 self.send_feedback(db,root,user,target,data)
             elif action=='feedback.comment':
                 self.feedback_comment(root,user,data)
+            elif action=='feedback.resolve':
+                self.feedback_resolve(root,user,data)
             elif action=='feedback.link':
                 self.feedback_link(root,user,data)
             elif action=='content.request':
@@ -662,6 +665,17 @@ class Service:
                     if result.get('reviewerId'):
                         add('grade:'+target+':'+ident+':'+result['at'],'학습 퀴즈 · 멘토 검토 결과',
                             '판정과 피드백을 확인하세요.',result['date'],target=target,view='exam')
+        for f in root.get('feedback') or []:
+            if f.get('user') != user['id']: continue
+            title=STEPS.get(f.get('step'),{}).get('title','교육 항목')
+            for comment in f.get('comments') or []:
+                if comment.get('notifyAuthor'):
+                    add('opinion-reply:'+f['id']+':'+comment['id'], '보내주신 의견에 답변이 등록되었습니다.',
+                        title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.reply',step=f.get('step'))
+            resolved=f.get('resolved')
+            if f.get('status')=='done' and resolved:
+                add('opinion-resolved:'+f['id'], '보내주신 의견이 반영되었습니다.',
+                    title,resolved['at'],feedback=f['id'],kind='feedback.resolved',step=f.get('step'))
         for t in root['tickets']:
             own=t['person']==user['id'];handler=user['id'] in root[t['type']]
             if not (own or handler):continue
@@ -787,11 +801,23 @@ class Service:
         if not f: raise ValueError('의견을 찾지 못했어요.')
         return f
 
+    def my_feedback(self, root, user):
+        """Authors may read their own opinions/comments, never other authors or admin-only ticket details."""
+        fields=('id','at','user','name','step','text','comments','status','resolved')
+        return [dict(copy.deepcopy({k:f[k] for k in fields if k in f}),
+                     stepTitle=STEPS.get(f.get('step'),{}).get('title',''))
+                for f in reversed(root.get('feedback') or []) if f.get('user')==user['id']]
+
     def feedback_comment(self, root, user, d):
         if not isinstance(d, dict) or set(d) != {'id', 'text'}: raise ValueError('댓글 내용을 확인해 주세요.')
         f = self._feedback(root, user, d['id'])
-        f['comments'] = (f.get('comments') or []) + [dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], text=projects.text(d['text'], 2000, True))]
-        f['comments'] = f['comments'][-100:]
+        f['comments'] = (f.get('comments') or []) + [dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], text=projects.text(d['text'], 2000, True), notifyAuthor=True)]
+
+    def feedback_resolve(self, root, user, d):
+        if set(d)!={'id'}: raise ValueError('완료할 의견을 확인해 주세요.')
+        f=self._feedback(root,user,d['id'])
+        if f.get('status')=='done': return  # Multiple administrators/retries cannot create another completion or alert.
+        f.update(status='done',resolved=dict(at=stamp(),user=user['id'],name=user['name']))
 
     def feedback_link(self, root, user, d):
         if not isinstance(d, dict) or set(d) != {'id', 'ticket', 'on'} or not isinstance(d['on'], bool): raise ValueError('연결할 티켓을 확인해 주세요.')
