@@ -22,7 +22,7 @@ function feedbackHarness(admin = true, status = '', pop = '') {
     steps: () => [{id: 'space-walk', title: '교육 항목'}], stepIndex: () => 2,
     kstAt: x => String(x || ''), reqOfKey: () => null, reqHead: () => ({name: 'A'}),
   });
-  vm.runInContext(line('const esc =') + '\n' + between('  const fbOf =', '  const openFb =') + `\nfbPop = ${JSON.stringify(pop)};\nglobalThis.detail = fbView;`, context);
+  vm.runInContext(line('const esc =') + '\n' + between('  const fbOf =', '  const openFb =') + `\nfbPop = ${JSON.stringify(pop)};\nglobalThis.detail = fbView;\nglobalThis.pick = v => { fbPick = v; };`, context);
   return context;
 }
 test('authors see status, every comment and the education title link, but no admin controls/ticket data', () => {
@@ -44,10 +44,14 @@ test('admin tools: ticket link entry and status dropdown with transitions and a 
   assert.match(closed, /data-fb-send >댓글 달기/);
   const open = feedbackHarness(true, '진행중', 'status').detail('f1');
   assert.match(open, /v1-stbtn b"[^>]*>진행중/);
-  assert.doesNotMatch(open, /data-fb-status="진행중"/);  // 지금 상태로는 바꾸지 않는다
-  for (const to of ['반영됨', '반려', '닫힘']) assert.match(open, new RegExp(`data-fb-status="${to}"`));
+  assert.doesNotMatch(open, /data-fb-pick="진행중"/);  // 지금 상태로는 바꾸지 않는다
+  for (const to of ['반영됨', '반려', '닫힘']) assert.match(open, new RegExp(`data-fb-pick="${to}"`));
+  assert.match(open, /data-fb-status-ok disabled>확인/);  // 고르기 전에는 확인을 누를 수 없다
   assert.match(open, /닫기<\/span><span class="v1-starrow"/);
   assert.match(open, /data-fb-status-text/);
+  const h = feedbackHarness(true, '진행중', 'status'); h.pick('닫힘');
+  assert.match(h.detail('f1'), /class="on" aria-checked="true" data-fb-pick="닫힘"/);
+  assert.match(h.detail('f1'), /data-fb-status-ok >확인/);
   assert.match(feedbackHarness(true, '', 'link').detail('f1'), /<option value="REQ-1">/);
 });
 function noticeHarness(fail = false) {
@@ -123,7 +127,7 @@ test('failed read acknowledgement keeps the notice unread and prevents navigatio
 });
 function actionHarness() {
   const listeners = {}, calls = [], drafts = new Map(), statusDraft = new Map(), box = {value: '작성 중인 댓글'}, ctx = {
-    view: 'fb:f1', cloud: {lmsLevel: 'admin'}, busy: false, feedbackDrafts: drafts, statusDraft, fbPop: 'status', keepFocus: '', succeed: true,
+    view: 'fb:f1', cloud: {lmsLevel: 'admin'}, busy: false, feedbackDrafts: drafts, statusDraft, fbPop: 'status', fbPick: '', keepFocus: '', succeed: true,
     $: () => ({addEventListener: (type, fn) => {listeners[type] = fn;}, querySelector: () => box}),
     fbOf: () => ({status: '진행중'}), render() {}, toast() {},
     act: async (action, data) => {calls.push({action, data}); return ctx.succeed;},
@@ -133,14 +137,20 @@ function actionHarness() {
   const click = (selector, dataset = {}) => listeners.click({target: {closest: s => s === selector ? {dataset} : null}});
   return {ctx, calls, drafts, statusDraft, box, click};
 }
-test('status change sends the optional comment and keeps the plain comment draft untouched', async () => {
+test('picking a status changes nothing until 확인; 확인 sends it with the optional comment', async () => {
   const h = actionHarness(); h.drafts.set('f1', h.box.value); h.statusDraft.set('f1', ' 답하고 닫을게요 ');
-  await h.click('[data-fb-status]', {fbStatus: '닫힘'});
+  await h.click('[data-fb-status-ok]');
+  assert.equal(h.calls.length, 0);  // 아직 고르지 않았다
+  await h.click('[data-fb-pick]', {fbPick: '닫힘'});
+  assert.equal(h.calls.length, 0);  // 고르기만 해서는 바뀌지 않는다
+  assert.equal(h.ctx.fbPick, '닫힘');
+  await h.click('[data-fb-status-ok]');
   assert.deepEqual(JSON.parse(JSON.stringify(h.calls[0])), {action: 'feedback.status', data: {id: 'f1', status: '닫힘', text: '답하고 닫을게요'}});
   assert.equal(h.statusDraft.has('f1'), false);
   assert.equal(h.drafts.get('f1'), h.box.value);
   assert.equal(h.ctx.fbPop, '');
-  await h.click('[data-fb-status]', {fbStatus: '반영됨'});
+  assert.equal(h.ctx.fbPick, '');
+  await h.click('[data-fb-pick]', {fbPick: '반영됨'}); await h.click('[data-fb-status-ok]');
   assert.deepEqual(Object.keys(h.calls[1].data), ['id', 'status']);
 });
 test('comment save failures retain drafts; a successful comment clears only that draft', async () => {
