@@ -113,19 +113,16 @@ MOCK = r'''
       contentRequests: [
         {id: 'demo-1', no: 'REQ-1', at: '2026-11-03T10:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'item', id: 'stock-ecount', title: '6단계 에스프레소 › 6.9 재고 전산 처리 › 86. 재고 전산 처리'}, type: '문구 수정', field: '교육 제목', asis: '재고 전산 처리', tobe: '(예시)', note: '', status: '반영됨', assignee: '체험 담당자', commit: 'abc1234', history: [{at: '2026-11-03T10:00:00', by: '체험 담당자', status: '진행중'}, {at: '2026-11-04T10:00:00', by: '체험 담당자', status: '반영됨', commit: 'abc1234'}]},
         {id: 'demo-2', no: 'REQ-2', at: '2026-11-04T09:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'doc', id: '본점-신입-교육-안내', title: '본점_신입_교육_안내_GUI_261020'}, type: '원본 문서 변경 확인', field: '파일', asis: '본점_신입_교육_안내_GUI_261020.docx', tobe: '파일: 본점_신입_교육_안내_GUI_261104.docx (이름 바뀜)\n바뀐 내용: 5.3.1과 5.3.2의 표를 삭제하고 넘버링 문구로 정리', note: '', status: '진행중', history: [{at: '2026-11-04T09:00:00', by: '체험 담당자', status: '진행중'}]}]};
-    // 11/06 미리보기 예시 의견: 체험 교육생이 보낸 의견 3건 · 관리자가 상태를 바꾸며 남긴 댓글이 알림으로 간다(40일 전 것은 30일이 지나 알림에 안 보임)
+    // 11/06 미리보기 예시 의견: 체험 교육생이 보낸 의견 4건 · 관리자 댓글이 알림으로 간다(40일 전 댓글은 30일이 지나 알림에 안 보임)
     const ago = (days, h = 10) => new Date(Date.now() - days * 864e5 - h * 36e5).toISOString();
-    const sc = (id, days, status, text, auto) => ({id, at: ago(days), user: 'u-staff', name: '체험 담당자', text: text || '', status, ...(auto ? {auto} : {})});
+    const cm = (id, days, text) => ({id, at: ago(days), user: 'u-staff', name: '체험 담당자', text, notifyAuthor: true});
+    const fb = (id, days, step, text, comments, tickets) => ({id, at: ago(days), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step, text, mentee: 'u-learner', menteeName: '체험 교육생', comments, ...(tickets ? {tickets} : {})});
     st.feedback = [
-      {id: 'fb-demo-old', at: ago(45), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'welcome-hygiene', text: '(예시) 위생 교육 사진이 흐려요.', mentee: 'u-learner', menteeName: '체험 교육생',
-        status: '반영됨', comments: [sc('c-old', 40, '반영됨', '(예시) 사진을 새로 바꿨어요.')]},
-      {id: 'fb-demo-1', at: ago(3), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'space-walk', text: '(예시) 3동 화장실 위치가 교육에 없어요.', mentee: 'u-learner', menteeName: '체험 교육생',
-        tickets: ['REQ-2'], status: '반영됨', comments: [sc('c-1a', 2, '진행중', '(예시) 확인하고 있어요.'), {id: 'c-1m', at: ago(2, 8), user: 'u-staff', name: '체험 담당자', text: '(예시) 매장 공간 안내 새 판에 맞춰 고칠게요.', notifyAuthor: true}, sc('c-1b', 0, '반영됨', '(예시) 3번 교육 내용 2에 3동 여자·남자화장실을 넣었어요. 교육 내용 2를 펼쳐 보세요.')]},
-      {id: 'fb-demo-2', at: ago(1), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'stock-order', text: '(예시) 발주 예시가 너무 길어요.', mentee: 'u-learner', menteeName: '체험 교육생',
-        status: '반려', comments: [sc('c-2a', 1, '반려', '(예시) 원본 문서 기준이라 그대로 둘게요. 대신 본문 펼치기에서 표를 함께 보여 드려요.')]},
-      {id: 'fb-demo-q', at: ago(6), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'welcome-tasting', text: '(예시) 시음은 매일 하나요?', mentee: 'u-learner', menteeName: '체험 교육생',
-        status: '닫힘', comments: [sc('c-qa', 5, '닫힘', '(예시) 입사 첫날 한 번 하고, 새 메뉴가 나오면 다시 해요.')]},
-      {id: 'fb-demo-3', at: ago(0, 1), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'menu-coffee', text: '(예시) 라떼 계량표를 따로 보고 싶어요.', mentee: 'u-learner', menteeName: '체험 교육생'}];
+      fb('fb-demo-old', 45, 'welcome-hygiene', '(예시) 위생 교육 사진이 흐려요.', [cm('c-old', 40, '(예시) 사진을 새로 바꿨어요.')]),
+      fb('fb-demo-q', 6, 'welcome-tasting', '(예시) 시음은 매일 하나요?', [cm('c-qa', 5, '(예시) 입사 첫날 한 번 하고, 새 메뉴가 나오면 다시 해요.')]),
+      fb('fb-demo-1', 3, 'space-walk', '(예시) 3동 화장실 위치가 교육에 없어요.', [cm('c-1a', 2, '(예시) 매장 공간 안내 새 판에 맞춰 고칠게요.'), cm('c-1b', 0, '(예시) 3번 교육 내용 2에 3동 여자·남자화장실을 넣었어요. 교육 내용 2를 펼쳐 보세요.')], ['REQ-2']),
+      fb('fb-demo-2', 1, 'stock-order', '(예시) 발주 예시가 너무 길어요.', [cm('c-2a', 1, '(예시) 원본 문서 기준이라 그대로 둘게요. 대신 본문 펼치기에서 표를 함께 보여 드려요.')]),
+      fb('fb-demo-3', 0.04, 'menu-coffee', '(예시) 라떼 계량표를 따로 보고 싶어요.', [])];
     st.learners['u-learner'] = {join: plus(today(), -4), startDate: plus(today(), -4), trainer: null, assessor: null};
     st.rooms['u-learner'] = blank(plus(today(), -4));
     return st;
@@ -138,14 +135,12 @@ MOCK = r'''
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
   function feedbackNotices(u) {
-    // onboarding.notices 와 같은 규칙: 내가 보낸 의견에 달린 댓글 · 댓글을 남기며 바꾼 상태(댓글 없는 상태 변경은 알림 없음)
+    // onboarding.notices 와 같은 규칙: 내가 보낸 의견에 달린 관리자 댓글
     const reads = (state.noticeReads || {})[u.id] || [], out = [];
     for (const f of state.feedback || []) {
       if (f.user !== u.id) continue;
-      for (const c of f.comments || []) if (!c.status && c.notifyAuthor) { const id = 'opinion-reply:' + f.id + ':' + c.id;
-        out.push({id, title: '보내주신 의견에 댓글이 달렸습니다.', detail: (STEPS[f.step] || {}).title || '교육 항목', date: c.at, kind: 'feedback.reply', by: c.name || '', text: c.text || '', feedback: f.id, comment: c.id, step: f.step, read: reads.includes(id)}); }
-      else if (c.status && c.text) { const id = 'opinion-status:' + f.id + ':' + c.id;
-        out.push({id, title: `보내주신 의견이 '${c.status}' 상태로 바뀌었습니다.`, detail: (STEPS[f.step] || {}).title || '교육 항목', date: c.at, kind: 'feedback.status', status: c.status, by: c.name || '', text: c.text || '', auto: c.auto || '', feedback: f.id, comment: c.id, step: f.step, read: reads.includes(id)}); }
+      for (const c of f.comments || []) if (c.text && !c.auto && (c.notifyAuthor || c.status)) { const id = 'opinion-reply:' + f.id + ':' + c.id;
+        out.push({id, title: '보내주신 의견에 댓글이 달렸습니다.', detail: (STEPS[f.step] || {}).title || '교육 항목', date: c.at, kind: 'feedback.reply', by: c.name || '', text: c.text, feedback: f.id, comment: c.id, step: f.step, read: reads.includes(id)}); }
     }
     return out.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 200);
   }
@@ -176,8 +171,8 @@ MOCK = r'''
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).map(([e, l]) => ({email: e, name: (ACCOUNTS.find(x => x.email === e) || DIRECTORY.find(x => x.email === e) || {}).name || '', level: l, seed: SEED.includes(e)})).sort((a, b) => (a.name || '~').localeCompare(b.name || '~', 'ko') || a.email.localeCompare(b.email)), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
-      myFeedback: (state.feedback || []).filter(f => f.user === u.id).slice().reverse().map(f => ({...Object.fromEntries(['id', 'at', 'user', 'name', 'step', 'text', 'status'].filter(k => k in f).map(k => [k, JSON.parse(JSON.stringify(f[k]))])),
-        comments: (f.comments || []).filter(c => !c.auto).map(c => ({...c})), stepTitle: (STEPS[f.step] || {}).title || ''})),
+      myFeedback: (state.feedback || []).filter(f => f.user === u.id).slice().reverse().map(f => ({...Object.fromEntries(['id', 'at', 'user', 'name', 'step', 'text'].filter(k => k in f).map(k => [k, JSON.parse(JSON.stringify(f[k]))])),
+        comments: (f.comments || []).filter(c => c.text && !c.auto).map(c => ({...c})), stepTitle: (STEPS[f.step] || {}).title || ''})),
       notifications: feedbackNotices(u),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
@@ -240,15 +235,11 @@ MOCK = r'''
       }
       state.rootRevision++; save(); return context(u, target);
     }
-    if (['feedback.comment', 'feedback.link', 'feedback.resolve', 'feedback.status'].includes(v.action)) {  // 의견 처리(admin)
+    if (['feedback.comment', 'feedback.link'].includes(v.action)) {  // 의견 처리(admin): 댓글 · 수정 요청 티켓 연결(의견에는 상태가 없다)
       if (levelOf(u) !== 'admin') throw {status: 403, error: '보낸 의견 관리는 LMS관리자 admin 만 할 수 있어요.'};
       const f = (state.feedback || []).find(x => x.id === d.id); if (!f) throw {status: 400, error: '의견을 찾지 못했어요.'};
-      const setStatus = (status, text, auto) => { if (f.status === status && !text) return; f.status = status;
-        f.comments = (f.comments || []).concat([{id: crypto.randomUUID(), at: new Date().toISOString(), user: u.id, name: u.name, text: text || '', status, ...(auto ? {auto} : {})}]); };
       if (v.action === 'feedback.comment') { const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '댓글을 적어 주세요.'};
         f.comments = (f.comments || []).concat([{id: crypto.randomUUID(), at: new Date().toISOString(), user: u.id, name: u.name, text, notifyAuthor: true}]); }
-      else if (v.action === 'feedback.status' || v.action === 'feedback.resolve') { const status = v.action === 'feedback.resolve' ? '반영됨' : d.status;
-        if (!['진행중', '반영됨', '반려', '닫힘'].includes(status)) throw {status: 400, error: '의견 상태를 확인해 주세요.'}; setStatus(status, String(d.text || '').trim()); }
       else { if (d.on && !(state.contentRequests || []).some(x => x.no === d.ticket)) throw {status: 400, error: d.ticket + ' 티켓을 찾지 못했어요.'};
         f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []); }
       state.rootRevision++; save(); return context(u, target);

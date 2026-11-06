@@ -260,7 +260,7 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Search').hidden) closeSearch(); });
 
   // --- opinion notifications: opening a list never marks every item read.
-  // 11/06 알림 = 내가 보낸 의견에 달린 댓글 · 댓글을 남기며 바꾼 상태(댓글 없이 상태만 바뀌면 알림 없음). 최근 30일 · 최신이 위
+  // 11/06 알림 = 내가 보낸 의견에 달린 관리자 댓글. 최근 30일 · 최신이 위
   const NOTICE_DAYS = 30;
   const opinionNotices = () => { const from = Date.now() - NOTICE_DAYS * 864e5;
     return (cloud.notifications || []).filter(n => String(n.kind || '').startsWith('feedback.') && Date.parse(n.date) >= from).sort((a, b) => Date.parse(b.date) - Date.parse(a.date)); };
@@ -276,9 +276,9 @@
     if ($('v1Notices').hidden) return;
     $('v1NoticeList').innerHTML = items.length
       ? items.map(n => `<button type="button" class="v1-nb ${n.read ? 'read' : 'unread'}" data-open-notice="${esc(n.id)}" ${noticeBusy ? 'disabled' : ''}>` +
-          `<span class="v1-nb-head"><span>${n.kind === 'feedback.status' ? '의견 상태 변경' : '의견 댓글'}</span>${n.status ? `<span class="v1-lst ${FB_ST[n.status] || 'n'}">${esc(n.status)}</span>` : ''}<time datetime="${esc(n.date)}">${esc(noticeWhen(n.date))}</time></span>` +
+          `<span class="v1-nb-head"><span>의견 댓글</span><time datetime="${esc(n.date)}">${esc(noticeWhen(n.date))}</time></span>` +
           `<span class="v1-nb-title">${esc(steps().some(x => x.id === n.step) ? `${stepIndex(n.step) + 1}. ${n.detail}` : n.detail || n.title)}</span>` +
-          `<span class="v1-nb-text">${esc(n.text || (n.auto ? `${n.auto} — ${n.title}` : n.title))}</span>` +
+          `<span class="v1-nb-text">${esc(n.text || n.title)}</span>` +
           (n.by ? `<span class="v1-nb-by">by ${esc(n.by)}</span>` : '') + '</button>').join('') +
         `<p class="v1-notices-end">최근 ${NOTICE_DAYS}일간 받은 알림을 모두 확인했습니다.</p>`
       : '<p class="v1-notices-empty">최근 받은 알림이 없습니다.</p>';
@@ -542,9 +542,9 @@
   function opinionsView() {
     const titleOf = id => { const st = steps().find(x => x.id === id); return st ? `${stepIndex(id) + 1}. ${st.title}` : ''; };
     const admin = cloud.lmsLevel === 'admin', fbAll = admin ? (cloud.feedback || []) : (cloud.myFeedback || []), fbPage = pageOf('fb', fbAll);
-    const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(kstAt(f.at))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${f.status || (f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${f.status ? `<span class="v1-lst ${FB_ST[f.status] || 'n'}">${esc(f.status)}</span>` : ''}${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
-    return `<section class="v1-card"><h2>의견 리스트</h2><p class="v1-muted">${admin ? '교육 › 의견 보내기에서 구성원들이 보내 주신 의견이에요.' : '내가 교육 › 의견 보내기에서 보낸 의견이에요. 상태가 바뀌면 알림으로 알려 드려요.'}</p>` +
-      (rows ? `<div class="v1-table"><table class="v1-llist"><thead><tr><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>의견 · ${admin ? '상태 · 티켓' : '상태'}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
+    const rows = fbPage.items.map(f => `<tr class="v1-lrow" data-fb="${esc(f.id)}" tabindex="0" role="link" aria-label="${esc(f.name)}님의 의견 상세 보기"><td class="v1-nowrap">${esc(f.name)}</td><td class="v1-nowrap">${esc(kstAt(f.at))}</td><td class="v1-fb-course">${esc(titleOf(f.step) || f.stepTitle || '')}</td><td class="v1-fb-text">${esc(f.text).replace(/\n/g, '<br>')}${(f.comments || []).length || (f.tickets || []).length ? `<span class="v1-fbtags">${(f.tickets || []).map(k => `<span class="v1-lchip b">${esc(k)}</span>`).join('')}${(f.comments || []).length ? `<span class="v1-lchip">댓글 ${f.comments.length}</span>` : ''}</span>` : ''}</td><td class="v1-chev">›</td></tr>`).join('');
+    return `<section class="v1-card"><h2>의견 리스트</h2><p class="v1-muted">${admin ? '교육 › 의견 보내기에서 구성원들이 보내 주신 의견이에요.' : '내가 교육 › 의견 보내기에서 보낸 의견이에요. 댓글이 달리면 알림으로 알려 드려요.'}</p>` +
+      (rows ? `<div class="v1-table"><table class="v1-llist"><thead><tr><th>보낸사람</th><th>시간</th><th>교육 과정</th><th>${admin ? '의견 · 티켓' : '의견'}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${fbPage.nav}` : '<p class="v1-muted">아직 보낸 의견이 없어요.</p>') + '</section>';
   }
   // 11/03 페이지네이션: 보낸 의견·반영 기록 20개씩(최근 순). 상세에 갔다 와도 보던 페이지 유지
   const PAGE = 20, adminPage = {fb: 1, log: 1, req: 1};
@@ -628,8 +628,7 @@
   }
   // 11/03 콘텐츠 수정 요청: /v1/graph 에서 모모스 담당자가 보낸 요청(AS-IS/TO-BE). 행을 누르면 상세(req:<id>)에서 처리 상태를 바꾼다
   const REQ_ST = {'진행중': 'b', '요청': 'b', '처리 중': 'b', '반영됨': 'g', '반려': 'r'};
-  // 11/06 의견 상태(수정 요청과 같은 이름·색): 진행중 · 반영됨 · 반려 · 닫힘(질문에 댓글로 답하고 닫을 때)
-  const FB_ST = {'진행중': 'b', '반영됨': 'g', '반려': 'r', '닫힘': 'n'}, FB_STATUSES = ['진행중', '반영됨', '반려', '닫힘'];
+
   // 교육 요청의 대상은 '단계 › 단원 › 교육' 경로로 저장된다: 앞은 작게, 교육 이름은 크게
   const reqHead = r => { const parts = String(r.target.title).split(' › '), last = parts.pop(); return {path: parts.join(' › '), name: last}; };
   const fmtAt = kstAt;
@@ -683,13 +682,10 @@
   // 11/03 보낸 의견 상세(fb:<id>): 의견 · 댓글 · 연결된 수정 요청 티켓
   const fbsOf = r => (cloud.feedback || []).filter(f => (f.tickets || []).includes(r.no));
   const fbOf = id => (cloud.feedback || []).find(x => x.id === id) || (cloud.myFeedback || []).find(x => x.id === id);
-  // 11/06 의견 상세: 맨 위 교육 제목(누르면 그 교육으로) · 상태 라벨 · 의견란 우측 상단에 티켓 연결 · 상태 변경(admin 만)
-  // 상태 변경 = 현재 상태 버튼 → '동작 → 상태' 목록 + 아래 댓글 칸. 댓글(일반·상태 변경)은 모두 작성자에게 보이고 알림이 간다
-  const ICON_LINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="__LINK__" fill="currentColor"/></svg>';  // WDS mono 16/link-plus
-  const ICON_CARET = '<svg class="v1-caret" viewBox="0 0 12 12" aria-hidden="true"><path d="M6.27543 8.41797C6.08135 8.54613 5.81739 8.52438 5.64652 8.35351L3.14652 5.85351C2.95126 5.65825 2.95126 5.34175 3.14652 5.14648C3.34178 4.95122 3.65829 4.95122 3.85355 5.14648L6.00004 7.29297L8.14652 5.14648C8.34178 4.95122 8.65829 4.95122 8.85355 5.14648C9.04882 5.34175 9.04882 5.65825 8.85355 5.85351L6.35355 8.35351L6.27543 8.41797Z" fill="currentColor"/></svg>';  // WDS mono 12/chevron-down
-  const FB_MOVES = [['진행중', '검토 시작하기'], ['반영됨', '반영 완료하기'], ['반려', '반려하기'], ['닫힘', '닫기']];
-  let fbPop = '', fbPick = '';  // fbPop: 'link' | 'status' | '' · fbPick: 상태 메뉴에서 고른 상태(확인을 눌러야 바뀐다)
-  const statusDraft = new Map();
+  // 11/06 의견 상세: 맨 위 교육 제목(누르면 그 교육으로) · 의견란 우측 상단에 수정 요청 티켓 연결(admin 만) · 댓글(작성자에게 보이고 알림이 간다)
+  // 의견에는 상태가 없다 — 진행 상태는 연결한 수정 요청 티켓에서 본다
+  const ICON_LINK = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 7.9995C11.7759 7.9996 11.9997 8.2236 12 8.4995V10.9995H14.5C14.7759 10.9996 14.9997 11.2236 15 11.4995C15 11.7756 14.7761 11.9995 14.5 11.9995H12V14.4995C12 14.7756 11.7761 14.9995 11.5 14.9995C11.2239 14.9995 11 14.7757 11 14.4995V11.9995H8.5C8.2239 11.9995 8 11.7757 8 11.4995C8.0003 11.2236 8.224 10.9995 8.5 10.9995H11V8.4995C11.0003 8.2236 11.224 7.9995 11.5 7.9995ZM4.5635 6.646C4.7587 6.4512 5.0754 6.451 5.2705 6.646C5.4655 6.8411 5.4653 7.1578 5.2705 7.353L4.3955 8.228C3.4632 9.1603 3.4632 10.6727 4.3955 11.605C4.9493 12.1586 5.7074 12.3834 6.4287 12.2788C6.7016 12.2396 6.9553 12.4288 6.9951 12.7017C7.0347 12.9748 6.8453 13.2292 6.5723 13.269C5.5522 13.417 4.4748 13.0981 3.6885 12.312C2.3656 10.9892 2.3656 8.8438 3.6885 7.521L4.5635 6.646ZM9.6465 5.646C9.8417 5.4511 10.1583 5.451 10.3535 5.646C10.5487 5.8412 10.5485 6.1577 10.3535 6.353L6.3535 10.353C6.1583 10.5483 5.8417 10.5483 5.6465 10.353C5.4514 10.1577 5.4513 9.8412 5.6465 9.646L9.6465 5.646ZM7.5215 3.688C8.8443 2.3654 10.9897 2.3652 12.3125 3.688C13.0986 4.4742 13.4174 5.5518 13.2695 6.5718C13.2299 6.8449 12.9753 7.034 12.7021 6.9946C12.4291 6.9548 12.2398 6.7013 12.2793 6.4282C12.3838 5.707 12.159 4.9487 11.6055 4.395C10.6732 3.4628 9.1609 3.463 8.2285 4.395L7.3535 5.27C7.1583 5.4651 6.8417 5.4651 6.6465 5.27C6.4514 5.0748 6.4514 4.7582 6.6465 4.563L7.5215 3.688Z" fill="currentColor"/></svg>';  // WDS mono 16/link-plus
+  let fbPop = '';  // 'link' | ''
   function fbView(id) {
     const f = fbOf(id);
     if (!f) return '<section class="v1-card"><p class="v1-muted">의견을 찾지 못했어요.</p></section>';
@@ -698,33 +694,26 @@
     const linked = (f.tickets || []).map(k => { const r = reqOfKey(k); return `<li><button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}"><b class="v1-tkey">${esc(k)}</b> ${r ? esc(reqHead(r).name) : '(지운 요청)'}</button>${r ? ` <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : ''} <button type="button" class="v1-tbtn" data-fb-unlink="${esc(k)}" aria-label="${esc(k)} 연결 해제">해제</button></li>`; }).join('');
     const options = (cloud.contentRequests || []).filter(r => r.no && !(f.tickets || []).includes(r.no)).map(r => `<option value="${esc(r.no)}">${esc(r.no)} · ${esc(r.status)} · ${esc(reqHead(r).name)}</option>`).join('');
     const linkPop = `<div class="v1-fbcard v1-fbpop" role="dialog" aria-label="수정 요청 티켓 연결" ${fbPop === 'link' ? '' : 'hidden'}><h3>수정 요청 티켓 연결</h3>` +
-      (linked ? `<ul>${linked}</ul>` : '<p class="v1-muted">아직 연결된 티켓이 없어요. 연결해도 의견 상태는 바뀌지 않아요.</p>') +
+      (linked ? `<ul>${linked}</ul>` : '<p class="v1-muted">아직 연결된 티켓이 없어요.</p>') +
       (options ? `<div class="v1-admin-add"><select class="v1-pop-input" data-fb-ticket aria-label="연결할 티켓">${options}</select><button type="button" class="v1-btn" data-fb-link>연결</button></div>`
         : `<p class="v1-muted">연결할 티켓이 없어요. <a class="v1-link" href="/v1/graph">연결도</a>에서 수정 요청을 먼저 만들어 주세요.</p>`) + '</div>';
-    const statusPop = `<div class="v1-menu v1-fbpop v1-stmenu" role="menu" aria-label="상태 변경" ${fbPop === 'status' ? '' : 'hidden'}>` +
-      FB_MOVES.filter(([to]) => to !== f.status).map(([to, act]) => `<button type="button" role="menuitemradio" class="${fbPick === to ? 'on' : ''}" aria-checked="${fbPick === to}" data-fb-pick="${esc(to)}"><span>${esc(act)}</span><span class="v1-starrow" aria-hidden="true">→</span><span class="v1-lst ${FB_ST[to]}">${esc(to)}</span></button>`).join('') +
-      `<hr class="v1-menu-sep"><textarea class="v1-pop-input" data-fb-status-text maxlength="2000" rows="3" placeholder="상태를 바꾸며 남길 댓글 (선택) — 댓글을 남기면 의견을 보낸 분에게 알림이 가요" aria-label="상태 변경 댓글">${esc(statusDraft.get(id) || '')}</textarea>` +
-      `<div class="v1-stfoot"><button type="button" class="v1-btn" data-fb-pop="status">취소</button><button type="button" class="v1-btn primary" data-fb-status-ok ${!fbPick || busy ? 'disabled' : ''}>확인</button></div></div>`;
-    const tools = admin ? `<div class="v1-fbtools">` +
-      `<button type="button" class="v1-fbtool" data-fb-pop="link" aria-expanded="${fbPop === 'link'}" aria-label="수정 요청 티켓 연결 (${(f.tickets || []).length}건)">${ICON_LINK.replace('__LINK__', 'M11.5 7.9995C11.7759 7.9996 11.9997 8.2236 12 8.4995V10.9995H14.5C14.7759 10.9996 14.9997 11.2236 15 11.4995C15 11.7756 14.7761 11.9995 14.5 11.9995H12V14.4995C12 14.7756 11.7761 14.9995 11.5 14.9995C11.2239 14.9995 11 14.7757 11 14.4995V11.9995H8.5C8.2239 11.9995 8 11.7757 8 11.4995C8.0003 11.2236 8.224 10.9995 8.5 10.9995H11V8.4995C11.0003 8.2236 11.224 7.9995 11.5 7.9995ZM4.5635 6.646C4.7587 6.4512 5.0754 6.451 5.2705 6.646C5.4655 6.8411 5.4653 7.1578 5.2705 7.353L4.3955 8.228C3.4632 9.1603 3.4632 10.6727 4.3955 11.605C4.9493 12.1586 5.7074 12.3834 6.4287 12.2788C6.7016 12.2396 6.9553 12.4288 6.9951 12.7017C7.0347 12.9748 6.8453 13.2292 6.5723 13.269C5.5522 13.417 4.4748 13.0981 3.6885 12.312C2.3656 10.9892 2.3656 8.8438 3.6885 7.521L4.5635 6.646ZM9.6465 5.646C9.8417 5.4511 10.1583 5.451 10.3535 5.646C10.5487 5.8412 10.5485 6.1577 10.3535 6.353L6.3535 10.353C6.1583 10.5483 5.8417 10.5483 5.6465 10.353C5.4514 10.1577 5.4513 9.8412 5.6465 9.646L9.6465 5.646ZM7.5215 3.688C8.8443 2.3654 10.9897 2.3652 12.3125 3.688C13.0986 4.4742 13.4174 5.5518 13.2695 6.5718C13.2299 6.8449 12.9753 7.034 12.7021 6.9946C12.4291 6.9548 12.2398 6.7013 12.2793 6.4282C12.3838 5.707 12.159 4.9487 11.6055 4.395C10.6732 3.4628 9.1609 3.463 8.2285 4.395L7.3535 5.27C7.1583 5.4651 6.8417 5.4651 6.6465 5.27C6.4514 5.0748 6.4514 4.7582 6.6465 4.563L7.5215 3.688Z')}${(f.tickets || []).length ? `<span>${(f.tickets || []).length}</span>` : ''}</button>` +
-      `<button type="button" class="v1-fbtool v1-stbtn ${FB_ST[f.status] || 'n'}" data-fb-pop="status" aria-haspopup="menu" aria-expanded="${fbPop === 'status'}">${esc(f.status || '상태 없음')}${ICON_CARET}</button>${linkPop}${statusPop}</div>` : '';
-    const shown = (f.comments || []).filter(c => !c.auto);  // 예전 알파의 '티켓 연결' 자동 기록은 보이지 않는다(티켓 상태와 헷갈림)
-    const comments = shown.map(c => `<li data-comment-id="${esc(c.id)}"><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small>${c.status ? `<div><small class="v1-muted">의견 상태를</small> <span class="v1-lst ${FB_ST[c.status] || 'n'}">${esc(c.status)}</span> <small class="v1-muted">(으)로 바꿈</small></div>` : ''}${c.text ? `<div>${esc(c.text).replace(/\n/g, '<br>')}</div>` : ''}</li>`).join('');
+    const tools = admin ? `<div class="v1-fbtools"><button type="button" class="v1-fbtool" data-fb-pop="link" aria-expanded="${fbPop === 'link'}" aria-label="수정 요청 티켓 연결 (${(f.tickets || []).length}건)">${ICON_LINK}${(f.tickets || []).length ? `<span>${(f.tickets || []).length}</span>` : ''}</button>${linkPop}</div>` : '';
+    const shown = f.comments || [];
+    const comments = shown.map(c => `<li data-comment-id="${esc(c.id)}"><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small><div>${esc(c.text).replace(/\n/g, '<br>')}</div></li>`).join('');
     return `<section class="v1-card v1-logd">${st ? `<button type="button" class="v1-fbtitle" data-step="${esc(st.id)}">${esc(label)}</button>` : `<p class="v1-muted v1-reqpath">${esc(label)}</p>`}<h2>${esc(f.name)}님의 의견</h2>` +
-      `<dl class="v1-snap-meta"><dt>보낸 시간</dt><dd>${at(f.at)}</dd>${f.status && !admin ? `<dt>상태</dt><dd><span class="v1-lst ${FB_ST[f.status] || 'n'}">${esc(f.status)}</span></dd>` : ''}</dl>` +
+      `<dl class="v1-snap-meta"><dt>보낸 시간</dt><dd>${at(f.at)}</dd></dl>` +
       (tools ? `<div class="v1-fbtop">${tools}</div>` : '') +
       `<div class="v1-fbq">${esc(f.text).replace(/\n/g, '<br>')}</div></section>` +
-      `<section class="v1-card v1-logd"><h2>댓글 <small class="v1-muted">${shown.length}개</small></h2>${comments ? `<ul class="v1-fbc">${comments}</ul>` : `<p class="v1-muted">${admin ? '아직 댓글이 없어요.' : '아직 댓글이 없어요. 댓글이 달리거나 상태가 바뀌면 알림으로 알려 드려요.'}</p>`}` +
-      (admin ? `<div class="v1-reqform"><textarea class="v1-pop-input" data-fb-comment maxlength="2000" rows="2" placeholder="댓글 (의견을 보낸 분에게 보이고 알림이 가요)" aria-label="댓글">${esc(feedbackDrafts.get(id) || '')}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-fb-send ${busy ? 'disabled' : ''}>댓글 달기</button></div><p class="v1-muted">상태는 바뀌지 않아요. 상태를 바꾸며 댓글을 남기려면 위의 상태 버튼을 눌러 주세요.</p></div>` : '') + '</section>';
+      `<section class="v1-card v1-logd"><h2>댓글 <small class="v1-muted">${shown.length}개</small></h2>${comments ? `<ul class="v1-fbc">${comments}</ul>` : `<p class="v1-muted">${admin ? '아직 댓글이 없어요.' : '아직 댓글이 없어요. 댓글이 달리면 알림으로 알려 드려요.'}</p>`}` +
+      (admin ? `<div class="v1-reqform"><textarea class="v1-pop-input" data-fb-comment maxlength="2000" rows="2" placeholder="댓글 (의견을 보낸 분에게 보이고 알림이 가요)" aria-label="댓글">${esc(feedbackDrafts.get(id) || '')}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn primary" data-fb-send ${busy ? 'disabled' : ''}>댓글 달기</button></div></div>` : '') + '</section>';
   }
-  const openFb = id => { fbPop = ''; fbPick = ''; view = 'fb:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  const openFb = id => { fbPop = ''; view = 'fb:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   $('app').addEventListener('click', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'opinions') openFb(t.dataset.fb); const o = e.target.closest('[data-open-fb]'); if (o) openFb(o.dataset.openFb); });
   $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'opinions' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFb(t.dataset.fb); } });
   $('app').addEventListener('input', e => { if (!view.startsWith('fb:')) return;
-    if (e.target.matches('[data-fb-comment]')) feedbackDrafts.set(view.slice(3), e.target.value);
-    if (e.target.matches('[data-fb-status-text]')) statusDraft.set(view.slice(3), e.target.value); });
-  document.addEventListener('click', e => { if (fbPop && view.startsWith('fb:') && !e.target.closest('.v1-fbtools')) { fbPop = ''; fbPick = ''; render(); } });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && fbPop && view.startsWith('fb:')) { const k = fbPop; fbPop = ''; fbPick = ''; keepFocus = `[data-fb-pop="${k}"]`; render(); } });
+    if (e.target.matches('[data-fb-comment]')) feedbackDrafts.set(view.slice(3), e.target.value); });
+  document.addEventListener('click', e => { if (fbPop && view.startsWith('fb:') && !e.target.closest('.v1-fbtools')) { fbPop = ''; render(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && fbPop && view.startsWith('fb:')) { const k = fbPop; fbPop = ''; keepFocus = `[data-fb-pop="${k}"]`; render(); } });
   $('app').addEventListener('click', async e => {
     if (!view.startsWith('fb:')) return;
     const id = view.slice(3), app = $('app');
@@ -732,11 +721,7 @@
       feedbackDrafts.set(id, box.value);
       if (await act('feedback.comment', {id, text})) { feedbackDrafts.delete(id); render(); toast('댓글을 달았어요.'); } return; }
     const pop = e.target.closest('[data-fb-pop]');
-    if (pop) { fbPop = fbPop === pop.dataset.fbPop ? '' : pop.dataset.fbPop; fbPick = ''; keepFocus = `[data-fb-pop="${pop.dataset.fbPop}"]`; render(); return; }
-    const pick = e.target.closest('[data-fb-pick]');
-    if (pick) { fbPick = pick.dataset.fbPick; keepFocus = `[data-fb-pick="${fbPick}"]`; render(); return; }  // 고르기만 — 확인을 눌러야 바뀐다
-    if (e.target.closest('[data-fb-status-ok]')) { if (busy || cloud.lmsLevel !== 'admin' || !fbPick) return; const to = fbPick, text = (statusDraft.get(id) || '').trim();
-      if (await act('feedback.status', {id, status: to, ...(text ? {text} : {})})) { statusDraft.delete(id); fbPop = ''; fbPick = ''; render(); toast(`'${to}'(으)로 바꿨어요.${text ? ' 댓글도 함께 남겼어요.' : ''}`); } return; }
+    if (pop) { fbPop = fbPop === pop.dataset.fbPop ? '' : pop.dataset.fbPop; keepFocus = `[data-fb-pop="${pop.dataset.fbPop}"]`; render(); return; }
     if (e.target.closest('[data-fb-link]')) { const sel = app.querySelector('[data-fb-ticket]'); if (sel && await act('feedback.link', {id, ticket: sel.value, on: true})) toast(sel.value + ' 티켓과 이었어요.'); return; }
     const u = e.target.closest('[data-fb-unlink]'); if (u && await act('feedback.link', {id, ticket: u.dataset.fbUnlink, on: false})) toast(u.dataset.fbUnlink + ' 연결을 풀었어요.');
   });

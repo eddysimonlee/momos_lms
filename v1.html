@@ -394,14 +394,12 @@ img{max-width:100%}
 .v1-notices-end{margin:var(--spacing-4) 0 0;padding:var(--spacing-12) 0 var(--spacing-4);text-align:center;color:var(--text-muted);font:var(--body-sm)}
 .v1-notices-empty{flex:1;display:flex;align-items:center;justify-content:center;margin:0;color:var(--text-muted);font:var(--body-md)}
 @media(max-width:719px){ /* wds-allow: 기존 모바일 전환 기준과 동일 */.v1-notices-panel{left:var(--spacing-8);right:var(--spacing-8);width:auto;max-height:calc(100dvh - var(--v1-notice-top,var(--component-gnb-height)) - var(--spacing-8))}.v1-notices-title{padding:var(--spacing-16) var(--spacing-20) var(--spacing-12)}.v1-notices-list{padding:var(--spacing-12)}.v1-nb{padding:var(--spacing-14) var(--spacing-16)}}
-/* 11/06 의견 리스트 · 의견 상세(상태 라벨, 우측 상단 티켓 연결·상태 변경) */
+/* 11/06 의견 리스트 · 의견 상세(우측 상단 티켓 연결) */
 .v1-fbtop{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8);margin-top:var(--spacing-12)}
 .v1-fbtools{position:relative;display:flex;align-items:center;gap:var(--spacing-4);margin-left:auto}
 .v1-fbtool{appearance:none;display:inline-flex;align-items:center;gap:var(--spacing-4);height:var(--component-dropdown-button-type-ghost-size-text-md-height);padding:0 var(--component-dropdown-button-type-ghost-size-text-md-padding-x);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--component-dropdown-button-type-ghost-size-text-md-radius);background:var(--surface-default);color:var(--text-default);font:var(--component-dropdown-button-type-ghost-size-text-md-typography);cursor:pointer}
 .v1-fbtool:hover{background:var(--surface-fill-default)}
 .v1-fbtool svg{width:16px;height:16px;color:var(--icon-default)}
-.v1-fbtool .v1-caret{width:12px;height:12px}
-.v1-fbtool[aria-expanded="true"]{border-color:var(--border-strong)}
 .v1-fbpop{right:0;min-width:280px; /* wds-allow: 티켓 고르기 폭 */padding:var(--spacing-12)}
 .v1-fbcard{position:absolute;top:calc(100% + var(--spacing-4));width:min(360px, calc(100vw - var(--spacing-32))); /* wds-allow: 티켓 연결 카드 폭 */background:var(--surface-default);border-radius:var(--component-popover-base-border-radius);box-shadow:var(--component-popover-base-shadow);z-index:var(--component-layout-z-index-gnb)}
 .v1-fbcard[hidden]{display:none}
@@ -409,26 +407,9 @@ img{max-width:100%}
 .v1-fbpop .v1-admin-add{margin-top:var(--spacing-8)}
 .v1-fbpop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-4)}
 .v1-fbpop li{display:flex;align-items:center;gap:var(--spacing-6)}
-.v1-stbtn.b{background:var(--surface-primary);border-color:var(--surface-primary);color:var(--text-static-light)}
-.v1-stbtn.g{background:var(--surface-success-vivid);border-color:var(--surface-success-vivid);color:var(--text-static-light)}
-.v1-stbtn.r{background:var(--surface-error);border-color:var(--surface-error);color:var(--text-static-light)}
-.v1-stbtn.b svg,.v1-stbtn.g svg,.v1-stbtn.r svg{color:currentColor}
-.v1-stbtn.b:hover,.v1-stbtn.g:hover,.v1-stbtn.r:hover{filter:brightness(.95)}
-.v1-stmenu{min-width:320px; /* wds-allow: 상태 변경 목록 폭 */}
-.v1-menu.v1-stmenu>button{display:grid;grid-template-columns:1fr auto 72px; /* wds-allow: 상태 라벨 칸 */align-items:center;gap:var(--spacing-12);width:100%}
-.v1-menu.v1-stmenu>button .v1-lst{justify-self:start}
-.v1-starrow{color:var(--icon-subtle)}
-.v1-stmenu textarea{width:100%;resize:vertical}
-.v1-menu.v1-stmenu>button.on{background:var(--component-menu-item-state-selected-background)}
-.v1-menu.v1-stmenu>button.on>span:first-child{font:var(--body-md-bold)}
-.v1-stfoot{display:flex;gap:var(--spacing-8);margin-top:var(--spacing-8)}
-.v1-menu .v1-stfoot .v1-btn{flex:1;justify-content:center;height:var(--component-button-size-md-height);border:var(--v1-hairline) solid var(--component-button-type-secondary-state-default-border);background:var(--component-button-type-secondary-state-default-background);color:var(--component-button-type-secondary-state-default-text)}
-.v1-menu .v1-stfoot .v1-btn.primary{background:var(--component-button-type-primary-state-default-background);border-color:transparent;color:var(--component-button-type-primary-state-default-text)}
-.v1-menu .v1-stfoot .v1-btn.primary:disabled{background:var(--component-button-type-primary-state-disabled-background);color:var(--component-button-type-primary-state-disabled-text)}
 
 .v1-fbtitle{appearance:none;border:0;background:none;padding:0;min-height:var(--spacing-32);color:var(--text-muted);font:var(--body-md);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .v1-fbtitle:hover{color:var(--text-default)}
-.v1-fbc .v1-lst{margin-right:var(--spacing-4)}
 .v1-notice-toggle{position:relative}
 .v1-notice-count{position:absolute;right:0;top:0;display:inline-flex;align-items:center;justify-content:center;height:var(--component-badge-type-count-height);min-width:var(--component-badge-type-count-min-width);padding:0 var(--component-badge-type-count-padding-x);border-radius:var(--radius-full);background:var(--status-notification);color:var(--component-badge-type-count-text-color);font:var(--component-badge-type-count-text-typography);pointer-events:none}
 .v1-notice-count[hidden]{display:none}
