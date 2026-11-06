@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-04",
+  "updated": "2026-11-06",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -205,9 +205,9 @@
     {
       "id": "매장-공간-안내",
       "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
-      "file": "매장_공간_안내_GUI_261024.docx",
+      "file": "매장_공간_안내_GUI_261106.docx",
       "revised": "2026-10-24",
-      "sha1": "1c564d0a69eb97aa766958f71c6f3e21113d29ef",
+      "sha1": "9c2c9f5ffc3078b1777ed144f2b979eccbd0a151",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
     },
