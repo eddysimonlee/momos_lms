@@ -19,6 +19,8 @@
   let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
+  const feedbackDrafts = new Map();
+  let noticeBusy = false;
 
   function toast(message) {
     const el = $('v1Toast'); el.textContent = message; el.classList.add('show');
@@ -257,6 +259,55 @@
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Search').hidden) closeSearch(); });
 
+  // --- opinion notifications: opening a list never marks every item read.
+  const opinionNotices = () => (cloud.notifications || []).filter(n => n.kind === 'feedback.reply' || n.kind === 'feedback.resolved');
+  function drawNotices() {
+    const items = opinionNotices(), unread = items.filter(n => !n.read).length;
+    $('v1NoticeCount').hidden = !unread; $('v1NoticeCount').textContent = unread;
+    $('v1NoticeToggle').setAttribute('aria-label', `알림 · 읽지 않은 알림 ${unread}개`);
+    if ($('v1Notices').hidden) return;
+    $('v1NoticeList').innerHTML = items.length ? `<ul class="v1-notice-list">${items.map(n => `<li class="v1-notice-item${n.read ? '' : ' unread'}"><button type="button" class="v1-notice-open" data-open-notice="${esc(n.id)}" ${noticeBusy ? 'disabled' : ''}><small>${n.read ? '읽음' : '읽지 않음'} · ${esc(kstAt(n.date))}</small><strong>${esc(n.title)}</strong><span>${esc(n.detail)}</span></button>${n.kind === 'feedback.resolved' && steps().some(s => s.id === n.step) ? `<button type="button" class="v1-btn" data-notice-education="${esc(n.id)}" ${noticeBusy ? 'disabled' : ''}>수정된 교육 보기</button>` : ''}</li>`).join('')}</ul>` : '<p class="v1-muted">아직 도착한 의견 알림이 없어요.</p>';
+  }
+  function closeNotices(focus = true) {
+    $('v1Notices').hidden = true; $('v1NoticeToggle').setAttribute('aria-expanded', 'false'); document.body.style.overflow = '';
+    if (focus) $('v1NoticeToggle').focus({preventScroll: true});
+  }
+  async function openNotice(id, education = false) {
+    if (noticeBusy || busy) return;
+    const notice = opinionNotices().find(n => n.id === id); if (!notice) return;
+    noticeBusy = true; drawNotices();
+    try {
+      // Switch back to the signed-in author's context, even when viewing another learner.
+      const fresh = notice.read ? await api('GET') : await api('POST', {action: 'notification.read', target: cloud.user.id,
+        revision: cloud.learner.revision, rootRevision: cloud.rootRevision, requestId: uid(), data: {ids: [id]}});
+      cloud = fresh; closeNotices(false);
+      if (education && steps().some(s => s.id === notice.step)) { returnView = 'fb:' + notice.feedback; view = 'step:' + notice.step; stageSel = unitOf(notice.step).stage.order; render(); }
+      else { openFb(notice.feedback); if (notice.comment) $('app').querySelector(`[data-comment-id="${CSS.escape(notice.comment)}"]`)?.scrollIntoView({block: 'center', behavior: 'instant'}); }
+    } catch (e) { toast(e.message || '알림을 열지 못했어요. 다시 눌러 주세요.'); }
+    finally { noticeBusy = false; drawNotices(); }
+  }
+  $('v1NoticeToggle').onclick = () => {
+    if (!$('v1Notices').hidden) return closeNotices();
+    closeSearch(false); closeNav(); closeMenu(); closeMe(); $('v1Sheet').hidden = true;
+    $('v1Notices').hidden = false; $('v1NoticeToggle').setAttribute('aria-expanded', 'true'); document.body.style.overflow = 'hidden';
+    $('v1Notices').style.setProperty('--v1-notice-anchor', document.querySelector('.v1-top').getBoundingClientRect().bottom + 'px');
+    drawNotices(); $('v1Notices').querySelector('button[data-notices-close]').focus();
+  };
+  $('v1Notices').addEventListener('click', e => {
+    if (e.target.closest('[data-notices-close]')) return closeNotices();
+    const button = e.target.closest('[data-open-notice],[data-notice-education]');
+    if (button) openNotice(button.dataset.openNotice || button.dataset.noticeEducation, button.hasAttribute('data-notice-education'));
+  });
+  document.addEventListener('keydown', e => {
+    if ($('v1Notices').hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeNotices(); }
+    if (e.key === 'Tab') {
+      const buttons = [...$('v1Notices').querySelectorAll('button:not([disabled])')], first = buttons[0], last = buttons[buttons.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  });
+
   // --- rendering
   function render() {
     if (!cloud || !content) return;
@@ -267,7 +318,7 @@
     // 꺽쇠: 항목 → 홈, 역할 → 지점, (바꾸는 중인) 지점 → 홈. 처음 지점 화면에서는 숨긴다.
     // 꺽쇠: 항목 → 들어온 화면(진행 현황·교육생·교육 단계), 교육생 진행 → 교육생 목록, 역할 → 지점, (바꾸는 중인) 지점 → 홈.
     // 꺽쇠가 없는 화면(홈·교육 단계)에는 왼쪽 메뉴(☰)
-    const backTo = step ? returnView : view.startsWith('log:') || view.startsWith('req:') || view.startsWith('fb:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
+    const backTo = step ? returnView : view.startsWith('fb:') ? (isStaff() ? 'admin' : 'home') : view.startsWith('log:') || view.startsWith('req:') ? 'admin' : (view === 'person' || view === 'all') && cloud.target !== cloud.user.id ? 'home' : view === 'branch' && profile() ? 'home' : null;
     $('v1Back').hidden = !backTo;
     $('v1Back').dataset.to = backTo || '';
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
@@ -283,6 +334,8 @@
     }
     $('v1Me').hidden = branch && !profile();
     $('v1Find').hidden = branch || !profile();
+    $('v1NoticeToggle').hidden = branch || !profile();
+    drawNotices();
     $('v1More').hidden = !step || planned(step);  // ⋮ = 항목 화면의 PDF 만(지점·역할 변경은 왼쪽 메뉴)
     closeMenu();
     // 같은 화면을 다시 그릴 때(체크·저장 등)는 보던 위치·펼친 원본·포커스를 그대로 둔다. 다른 항목으로 갈 때만 맨 위로.
@@ -604,31 +657,39 @@
   }
   // 11/03 보낸 의견 상세(fb:<id>): 의견 · 댓글 · 연결된 수정 요청 티켓
   const fbsOf = r => (cloud.feedback || []).filter(f => (f.tickets || []).includes(r.no));
+  const fbOf = id => (cloud.feedback || []).find(x => x.id === id) || (cloud.myFeedback || []).find(x => x.id === id);
   function fbView(id) {
-    const f = (cloud.feedback || []).find(x => x.id === id);
+    const f = fbOf(id);
     if (!f) return '<section class="v1-card"><p class="v1-muted">의견을 찾지 못했어요.</p></section>';
     const st = steps().find(x => x.id === f.step), at = x => esc(kstAt(x));
     const linked = (f.tickets || []).map(k => { const r = reqOfKey(k); return `<li><button type="button" class="v1-link v1-tlink" data-open-req="${esc(k)}"><b class="v1-tkey">${esc(k)}</b> ${r ? esc(reqHead(r).name) : '(지운 요청)'}</button>${r ? ` <span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>` : ''}${cloud.lmsLevel === 'admin' ? ` <button type="button" class="v1-tbtn" data-fb-unlink="${esc(k)}" aria-label="${esc(k)} 연결 해제">연결 해제</button>` : ''}</li>`; }).join('');
     const options = (cloud.contentRequests || []).filter(r => r.no && !(f.tickets || []).includes(r.no)).map(r => `<option value="${esc(r.no)}">${esc(r.no)} · ${esc(r.status)} · ${esc(reqHead(r).name)}</option>`).join('');
-    const comments = (f.comments || []).map(c => `<li><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small><div>${esc(c.text).replace(/\n/g, '<br>')}</div></li>`).join('');
+    const comments = (f.comments || []).map(c => `<li data-comment-id="${esc(c.id)}"><b>${esc(c.name)}</b> <small class="v1-muted">${at(c.at)}</small><div>${esc(c.text).replace(/\n/g, '<br>')}</div></li>`).join('');
     return `<section class="v1-card v1-logd"><p class="v1-muted v1-reqpath">${esc(st ? `${stepIndex(st.id) + 1}. ${st.title}` : f.stepTitle || '')}</p><h2>${esc(f.name)}님의 의견</h2>` +
       `<dl class="v1-snap-meta"><dt>보낸 시간</dt><dd>${at(f.at)}</dd></dl>` +
-      `<div class="v1-fbq">${esc(f.text).replace(/\n/g, '<br>')}</div></section>` +
-      `<section class="v1-card v1-logd"><h2>수정 요청 티켓 <small class="v1-muted">${(f.tickets || []).length}건</small></h2><p class="v1-muted">이 의견을 개선에 반영하는 작업을 티켓으로 이어 두면, 티켓 화면에서도 이 의견이 보여요.</p>` +
+      `<div class="v1-fbq">${esc(f.text).replace(/\n/g, '<br>')}</div>` +
+      (f.status === 'done' ? `<p><span class="v1-pill done">반영 완료됨</span> <small class="v1-muted">${at(f.resolved && f.resolved.at)}</small></p>${st ? `<button type="button" class="v1-btn" data-step="${esc(st.id)}">수정된 교육 보기</button>` : ''}` : '') + '</section>' +
+      (cloud.lmsLevel === 'admin' ? `<section class="v1-card v1-logd"><h2>수정 요청 티켓 <small class="v1-muted">${(f.tickets || []).length}건</small></h2><p class="v1-muted">이 의견을 개선에 반영하는 작업을 티켓으로 이어 두면, 티켓 화면에서도 이 의견이 보여요.</p>` +
       (linked ? `<ul class="v1-srm v1-tlogs">${linked}</ul>` : '') +
       (cloud.lmsLevel === 'admin' ? (options ? `<div class="v1-admin-add"><select class="v1-pop-input" data-fb-ticket aria-label="연결할 티켓">${options}</select><button type="button" class="v1-btn" data-fb-link>티켓 연결</button></div>`
-        : `<p class="v1-muted">연결할 티켓이 없어요. <a class="v1-link" href="/v1/graph">연결도</a>에서 수정 요청을 먼저 만들어 주세요.</p>`) : '') + '</section>' +
+        : `<p class="v1-muted">연결할 티켓이 없어요. <a class="v1-link" href="/v1/graph">연결도</a>에서 수정 요청을 먼저 만들어 주세요.</p>`) : '') + '</section>' : '') +
       `<section class="v1-card v1-logd"><h2>댓글 <small class="v1-muted">${(f.comments || []).length}개</small></h2>${comments ? `<ul class="v1-fbc">${comments}</ul>` : '<p class="v1-muted">아직 댓글이 없어요.</p>'}` +
-      (cloud.lmsLevel === 'admin' ? `<div class="v1-reqform"><textarea class="v1-pop-input" data-fb-comment maxlength="2000" rows="2" placeholder="댓글 (예: REQ-3 으로 반영 중이에요)" aria-label="댓글"></textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn primary" data-fb-send>댓글 달기</button></div></div>` : '') + '</section>';
+      (cloud.lmsLevel === 'admin' ? `<div class="v1-reqform"><textarea class="v1-pop-input" data-fb-comment maxlength="2000" rows="2" placeholder="수정 내용이나 답변을 적어 주세요." aria-label="댓글">${esc(feedbackDrafts.get(id) || '')}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn primary" data-fb-send ${busy ? 'disabled' : ''}>댓글 달기</button><button type="button" class="v1-btn" data-fb-resolve ${busy || f.status === 'done' ? 'disabled' : ''}>${f.status === 'done' ? '반영 완료됨' : '반영 완료'}</button></div><p class="v1-muted">교육 내용의 수정·배포를 확인한 뒤 반영 완료를 눌러 주세요.</p></div>` : '') + '</section>';
   }
   const openFb = id => { view = 'fb:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   $('app').addEventListener('click', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'admin') openFb(t.dataset.fb); const o = e.target.closest('[data-open-fb]'); if (o) openFb(o.dataset.openFb); });
   $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-fb]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openFb(t.dataset.fb); } });
+  $('app').addEventListener('input', e => { if (view.startsWith('fb:') && e.target.matches('[data-fb-comment]')) feedbackDrafts.set(view.slice(3), e.target.value); });
   $('app').addEventListener('click', async e => {
     if (!view.startsWith('fb:')) return;
     const id = view.slice(3), app = $('app');
     if (e.target.closest('[data-fb-send]')) { const box = app.querySelector('[data-fb-comment]'), text = (box && box.value || '').trim(); if (!text) return toast('댓글을 적어 주세요.');
-      if (await act('feedback.comment', {id, text})) toast('댓글을 달았어요.'); return; }
+      feedbackDrafts.set(id, box.value);
+      if (await act('feedback.comment', {id, text})) { feedbackDrafts.delete(id); render(); toast('댓글을 달았어요.'); } return; }
+    if (e.target.closest('[data-fb-resolve]')) {
+      if (busy || cloud.lmsLevel !== 'admin' || fbOf(id)?.status === 'done') return;
+      if (await act('feedback.resolve', {id})) toast('반영 완료로 처리했어요.'); return;
+    }
     if (e.target.closest('[data-fb-link]')) { const sel = app.querySelector('[data-fb-ticket]'); if (sel && await act('feedback.link', {id, ticket: sel.value, on: true})) toast(sel.value + ' 티켓과 이었어요.'); return; }
     const u = e.target.closest('[data-fb-unlink]'); if (u && await act('feedback.link', {id, ticket: u.dataset.fbUnlink, on: false})) toast(u.dataset.fbUnlink + ' 연결을 풀었어요.');
   });
@@ -1072,7 +1133,7 @@
     try {
       const fresh = await api('GET', null, cloud.target);
       if (busy || fresh.target !== cloud.target) return;
-      if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision) { cloud = fresh; render(); }
+      if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision || JSON.stringify(fresh.notifications) !== JSON.stringify(cloud.notifications)) { cloud = fresh; render(); }
     } catch {}
   }, 5000);
 

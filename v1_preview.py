@@ -124,6 +124,17 @@ MOCK = r'''
   let current = 'u-learner'; try { current = sessionStorage.getItem(KEY + '-who') || current; } catch (e) {}
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
+  function feedbackNotices(u) {
+    const reads = (state.noticeReads || {})[u.id] || [], out = [];
+    const add = (id, f, title, at, kind, comment) => out.push({id, title, detail: (STEPS[f.step] || {}).title || '교육 항목', date: at,
+      kind, feedback: f.id, step: f.step, ...(comment ? {comment} : {}), read: reads.includes(id)});
+    for (const f of state.feedback || []) {
+      if (f.user !== u.id) continue;
+      for (const c of f.comments || []) if (c.notifyAuthor) add('opinion-reply:' + f.id + ':' + c.id, f, '보내주신 의견에 답변이 등록되었습니다.', c.at, 'feedback.reply', c.id);
+      if (f.status === 'done' && f.resolved) add('opinion-resolved:' + f.id, f, '보내주신 의견이 반영되었습니다.', f.resolved.at, 'feedback.resolved');
+    }
+    return out.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 200);
+  }
   const levels = () => { const m = {}; for (const x of state.lmsAdmins || []) if (x && x.email && x.level === 'admin') m[x.email] = 'admin'; for (const e of SEED) m[e] = 'admin'; return m; };
   const levelOf = u => levels()[u.email] || null;
   const isLms = u => Boolean(levelOf(u));  // onboarding.lms_staff: 지정된 이메일(admin)만 LMS관리자
@@ -151,10 +162,18 @@ MOCK = r'''
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).map(([e, l]) => ({email: e, name: (ACCOUNTS.find(x => x.email === e) || DIRECTORY.find(x => x.email === e) || {}).name || '', level: l, seed: SEED.includes(e)})).sort((a, b) => (a.name || '~').localeCompare(b.name || '~', 'ko') || a.email.localeCompare(b.email)), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
+      myFeedback: (state.feedback || []).filter(f => f.user === u.id).slice().reverse().map(f => Object.fromEntries(['id', 'at', 'user', 'name', 'step', 'text', 'comments', 'status', 'resolved'].filter(k => k in f).map(k => [k, JSON.parse(JSON.stringify(f[k]))]))),
+      notifications: feedbackNotices(u),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
   function update(u, v) {
     const target = v.target || u.id, p = roles(u, target), d = v.data || {};
+    if (v.action === 'notification.read') {
+      const visible = new Set(feedbackNotices(u).map(n => n.id));
+      if (!Array.isArray(d.ids) || d.ids.length > 200 || d.ids.some(id => !visible.has(id))) throw {status: 403, error: '본인에게 보이는 알림만 읽음 처리할 수 있습니다.'};
+      const reads = state.noticeReads = state.noticeReads || {};
+      reads[u.id] = [...new Set((reads[u.id] || []).concat(d.ids))]; save(); return context(u, target);
+    }
     if (v.action === 'profile.set') {
       if (target !== u.id) throw {status: 403, error: '본인의 지점·역할만 바꿀 수 있습니다.'};
       if (d.role === 'staff' && !isLms(u)) throw {status: 403, error: '관리자는 LMS관리자로 지정된 구성원만 선택할 수 있습니다.'};
@@ -206,11 +225,12 @@ MOCK = r'''
       }
       state.rootRevision++; save(); return context(u, target);
     }
-    if (v.action === 'feedback.comment' || v.action === 'feedback.link') {  // 11/03 보낸 의견 댓글·티켓 연결(admin)
+    if (['feedback.comment', 'feedback.link', 'feedback.resolve'].includes(v.action)) {  // 보낸 의견 처리(admin)
       if (levelOf(u) !== 'admin') throw {status: 403, error: '보낸 의견 관리는 LMS관리자 admin 만 할 수 있어요.'};
       const f = (state.feedback || []).find(x => x.id === d.id); if (!f) throw {status: 400, error: '의견을 찾지 못했어요.'};
       if (v.action === 'feedback.comment') { const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '댓글을 적어 주세요.'};
-        f.comments = (f.comments || []).concat([{id: String(Date.now()), at: new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19), user: u.id, name: u.name, text}]); }
+        f.comments = (f.comments || []).concat([{id: crypto.randomUUID(), at: new Date().toISOString(), user: u.id, name: u.name, text, notifyAuthor: true}]); }
+      else if (v.action === 'feedback.resolve') { if (f.status !== 'done') { f.status = 'done'; f.resolved = {at: new Date().toISOString(), user: u.id, name: u.name}; } }
       else { if (d.on && !(state.contentRequests || []).some(x => x.no === d.ticket)) throw {status: 400, error: d.ticket + ' 티켓을 찾지 못했어요.'};
         f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []); }
       state.rootRevision++; save(); return context(u, target);

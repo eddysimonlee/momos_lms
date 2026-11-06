@@ -373,6 +373,17 @@ img{max-width:100%}
 .v1-sheet p{margin:var(--spacing-4) 0 0}
 .v1-fwrap{display:flex;flex-wrap:wrap;gap:var(--spacing-8)}
 .v1-sheet .v1-actions{margin-top:var(--spacing-20)}
+.v1-notice-toggle{position:relative}
+.v1-notice-count{position:absolute;right:0;top:0;display:inline-flex;align-items:center;justify-content:center;height:var(--component-badge-type-count-height);min-width:var(--component-badge-type-count-min-width);padding:0 var(--component-badge-type-count-padding-x);border-radius:var(--radius-full);background:var(--status-notification);color:var(--component-badge-type-count-text-color);font:var(--component-badge-type-count-text-typography);pointer-events:none}
+.v1-notice-count[hidden]{display:none}
+.v1-notice-list{list-style:none;display:flex;flex-direction:column;gap:var(--spacing-8);margin:var(--spacing-12) 0 0;padding:0}
+.v1-notice-item{padding:var(--spacing-8);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-lg)}
+.v1-notice-item.unread{background:var(--surface-info-subtle)}
+.v1-notice-open{appearance:none;display:flex;flex-direction:column;gap:var(--spacing-4);width:100%;padding:var(--spacing-8);border:0;background:transparent;color:var(--text-default);font:var(--body-md);text-align:left;cursor:pointer;overflow-wrap:anywhere}
+.v1-notice-open small{color:var(--text-muted);font:var(--label-xs)}
+.v1-notice-open strong{font:var(--body-md-bold)}
+.v1-notice-item>.v1-btn{width:100%;margin-top:var(--spacing-8)}
+@media(min-width:720px){ /* wds-allow: 기존 PC 전환 기준과 동일 */.v1-notices .v1-sheet-panel{left:auto;right:var(--component-layout-content-padding-x);top:calc(var(--v1-notice-anchor,var(--component-gnb-height)) + var(--spacing-8));bottom:auto;width:var(--component-modal-dialog-size-sm);border-radius:var(--radius-xl)}}
 .v1-unote{color:var(--text-muted);font:var(--body-sm);margin:var(--spacing-4) 0 0}
 .v1-item.planned{opacity:.62}.v1-item.planned .v1-num{background:transparent;border:var(--v1-hairline) dashed var(--border-default)}
 .v1-pill.planned{background:var(--component-tag-color-neutral-surface);color:var(--component-tag-color-neutral-text-color)}
@@ -498,6 +509,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
     <button id="v1Find" class="v1-icon-btn" type="button" hidden aria-label="교육 검색" aria-haspopup="dialog" aria-controls="v1Search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.6 12.6l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><!-- wds-allow: 돋보기 아이콘 자산 반입 전 임시 인라인 -->
+    <button id="v1NoticeToggle" class="v1-icon-btn v1-notice-toggle" type="button" hidden aria-label="알림" aria-haspopup="dialog" aria-expanded="false" aria-controls="v1Notices"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="v1NoticeCount" class="v1-notice-count" hidden></span></button><!-- wds-allow: 기존 onboarding.js의 bell 아이콘 재사용, WDS 자산 반입 전 -->
     <div id="v1Me" class="v1-me"><button id="v1Who" type="button" class="v1-avatar v1-avatar-top" aria-haspopup="menu" aria-expanded="false" aria-controls="v1MeMenu"></button>
       <div id="v1MeMenu" class="v1-menu v1-me-menu" role="menu" hidden><div class="v1-me-who"><b id="v1MeName"></b><small id="v1MeMail"></small></div><button type="button" role="menuitem" id="v1Logout">로그아웃</button></div></div>
     <div id="v1More" class="v1-more" hidden>
@@ -514,6 +526,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <div id="v1SearchList" class="v1-search-list" aria-live="polite"></div>
   </div>
   <div id="v1Sheet" class="v1-sheet" hidden><div class="v1-scrim" data-sheet-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1SheetTitle"></div></div>
+  <div id="v1Notices" class="v1-sheet v1-notices" hidden><div class="v1-scrim" data-notices-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1NoticesTitle"><div class="v1-prow"><h2 id="v1NoticesTitle">알림</h2><button type="button" class="v1-tbtn" data-notices-close>닫기</button></div><div id="v1NoticeList"></div></div></div>
 </div>
 <div id="v1Print" class="v1-print" aria-hidden="true"></div>
 <dialog id="accountDialog"></dialog>

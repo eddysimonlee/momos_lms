@@ -28,8 +28,7 @@ jobs:
           node --check onboarding.js
           node --check workspace_items.js
       - name: Python tests
-        run: python -B -m unittest onboarding_test workspace_items_test manual_wiki_test auth_http_test
+        run: python -B -m unittest discover -p '*_test.py'
       - name: Browser behaviour tests
         run: |
-          node onboarding_failure_test.cjs
-          node workspace_items_test.cjs
+          node --test *_test.cjs
