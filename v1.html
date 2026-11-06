@@ -95,6 +95,10 @@ img{max-width:100%}
 .v1-memo:disabled{background:var(--surface-subtle);color:var(--text-default-disabled)}
 /* actions = button lg, primary / secondary */
 .v1-actions{position:sticky;bottom:0;background:var(--surface-default);padding:var(--spacing-12) 0 calc(var(--spacing-8) + env(safe-area-inset-bottom));display:flex;gap:var(--spacing-8)}
+.v1-step-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.v1-step-actions>[data-close],.v1-step-actions>[data-reopen]{grid-column:1 / -1}
+.v1-step-prev{grid-column:1}
+.v1-step-next{grid-column:2}
 .v1-btn{appearance:none;flex:1;height:var(--component-button-size-lg-height);padding:0 var(--component-button-size-lg-padding-x);border-radius:var(--component-button-size-lg-radius);border:var(--v1-hairline) solid var(--component-button-type-secondary-state-default-border);background:var(--component-button-type-secondary-state-default-background);color:var(--component-button-type-secondary-state-default-text);font:var(--component-button-type-primary-typography);cursor:pointer}
 .v1-btn:hover{background:var(--component-button-type-secondary-state-hover-background)}
 .v1-btn:disabled{border-color:var(--component-button-type-secondary-state-disabled-border);color:var(--component-button-type-secondary-state-disabled-text);cursor:default}
