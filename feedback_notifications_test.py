@@ -98,6 +98,15 @@ class FeedbackNotificationTests(unittest.TestCase):
         self.assertEqual(self.notices(), [])
         self.assertEqual(self.service.get(self.admin)['feedback'][0]['tickets'], [key])
 
+    def test_legacy_auto_link_records_are_hidden_from_the_author(self):
+        fid = self.send()
+        with self.store.connect() as db:
+            root = self.service.root(db)
+            root['feedback'][-1].update(status='진행중', comments=[dict(id='a1', at='2026-11-06', user=self.admin['id'], name='관리자', text='', status='진행중', auto='REQ-1 수정 요청과 연결')])
+            projects.Rooms.write(db, ob.ROOT, root)
+        self.assertEqual((self.opinion()['status'], self.opinion()['comments']), ('진행중', []))
+        self.assertEqual(self.notices(), [])
+
     def test_legacy_resolve_maps_to_reflected(self):
         fid = self.send()
         self.act(self.admin, 'feedback.resolve', dict(id=fid))
