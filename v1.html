@@ -419,6 +419,12 @@ img{max-width:100%}
 .v1-menu.v1-stmenu>button .v1-lst{justify-self:start}
 .v1-starrow{color:var(--icon-subtle)}
 .v1-stmenu textarea{width:100%;resize:vertical}
+.v1-menu.v1-stmenu>button.on{background:var(--component-menu-item-state-selected-background)}
+.v1-menu.v1-stmenu>button.on>span:first-child{font:var(--body-md-bold)}
+.v1-stfoot{display:flex;gap:var(--spacing-8);margin-top:var(--spacing-8)}
+.v1-menu .v1-stfoot .v1-btn{flex:1;justify-content:center;height:var(--component-button-size-md-height);border:var(--v1-hairline) solid var(--component-button-type-secondary-state-default-border);background:var(--component-button-type-secondary-state-default-background);color:var(--component-button-type-secondary-state-default-text)}
+.v1-menu .v1-stfoot .v1-btn.primary{background:var(--component-button-type-primary-state-default-background);border-color:transparent;color:var(--component-button-type-primary-state-default-text)}
+.v1-menu .v1-stfoot .v1-btn.primary:disabled{background:var(--component-button-type-primary-state-disabled-background);color:var(--component-button-type-primary-state-disabled-text)}
 
 .v1-fbtitle{appearance:none;border:0;background:none;padding:0;min-height:var(--spacing-32);color:var(--text-muted);font:var(--body-md);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .v1-fbtitle:hover{color:var(--text-default)}
