@@ -15,7 +15,7 @@ const between = (a, b) => {
 const FB = {FB_ST: {'진행중': 'b', '반영됨': 'g', '반려': 'r', '닫힘': 'n'}, REQ_ST: {'진행중': 'b', '반영됨': 'g', '반려': 'r'}};
 function feedbackHarness(admin = true, status = '', pop = '') {
   const f = {id: 'f1', name: '작성자', step: 'space-walk', at: '2026-11-06', text: '<script>의견</script>', ...(status ? {status} : {}),
-    comments: [{id: 'c1', name: '관리자', at: '2026-11-06', text: '<b>답변</b>'}, {id: 'c2', name: '관리자', at: '2026-11-06', text: '', status: '진행중', auto: 'REQ-1 수정 요청과 연결'}]};
+    comments: [{id: 'c1', name: '관리자', at: '2026-11-06', text: '<b>답변</b>'}, {id: 'c2', name: '관리자', at: '2026-11-06', text: '확인 중', status: '진행중'}, {id: 'c3', name: '관리자', at: '2026-11-06', text: '', status: '진행중', auto: 'REQ-1 수정 요청과 연결'}]};
   const context = vm.createContext({...FB,
     cloud: {lmsLevel: admin ? 'admin' : null, ...(admin ? {feedback: [f], contentRequests: [{no: 'REQ-1', status: '진행중', target: {title: 'A'}}]} : {myFeedback: [f]})},
     feedbackDrafts: new Map([['f1', '<답변 초안>']]), busy: false,
@@ -31,6 +31,8 @@ test('authors see status, every comment and the education title link, but no adm
   assert.match(html, /&lt;b&gt;답변/);
   assert.match(html, /data-comment-id="c1"/);
   assert.match(html, /data-comment-id="c2"/);
+  assert.match(html, /의견 상태를<\/small> <span class="v1-lst b">진행중<\/span> <small class="v1-muted">\(으\)로 바꿈/);
+  assert.doesNotMatch(html, /data-comment-id="c3"|수정 요청과 연결/);  // 예전 티켓 연결 자동 기록은 숨김
   assert.match(html, /<dt>상태<\/dt><dd><span class="v1-lst g">반영됨/);
   assert.match(html, /class="v1-fbtitle" data-step="space-walk">3\. 교육 항목/);
   assert.doesNotMatch(html, /수정된 교육 보기|data-fb-send|data-fb-pop|data-fb-status|수정 요청 티켓|textarea/);

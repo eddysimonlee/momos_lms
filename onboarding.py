@@ -819,7 +819,7 @@ class Service:
         # 11/06: 작성자에게는 상태와 댓글(일반 댓글 · 상태를 바꾸며 쓴 댓글)이 보인다. 연결한 티켓은 관리자만 본다
         fields=('id','at','user','name','step','text')
         return [dict(copy.deepcopy({k:f[k] for k in fields if k in f}), status=fb_status(f),
-                     comments=[copy.deepcopy(c) for c in f.get('comments') or []],
+                     comments=[copy.deepcopy(c) for c in f.get('comments') or [] if not c.get('auto')],  # 예전 '티켓 연결' 자동 기록은 빼고
                      stepTitle=STEPS.get(f.get('step'),{}).get('title',''))
                 for f in reversed(root.get('feedback') or []) if f.get('user')==user['id']]
 
