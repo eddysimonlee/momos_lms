@@ -168,6 +168,14 @@
   const matches = (s, f = filt) => !f || (s[f.k] || []).includes(f.v);
   // '다음 항목 ›': 필터를 걸었으면 그 필터 안의 다음 항목으로(번호는 전체 번호 그대로)
   const nextOf = s => { const f = returnView === 'all' ? validFilter(filt) : null; return steps().slice(stepIndex(s.id) + 1).find(x => matches(x, f)); };
+  const prevOf = s => { const f = returnView === 'all' ? validFilter(filt) : null; return steps().slice(0, stepIndex(s.id)).reverse().find(x => matches(x, f)); };
+  const stepActions = (s, action = '') => {
+    const prev = prevOf(s), next = nextOf(s);
+    if (!prev && !next && !action) return '';
+    return `<div class="v1-actions v1-step-actions">${action}` +
+      (prev ? `<button type="button" class="v1-btn v1-step-prev" data-step="${esc(prev.id)}">‹ 이전 항목</button>` : '') +
+      (next ? `<button type="button" class="v1-btn v1-step-next" data-step="${esc(next.id)}">다음 항목 ›</button>` : '') + '</div>';
+  };
   function setFilter(f) {
     filt = f;
     homeScroll = null; lastStep = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
@@ -757,19 +765,18 @@
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Nav').hidden) { closeNav(); $('v1Ham').focus(); } });
 
   function plannedView(s) {
-    const i = stepIndex(s.id), next = nextOf(s), u = unitOf(s.id);
+    const u = unitOf(s.id);
     return `<section class="v1-card"><span class="v1-pill planned">${STATUS.planned}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2><p class="v1-muted">이 세션의 교육 목적·교육 내용·수행 확인은 원본 문서를 바탕으로 준비 중이에요.</p>` +
       (s.topics && s.topics.length ? `<h2 style="margin-top:var(--spacing-16)">다룰 내용</h2><ol class="v1-kp">${s.topics.map(t => `<li><div>${esc(t)}</div></li>`).join('')}</ol>` : '') +
       (s.plannedSources ? `<h2 style="margin-top:var(--spacing-16)">근거 문서</h2><p class="v1-muted">${esc(s.plannedSources)}</p>` : '') +
       (s.sessionNote ? `<div class="v1-note">${esc(s.sessionNote)}</div>` : '') + '</section>' +
-      (next ? `<div class="v1-actions"><button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button></div>` : '');
+      stepActions(s);
   }
 
   function stepView(s) {
     if (planned(s)) return plannedView(s);
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
-    const i = stepIndex(s.id), next = nextOf(s);
     // 10/30: 체크·완료는 관리자만 — 교육생 기록에 들어가서 한다. 교육생은 관리자가 체크한 상태를 보고, 의견만 보낸다
     const editMark = mayConfirm() && cloud.target !== cloud.user.id && (st === 'ready' || st === 'practice');  // 11/02: 모든 직원이 다른 사람 교육을 체크(내 교육은 보기만)
     const srcLabel = key => { const sec = content.sections[key], doc = sec && content.documents[sec.doc]; return sec ? `${doc ? doc.title : ''} ${sec.no} ${sec.title}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.trim() : key; };
@@ -816,7 +823,6 @@
       const ready = items.length && items.every((_, k) => r.teacher[k]);
       actions = `<button class="v1-btn primary" data-close ${ready && !busy ? '' : 'disabled'}>완료</button>`;
     } else if (trainer && st === 'done') actions = `<button class="v1-btn" data-reopen ${busy ? 'disabled' : ''}>완료 취소</button>`;
-    if (next) actions += `<button class="v1-btn" data-step="${esc(next.id)}">다음 항목 ›</button>`;
     // 의견 보내기: 멘티는 본인 교육 화면에서, 관리자는 멘티의 교육 화면이나 교육 과정에서. 보내면 LMS관리자 화면의 표로 모인다
     const memo = own || trainer ? `<section class="v1-card"><h2>의견 보내기</h2>` +
       `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="${trainer ? '교육 내용에서 고칠 점이나 의견을 입력해주세요.' : '궁금하거나 이해가 어려운 점을 입력해주세요.'}"></textarea>` +
@@ -831,7 +837,7 @@
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
       memo +
-      (actions ? `<div class="v1-actions">${actions}</div>` : '');
+      stepActions(s, actions);
   }
   function bind(step) {
     const app = $('app');
