@@ -373,17 +373,59 @@ img{max-width:100%}
 .v1-sheet p{margin:var(--spacing-4) 0 0}
 .v1-fwrap{display:flex;flex-wrap:wrap;gap:var(--spacing-8)}
 .v1-sheet .v1-actions{margin-top:var(--spacing-20)}
+/* 11/06 알림 레이어(WORKS 서비스 알림 형식): 종 아래로 펼쳐지는 패널 · 최근 30일 · 최신이 위 · 넘치면 스크롤 */
+.v1-notices{position:fixed;inset:0;z-index:calc(var(--component-layout-z-index-gnb) + 1)}
+.v1-notices[hidden]{display:none}
+.v1-notices-scrim{position:absolute;inset:0}
+.v1-notices-panel{position:absolute;top:var(--v1-notice-top,var(--component-gnb-height));right:var(--v1-notice-right,var(--spacing-16));width:400px; /* wds-allow: 알림 레이어 폭(WORKS 서비스 알림과 같은 폭) */display:flex;flex-direction:column;max-height:min(600px, calc(100dvh - var(--v1-notice-top,var(--component-gnb-height)) - var(--spacing-16))); /* wds-allow: 알림 블록 5개가 한 번에 보이는 높이 */background:var(--surface-subtle);border:var(--v1-hairline) solid var(--border-subtle);border-radius:var(--radius-xl);box-shadow:var(--shadow-strong);overflow:hidden}
+.v1-notices-title{margin:0;padding:var(--spacing-20) var(--spacing-24) var(--spacing-16);font:var(--title-md-bold);color:var(--text-default);background:var(--surface-subtle);border-bottom:var(--v1-hairline) solid var(--border-subtle)}
+.v1-notices-list{flex:1;min-height:200px; /* wds-allow: 빈 상태 문구가 가운데 오도록 최소 높이 */overflow-y:auto;overscroll-behavior:contain;padding:var(--spacing-12) var(--spacing-16) var(--spacing-16);display:flex;flex-direction:column;gap:var(--spacing-12)}
+.v1-notices-list:focus{outline:none}
+.v1-nb{appearance:none;display:flex;flex-direction:column;gap:var(--spacing-6);width:100%;padding:var(--spacing-16) var(--spacing-20);border:0;border-radius:var(--radius-lg);background:var(--surface-default);color:var(--text-default);text-align:left;font:var(--body-md);cursor:pointer;box-shadow:var(--shadow-sm)}
+.v1-nb:hover{box-shadow:var(--shadow-md)}
+.v1-nb:disabled{cursor:default}
+.v1-nb-head{display:flex;align-items:center;gap:var(--spacing-6);color:var(--text-muted);font:var(--label-sm)}
+.v1-nb-head time{margin-left:auto;white-space:nowrap}
+.v1-nb.unread .v1-nb-head::before{content:'';width:6px;height:6px; /* wds-allow: 안 읽음 점 */border-radius:var(--radius-full);background:var(--status-notification)}
+.v1-nb-title{font:var(--body-lg-bold);color:var(--text-default);overflow-wrap:anywhere}
+.v1-nb.read .v1-nb-title{font:var(--body-lg)}
+.v1-nb-text{color:var(--text-subtle);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.v1-nb-by{color:var(--text-muted);font:var(--body-sm)}
+.v1-notices-end{margin:var(--spacing-4) 0 0;padding:var(--spacing-12) 0 var(--spacing-4);text-align:center;color:var(--text-muted);font:var(--body-sm)}
+.v1-notices-empty{flex:1;display:flex;align-items:center;justify-content:center;margin:0;color:var(--text-muted);font:var(--body-md)}
+@media(max-width:719px){ /* wds-allow: 기존 모바일 전환 기준과 동일 */.v1-notices-panel{left:var(--spacing-8);right:var(--spacing-8);width:auto;max-height:calc(100dvh - var(--v1-notice-top,var(--component-gnb-height)) - var(--spacing-8))}.v1-notices-title{padding:var(--spacing-16) var(--spacing-20) var(--spacing-12)}.v1-notices-list{padding:var(--spacing-12)}.v1-nb{padding:var(--spacing-14) var(--spacing-16)}}
+/* 11/06 의견 리스트 · 의견 상세(상태 라벨, 우측 상단 티켓 연결·상태 변경) */
+.v1-fbtop{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8);margin-top:var(--spacing-12)}
+.v1-fbtools{position:relative;display:flex;align-items:center;gap:var(--spacing-4);margin-left:auto}
+.v1-fbtool{appearance:none;display:inline-flex;align-items:center;gap:var(--spacing-4);height:var(--component-dropdown-button-type-ghost-size-text-md-height);padding:0 var(--component-dropdown-button-type-ghost-size-text-md-padding-x);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--component-dropdown-button-type-ghost-size-text-md-radius);background:var(--surface-default);color:var(--text-default);font:var(--component-dropdown-button-type-ghost-size-text-md-typography);cursor:pointer}
+.v1-fbtool:hover{background:var(--surface-fill-default)}
+.v1-fbtool svg{width:16px;height:16px;color:var(--icon-default)}
+.v1-fbtool .v1-caret{width:12px;height:12px}
+.v1-fbtool[aria-expanded="true"]{border-color:var(--border-strong)}
+.v1-fbpop{right:0;min-width:280px; /* wds-allow: 티켓 고르기 폭 */padding:var(--spacing-12)}
+.v1-fbcard{position:absolute;top:calc(100% + var(--spacing-4));width:min(360px, calc(100vw - var(--spacing-32))); /* wds-allow: 티켓 연결 카드 폭 */background:var(--surface-default);border-radius:var(--component-popover-base-border-radius);box-shadow:var(--component-popover-base-shadow);z-index:var(--component-layout-z-index-gnb)}
+.v1-fbcard[hidden]{display:none}
+.v1-fbpop h3{margin:0 0 var(--spacing-8);font:var(--body-md-bold)}
+.v1-fbpop .v1-admin-add{margin-top:var(--spacing-8)}
+.v1-fbpop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-4)}
+.v1-fbpop li{display:flex;align-items:center;gap:var(--spacing-6)}
+.v1-stbtn.b{background:var(--surface-primary);border-color:var(--surface-primary);color:var(--text-static-light)}
+.v1-stbtn.g{background:var(--surface-success-vivid);border-color:var(--surface-success-vivid);color:var(--text-static-light)}
+.v1-stbtn.r{background:var(--surface-error);border-color:var(--surface-error);color:var(--text-static-light)}
+.v1-stbtn.b svg,.v1-stbtn.g svg,.v1-stbtn.r svg{color:currentColor}
+.v1-stbtn.b:hover,.v1-stbtn.g:hover,.v1-stbtn.r:hover{filter:brightness(.95)}
+.v1-stmenu{min-width:320px; /* wds-allow: 상태 변경 목록 폭 */}
+.v1-menu.v1-stmenu>button{display:grid;grid-template-columns:1fr auto 72px; /* wds-allow: 상태 라벨 칸 */align-items:center;gap:var(--spacing-12);width:100%}
+.v1-menu.v1-stmenu>button .v1-lst{justify-self:start}
+.v1-starrow{color:var(--icon-subtle)}
+.v1-stmenu textarea{width:100%;resize:vertical}
+
+.v1-fbtitle{appearance:none;border:0;background:none;padding:0;min-height:var(--spacing-32);color:var(--text-muted);font:var(--body-md);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.v1-fbtitle:hover{color:var(--text-default)}
+.v1-fbc .v1-lst{margin-right:var(--spacing-4)}
 .v1-notice-toggle{position:relative}
 .v1-notice-count{position:absolute;right:0;top:0;display:inline-flex;align-items:center;justify-content:center;height:var(--component-badge-type-count-height);min-width:var(--component-badge-type-count-min-width);padding:0 var(--component-badge-type-count-padding-x);border-radius:var(--radius-full);background:var(--status-notification);color:var(--component-badge-type-count-text-color);font:var(--component-badge-type-count-text-typography);pointer-events:none}
 .v1-notice-count[hidden]{display:none}
-.v1-notice-list{list-style:none;display:flex;flex-direction:column;gap:var(--spacing-8);margin:var(--spacing-12) 0 0;padding:0}
-.v1-notice-item{padding:var(--spacing-8);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-lg)}
-.v1-notice-item.unread{background:var(--surface-info-subtle)}
-.v1-notice-open{appearance:none;display:flex;flex-direction:column;gap:var(--spacing-4);width:100%;padding:var(--spacing-8);border:0;background:transparent;color:var(--text-default);font:var(--body-md);text-align:left;cursor:pointer;overflow-wrap:anywhere}
-.v1-notice-open small{color:var(--text-muted);font:var(--label-xs)}
-.v1-notice-open strong{font:var(--body-md-bold)}
-.v1-notice-item>.v1-btn{width:100%;margin-top:var(--spacing-8)}
-@media(min-width:720px){ /* wds-allow: 기존 PC 전환 기준과 동일 */.v1-notices .v1-sheet-panel{left:auto;right:var(--component-layout-content-padding-x);top:calc(var(--v1-notice-anchor,var(--component-gnb-height)) + var(--spacing-8));bottom:auto;width:var(--component-modal-dialog-size-sm);border-radius:var(--radius-xl)}}
 .v1-unote{color:var(--text-muted);font:var(--body-sm);margin:var(--spacing-4) 0 0}
 .v1-item.planned{opacity:.62}.v1-item.planned .v1-num{background:transparent;border:var(--v1-hairline) dashed var(--border-default)}
 .v1-pill.planned{background:var(--component-tag-color-neutral-surface);color:var(--component-tag-color-neutral-text-color)}
@@ -509,7 +551,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <button id="v1Back" class="v1-back" hidden aria-label="뒤로">‹</button>
     <div class="v1-titlebox"><span id="v1Stage" class="v1-stage-tag" hidden></span><h1 id="v1Title">모모스 온보딩</h1></div>
     <button id="v1Find" class="v1-icon-btn" type="button" hidden aria-label="교육 검색" aria-haspopup="dialog" aria-controls="v1Search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.75" cy="8.75" r="5.25" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12.6 12.6l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><!-- wds-allow: 돋보기 아이콘 자산 반입 전 임시 인라인 -->
-    <button id="v1NoticeToggle" class="v1-icon-btn v1-notice-toggle" type="button" hidden aria-label="알림" aria-haspopup="dialog" aria-expanded="false" aria-controls="v1Notices"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14l-2-3V9a5 5 0 0 0-10 0v5zM10 21h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="v1NoticeCount" class="v1-notice-count" hidden></span></button><!-- wds-allow: 기존 onboarding.js의 bell 아이콘 재사용, WDS 자산 반입 전 -->
+    <button id="v1NoticeToggle" class="v1-icon-btn v1-notice-toggle" type="button" hidden aria-label="알림" aria-haspopup="dialog" aria-expanded="false" aria-controls="v1Notices"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10.0004 2.38672C11.5156 2.38682 13.0241 2.925 14.1538 4.08105C15.2873 5.24124 15.977 6.95784 15.977 9.19824C15.977 9.36154 16.0073 9.96475 16.0405 10.5791C16.0623 10.9833 16.083 11.4054 16.0952 11.6504L16.7905 13.0283L16.8168 13.085C16.9844 13.5 17.1283 14.2094 16.8198 14.8682C16.4689 15.617 15.684 16.0096 14.5913 16.0098H12.4096C12.2227 16.9322 11.2457 17.6367 10.0668 17.6367C8.88796 17.6367 7.91098 16.9322 7.72407 16.0098H5.40961C4.31675 16.0097 3.53204 15.617 3.1811 14.8682C2.87243 14.2093 3.01643 13.5 3.18403 13.085L3.2104 13.0283L3.90473 11.6504C3.91684 11.4054 3.9386 10.9833 3.9604 10.5791C3.99353 9.96476 4.02387 9.36154 4.02387 9.19824C4.02391 6.95771 4.71343 5.24124 5.84711 4.08105C6.97687 2.92506 8.4852 2.38673 10.0004 2.38672ZM10.0004 3.88672C8.8381 3.88673 7.7332 4.29622 6.91938 5.12891C6.10957 5.95767 5.52391 7.27165 5.52387 9.19824C5.52387 9.41376 5.49001 10.0739 5.45844 10.6592C5.45034 10.8094 5.44259 10.9581 5.43501 11.0967C5.42742 11.2354 5.42054 11.3645 5.4145 11.4766C5.40844 11.5888 5.4033 11.6832 5.39985 11.7529C5.39672 11.8162 5.39529 11.8446 5.39497 11.8506C5.39494 11.9678 5.36767 12.0838 5.31489 12.1885L4.57075 13.6602C4.48825 13.8729 4.47978 14.1036 4.5395 14.2314C4.56111 14.2775 4.60086 14.3329 4.70356 14.3857C4.81764 14.4443 5.03248 14.5097 5.40961 14.5098H14.5913C14.9685 14.5097 15.1834 14.4443 15.2973 14.3857C15.3999 14.3329 15.4398 14.2775 15.4614 14.2314C15.521 14.1036 15.5117 13.8728 15.4291 13.6602L14.686 12.1885C14.6331 12.0837 14.6059 11.9679 14.6059 11.8506C14.6056 11.8446 14.6042 11.8163 14.601 11.7529C14.5976 11.6832 14.5924 11.5888 14.5864 11.4766C14.5803 11.3645 14.5735 11.2354 14.5659 11.0967C14.5583 10.9581 14.5505 10.8094 14.5424 10.6592C14.5109 10.0739 14.477 9.41376 14.477 9.19824C14.477 7.2718 13.8912 5.95767 13.0815 5.12891C12.2678 4.29617 11.1627 3.88682 10.0004 3.88672Z" fill="currentColor"/></svg><span id="v1NoticeCount" class="v1-notice-count" hidden></span></button><!-- WDS mono 20/bell.svg (assets/wds-icons) -->
     <div id="v1Me" class="v1-me"><button id="v1Who" type="button" class="v1-avatar v1-avatar-top" aria-haspopup="menu" aria-expanded="false" aria-controls="v1MeMenu"></button>
       <div id="v1MeMenu" class="v1-menu v1-me-menu" role="menu" hidden><div class="v1-me-who"><b id="v1MeName"></b><small id="v1MeMail"></small></div><button type="button" role="menuitem" id="v1Logout">로그아웃</button></div></div>
     <div id="v1More" class="v1-more" hidden>
@@ -526,7 +568,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
     <div id="v1SearchList" class="v1-search-list" aria-live="polite"></div>
   </div>
   <div id="v1Sheet" class="v1-sheet" hidden><div class="v1-scrim" data-sheet-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1SheetTitle"></div></div>
-  <div id="v1Notices" class="v1-sheet v1-notices" hidden><div class="v1-scrim" data-notices-close></div><div class="v1-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="v1NoticesTitle"><div class="v1-prow"><h2 id="v1NoticesTitle">알림</h2><button type="button" class="v1-tbtn" data-notices-close>닫기</button></div><div id="v1NoticeList"></div></div></div>
+  <div id="v1Notices" class="v1-notices" hidden><div class="v1-notices-scrim" data-notices-close></div><div class="v1-notices-panel" role="dialog" aria-modal="false" aria-labelledby="v1NoticesTitle"><h2 id="v1NoticesTitle" class="v1-notices-title">알림</h2><div id="v1NoticeList" class="v1-notices-list" tabindex="-1"></div></div></div>
 </div>
 <div id="v1Print" class="v1-print" aria-hidden="true"></div>
 <dialog id="accountDialog"></dialog>

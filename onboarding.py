@@ -63,7 +63,7 @@ LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
 QUESTIONS = {q['id']: q for q in COURSE['bank']}
 SYSTEM_REVIEWS = json.loads(Path(__file__).with_name('onboarding_reviews.json').read_text(encoding='utf-8'))
-ACTION_NAMES = {'content.log':'티켓 ↔ 반영 기록 연결','content.reply':'처리 메모 수정·삭제','feedback.resolve':'의견 반영 완료','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
+ACTION_NAMES = {'content.log':'티켓 ↔ 반영 기록 연결','content.reply':'처리 메모 수정·삭제','feedback.resolve':'의견 반영 완료','feedback.status':'의견 상태 변경','feedback.comment':'의견 댓글','feedback.link':'의견 ↔ 티켓 연결','content.request':'콘텐츠 수정 요청','content.status':'수정 요청 처리','content.delete':'수정 요청 삭제','step.mark':'관리자 교육 체크','step.close':'관리자 교육 완료','step.reopen':'교육 완료 취소','feedback.send':'의견 보내기','lms.admin':'LMS관리자 변경','step.start':'실습 시작','step.self':'직원 실습 체크','step.request':'교육자 확인 요청',
                 'step.teacher':'교육자 항목 확인','step.complete':'실습 확인 완료','step.retry':'새 시도 · 재실습',
                 'step.memo':'실습 메모 저장','schedule.reason':'일정 지연 사유 기록','plan.save':'개별 실습 예정일 조정','plan.test':'포지션 시험 예정일 조정',
                 'practice.add':'포지션 반복 연습 기록','test.record':'현장 포지션 평가 기록',
@@ -75,7 +75,7 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 
 
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
-LATEST_OK = {'feedback.resolve','content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
+LATEST_OK = {'feedback.resolve','feedback.status','content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
 BRANCHES = {'oncheon': '온천 본점'}
 
@@ -201,7 +201,15 @@ MENTEE_RESET = 'mentee-reset-2026-11-02'
 # 11/03 조직도 직책 순서(위가 먼저). 목록에 없는 직책은 그 뒤에 WORKS 순서·이름순
 POSITION_ORDER = ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원']
 CONTENT_REQUEST_TYPES = ('문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '원본 문서 변경 확인', '기타')
-CONTENT_REQUEST_STATUS = ('요청', '처리 중', '반영됨', '반려')
+CONTENT_REQUEST_STATUS = ('진행중', '반영됨', '반려')
+# 11/06: '요청'·'처리 중'은 사실상 같은 상태 → '진행중' 하나로. 예전 기록은 읽을 때 바꿔 보여 준다(저장된 값은 그대로)
+LEGACY_STATUS = {'요청': '진행중', '처리 중': '진행중', '진행 중': '진행중'}
+def req_status(v): return LEGACY_STATUS.get(v, v)
+# 11/06 의견 상태: 없음(아직 안 봄) → 진행중(티켓 연결 또는 관리자 변경) → 반영됨 / 반려 / 닫힘(질문에 댓글로 답하고 닫기). 댓글은 모두 작성자에게 보이고 알림이 간다
+FEEDBACK_STATUS = ('진행중', '반영됨', '반려', '닫힘')
+def fb_status(f):
+    v = f.get('status')
+    return '반영됨' if v == 'done' else v if v in FEEDBACK_STATUS else ''
 
 
 def source_log():
@@ -570,6 +578,8 @@ class Service:
                 self.feedback_comment(root,user,data)
             elif action=='feedback.resolve':
                 self.feedback_resolve(root,user,data)
+            elif action=='feedback.status':
+                self.feedback_status(root,user,data)
             elif action=='feedback.link':
                 self.feedback_link(root,user,data)
             elif action=='content.request':
@@ -668,14 +678,20 @@ class Service:
         for f in root.get('feedback') or []:
             if f.get('user') != user['id']: continue
             title=STEPS.get(f.get('step'),{}).get('title','교육 항목')
+            # 11/06: 관리자의 댓글·상태 변경마다 알림 1건. 상태 변경 알림에는 바꾸며 쓴 댓글이 함께 담긴다
             for comment in f.get('comments') or []:
-                if comment.get('notifyAuthor'):
-                    add('opinion-reply:'+f['id']+':'+comment['id'], '보내주신 의견에 답변이 등록되었습니다.',
-                        title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.reply',step=f.get('step'))
+                if not comment.get('status'):
+                    if not comment.get('notifyAuthor'): continue  # 알림 기능 전에 단 댓글은 알림을 새로 만들지 않는다
+                    add('opinion-reply:'+f['id']+':'+comment['id'], '보내주신 의견에 댓글이 달렸습니다.',
+                        title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.reply',by=comment.get('name',''),text=comment.get('text',''),step=f.get('step'))
+                else:
+                    add('opinion-status:'+f['id']+':'+comment['id'], f"보내주신 의견이 '{comment['status']}' 상태로 바뀌었습니다.",
+                        title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.status',status=comment['status'],
+                        by=comment.get('name',''),text=comment.get('text',''),auto=comment.get('auto',''),step=f.get('step'))
             resolved=f.get('resolved')
-            if f.get('status')=='done' and resolved:
-                add('opinion-resolved:'+f['id'], '보내주신 의견이 반영되었습니다.',
-                    title,resolved['at'],feedback=f['id'],kind='feedback.resolved',step=f.get('step'))
+            if f.get('status')=='done' and resolved:  # 알파 28f93d6 의 예전 '반영 완료'
+                add('opinion-resolved:'+f['id'], "보내주신 의견이 '반영됨' 상태로 바뀌었습니다.",
+                    title,resolved['at'],feedback=f['id'],kind='feedback.status',status='반영됨',by=resolved.get('name',''),text='',step=f.get('step'))
         for t in root['tickets']:
             own=t['person']==user['id'];handler=user['id'] in root[t['type']]
             if not (own or handler):continue
@@ -724,7 +740,7 @@ class Service:
             # 멘티 = 의견을 보낸 교육 화면의 주인(예전 의견은 보낸 사람 본인), 체크한 사람 = 그 교육을 체크·완료한 사람. 예전 '교육 과정'에서 보낸 의견은 비어 있다
             mentee = f.get('mentee', f.get('user'))
             if mentee and mentee not in mentors: mentors[mentee] = self.mentors_of(db, root, mentee)
-            return dict(f, stepTitle=steps.get(f.get('step'), ''), mentee=mentee, menteeName=f.get('menteeName', f.get('name')) if mentee else '',
+            return dict(f, status=fb_status(f), stepTitle=steps.get(f.get('step'), ''), mentee=mentee, menteeName=f.get('menteeName', f.get('name')) if mentee else '',
                         mentors=mentors.get(mentee, []) if mentee else [])
         # 11/03 admin 목록은 '이름(이메일)': 이름은 WORKS 주소록 → LMS 계정 순으로 찾는다
         import works_auth
@@ -740,7 +756,7 @@ class Service:
         return dict(lmsAdmins=admins,
                     feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
                     sourceLog=source_log(),
-                    contentRequests=list(reversed((root.get('contentRequests') or [])[-300:])))
+                    contentRequests=[dict(r, status=req_status(r.get('status')), history=[dict(h, status=req_status(h.get('status'))) for h in r.get('history') or []]) for r in reversed((root.get('contentRequests') or [])[-300:])])
 
     def set_lms_admin(self, root, user, d):
         """admin 만 다른 admin 을 지정(level 'admin')·해제(level None)한다. 기본 admin 과 본인은 바꿀 수 없다(아무도 남지 않는 일이 없게)."""
@@ -773,13 +789,14 @@ class Service:
                     target=dict(kind=t['kind'], id=projects.text(t['id'], 120, True), title=projects.text(t['title'], 200, True)),
                     type=d['type'], field=projects.text(d.get('field', ''), 80), asis=projects.text(d.get('asis', ''), 4000),
                     tobe=projects.text(d['tobe'], 4000, True), note=projects.text(d.get('note', ''), 2000),
-                    status='요청', history=[dict(at=stamp(), by=user['name'], status='요청')])
+                    status='진행중', history=[dict(at=stamp(), by=user['name'], status='진행중')])
         items = root.setdefault('contentRequests', [])
         items.append(item)
         root['contentRequests'] = items[-2000:]
 
     def content_status(self, root, user, d):
         if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청 처리는 LMS관리자 admin 만 할 수 있어요.')
+        if isinstance(d, dict) and 'status' in d: d = dict(d, status=req_status(d['status']))
         if not isinstance(d, dict) or set(d) - {'id', 'status', 'note', 'commit', 'log'} or not {'id', 'status'} <= set(d) or d['status'] not in CONTENT_REQUEST_STATUS:
             raise ValueError('처리 상태를 확인해 주세요.')
         item = next((x for x in root.get('contentRequests') or [] if x['id'] == d['id']), None)
@@ -788,7 +805,7 @@ class Service:
         if commit and not re.fullmatch(r'[0-9a-f]{7,40}', commit): raise ValueError('커밋 번호(7자리 이상)를 확인해 주세요.')
         if d['status'] == '반려' and not note: raise ValueError('반려 사유를 적어 주세요.')
         item['status'] = d['status']
-        if d['status'] in ('처리 중', '반영됨') and not item.get('assignee'): item['assignee'] = user['name']  # 처음 맡은 사람
+        if d['status'] in ('진행중', '반영됨') and not item.get('assignee'): item['assignee'] = user['name']  # 처음 맡은 사람
         if note: item['reply'] = note
         if commit: item['commit'] = commit
         if d.get('log'): self._link_log(item, d['log'], True)
@@ -803,8 +820,10 @@ class Service:
 
     def my_feedback(self, root, user):
         """Authors may read their own opinions/comments, never other authors or admin-only ticket details."""
-        fields=('id','at','user','name','step','text','comments','status','resolved')
-        return [dict(copy.deepcopy({k:f[k] for k in fields if k in f}),
+        # 11/06: 작성자에게는 상태와 댓글(일반 댓글 · 상태를 바꾸며 쓴 댓글)이 보인다. 연결한 티켓은 관리자만 본다
+        fields=('id','at','user','name','step','text')
+        return [dict(copy.deepcopy({k:f[k] for k in fields if k in f}), status=fb_status(f),
+                     comments=[copy.deepcopy(c) for c in f.get('comments') or []],
                      stepTitle=STEPS.get(f.get('step'),{}).get('title',''))
                 for f in reversed(root.get('feedback') or []) if f.get('user')==user['id']]
 
@@ -814,10 +833,23 @@ class Service:
         f['comments'] = (f.get('comments') or []) + [dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], text=projects.text(d['text'], 2000, True), notifyAuthor=True)]
 
     def feedback_resolve(self, root, user, d):
-        if set(d)!={'id'}: raise ValueError('완료할 의견을 확인해 주세요.')
-        f=self._feedback(root,user,d['id'])
-        if f.get('status')=='done': return  # Multiple administrators/retries cannot create another completion or alert.
-        f.update(status='done',resolved=dict(at=stamp(),user=user['id'],name=user['name']))
+        # 예전 '반영 완료' 버튼(알파 28f93d6) — 상태 '반영됨' 으로 바꾸는 것과 같다
+        if not isinstance(d, dict) or set(d)!={'id'}: raise ValueError('완료할 의견을 확인해 주세요.')
+        self.feedback_status(root, user, dict(id=d['id'], status='반영됨'))
+
+    def _set_feedback_status(self, f, user, status, text='', auto=''):
+        if fb_status(f) == status and not text: return  # 같은 상태를 다시 눌러도 알림이 또 가지 않게
+        f['status'] = status
+        f['statusAt'] = stamp()
+        f['comments'] = (f.get('comments') or []) + [dict(id=uuid.uuid4().hex, at=stamp(), user=user['id'], name=user['name'], text=text, status=status, **({'auto': auto} if auto else {}))]
+
+    def feedback_status(self, root, user, d):
+        # 11/06: 관리자가 의견 상태를 바꾼다(진행중·반영됨·반려). 바꾸며 쓴 댓글은 작성자에게 보이고 알림이 간다
+        if not isinstance(d, dict) or set(d) - {'id', 'status', 'text'} or not {'id', 'status'} <= set(d) or d['status'] not in FEEDBACK_STATUS:
+            raise ValueError('의견 상태를 확인해 주세요.')
+        f = self._feedback(root, user, d['id'])
+        text = projects.text(d.get('text') or '', 2000) if str(d.get('text') or '').strip() else ''
+        self._set_feedback_status(f, user, d['status'], text)
 
     def feedback_link(self, root, user, d):
         if not isinstance(d, dict) or set(d) != {'id', 'ticket', 'on'} or not isinstance(d['on'], bool): raise ValueError('연결할 티켓을 확인해 주세요.')
@@ -826,6 +858,8 @@ class Service:
         if d['on'] and not any(x.get('no') == key for x in root.get('contentRequests') or []): raise ValueError(f'{key} 티켓을 찾지 못했어요.')
         rest = [k for k in f.get('tickets') or [] if k != key]
         f['tickets'] = rest + ([key] if d['on'] else [])
+        # 11/06: 상태가 없던 의견을 티켓과 이으면 '진행중'으로
+        if d['on'] and not fb_status(f): self._set_feedback_status(f, user, '진행중', auto=f'{key} 수정 요청과 연결')
 
     # 11/04 티켓 ↔ 반영 기록: 반영 기록(source_log.json)의 tickets 와 별개로, 화면에서 티켓 쪽에 반영 기록을 골라 잇는다
     def _link_log(self, item, log_id, on):
