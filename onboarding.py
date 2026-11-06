@@ -205,7 +205,7 @@ CONTENT_REQUEST_STATUS = ('진행중', '반영됨', '반려')
 # 11/06: '요청'·'처리 중'은 사실상 같은 상태 → '진행중' 하나로. 예전 기록은 읽을 때 바꿔 보여 준다(저장된 값은 그대로)
 LEGACY_STATUS = {'요청': '진행중', '처리 중': '진행중', '진행 중': '진행중'}
 def req_status(v): return LEGACY_STATUS.get(v, v)
-# 11/06 의견 상태: 없음(아직 안 봄) → 진행중(티켓 연결 또는 관리자 변경) → 반영됨 / 반려 / 닫힘(질문에 댓글로 답하고 닫기). 댓글은 모두 작성자에게 보이고 알림이 간다
+# 11/06 의견 상태: 없음 → 진행중 → 반영됨 / 반려 / 닫힘(질문에 댓글로 답하고 닫기). 관리자가 직접 바꾼다(티켓 연결과 별개). 댓글은 모두 작성자에게 보이고 알림이 간다
 FEEDBACK_STATUS = ('진행중', '반영됨', '반려', '닫힘')
 def fb_status(f):
     v = f.get('status')
@@ -678,20 +678,16 @@ class Service:
         for f in root.get('feedback') or []:
             if f.get('user') != user['id']: continue
             title=STEPS.get(f.get('step'),{}).get('title','교육 항목')
-            # 11/06: 관리자의 댓글·상태 변경마다 알림 1건. 상태 변경 알림에는 바꾸며 쓴 댓글이 함께 담긴다
+            # 11/06: 관리자의 댓글마다 알림 1건. 상태 변경은 바꾸며 댓글을 쓴 경우에만 알림(댓글 없이 상태만 바뀌면 알림 없음 — 노이즈 방지)
             for comment in f.get('comments') or []:
                 if not comment.get('status'):
                     if not comment.get('notifyAuthor'): continue  # 알림 기능 전에 단 댓글은 알림을 새로 만들지 않는다
                     add('opinion-reply:'+f['id']+':'+comment['id'], '보내주신 의견에 댓글이 달렸습니다.',
                         title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.reply',by=comment.get('name',''),text=comment.get('text',''),step=f.get('step'))
-                else:
+                elif comment.get('text'):
                     add('opinion-status:'+f['id']+':'+comment['id'], f"보내주신 의견이 '{comment['status']}' 상태로 바뀌었습니다.",
                         title,comment['at'],feedback=f['id'],comment=comment['id'],kind='feedback.status',status=comment['status'],
                         by=comment.get('name',''),text=comment.get('text',''),auto=comment.get('auto',''),step=f.get('step'))
-            resolved=f.get('resolved')
-            if f.get('status')=='done' and resolved:  # 알파 28f93d6 의 예전 '반영 완료'
-                add('opinion-resolved:'+f['id'], "보내주신 의견이 '반영됨' 상태로 바뀌었습니다.",
-                    title,resolved['at'],feedback=f['id'],kind='feedback.status',status='반영됨',by=resolved.get('name',''),text='',step=f.get('step'))
         for t in root['tickets']:
             own=t['person']==user['id'];handler=user['id'] in root[t['type']]
             if not (own or handler):continue
@@ -857,9 +853,7 @@ class Service:
         key = projects.text(d['ticket'], 20, True)
         if d['on'] and not any(x.get('no') == key for x in root.get('contentRequests') or []): raise ValueError(f'{key} 티켓을 찾지 못했어요.')
         rest = [k for k in f.get('tickets') or [] if k != key]
-        f['tickets'] = rest + ([key] if d['on'] else [])
-        # 11/06: 상태가 없던 의견을 티켓과 이으면 '진행중'으로
-        if d['on'] and not fb_status(f): self._set_feedback_status(f, user, '진행중', auto=f'{key} 수정 요청과 연결')
+        f['tickets'] = rest + ([key] if d['on'] else [])  # 11/06: 티켓을 이어도 의견 상태는 그대로(상태는 관리자가 직접 바꾼다)
 
     # 11/04 티켓 ↔ 반영 기록: 반영 기록(source_log.json)의 tickets 와 별개로, 화면에서 티켓 쪽에 반영 기록을 골라 잇는다
     def _link_log(self, item, log_id, on):

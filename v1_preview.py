@@ -120,7 +120,7 @@ MOCK = r'''
       {id: 'fb-demo-old', at: ago(45), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'welcome-hygiene', text: '(예시) 위생 교육 사진이 흐려요.', mentee: 'u-learner', menteeName: '체험 교육생',
         status: '반영됨', comments: [sc('c-old', 40, '반영됨', '(예시) 사진을 새로 바꿨어요.')]},
       {id: 'fb-demo-1', at: ago(3), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'space-walk', text: '(예시) 3동 화장실 위치가 교육에 없어요.', mentee: 'u-learner', menteeName: '체험 교육생',
-        tickets: ['REQ-2'], status: '반영됨', comments: [sc('c-1a', 2, '진행중', '', 'REQ-2 수정 요청과 연결'), {id: 'c-1m', at: ago(2, 8), user: 'u-staff', name: '체험 담당자', text: '(예시) 매장 공간 안내 새 판에 맞춰 고칠게요.', notifyAuthor: true}, sc('c-1b', 0, '반영됨', '(예시) 3번 교육 내용 2에 3동 여자·남자화장실을 넣었어요. 교육 내용 2를 펼쳐 보세요.')]},
+        tickets: ['REQ-2'], status: '반영됨', comments: [sc('c-1a', 2, '진행중', '(예시) 확인하고 있어요.'), {id: 'c-1m', at: ago(2, 8), user: 'u-staff', name: '체험 담당자', text: '(예시) 매장 공간 안내 새 판에 맞춰 고칠게요.', notifyAuthor: true}, sc('c-1b', 0, '반영됨', '(예시) 3번 교육 내용 2에 3동 여자·남자화장실을 넣었어요. 교육 내용 2를 펼쳐 보세요.')]},
       {id: 'fb-demo-2', at: ago(1), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'stock-order', text: '(예시) 발주 예시가 너무 길어요.', mentee: 'u-learner', menteeName: '체험 교육생',
         status: '반려', comments: [sc('c-2a', 1, '반려', '(예시) 원본 문서 기준이라 그대로 둘게요. 대신 본문 펼치기에서 표를 함께 보여 드려요.')]},
       {id: 'fb-demo-q', at: ago(6), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step: 'welcome-tasting', text: '(예시) 시음은 매일 하나요?', mentee: 'u-learner', menteeName: '체험 교육생',
@@ -138,13 +138,13 @@ MOCK = r'''
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
   function feedbackNotices(u) {
-    // onboarding.notices 와 같은 규칙: 내가 보낸 의견에 달린 댓글 · 상태 변경(바꾸며 쓴 댓글 포함)
+    // onboarding.notices 와 같은 규칙: 내가 보낸 의견에 달린 댓글 · 댓글을 남기며 바꾼 상태(댓글 없는 상태 변경은 알림 없음)
     const reads = (state.noticeReads || {})[u.id] || [], out = [];
     for (const f of state.feedback || []) {
       if (f.user !== u.id) continue;
       for (const c of f.comments || []) if (!c.status && c.notifyAuthor) { const id = 'opinion-reply:' + f.id + ':' + c.id;
         out.push({id, title: '보내주신 의견에 댓글이 달렸습니다.', detail: (STEPS[f.step] || {}).title || '교육 항목', date: c.at, kind: 'feedback.reply', by: c.name || '', text: c.text || '', feedback: f.id, comment: c.id, step: f.step, read: reads.includes(id)}); }
-      else if (c.status) { const id = 'opinion-status:' + f.id + ':' + c.id;
+      else if (c.status && c.text) { const id = 'opinion-status:' + f.id + ':' + c.id;
         out.push({id, title: `보내주신 의견이 '${c.status}' 상태로 바뀌었습니다.`, detail: (STEPS[f.step] || {}).title || '교육 항목', date: c.at, kind: 'feedback.status', status: c.status, by: c.name || '', text: c.text || '', auto: c.auto || '', feedback: f.id, comment: c.id, step: f.step, read: reads.includes(id)}); }
     }
     return out.sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 200);
@@ -250,8 +250,7 @@ MOCK = r'''
       else if (v.action === 'feedback.status' || v.action === 'feedback.resolve') { const status = v.action === 'feedback.resolve' ? '반영됨' : d.status;
         if (!['진행중', '반영됨', '반려', '닫힘'].includes(status)) throw {status: 400, error: '의견 상태를 확인해 주세요.'}; setStatus(status, String(d.text || '').trim()); }
       else { if (d.on && !(state.contentRequests || []).some(x => x.no === d.ticket)) throw {status: 400, error: d.ticket + ' 티켓을 찾지 못했어요.'};
-        f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []);
-        if (d.on && !f.status) setStatus('진행중', '', d.ticket + ' 수정 요청과 연결'); }
+        f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []); }
       state.rootRevision++; save(); return context(u, target);
     }
     if (v.action === 'feedback.send') {
