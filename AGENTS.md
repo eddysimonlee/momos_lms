@@ -43,7 +43,12 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
 - **요청한 것만 바꾼다**: 애매하면 바꾸기 전에 묻는다. 한 작업에 한 가지만 — 나중에 골라서 실서비스에 반영할 수 있게.
 - **반영 기록**: 알파 작업도 `source_log.json` 에 기록 1건을 남긴다. `basis.kind` = '알파 작업', `tickets` = 빈 목록(티켓 없음), `approvedBy` = 채수민 님, 무엇을 왜 바꿨는지와 AS-IS/TO-BE. 교육 내용 칸 삭제·순서 변경·문항 교체가 있으면 `checks` 에 적는다(실서비스 체크 기록에 영향).
 - **DB 는 따라가지 않는다**: 서버마다 자기 DB 를 본다(Render 환경변수). 레포로 넘어가는 것은 교육 콘텐츠·교육과정·문서-콘텐츠 매핑·반영 기록·사진뿐이다.
-- **고칠 수 있는 파일**: `v1_lessons.json` · `curriculum.json` · `source_manifest.json` · `source_log.json` 과 빌드 결과(`v1_content.json` · `v1_photos/`). 그 밖(서버·화면 코드, `Dockerfile`, `deploy/`, 테스트)은 고치지 않고 '서비스 기획 확인 필요'로 이재현에게 넘긴다.
+- **고칠 수 있는 파일**: 교육 콘텐츠(`v1_lessons.json` · `curriculum.json` · `source_manifest.json` · `source_log.json`)와 빌드 결과(`v1_content.json` · `v1_photos/`).
+- **화면 코드(`v1.js` · `v1.html` · `v1_graph.html`)**: 알파에서는 고쳐도 된다(11/06 이재현 결정).
+  - **기존 UI 재활용**: 이미 있는 클래스·버튼·카드·목록과 WDS 토큰만으로 만드는 변경(예: 기존 버튼 스타일로 '이전 항목' 추가)은 일반 작업과 같다.
+  - **새 UI 요소**: 새 컴포넌트·새 화면 구조·새 클래스 체계·WDS 에 없는 값을 만들면 알파에 적용하되, 반영 기록 `rules` 에 '새 UI 요소 — 이재현 검수 필요'를 적고 채수민 님께도 알린다. 실서비스 반영은 이재현 검수 후.
+  - 테스트는 추가할 수 있다. 기존 테스트를 고치면 이유를 반영 기록에 적는다.
+- **고치지 않는 것**: 서버 코드(`server.py` · `onboarding.py` · `works_auth.py` 등)·API·DB 구조, `Dockerfile`, `deploy/`. 필요하면 '서비스 기획 확인 필요'로 이재현에게 넘긴다.
 - **원본 색인**: `source_index.json`·`source_images/` 는 레포에 없다. 작업 PC 에 받은 드라이브 `ST_매장사업부` 폴더로 만든다.
   `python3 source_parse.py --base <ST_매장사업부 폴더> --images source_images`
   `source_manifest.json` 의 문서만 읽고 순서·시각도 manifest 로 정하므로, 같은 원본이면 누구나 같은 색인·같은 `v1_content.json` 이 나온다. '기준과 내용이 다름'이 나오면 원본이 바뀐 것이다 — 작업 전에 채수민 님에게 알리고 업무문서 반영 절차로 처리한다(반영하면 manifest 의 sha1·updated 갱신).
