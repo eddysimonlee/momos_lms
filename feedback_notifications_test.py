@@ -53,46 +53,63 @@ class FeedbackNotificationTests(unittest.TestCase):
         self.service.update(self.admin, value)
         self.service.update(self.admin, value)
         self.assertEqual(len(self.opinion()['comments']), 1)
+        self.assertEqual(self.opinion()['status'], '')  # 일반 댓글은 상태를 바꾸지 않는다
         notices = self.notices()
         self.assertEqual(len(notices), 1)
-        self.assertEqual(notices[0]['title'], '보내주신 의견에 답변이 등록되었습니다.')
-        self.assertEqual((notices[0]['feedback'], notices[0]['step']), (fid, self.step))
+        self.assertEqual((notices[0]['kind'], notices[0]['title']), ('feedback.reply', '보내주신 의견에 댓글이 달렸습니다.'))
+        self.assertEqual((notices[0]['feedback'], notices[0]['step'], notices[0]['text']), (fid, self.step, '새 답변'))
         self.assertEqual(notices[0]['comment'], self.opinion()['comments'][0]['id'])
         self.assertFalse(notices[0]['read'])
         self.assertEqual(self.notices(self.admin), [])
 
-    def test_resolve_without_comment_is_idempotent_even_with_a_new_request_id(self):
+    def test_status_change_with_optional_comment_notifies_once_per_change(self):
         fid = self.send()
-        value = self.payload(self.admin, 'feedback.resolve', dict(id=fid))
+        value = self.payload(self.admin, 'feedback.status', dict(id=fid, status='반영됨', text='3번 교육에 넣었어요.'))
         self.service.update(self.admin, value)
-        original = copy.deepcopy(self.opinion())
-        self.service.update(self.admin, value)
-        self.act(self.admin, 'feedback.resolve', dict(id=fid))
-        self.assertEqual(self.opinion(), original)
-        self.assertEqual(original['status'], 'done')
-        self.assertEqual(original.get('comments', []), [])
-        self.assertEqual(original['resolved']['user'], self.admin['id'])
+        self.service.update(self.admin, value)  # 같은 요청 재시도
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='반영됨'))  # 같은 상태 다시 누름(댓글 없음)
+        own = self.opinion()
+        self.assertEqual(own['status'], '반영됨')
+        self.assertEqual([(c['status'], c['text']) for c in own['comments']], [('반영됨', '3번 교육에 넣었어요.')])
         notices = self.notices()
         self.assertEqual(len(notices), 1)
-        self.assertEqual(notices[0]['title'], '보내주신 의견이 반영되었습니다.')
-        self.assertEqual(notices[0]['step'], self.step)
+        self.assertEqual((notices[0]['kind'], notices[0]['status'], notices[0]['text']), ('feedback.status', '반영됨', '3번 교육에 넣었어요.'))
+        self.assertEqual(notices[0]['title'], "보내주신 의견이 '반영됨' 상태로 바뀌었습니다.")
 
-    def test_comments_before_and_after_completion_are_independent(self):
+    def test_close_after_answering_a_question(self):
         fid = self.send()
-        self.act(self.admin, 'feedback.comment', dict(id=fid, text='먼저 확인 중'))
-        self.assertNotEqual(self.opinion().get('status'), 'done')
+        self.act(self.admin, 'feedback.comment', dict(id=fid, text='매일 하지는 않아요.'))
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='닫힘'))
+        self.assertEqual(self.opinion()['status'], '닫힘')
+        self.assertEqual(sorted(n['kind'] for n in self.notices()), ['feedback.reply', 'feedback.status'])
+        with self.assertRaises(ValueError):
+            self.act(self.admin, 'feedback.status', dict(id=fid, status='완료'))
+
+    def test_linking_a_ticket_moves_an_unset_opinion_to_in_progress(self):
+        fid = self.send()
+        self.act(self.admin, 'content.request', dict(target=dict(kind='item', id=self.step, title='교육'), type='문구 수정', tobe='새 문장'))
+        key = self.service.get(self.admin)['contentRequests'][0]['no']
+        self.act(self.admin, 'feedback.link', dict(id=fid, ticket=key, on=True))
+        own = self.opinion()
+        self.assertEqual(own['status'], '진행중')
+        self.assertEqual(own['comments'][-1]['auto'], f'{key} 수정 요청과 연결')
+        self.assertNotIn('tickets', own)  # 작성자에게 티켓 정보는 보이지 않는다
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='반려', text='원본 기준이에요.'))
+        self.act(self.admin, 'feedback.link', dict(id=fid, ticket=key, on=False))
+        self.act(self.admin, 'feedback.link', dict(id=fid, ticket=key, on=True))
+        self.assertEqual(self.opinion()['status'], '반려')  # 상태가 있으면 연결해도 바뀌지 않는다
+
+    def test_legacy_resolve_maps_to_reflected(self):
+        fid = self.send()
         self.act(self.admin, 'feedback.resolve', dict(id=fid))
-        resolved = copy.deepcopy(self.opinion()['resolved'])
-        self.act(self.admin, 'feedback.comment', dict(id=fid, text='완료 후 보충 답변'))
-        self.assertEqual(self.opinion()['status'], 'done')
-        self.assertEqual(self.opinion()['resolved'], resolved)
-        self.assertEqual(len(self.opinion()['comments']), 2)
-        self.assertEqual(len(self.notices()), 3)
+        self.act(self.admin, 'feedback.resolve', dict(id=fid))
+        self.assertEqual(self.opinion()['status'], '반영됨')
+        self.assertEqual(len(self.notices()), 1)
 
     def test_author_is_sender_not_the_learner_whose_education_was_open(self):
         fid = self.send(self.trainer, self.learner['id'])
         self.act(self.admin, 'feedback.comment', dict(id=fid, text='교육자님께 답변'))
-        self.act(self.admin, 'feedback.resolve', dict(id=fid))
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='반영됨'))
         self.assertEqual(len(self.notices(self.trainer)), 2)
         self.assertEqual(self.notices(self.learner), [])
         self.assertEqual(self.service.get(self.learner)['myFeedback'], [])
@@ -103,6 +120,8 @@ class FeedbackNotificationTests(unittest.TestCase):
             with self.assertRaises(PermissionError):
                 self.act(user, 'feedback.resolve', dict(id=fid))
             with self.assertRaises(PermissionError):
+                self.act(user, 'feedback.status', dict(id=fid, status='닫힘'))
+            with self.assertRaises(PermissionError):
                 self.act(user, 'feedback.comment', dict(id=fid, text='허용되지 않은 답변'))
         self.assertNotIn('resolved', self.opinion())
         self.assertEqual(self.notices(), [])
@@ -110,7 +129,7 @@ class FeedbackNotificationTests(unittest.TestCase):
     def test_read_is_per_notification_per_author_and_survives_service_reload(self):
         fid = self.send()
         self.act(self.admin, 'feedback.comment', dict(id=fid, text='첫 답변'))
-        self.act(self.admin, 'feedback.resolve', dict(id=fid))
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='반영됨'))
         first, second = self.notices()
         self.assertFalse(any(n['read'] for n in self.notices()))  # GET/list never marks read.
         with self.assertRaises(PermissionError):
@@ -139,9 +158,9 @@ class FeedbackNotificationTests(unittest.TestCase):
         self.assertEqual(self.notices(), [])
         before = copy.deepcopy(self.service.get(self.learner)['learner'])
         self.act(self.admin, 'feedback.comment', dict(id=fid, text='추가 답변'))
-        self.act(self.admin, 'feedback.resolve', dict(id=fid))
+        self.act(self.admin, 'feedback.status', dict(id=fid, status='반영됨'))
         self.assertEqual(self.opinion()['comments'][:101], legacy)
-        self.assertEqual(len(self.opinion()['comments']), 102)
+        self.assertEqual(len(self.opinion()['comments']), 103)
         self.assertEqual(len(self.notices()), 2)
         self.assertEqual(self.service.get(self.learner)['learner'], before)
         self.assertEqual(self.erp_snapshot(), self.erp_before)
@@ -152,6 +171,8 @@ class FeedbackNotificationTests(unittest.TestCase):
             self.act(self.admin, 'feedback.comment', dict(id=fid, text='  '))
         with self.assertRaises(ValueError):
             self.act(self.admin, 'feedback.resolve', dict(id=fid, text='자동 댓글 금지'))
+        with self.assertRaises(ValueError):
+            self.act(self.admin, 'feedback.status', dict(id=fid, status='done'))
         self.assertNotIn('resolved', self.opinion())
         self.assertEqual(self.notices(), [])
 

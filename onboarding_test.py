@@ -590,13 +590,20 @@ class EducationTests(unittest.TestCase):
             with self.assertRaises(ValueError):self.act(a,'content.request',dict(req,type='화면 바꾸기'))  # 종류 제한
             with self.assertRaises(ValueError):self.act(a,'content.request',dict(req,target=dict(kind='item',id='nope',title='x')))
             c=self.act(a,'content.request',req);r=c['contentRequests'][0]
-            self.assertEqual((r['status'],r['tobe'],r['target']['id'],r['name']),('요청','새 문장',ident,a['name']))
+            self.assertEqual((r['status'],r['tobe'],r['target']['id'],r['name']),('진행중','새 문장',ident,a['name']))
             self.assertEqual(r['no'],'REQ-1');self.assertEqual(self.act(a,'content.request',req)['contentRequests'][0]['no'],'REQ-2')  # 티켓 번호는 차례로
             with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반려'))  # 반려는 사유 필요
             with self.assertRaises(ValueError):self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='xyz'))
             c=self.act(a,'content.status',dict(id=r['id'],status='반영됨',commit='aa54099',note='5번 문장 수정'));r=next(x for x in c['contentRequests'] if x['no']=='REQ-1')
             self.assertEqual(r['assignee'],a['name'])
-            self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['요청','반영됨']))
+            self.assertEqual((r['status'],r['commit'],r['reply'],[h['status'] for h in r['history']]),('반영됨','aa54099','5번 문장 수정',['진행중','반영됨']))
+            # 11/06 예전 '요청'·'처리 중' 기록은 '진행중'으로 보이고, 예전 이름으로 바꿔도 '진행중'으로 저장된다
+            with self.store.connect() as db:
+                root=self.service.root(db);root['contentRequests'][-1]['status']='처리 중';projects.Rooms.write(db,ob.ROOT,root)
+            self.assertEqual(self.service.get(a)['contentRequests'][0]['status'],'진행중')
+            r2=self.service.get(a)['contentRequests'][0];self.assertEqual(r2['no'],'REQ-2')
+            self.act(a,'content.status',dict(id=r2['id'],status='요청'))
+            self.assertEqual(self.service.get(a)['contentRequests'][0]['status'],'진행중')
             self.assertNotIn('contentRequests',self.service.get(b))
             # 티켓 ↔ 반영 기록(화면에서 고름)
             lid=ob.source_log()[0]['id'];r1=next(x for x in self.service.get(a)['contentRequests'] if x['no']=='REQ-1')
