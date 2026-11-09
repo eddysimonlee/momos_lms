@@ -337,7 +337,7 @@ def main():
     if a.images:
         os.makedirs(a.images, exist_ok=True)
         IMAGES_DIR = a.images
-    files, folders, notes, manifest_updated = [], {}, [], ''
+    files, folders, ids, notes, manifest_updated = [], {}, {}, [], ''
     if a.base:
         # 맥은 한글 파일 이름을 NFD 로 준다: NFC 로 맞춰 찾는다
         found = {}
@@ -355,6 +355,7 @@ def main():
                 if m.get('sha1') and hashlib.sha1(fh.read()).hexdigest() != m['sha1']:
                     notes.append(f"기준과 내용이 다름(원본이 바뀜): {rel}")
             files.append(found[rel]); folders[found[rel]] = nfc(m['folder'])
+            if m.get('id'): ids[found[rel]] = m['id']  # 11/09 문서 id 는 manifest 기준(파일 이름이 바뀌어도 그대로)
         if notes:
             print('\n'.join(notes), file=sys.stderr)
         if any(n.startswith('없음') for n in notes):
@@ -370,6 +371,8 @@ def main():
     for f, d in zip(files, docs):
         if f in folders:
             d['folder'] = folders[f]  # 기준 폴더 아래 경로(source_manifest 의 folder)
+        if f in ids:
+            d['id'] = ids[f]
     out = {'generated_at': datetime.now(timezone.utc).isoformat(timespec='seconds'), 'documents': docs}
     if a.base:
         # 사람마다 같은 색인: 문서 순서 = source_manifest.json 순서, 색인 시각 = manifest 의 updated(기준 폴더를 맞춘 날)
