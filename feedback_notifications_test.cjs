@@ -12,7 +12,7 @@ const between = (a, b) => {
   assert.ok(start >= 0 && end > start, a);
   return source.slice(start, end);
 };
-const FB = {REQ_ST: {'진행중': 'b', '반영됨': 'g', '반려': 'r'}};
+const FB = {REQ_ST: {'진행중': 'b', '반영됨': 'g', '반려': 'r'}, FB_ANS: {'답변중': 'b', '완료': 'g'}};
 function feedbackHarness(admin = true, pop = '') {
   const f = {id: 'f1', name: '작성자', step: 'space-walk', at: '2026-11-06', text: '<script>의견</script>',
     comments: [{id: 'c1', name: '관리자', at: '2026-11-06', text: '<b>답변</b>'}]};
@@ -31,13 +31,15 @@ test('authors see the opinion, comments and the education title link, with no st
   assert.match(html, /&lt;b&gt;답변/);
   assert.match(html, /data-comment-id="c1"/);
   assert.match(html, /class="v1-fbtitle" data-step="space-walk">3\. 교육 항목/);
-  assert.doesNotMatch(html, /상태|수정된 교육 보기|data-fb-send|data-fb-pop|수정 요청 티켓|textarea/);
+  assert.match(html, /<dt>상태<\/dt><dd><span class="v1-lst b">답변중/);  // 처음엔 답변중
+  assert.doesNotMatch(html, /수정된 교육 보기|data-fb-send|data-fb-pop|data-fb-answer|수정 요청 티켓|textarea/);
   assert.match(context.detail('another-author'), /의견을 찾지 못했어요/);
 });
 test('admins get the ticket link entry and the comment box, but no status controls', () => {
   const closed = feedbackHarness(true).detail('f1');
   assert.match(closed, /data-fb-pop="link"/);
-  assert.doesNotMatch(closed, /data-fb-pop="status"|data-fb-pick|data-fb-status|상태/);
+  assert.doesNotMatch(closed, /data-fb-pop="status"|data-fb-pick|data-fb-status/);
+  assert.match(closed, /data-fb-answer="on" >완료로 표시/);
   assert.match(closed, /data-fb-comment[^>]*>&lt;답변 초안&gt;<\/textarea>/);
   assert.match(closed, /data-fb-send >댓글 달기/);
   assert.match(feedbackHarness(true, 'link').detail('f1'), /<option value="REQ-1">/);
@@ -121,7 +123,7 @@ function actionHarness() {
     act: async (action, data) => {calls.push({action, data}); return ctx.succeed;},
   };
   vm.createContext(ctx);
-  vm.runInContext(between("  $('app').addEventListener('click', async e => {\n    if (!view.startsWith('fb:'))", "  $('app').addEventListener('click', e => {\n    const f = e.target.closest('[data-req-filter]')"), ctx);
+  vm.runInContext(between("  $('app').addEventListener('click', async e => {\n    if (!view.startsWith('fb:'))", "  $('app').addEventListener('click', e => {\n    const ffb = e.target.closest('[data-fb-filter]')"), ctx);
   const click = (selector, dataset = {}) => listeners.click({target: {closest: s => s === selector ? {dataset} : null}});
   return {ctx, calls, drafts, box, click};
 }

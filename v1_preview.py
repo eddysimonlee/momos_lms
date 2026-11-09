@@ -100,7 +100,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-22';
+  const KEY = 'momos-v1-preview-23';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -116,10 +116,10 @@ MOCK = r'''
     // 11/06 미리보기 예시 의견: 체험 교육생이 보낸 의견 4건 · 관리자 댓글이 알림으로 간다(40일 전 댓글은 30일이 지나 알림에 안 보임)
     const ago = (days, h = 10) => new Date(Date.now() - days * 864e5 - h * 36e5).toISOString();
     const cm = (id, days, text) => ({id, at: ago(days), user: 'u-staff', name: '체험 담당자', text, notifyAuthor: true});
-    const fb = (id, days, step, text, comments, tickets) => ({id, at: ago(days), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step, text, mentee: 'u-learner', menteeName: '체험 교육생', comments, ...(tickets ? {tickets} : {})});
+    const fb = (id, days, step, text, comments, tickets, done) => ({id, at: ago(days), user: 'u-learner', name: '체험 교육생', email: 'learner@local.test', step, text, mentee: 'u-learner', menteeName: '체험 교육생', comments, ...(tickets ? {tickets} : {}), ...(done ? {answered: {at: ago(done), user: 'u-staff', name: '체험 담당자'}} : {})});
     st.feedback = [
-      fb('fb-demo-old', 45, 'welcome-hygiene', '(예시) 위생 교육 사진이 흐려요.', [cm('c-old', 40, '(예시) 사진을 새로 바꿨어요.')]),
-      fb('fb-demo-q', 6, 'welcome-tasting', '(예시) 시음은 매일 하나요?', [cm('c-qa', 5, '(예시) 입사 첫날 한 번 하고, 새 메뉴가 나오면 다시 해요.')]),
+      fb('fb-demo-old', 45, 'welcome-hygiene', '(예시) 위생 교육 사진이 흐려요.', [cm('c-old', 40, '(예시) 사진을 새로 바꿨어요.')], null, 40),
+      fb('fb-demo-q', 6, 'welcome-tasting', '(예시) 시음은 매일 하나요?', [cm('c-qa', 5, '(예시) 입사 첫날 한 번 하고, 새 메뉴가 나오면 다시 해요.')], null, 5),
       fb('fb-demo-1', 3, 'space-walk', '(예시) 3동 화장실 위치가 교육에 없어요.', [cm('c-1a', 2, '(예시) 매장 공간 안내 새 판에 맞춰 고칠게요.'), cm('c-1b', 0, '(예시) 3번 교육 내용 2에 3동 여자·남자화장실을 넣었어요. 교육 내용 2를 펼쳐 보세요.')], ['REQ-2']),
       fb('fb-demo-2', 1, 'stock-order', '(예시) 발주 예시가 너무 길어요.', [cm('c-2a', 1, '(예시) 원본 문서 기준이라 그대로 둘게요. 대신 본문 펼치기에서 표를 함께 보여 드려요.')]),
       fb('fb-demo-3', 0.04, 'menu-coffee', '(예시) 라떼 계량표를 따로 보고 싶어요.', [])];
@@ -170,9 +170,9 @@ MOCK = r'''
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
-      ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).map(([e, l]) => ({email: e, name: (ACCOUNTS.find(x => x.email === e) || DIRECTORY.find(x => x.email === e) || {}).name || '', level: l, seed: SEED.includes(e)})).sort((a, b) => (a.name || '~').localeCompare(b.name || '~', 'ko') || a.email.localeCompare(b.email)), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
+      ...(lms ? {contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).map(([e, l]) => ({email: e, name: (ACCOUNTS.find(x => x.email === e) || DIRECTORY.find(x => x.email === e) || {}).name || '', level: l, seed: SEED.includes(e)})).sort((a, b) => (a.name || '~').localeCompare(b.name || '~', 'ko') || a.email.localeCompare(b.email)), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, answer: f.answered ? '완료' : '답변중', answeredAt: (f.answered || {}).at || '', mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       myFeedback: (state.feedback || []).filter(f => f.user === u.id).slice().reverse().map(f => ({...Object.fromEntries(['id', 'at', 'user', 'name', 'step', 'text'].filter(k => k in f).map(k => [k, JSON.parse(JSON.stringify(f[k]))])),
-        comments: (f.comments || []).filter(c => c.text && !c.auto).map(c => ({...c})), stepTitle: (STEPS[f.step] || {}).title || ''})),
+        answer: f.answered ? '완료' : '답변중', comments: (f.comments || []).filter(c => c.text && !c.auto).map(c => ({...c})), stepTitle: (STEPS[f.step] || {}).title || ''})),
       notifications: feedbackNotices(u),
       enrolled: !!entry, scheduled: !!(learner && learner.startDate), today: today(), rootRevision: state.rootRevision, learner: JSON.parse(JSON.stringify(learner))};
   }
@@ -235,11 +235,13 @@ MOCK = r'''
       }
       state.rootRevision++; save(); return context(u, target);
     }
-    if (['feedback.comment', 'feedback.link'].includes(v.action)) {  // 의견 처리(admin): 댓글 · 수정 요청 티켓 연결(의견에는 상태가 없다)
+    if (['feedback.comment', 'feedback.link', 'feedback.answer'].includes(v.action)) {  // 의견 처리(admin): 댓글 · 수정 요청 티켓 연결(의견에는 상태가 없다)
       if (levelOf(u) !== 'admin') throw {status: 403, error: '보낸 의견 관리는 LMS관리자 admin 만 할 수 있어요.'};
       const f = (state.feedback || []).find(x => x.id === d.id); if (!f) throw {status: 400, error: '의견을 찾지 못했어요.'};
       if (v.action === 'feedback.comment') { const text = String(d.text || '').trim(); if (!text) throw {status: 400, error: '댓글을 적어 주세요.'};
         f.comments = (f.comments || []).concat([{id: crypto.randomUUID(), at: new Date().toISOString(), user: u.id, name: u.name, text, notifyAuthor: true}]); }
+      else if (v.action === 'feedback.answer') { if (typeof d.on !== 'boolean') throw {status: 400, error: '답변 상태를 확인해 주세요.'};
+        if (d.on && !f.answered) f.answered = {at: new Date().toISOString(), user: u.id, name: u.name}; else if (!d.on) delete f.answered; }
       else { if (d.on && !(state.contentRequests || []).some(x => x.no === d.ticket)) throw {status: 400, error: d.ticket + ' 티켓을 찾지 못했어요.'};
         f.tickets = (f.tickets || []).filter(k => k !== d.ticket).concat(d.on ? [d.ticket] : []); }
       state.rootRevision++; save(); return context(u, target);

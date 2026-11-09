@@ -309,6 +309,14 @@ img{max-width:100%}
 .v1-table th{color:var(--text-muted);font:var(--body-sm-bold);white-space:nowrap}
 .v1-table .v1-fb-course{min-width:9em}
 .v1-table .v1-fb-text{min-width:14em}
+/* 11/09 의견 리스트: 상태 열(답변중·완료)이 잘리지 않게 칸 폭을 줄이고, 모바일에서는 상태를 오른쪽에 */
+.v1-fblist .v1-fb-course{min-width:7em}.v1-fblist .v1-fb-text{min-width:9em}
+/* 모바일: 의견 칸(댓글 수 포함)이 숨으므로 상태 아래에 댓글 아이콘 + 수 */
+.v1-fbcm{display:none}
+@media (max-width:600px){.v1-fblist tr.v1-lrow td:nth-child(5){grid-column:2;grid-row:1/4;align-self:start;display:flex;flex-direction:column;align-items:flex-end;gap:var(--spacing-8)}.v1-fblist tr.v1-lrow td:nth-child(6){display:none}
+.v1-fbcm{display:inline-flex;align-items:center;gap:var(--spacing-2);color:var(--text-muted);font:var(--label-sm-bold)}.v1-fbcm svg{width:16px;height:16px;color:var(--icon-subtle)}
+/* 티켓 연결 카드: 모바일에서는 버튼 오른쪽 정렬 대신 카드 폭에 맞춰 가운데 */
+.v1-fbtop{position:relative}.v1-fbtop .v1-fbtools{position:static}.v1-fbtop .v1-fbcard{left:0;right:0;width:auto}}
 .v1-nowrap{white-space:nowrap}
 .v1-fb-step{display:block;margin-top:var(--spacing-4);color:var(--text-muted);font:var(--label-xs)}
 .v1-lhead.v1-lhead-top{margin-top:0}
@@ -407,6 +415,7 @@ img{max-width:100%}
 .v1-fbpop .v1-admin-add{margin-top:var(--spacing-8)}
 .v1-fbpop ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--spacing-4)}
 .v1-fbpop li{display:flex;align-items:center;gap:var(--spacing-6)}
+.v1-fbpop li .v1-tbtn,.v1-fbpop li .v1-lst{white-space:nowrap;flex:none}
 
 .v1-fbtitle{appearance:none;border:0;background:none;padding:0;min-height:var(--spacing-32);color:var(--text-muted);font:var(--body-md);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .v1-fbtitle:hover{color:var(--text-default)}

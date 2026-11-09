@@ -64,7 +64,7 @@ class FeedbackNotificationTests(unittest.TestCase):
 
     def test_status_actions_are_gone(self):
         fid = self.send()
-        for action, data in (('feedback.status', dict(id=fid, status='닫힘')), ('feedback.resolve', dict(id=fid))):
+        for action, data in (('feedback.status', dict(id=fid, status='닫힘')), ('feedback.resolve', dict(id=fid))):  # 알파에서 잠깐 쓰던 의견 상태(답변 상태와 별개)
             with self.assertRaises(Exception):
                 self.act(self.admin, action, data)
         self.assertNotIn('status', self.service.get(self.admin)['feedback'][0])
@@ -98,6 +98,24 @@ class FeedbackNotificationTests(unittest.TestCase):
         admin_row = self.service.get(self.admin)['feedback'][0]
         self.assertNotIn('status', admin_row)
         self.assertEqual([c['id'] for c in admin_row['comments']], ['a3'])
+
+    def test_answer_state_defaults_to_in_progress_and_only_admins_toggle_it_without_alerts(self):
+        fid = self.send()
+        self.assertEqual(self.opinion()['answer'], '답변중')
+        self.assertEqual(self.service.get(self.admin)['feedback'][0]['answer'], '답변중')
+        with self.assertRaises(PermissionError):
+            self.act(self.learner, 'feedback.answer', dict(id=fid, on=True))
+        with self.assertRaises(ValueError):
+            self.act(self.admin, 'feedback.answer', dict(id=fid, on='yes'))
+        self.act(self.admin, 'feedback.answer', dict(id=fid, on=True))
+        first = self.service.get(self.admin)['feedback'][0]
+        self.assertEqual((first['answer'], self.opinion()['answer']), ('완료', '완료'))
+        self.assertNotIn('answered', first)
+        self.act(self.admin, 'feedback.answer', dict(id=fid, on=True))  # 다시 눌러도 처음 완료 시각 유지
+        self.assertEqual(self.service.get(self.admin)['feedback'][0]['answeredAt'], first['answeredAt'])
+        self.assertEqual(self.notices(), [])  # 상태 변경은 알림이 없다
+        self.act(self.admin, 'feedback.answer', dict(id=fid, on=False))
+        self.assertEqual(self.opinion()['answer'], '답변중')
 
     def test_author_is_sender_not_the_learner_whose_education_was_open(self):
         fid = self.send(self.trainer, self.learner['id'])
