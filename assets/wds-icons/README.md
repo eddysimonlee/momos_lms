@@ -6,6 +6,7 @@
 |---|---|---|
 | bell-20.svg | 20/bell.svg | 상단 알림 버튼 |
 | link-plus-16.svg | 16/link-plus.svg | 의견 › 수정 요청 티켓 연결 |
-| chevron-down-12.svg | 12/chevron-down.svg | 의견 › 상태 변경 |
+| chevron-down-12.svg | 12/chevron-down.svg | (지금은 쓰지 않음) |
+| chat-bubble-16.svg | 16/chat-bubble.svg | 의견 리스트(모바일) › 댓글 수 |
 
 화면에는 path 를 인라인으로 넣고 fill 을 currentColor 로 바꿔 쓴다(파일은 받은 그대로 보관).
