@@ -464,8 +464,8 @@ class Handler(BaseHTTPRequestHandler):
                 if level != 'admin':
                     raise PermissionError('수정 요청 목록은 LMS관리자 admin 만 볼 수 있습니다.')
                 items = root.get('contentRequests') or []
-                if query.get('open', [''])[0] == '1':
-                    items = [x for x in items if x.get('status') in ('요청', '처리 중')]
+                if query.get('open', [''])[0] == '1':  # 11/10: 상태 이름이 '진행중'으로 바뀐 뒤 빈 목록만 나오던 것 고침
+                    items = [x for x in items if onboarding.req_status(x.get('status')) == '진행중']
                 return self.send(200, {'format': 'momos-lms-content-requests', 'exportedAt': onboarding.stamp(), 'requests': items})
             if path == '/api/works/docs-check' and method == 'GET':
                 # 11/02 확인용(admin 만): WORKS 드라이브 업무문서 폴더 연동. 브라우저 주소창에서 열어 본다

@@ -281,6 +281,12 @@ def run():
     if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 계정·교육 기록·세션을 지운다
         n = works_auth.purge_trial_accounts(store)
         if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
+    import onboarding  # 11/10 배포 뒤: 서비스 문구가 TO-BE 와 같아진 '반영 대기' 문구 수정 티켓을 '반영됨'으로
+    try:
+        closed = onboarding.close_applied_edits(store)
+        if closed: print(f"문구 수정 {len(closed)}건을 반영됨으로 닫았습니다: {', '.join(closed)}", flush=True)
+    except Exception as e:  # 티켓 정리가 실패해도 서비스는 뜬다
+        print('문구 수정 자동 처리 실패:', type(e).__name__, flush=True)
     httpd.daemon_threads=False
     stop = threading.Event()
     def terminate(signum,frame):

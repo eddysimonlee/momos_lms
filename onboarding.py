@@ -59,6 +59,30 @@ if _LESSONS.exists():
                     elif _s['id'] in STEPS and _u.get('plan'):
                         STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
 TESTS = {t['id']: t for t in COURSE['tests']}
+
+
+def close_applied_edits(store):
+    """11/10 배포 뒤 서버가 시작할 때 한 번: 반영 대기(진행중) 문구 수정 티켓 중 지금 서비스 문구가 TO-BE 와 같아진 것을 '반영됨'으로 닫는다.
+    (apply_edits.py 로 v1_lessons.json 에 반영·커밋·배포된 것) 문구가 다르면 그대로 둔다. → 닫은 티켓 번호 목록"""
+    data = content_edit.load(Path(__file__).parent)
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        root = projects.Rooms.read(db, ROOT)
+        if not root: return []
+        done = []
+        for r in root.get('contentRequests') or []:
+            e = r.get('edit')
+            if not e or req_status(r.get('status')) != '진행중': continue
+            try: text, _ = content_edit.current(data, (r.get('target') or {}).get('id'), e.get('part'), e.get('index'))
+            except ValueError: continue
+            if text.strip() != str(r.get('tobe') or '').strip(): continue
+            r['status'] = '반영됨'
+            r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='배포된 서비스 문구가 TO-BE 와 같아 자동으로 반영됨 처리')]
+            done.append(r.get('no'))
+        if done:
+            root['revision'] = root.get('revision', 0) + 1
+            projects.Rooms.write(db, ROOT, root)
+        return done
 # 처음 LMS관리자(admin) 이메일(소문자). Render 환경변수 LMS_ADMIN_EMAILS(쉼표 구분)로도 더할 수 있다. 화면에서 지울 수 없다
 LMS_ADMIN_SEED = ['jaehyun.eddy.lee@momos.co.kr']
 LMS_LEVELS = ('admin',)  # 11/02: LMS관리자 = admin 하나. 다른 admin 지정·해제와 보낸 의견 보기(예전 'mentor' 지정은 무시)
@@ -788,22 +812,22 @@ class Service:
 
     @staticmethod
     def content_edit(root, d):
-        """11/10 교육 문구 직접 수정(교육 목적·교육 내용): 지금 문구와 같은지 보고, 화면과 같은 자동 사전 검사를 서버에서 다시 한다.
-        보낼 수 없는 것(block)이 있으면 거절, 경고(warn)·안내(info)는 티켓에 남긴다. 서비스 문구는 바뀌지 않는다(검토 → 커밋으로만 반영)."""
+        """11/10 교육 문구 직접 수정(교육 목적·교육 내용) — '수정하기' = 반영 대기 티켓. 지금 문구와 같은지 보고, 화면과 같은 검사(수정 필요 7개)를
+        서버에서 다시 한다. 하나라도 걸리면 거절. 서비스 문구는 다음 배포 때(apply_edits.py → 커밋) 바뀌고, 배포 뒤 서버가 티켓을 '반영됨'으로 닫는다."""
         e, t = d['edit'], d['target']
         if not isinstance(e, dict) or set(e) - {'part', 'index', 'kind', 'checks'} or 'part' not in e: raise ValueError('수정 내용을 확인해 주세요.')
         if d['type'] != '문구 수정' or t['kind'] != 'item': raise ValueError('교육 문구 수정은 교육의 문구 수정 요청으로만 보낼 수 있어요.')
         part, index = e['part'], e.get('index')
         if part not in ('purpose', 'kp') or (part == 'purpose' and index is not None) or (part == 'kp' and type(index) is not int): raise ValueError('고칠 곳을 확인해 주세요.')
         if 'kind' in e and e['kind'] not in content_edit.KINDS: raise ValueError('변경 종류를 확인해 주세요.')
-        if not str(d.get('note') or '').strip(): raise ValueError('수정 이유를 적어 주세요.')
+        if not str(d.get('note') or '').strip(): raise ValueError('수정 사유를 적어 주세요.')
         busy = next((x for x in root.get('contentRequests') or [] if req_status(x.get('status')) == '진행중' and (x.get('edit') or {}).get('part') == part
                      and (x.get('edit') or {}).get('index') == index and (x.get('target') or {}).get('id') == t['id']), None)
         r = content_edit.review(Path(__file__).parent, t['id'], part, index, d.get('asis', ''), str(d['tobe']).strip(), busy and busy.get('no'))
         block = [i for i in r['items'] if i['level'] == 'block']
         if block: raise ValueError(block[0]['text'])
         # 변경 종류 = 서버 자동 추천(11/10: 화면에서 고르지 않음. BACKLOG 4번 '이미 체크한 사람에게 알리기' 때 쓴다)
-        return dict(part=part, index=index, kind=r['suggest'], suggest=r['suggest'], checks=r['items'],
+        return dict(part=part, index=index, kind=r['suggest'], suggest=r['suggest'],
                     field='교육 목적' if part == 'purpose' else f'교육 내용 {index + 1}')
 
     def content_status(self, root, user, d):

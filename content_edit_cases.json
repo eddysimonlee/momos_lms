@@ -13,12 +13,6 @@
    "베로나잔 또는 레알레잔"
   ]
  ],
- "terms": [
-  "리베르타잔",
-  "베로나잔",
-  "피카디잔",
-  "생크림"
- ],
  "cases": [
   {
    "name": "number",
@@ -32,16 +26,6 @@
       "level": "block",
       "code": "number",
       "text": "근거 원문에 없는 수치: '1200g'"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '1000g'"
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 2곳 바뀜"
      }
     ],
     "suggest": "재확인 필요"
@@ -54,13 +38,7 @@
    "tobe": "매일 4~6통 유지한다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 2곳 바뀜"
-     }
-    ],
+    "items": [],
     "suggest": "재확인 필요"
    }
   },
@@ -71,13 +49,7 @@
    "tobe": "물 1,550 g을 계량해 넣는다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
+    "items": [],
     "suggest": "단순 수정"
    }
   },
@@ -93,11 +65,6 @@
       "level": "block",
       "code": "number",
       "text": "근거 원문에 없는 수치: '153g' (같은 문서 6.5 말차 베이스에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)"
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 1곳 바뀜"
      }
     ],
     "suggest": "재확인 필요"
@@ -117,7 +84,7 @@
       "text": "바꿀 문구를 적어 주세요."
      }
     ],
-    "suggest": "재확인 필요"
+    "suggest": "단순 수정"
    }
   },
   {
@@ -149,41 +116,6 @@
       "level": "block",
       "code": "length",
       "text": "200자까지 쓸 수 있어요. (지금 203자)"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '1배치'"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '500g'"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '1000g'"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '330g'"
-     },
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '생크림'"
-     },
-     {
-      "level": "warn",
-      "code": "rewrite",
-      "text": "절반 넘게 바뀌었어요. 새 내용이면 '교육 내용 추가' 요청이 맞는지 확인해 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 4곳 바뀜"
      }
     ],
     "suggest": "재확인 필요"
@@ -201,11 +133,6 @@
       "level": "block",
       "code": "breaks",
       "text": "줄바꿈은 한 번까지 쓸 수 있어요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
      }
     ],
     "suggest": "단순 수정"
@@ -223,11 +150,6 @@
       "level": "block",
       "code": "breaks",
       "text": "교육 목적은 줄바꿈 없이 써 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
      }
     ],
     "suggest": "단순 수정"
@@ -245,16 +167,6 @@
       "level": "block",
       "code": "markup",
       "text": "태그·링크·이모지는 쓸 수 없어요."
-     },
-     {
-      "level": "warn",
-      "code": "style",
-      "text": "교육 내용은 '~다.'로 끝내 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
      }
     ],
     "suggest": "단순 수정"
@@ -271,105 +183,7 @@
      {
       "level": "block",
       "code": "open",
-      "text": "이 줄은 REQ-9 로 이미 검토 중이에요. 검토가 끝난 뒤 다시 고쳐 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
-    "suggest": "단순 수정"
-   }
-  },
-  {
-   "name": "term",
-   "part": "kp",
-   "asis": "에스프레소는 피카디잔과 낸다.",
-   "tobe": "에스프레소는 리베르타잔과 낸다.",
-   "openReq": null,
-   "expect": {
-    "items": [
-     {
-      "level": "warn",
-      "code": "term",
-      "text": "근거 원문에 없는 이름: '리베르타잔' — 다른 절 내용인지 확인해 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
-    "suggest": "단순 수정"
-   }
-  },
-  {
-   "name": "negation",
-   "part": "kp",
-   "asis": "생크림은 먼저 넣는다.",
-   "tobe": "생크림은 먼저 넣지 않는다.",
-   "openReq": null,
-   "expect": {
-    "items": [
-     {
-      "level": "warn",
-      "code": "negation",
-      "text": "뜻을 바꿀 수 있는 말이 늘거나 줄었어요: '않' — 뜻이 뒤집히지 않았는지 확인해 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
-    "suggest": "재확인 필요"
-   }
-  },
-  {
-   "name": "rewrite",
-   "part": "kp",
-   "asis": "생크림을 먼저 넣고 설탕을 넣는다.",
-   "tobe": "휘핑볼은 세 배치까지만 쓴다.",
-   "openReq": null,
-   "expect": {
-    "items": [
-     {
-      "level": "warn",
-      "code": "dropped",
-      "text": "원문에 있는데 빠진 내용: '생크림'"
-     },
-     {
-      "level": "warn",
-      "code": "rewrite",
-      "text": "절반 넘게 바뀌었어요. 새 내용이면 '교육 내용 추가' 요청이 맞는지 확인해 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
-    "suggest": "단순 수정"
-   }
-  },
-  {
-   "name": "style",
-   "part": "kp",
-   "asis": "생크림을 먼저 넣는다.",
-   "tobe": "생크림을 먼저 넣기",
-   "openReq": null,
-   "expect": {
-    "items": [
-     {
-      "level": "warn",
-      "code": "style",
-      "text": "교육 내용은 '~다.'로 끝내 주세요."
-     },
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
+      "text": "이 줄은 REQ-9 로 이미 반영 대기 중이에요. 배포 뒤 다시 고쳐 주세요."
      }
     ],
     "suggest": "단순 수정"
@@ -382,13 +196,7 @@
    "tobe": "타이머 5시간 55분으로 맞춘 뒤 생크림을 넣는다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
+    "items": [],
     "suggest": "단순 수정"
    }
   },
@@ -399,13 +207,7 @@
    "tobe": "피스타치오 크림을 직접 만들 수 있다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "info",
-      "code": "summary",
-      "text": "수치 그대로"
-     }
-    ],
+    "items": [],
     "suggest": "단순 수정"
    }
   }
