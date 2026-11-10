@@ -141,11 +141,9 @@
   const ceOpen = (stepId, part, index) => (cloud.contentRequests || []).find(r => r.status === '진행중' && r.edit && r.target && r.target.id === stepId && r.edit.part === part && (r.edit.index ?? null) === (index ?? null));
   function ceRun() { return ContentEdit.check(ceEdit.part, ceEdit.asis, ceEdit.text); }
   const CE_X = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  // 근거 원문(오른쪽 칸): 지금 고친 문구에 나오는 수치·원래 문구에서 빠진 수치를 원문에서 표시한다
-  function ceSource(keys, marks) {
-    const tokens = [...new Set(marks)].filter(Boolean).sort((a, b) => b.length - a.length);
-    const re = tokens.length ? new RegExp(tokens.map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/~/g, '\\s*[~\\-–]\\s*')).join('|'), 'g') : null;
-    const mark = s => { const h = esc(s); return re ? h.replace(re, m => `<mark>${m}</mark>`) : h; };
+  // 근거 원문(오른쪽 칸): 표시만 한다(11/10: 바뀐 수치 노란 표시도 글자 대조라 뺌)
+  function ceSource(keys) {
+    const mark = s => esc(s);
     return keys.map(k => {
       const sec = content.sections[k]; if (!sec) return '';
       const doc = content.documents[sec.doc] || {};
@@ -155,7 +153,6 @@
         (sec.paragraphs || []).map(p => `<p>${mark(p).replace(/\n/g, '<br>')}</p>`).join('') + tables + '</section>';
     }).join('') || '<p class="v1-muted">연결된 근거 원문이 없어요.</p>';
   }
-  const ceNums = s => ContentEdit.numbers(s);
   const ceDlg = () => $('v1Ce');
   function ceRefresh() {
     const box = ceDlg(); if (box.hidden || !ceEdit) return;
@@ -169,8 +166,7 @@
     box.querySelector('[data-ce-text]').setAttribute('aria-invalid', String(Boolean(err.length)));
     box.querySelector('[data-ce-send]').disabled = busy || untouched || blocked || !ceEdit.reason.trim();
     const s = steps().find(x => x.id === ceEdit.step);
-    const na = ceNums(ceEdit.asis), nt = ceNums(t), changed = untouched ? [] : [...na.filter(x => !nt.includes(x)), ...nt.filter(x => !na.includes(x))];  // 바뀐 수치만 원문에서 표시
-    box.querySelector('[data-ce-src]').innerHTML = ceSource(ceKeys(s, ceEdit.part, ceEdit.index), changed);
+    const src = box.querySelector('[data-ce-src]'); if (!src.dataset.ready) { src.innerHTML = ceSource(ceKeys(s, ceEdit.part, ceEdit.index)); src.dataset.ready = '1'; }
   }
   // WDS Modal dialog(xxl): 왼쪽 = 고치기, 오른쪽 = 근거 원문. 좁은 화면은 전체 화면 + Tab(고치기 / 근거 원문)
   function ceShow() {
