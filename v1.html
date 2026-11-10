@@ -589,7 +589,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-ce-btns .v1-btn{flex:none}
 .v1-btn-danger{background:var(--component-button-type-destructive-state-default-background);border-color:var(--component-button-type-destructive-state-default-border);color:var(--component-button-type-destructive-state-default-text)}
 .v1-btn-danger:hover{background:var(--component-button-type-destructive-state-hover-background)}
-.v1-ce-confirm{position:absolute;inset:0;display:grid;place-items:center;background:var(--surface-scrim);border-radius:inherit}
+.v1-ce-confirm{position:fixed;inset:0;z-index:1;display:grid;place-items:center;background:var(--surface-scrim)}
 .v1-ce-confirm[hidden]{display:none}
 .v1-ce-confirm-box{width:min(var(--component-confirm-dialog-base-width),calc(100% - var(--spacing-32)));padding:var(--component-confirm-dialog-base-padding);background:var(--component-confirm-dialog-base-surface);border:var(--component-confirm-dialog-base-border-width) solid var(--component-confirm-dialog-base-border-color);border-radius:var(--component-confirm-dialog-base-border-radius);box-shadow:var(--component-confirm-dialog-base-shadow)}
 .v1-ce-confirm-box h3{margin:0;font:var(--component-confirm-dialog-base-title-typography);color:var(--component-confirm-dialog-base-title-color)}
@@ -597,7 +597,6 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-ce-ticket{margin:var(--spacing-8) 0 0}
 @media(max-width:767px){ /* wds-allow: 브레이크포인트 토큰 없음 */
   .v1-ce-panel{left:0;top:0;transform:none;width:100%;height:100%;max-height:none;border-radius:var(--radius-none);border:0;padding:var(--spacing-16)}
-  .v1-ce-confirm{border-radius:0}
   .v1-ce-tabs{display:flex}
   .v1-ce-body{grid-template-columns:minmax(0,1fr)}
   .v1-ce-body[data-ce-pane="edit"] .v1-ce-src,.v1-ce-body[data-ce-pane="src"] .v1-ce-edit{display:none}
