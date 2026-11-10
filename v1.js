@@ -186,9 +186,11 @@
         `<label class="v1-ce-label" for="v1CeReason">수정 사유</label><input id="v1CeReason" class="v1-ce-input v1-ce-one" data-ce-reason maxlength="300" placeholder="반영 기록에 함께 남아요" value="${esc(e.reason)}">` +
       `</div><div class="v1-ce-src" data-ce-src></div></div>` +
       `<div class="v1-ce-foot"><p class="v1-ce-help v1-ce-note">수정하면 '반영 대기'로 저장되고, 다음 배포 때 서비스 문구가 바뀌어요.</p>` +
-      `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-close>취소</button><button type="button" class="v1-btn primary" data-ce-send>수정하기</button></div></div>` +
-      `<div class="v1-ce-confirm" data-ce-confirm hidden><div class="v1-ce-confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="v1CeAsk"><h3 id="v1CeAsk">고치던 내용을 버릴까요?</h3><p>지금 닫으면 고친 문구와 수정 이유가 사라져요.</p>` +
-        `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-keep>계속 고치기</button><button type="button" class="v1-btn v1-btn-danger" data-ce-drop>버리기</button></div></div></div>`;
+      `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-close>취소</button><button type="button" class="v1-btn primary" data-ce-send>수정하기</button></div></div>` ;
+    // 버리기 확인(Confirm dialog)은 편집 창 밖 — 화면 전체(편집 창 테두리까지)를 어둡게
+    box.querySelector('[data-ce-confirm]')?.remove();
+    box.insertAdjacentHTML('beforeend', `<div class="v1-ce-confirm" data-ce-confirm hidden><div class="v1-ce-confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="v1CeAsk"><h3 id="v1CeAsk">고치던 내용을 버릴까요?</h3><p>지금 닫으면 고친 문구와 수정 사유가 사라져요.</p>` +
+        `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-keep>계속 고치기</button><button type="button" class="v1-btn v1-btn-danger" data-ce-drop>버리기</button></div></div></div>`);
     box.hidden = false; document.body.classList.add('v1-noscroll');
     ceRefresh();
     const ta = box.querySelector('[data-ce-text]'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
