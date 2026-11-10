@@ -111,9 +111,9 @@
   const steps = () => content.units.flatMap(u => u.steps);
   const planned = s => s.lessonStatus === 'planned';
   // >>> content-edit-check (11/10 교육 문구 직접 수정 — 입력하는 동안 아래 '수정 필요'. content_edit.py 와 같은 규칙, content_edit_cases.json 으로 함께 테스트)
-  // 남기는 규칙은 6개(빈 문구·같은 문구·길이·줄바꿈·태그/링크/이모지·같은 줄 반영 대기). 원문과 뜻이 맞는지는 글자 대조로 알 수 없어(3000g = 3kg) 배포 때 사람이 AI 와 확인. 변경 종류 = 수치가 바뀌었는지로 자동 추천
+  // 남기는 규칙은 5개(빈 문구·같은 문구·길이·태그/링크/이모지·같은 줄 반영 대기, 줄바꿈 횟수는 제한 없음). 원문과 뜻이 맞는지는 글자 대조로 알 수 없어(3000g = 3kg) 배포 때 사람이 AI 와 확인. 변경 종류 = 수치가 바뀌었는지로 자동 추천
   const ContentEdit = (() => {
-    const LIMIT = {purpose: 120, kp: 200}, BREAKS = {purpose: 0, kp: 1};
+    const LIMIT = {purpose: 120, kp: 200};
     const UNIT = '(?:kg|g|mL|ml|L|ℓ|℃|°C|cm|mm|%|시간|분|초|잔|배치|통|샷|개월|개|일|장|병|회|번|명|층|동|팩|봉|스푼|펌프|주|년|원)';
     const NUM = new RegExp('\\d[\\d.]*(?:~\\d[\\d.]*)?' + UNIT, 'g');
     const MARKUP = /<[^>]*>|https?:\/\/|www\.|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
@@ -127,7 +127,6 @@
       if (!t) add('empty', '바꿀 문구를 적어 주세요.'); else if (t === a) add('same', '지금 문구와 같아요.');
       const len = [...t].length;
       if (len > LIMIT[part]) add('length', `${LIMIT[part]}자까지 쓸 수 있어요. (지금 ${len}자)`);
-      if (t.split('\n').length - 1 > BREAKS[part]) add('breaks', part === 'purpose' ? '교육 목적은 줄바꿈 없이 써 주세요.' : '줄바꿈은 한 번까지 쓸 수 있어요.');
       if (MARKUP.test(t)) add('markup', '태그·링크·이모지는 쓸 수 없어요.');
       const numsA = numbers(a), numsT = numbers(t);  // 변경 종류 자동 추천에만 쓴다(검사 아님)
       const changed = [...numsT.filter(x => !numsA.includes(x)), ...numsA.filter(x => !numsT.includes(x))];

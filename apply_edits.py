@@ -5,7 +5,7 @@
     python3 apply_edits.py content_edits_202611101530.json --commit --skip REQ-103  # 원문과 안 맞는 건은 빼고
     python3 apply_edits.py content_edits_202611101530.json           # 반영만(빌드·테스트·커밋은 손으로)
 
-한 건씩: 지금 문구가 AS-IS 와 같은지 → 서버와 같은 형식 검사(수정 필요 6개) → 교육 목적·교육 내용 문구만 바꾼다(근거·순서·칸 수는 그대로).
+한 건씩: 지금 문구가 AS-IS 와 같은지 → 서버와 같은 형식 검사(수정 필요 5개) → 교육 목적·교육 내용 문구만 바꾼다(근거·순서·칸 수는 그대로).
 원문과 뜻이 맞는지는 스크립트가 판단하지 않는다 — --check 로 근거 원문과 나란히 보고 사람(또는 AI)이 확인한 뒤, 안 맞는 건은 --skip 으로 뺀다.
 이미 TO-BE 이면 건너뛰고, AS-IS 와 다르거나 검사에 걸리면 건너뛰고 알린다. 바꾼 것은 source_log.json 에 기록 1건(tickets = REQ 번호).
 --commit: 그다음 python3 v1_build.py → 모든 *_test.py → git commit 까지 한다. 하나라도 실패하면 바꾼 파일을 되돌리고 커밋하지 않는다.

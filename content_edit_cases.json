@@ -1,5 +1,5 @@
 {
- "note": "content_edit.py ↔ v1.js ContentEdit 같은 결과 확인용(11/10, 수정 필요 6개). expect 는 content_edit.py 결과",
+ "note": "content_edit.py ↔ v1.js ContentEdit 같은 결과 확인용(11/10, 수정 필요 5개). expect 는 content_edit.py 결과",
  "cases": [
   {
    "name": "number",
@@ -103,13 +103,7 @@
    "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.\n둘째 줄이다.\n셋째 줄이다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "block",
-      "code": "breaks",
-      "text": "줄바꿈은 한 번까지 쓸 수 있어요."
-     }
-    ],
+    "items": [],
     "suggest": "단순 수정"
    }
   },
@@ -120,13 +114,7 @@
    "tobe": "피스타치오 크림을\n만들 수 있다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "block",
-      "code": "breaks",
-      "text": "교육 목적은 줄바꿈 없이 써 주세요."
-     }
-    ],
+    "items": [],
     "suggest": "단순 수정"
    }
   },
