@@ -20,6 +20,7 @@
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
   const feedbackDrafts = new Map();
+  let ceMode = false, ceEdit = null, ceTimer = null, ceTerms = null;  // ceMode: ⋮ › 문구 수정 모드(관리자). 항목 화면을 벗어나면 끝난다  // 11/10 교육 문구 직접 수정(관리자): 고치는 중인 줄 하나
   let noticeBusy = false;
 
   function toast(message) {
@@ -109,6 +110,154 @@
   // 교육과정(curriculum.json): 단계 → 단원 → 세션. 세션이 기록 단위(항목)다.
   const steps = () => content.units.flatMap(u => u.steps);
   const planned = s => s.lessonStatus === 'planned';
+  // >>> content-edit-check (11/10 교육 문구 직접 수정 — 입력하는 동안 아래 경고. content_edit.py 와 같은 규칙, content_edit_cases.json 으로 함께 테스트)
+  const ContentEdit = (() => {
+    const LIMIT = {purpose: 120, kp: 200}, BREAKS = {purpose: 0, kp: 1};
+    const UNIT = '(?:kg|g|mL|ml|L|ℓ|℃|°C|cm|mm|%|시간|분|초|잔|배치|통|샷|개월|개|일|장|병|회|번|명|층|동|팩|봉|스푼|펌프|주|년|원)';
+    const NUM = new RegExp('\\d[\\d.]*(?:~\\d[\\d.]*)?' + UNIT, 'g');
+    const MARKUP = /<[^>]*>|https?:\/\/|www\.|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+    const STRONG = ['않', '금지', '하지 말', '말 것', '반드시', '필수', '절대'];
+    const STOP = new Set(['기준', '항목', '품목', '재료', '용량', '수량', '비고', '내용', '담당', '위치', '시간', '방법', '순서', '구분', '상미기한']);
+    const norm = s => String(s ?? '').replace(/\r\n/g, '\n').replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(/(\d)\s*[~\-–]\s*(?=\d)/g, '$1~').replace(/(\d)[ \t]+(?=[^\d\s])/g, '$1');
+    const numbers = s => [...new Set(norm(s).match(NUM) || [])];
+    const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const has = (text, token) => new RegExp('(?<![\\d.])' + reEsc(token)).test(text);
+    const count = (s, w) => s.split(w).length - 1;
+    const sectionText = sec => [...(sec.paragraphs || []), ...(sec.tables || []).map(t => [t.header || [], ...(t.rows || [])].flat().join('\t'))].join('\n');
+    const termsOf = sections => {
+      const out = new Set();
+      for (const sec of Object.values(sections)) for (const t of sec.tables || []) for (const row of t.rows || []) for (let c of row) {
+        c = String(c).trim(); const n = [...c].length;
+        if (n >= 3 && n <= 12 && /[가-힣]/.test(c) && !/[\d\s]/.test(c) && !STOP.has(c)) out.add(c);
+      }
+      return [...out].sort((a, b) => [...b].length - [...a].length || (a < b ? -1 : a > b ? 1 : 0));
+    };
+    const ratio = (a, b) => {
+      a = a.replace(/ /g, ''); b = b.replace(/ /g, ''); if (!a && !b) return 1;
+      let prev = new Array(b.length + 1).fill(0);
+      for (const x of a) { const cur = [0]; for (let j = 0; j < b.length; j++) cur.push(x === b[j] ? prev[j] + 1 : Math.max(prev[j + 1], cur[j])); prev = cur; }
+      return 2 * prev[b.length] / (a.length + b.length);
+    };
+    function check(part, asis, tobe, cited, others = [], terms = [], openReq = null) {
+      const items = [], add = (level, code, text) => items.push({level, code, text});
+      const a = String(asis ?? '').replace(/\r\n/g, '\n').trim(), t = String(tobe ?? '').replace(/\r\n/g, '\n').trim(), src = norm(cited.join('\n'));
+      if (openReq) add('block', 'open', `이 줄은 ${openReq} 로 이미 검토 중이에요. 검토가 끝난 뒤 다시 고쳐 주세요.`);
+      if (!t) add('block', 'empty', '바꿀 문구를 적어 주세요.'); else if (t === a) add('block', 'same', '지금 문구와 같아요.');
+      const len = [...t].length;
+      if (len > LIMIT[part]) add('block', 'length', `${LIMIT[part]}자까지 쓸 수 있어요. (지금 ${len}자)`);
+      if (count(t, '\n') > BREAKS[part]) add('block', 'breaks', part === 'purpose' ? '교육 목적은 줄바꿈 없이 써 주세요.' : '줄바꿈은 한 번까지 쓸 수 있어요.');
+      if (MARKUP.test(t)) add('block', 'markup', '태그·링크·이모지는 쓸 수 없어요.');
+      const numsA = numbers(a);
+      for (const n of numbers(t)) {
+        if (numsA.includes(n) && !has(src, n)) continue;  // 원래 문구에 있던 값(근거 밖)은 이번 수정의 책임이 아니다
+        if (!has(src, n)) {
+          const where = [...new Set(others.filter(([, text]) => has(norm(text), n)).map(([label]) => label))].slice(0, 2);
+          add('block', 'number', `근거 원문에 없는 수치: '${n}'` + (where.length ? ` (${where.join(' · ')}에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)` : ''));
+        }
+      }
+      const nt = norm(t);
+      for (const w of t ? terms : []) if (t.includes(w) && !a.includes(w) && !src.includes(w)) add('warn', 'term', `근거 원문에 없는 이름: '${w}' — 다른 절 내용인지 확인해 주세요.`);
+      for (const n of t ? numsA : []) if (!has(nt, n) && has(src, n)) add('warn', 'dropped', `원문에 있는데 빠진 내용: '${n}'`);
+      for (const w of t ? terms : []) if (a.includes(w) && !t.includes(w) && src.includes(w)) add('warn', 'dropped', `원문에 있는데 빠진 내용: '${w}'`);
+      const flip = STRONG.filter(w => count(a, w) !== count(t, w));
+      if (flip.length && t) add('warn', 'negation', `뜻을 바꿀 수 있는 말이 늘거나 줄었어요: '${flip.join(', ')}' — 뜻이 뒤집히지 않았는지 확인해 주세요.`);
+      if (a && t && t !== a && ratio(a, t) < 0.5) add('warn', 'rewrite', "절반 넘게 바뀌었어요. 새 내용이면 '교육 내용 추가' 요청이 맞는지 확인해 주세요.");
+      const end = part === 'kp' ? /(다|\))\.$/ : /다\.$/;
+      if (t && end.test(a) && !end.test(t)) add('warn', 'style', part === 'kp' ? "교육 내용은 '~다.'로 끝내 주세요." : "교육 목적은 '~할 수 있다.'처럼 끝내 주세요.");
+      const nt2 = numbers(t), changed = [...new Set([...nt2.filter(x => !numsA.includes(x)), ...numsA.filter(x => !nt2.includes(x))])];
+      const suggest = changed.length || flip.length ? '재확인 필요' : '단순 수정';
+      if (t && t !== a) add('info', 'summary', changed.length ? `수치 ${changed.length}곳 바뀜` : '수치 그대로');
+      return {items, suggest};
+    }
+    return {check, termsOf, sectionText, LIMIT};
+  })();
+  // <<< content-edit-check
+  // 11/10 교육 문구 직접 수정 — 화면 쪽(관리자만). 보내면 '문구 수정' 티켓(REQ-n)이 되고, 서비스 문구는 검토 → 커밋 뒤에만 바뀐다.
+  const ceKeys = (s, part, index) => part === 'purpose' ? [...new Set((s.keyPoints || []).flatMap(k => k.cites || []))] : [...new Set((s.keyPoints[index] || {}).cites || [])];
+  const ceOpen = (stepId, part, index) => (cloud.contentRequests || []).find(r => r.status === '진행중' && r.edit && r.target && r.target.id === stepId && r.edit.part === part && (r.edit.index ?? null) === (index ?? null));
+  function ceRun() {
+    const s = steps().find(x => x.id === ceEdit.step), keys = ceKeys(s, ceEdit.part, ceEdit.index), set = new Set(keys);
+    const docs = new Set(keys.map(k => (content.sections[k] || {}).doc));
+    const label = k => { const sec = content.sections[k], doc = content.documents[sec.doc] || {}; return `${docs.has(sec.doc) ? '같은 문서' : (doc.title || '')} ${sec.no || ''} ${sec.title || ''}`.trim(); };
+    ceTerms = ceTerms || ContentEdit.termsOf(content.sections);
+    const cited = keys.filter(k => content.sections[k]).map(k => ContentEdit.sectionText(content.sections[k]));
+    const others = Object.keys(content.sections).filter(k => !set.has(k)).map(k => [label(k), ContentEdit.sectionText(content.sections[k])]);
+    return ContentEdit.check(ceEdit.part, ceEdit.asis, ceEdit.text, cited, others, ceTerms);
+  }
+  // 바뀐 부분: 낱말 단위로 지운 것(취소선)·더한 것(밑줄)
+  function ceDiff(a, b) {
+    const x = String(a).split(/(\s+)/), y = String(b).split(/(\s+)/), m = x.length, n = y.length;
+    const L = Array.from({length: m + 1}, () => new Array(n + 1).fill(0));
+    for (let i = m - 1; i >= 0; i--) for (let j = n - 1; j >= 0; j--) L[i][j] = x[i] === y[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    let i = 0, j = 0, out = '';
+    while (i < m || j < n) {
+      if (i < m && j < n && x[i] === y[j]) { out += esc(x[i]); i++; j++; }
+      else if (i < m && (j === n || L[i + 1][j] >= L[i][j + 1])) { out += /^\s+$/.test(x[i]) ? esc(x[i]) : `<del>${esc(x[i])}</del>`; i++; }
+      else { out += /^\s+$/.test(y[j]) ? esc(y[j]) : `<ins>${esc(y[j])}</ins>`; j++; }
+    }
+    return out.replace(/\n/g, '<br>');
+  }
+  const CE_LEVEL = {block: '고쳐야 함', warn: '확인', info: '참고'}, CE_BANNER = {block: 'red', warn: 'yellow', info: 'gray'};
+  // 검사 결과 = WDS Banner(round) 빨강·노랑·회색
+  const ceList = items => items.length ? `<ul class="v1-ce-checks">${items.map(i => `<li class="v1-ce-banner-${CE_BANNER[i.level]}"><b>${CE_LEVEL[i.level]}</b><span>${esc(i.text)}</span></li>`).join('')}</ul>` : '';
+  const CE_X = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
+  // 근거 원문(오른쪽 칸): 지금 고친 문구에 나오는 수치·원래 문구에서 빠진 수치를 원문에서 표시한다
+  function ceSource(keys, marks) {
+    const tokens = [...new Set(marks)].filter(Boolean).sort((a, b) => b.length - a.length);
+    const re = tokens.length ? new RegExp(tokens.map(t => esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/~/g, '\\s*[~\\-–]\\s*')).join('|'), 'g') : null;
+    const mark = s => { const h = esc(s); return re ? h.replace(re, m => `<mark>${m}</mark>`) : h; };
+    return keys.map(k => {
+      const sec = content.sections[k]; if (!sec) return '';
+      const doc = content.documents[sec.doc] || {};
+      const tables = (sec.tables || []).map(t => `<div class="table-wrap"><table><thead><tr>${(t.header || []).map(h => `<th>${mark(h)}</th>`).join('')}</tr></thead><tbody>${(t.rows || []).map(r =>
+        `<tr>${r.map(c => `<td>${mark(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('');
+      return `<section class="v1-ce-sec"><p class="v1-ce-doc">${esc(doc.title || '')}</p><h4>${esc(sec.no)} ${esc(sec.title)}${sec.partLabel ? ' · ' + esc(sec.partLabel) : ''}</h4>` +
+        (sec.paragraphs || []).map(p => `<p>${mark(p).replace(/\n/g, '<br>')}</p>`).join('') + tables + '</section>';
+    }).join('') || '<p class="v1-muted">연결된 근거 원문이 없어요.</p>';
+  }
+  const ceNums = s => (String(s).replace(/(\d),(?=\d{3}(?!\d))/g, '$1').match(/\d[\d.]*(?:\s*[~\-–]\s*\d[\d.]*)?\s*(?:kg|g|mL|ml|L|℃|°C|cm|mm|%|시간|분|초|잔|배치|통|샷|개월|개|일|장|병|회|번|명|층|동|팩|봉|스푼|펌프|주|년|원)/g) || []).map(x => x.replace(/\s+/g, ''));
+  const ceDlg = () => $('v1Ce');
+  function ceRefresh() {
+    const box = ceDlg(); if (box.hidden || !ceEdit) return;
+    const r = ceRun(), blocked = r.items.some(i => i.level === 'block'), t = ceEdit.text.trim(), untouched = t === ceEdit.asis;
+    const n = [...t].length, max = ContentEdit.LIMIT[ceEdit.part];
+    box.querySelector('[data-ce-count]').textContent = `${n} / ${max}`;
+    box.querySelector('[data-ce-text]').classList.toggle('error', !untouched && blocked);
+    box.querySelector('[data-ce-checks]').innerHTML = untouched ? '<p class="v1-ce-help">문구를 고치면 근거 원문과 바로 대조해요.</p>' : ceList(r.items) || '<p class="v1-ce-help">자동 검사에서 걸린 것이 없어요.</p>';
+    box.querySelector('[data-ce-diff]').innerHTML = t && !untouched ? `<p class="v1-ce-label">바뀐 부분</p><p>${ceDiff(ceEdit.asis, t)}</p>` : '';
+    box.querySelector('[data-ce-send]').disabled = busy || untouched || blocked || !ceEdit.reason.trim();
+    box.querySelector('[data-ce-why]').textContent = untouched ? '' : blocked ? "'고쳐야 함'을 고치면 보낼 수 있어요." : !ceEdit.reason.trim() ? '수정 이유를 적어 주세요.' : '';
+    const s = steps().find(x => x.id === ceEdit.step);
+    const na = ceNums(ceEdit.asis), nt = ceNums(t), changed = untouched ? [] : [...na.filter(x => !nt.includes(x)), ...nt.filter(x => !na.includes(x))];  // 바뀐 수치만 원문에서 표시
+    box.querySelector('[data-ce-src]').innerHTML = ceSource(ceKeys(s, ceEdit.part, ceEdit.index), changed);
+  }
+  // WDS Modal dialog(xxl): 왼쪽 = 고치기, 오른쪽 = 근거 원문. 좁은 화면은 전체 화면 + Tab(고치기 / 근거 원문)
+  function ceShow() {
+    const e = ceEdit, s = steps().find(x => x.id === e.step), title = e.part === 'purpose' ? '교육 목적 수정' : `교육 내용 ${e.index + 1} 수정`;
+    const box = ceDlg(), panel = box.querySelector('.v1-ce-panel');
+    panel.innerHTML = `<div class="v1-ce-top"><div><h2 id="v1CeTitle">${title}</h2><p class="v1-ce-meta">${stepIndex(s.id) + 1}. ${esc(s.title)}</p></div>` +
+      `<button type="button" class="v1-icon-btn v1-ce-x" data-ce-close aria-label="닫기">${CE_X}</button></div>` +
+      `<div class="v1-ce-tabs" role="tablist"><button type="button" role="tab" data-ce-tab="edit" aria-selected="true">고치기</button><button type="button" role="tab" data-ce-tab="src" aria-selected="false">근거 원문</button></div>` +
+      `<div class="v1-ce-body" data-ce-pane="edit"><div class="v1-ce-edit">` +
+        `<label class="v1-ce-label" for="v1CeText">문구</label><textarea id="v1CeText" class="v1-ce-input" data-ce-text rows="4">${esc(e.text)}</textarea>` +
+        `<p class="v1-ce-count" data-ce-count></p><div data-ce-checks aria-live="polite"></div><div class="v1-ce-diff" data-ce-diff></div>` +
+        `<label class="v1-ce-label" for="v1CeReason">수정 이유</label><input id="v1CeReason" class="v1-ce-input v1-ce-one" data-ce-reason maxlength="300" placeholder="검토하는 사람에게 보여요" value="${esc(e.reason)}">` +
+      `</div><div class="v1-ce-src" data-ce-src></div></div>` +
+      `<div class="v1-ce-foot"><p class="v1-ce-help" data-ce-why></p><p class="v1-ce-help v1-ce-note">보내도 바로 바뀌지 않아요. 원본과 맞는지 검토한 뒤 반영돼요.</p>` +
+      `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-close>취소</button><button type="button" class="v1-btn primary" data-ce-send>검토 요청 보내기</button></div></div>` +
+      `<div class="v1-ce-confirm" data-ce-confirm hidden><div class="v1-ce-confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="v1CeAsk"><h3 id="v1CeAsk">고치던 내용을 버릴까요?</h3><p>지금 닫으면 고친 문구와 수정 이유가 사라져요.</p>` +
+        `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-keep>계속 고치기</button><button type="button" class="v1-btn v1-btn-danger" data-ce-drop>버리기</button></div></div></div>`;
+    box.hidden = false; document.body.classList.add('v1-noscroll');
+    ceRefresh();
+    const ta = box.querySelector('[data-ce-text]'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+  function ceHide(force) {
+    if (!ceEdit) return;
+    const dirty = ceEdit.text.trim() !== ceEdit.asis || ceEdit.reason.trim();
+    if (dirty && !force) { const c = ceDlg().querySelector('[data-ce-confirm]'); c.hidden = false; c.querySelector('[data-ce-keep]').focus(); return; }
+    const back = ceEdit.from; ceEdit = null; ceDlg().hidden = true; document.body.classList.remove('v1-noscroll');
+    const el = back && $('app').querySelector(back); if (el) el.focus({preventScroll: true});
+  }
   // 체크할 항목 = 교육 내용(keyPoints). 교육 내용이 없는 항목(첫날 OJT)은 체크 목록 자체. 서버(onboarding.STEPS)와 같은 규칙.
   const checkItems = s => s.keyPoints && s.keyPoints.length ? s.keyPoints : (s.checks || []).map(text => ({text, cites: []}));  // 교육안 준비 중(추가·교체 세션): 수행 확인 없음
   // 서버에 아직 기록 칸이 없는 새 세션도 화면이 깨지지 않도록 빈 기록을 돌려준다.
@@ -330,6 +479,8 @@
   function render() {
     if (!cloud || !content) return;
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
+    if (ceEdit && !(step && step.id === ceEdit.step)) ceHide(true);  // 다른 화면으로 가면 고치던 것은 버린다
+    if (!step) ceMode = false;
     const branch = view === 'branch';
     if (view !== 'all' && !(step && returnView === 'all')) filt = null;  // 전체 교육을 벗어나면 필터 초기화
     // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
@@ -367,8 +518,11 @@
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
     app.innerHTML = view === 'admin' ? adminView() : view === 'opinions' ? opinionsView() : view.startsWith('log:') ? logView(view.slice(4)) : view.startsWith('req:') ? reqView(view.slice(4)) : view.startsWith('fb:') ? fbView(view.slice(3)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
+    if (ceEdit) ceRefresh();
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
+    const mbar = app.querySelector('.v1-ce-modebar');  // 11/10 문구 수정 모드 띠: 스크롤해도 상단바(+교육생 띠) 바로 아래에 고정
+    if (mbar) mbar.style.top = document.querySelector('.v1-top').offsetHeight + (lbar ? lbar.offsetHeight : 0) + 'px';
     if (same) {
       opened.forEach(id => { const d = document.getElementById(id); if (d) d.open = true; });
       // 저장 중에는 체크박스가 잠깐 disabled 라 포커스를 못 받는다 → 기억해 두었다가 저장 후 다시 그릴 때 돌려준다
@@ -674,6 +828,8 @@
       `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
+      (r.edit ? `<div class="v1-ce-ticket"><div class="v1-ce-diff"><i>바뀐 부분</i>${ceDiff(r.asis, r.tobe)}</div><p class="v1-muted">변경 종류(자동 추천): <b>${esc(r.edit.kind)}</b></p>` +
+        `<p class="v1-muted">자동 검사</p>${ceList((r.edit.checks || []).filter(i => i.level !== 'block')) || '<p class="v1-muted">걸린 것 없음</p>'}</div>` : '') +
       (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? (reqEdit === r.id
         ? `<div class="v1-reqform v1-replyedit"><textarea class="v1-pop-input" data-reply-text maxlength="2000" rows="3" aria-label="처리 메모 고치기">${esc(r.reply)}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-reply-cancel>취소</button><button type="button" class="v1-btn primary" data-reply-save>저장</button></div></div>`
         : `<div class="v1-reply"><p class="v1-muted">처리 메모: ${esc(r.reply).replace(/\n/g, '<br>')}</p>${cloud.lmsLevel === 'admin' ? '<span class="v1-reply-ctl"><button type="button" class="v1-tbtn" data-reply-edit>수정</button><button type="button" class="v1-tbtn v1-danger" data-reply-del>삭제</button></span>' : ''}</div>`) : '') + '</section>' +
@@ -748,7 +904,9 @@
   // 11/05 텍스트로 복사: 캡처 대신 Claude 세션에 붙여 넣기 좋게(티켓 번호·대상 id·AS-IS/TO-BE·메모)
   const reqText = r => [`[${tkey(r)}] ${r.type} · ${r.status}`,
     `대상: ${r.target.kind === 'doc' ? '원본 문서' : '교육'} — ${r.target.title} (id: ${r.target.id})`,
-    r.field ? `항목: ${r.field}` : '', `요청: ${r.name} · ${fmtAt(r.at)}`, r.assignee ? `담당: ${r.assignee}` : '',
+    r.field ? `항목: ${r.field}` : '', r.edit ? `변경 종류(자동 추천): ${r.edit.kind}` : '',
+    r.edit && (r.edit.checks || []).some(i => i.level !== 'info') ? `자동 검사:\n${r.edit.checks.filter(i => i.level !== 'info').map(i => `- ${CE_LEVEL[i.level]}: ${i.text}`).join('\n')}` : '',
+    `요청: ${r.name} · ${fmtAt(r.at)}`, r.assignee ? `담당: ${r.assignee}` : '',
     `AS-IS:\n${r.asis || '(없음)'}`, `TO-BE:\n${r.tobe}`, r.note ? `메모: ${r.note}` : '', r.reply ? `처리 메모: ${r.reply}` : '',
     r.commit ? `커밋: ${r.commit}` : '', logsOf(r).length ? `반영 기록: ${logsOf(r).map(e => e.id).join(', ')}` : ''].filter(Boolean).join('\n');
   async function copyText(text, done) {
@@ -764,6 +922,40 @@
     const all = e.target.closest('[data-req-copy-all]'); if (all && view === 'admin') { const f = REQ_FILTERS.find(x => x[0] === reqFilter) || REQ_FILTERS[1], list = (cloud.contentRequests || []).filter(f[2]);
       copyText(list.map(reqText).join('\n\n----\n\n'), `${f[1]} 요청 ${list.length}건을 복사했어요. Claude 대화에 붙여 넣으세요.`); }
   });
+  // 11/10 교육 문구 직접 수정: 줄을 누르면 편집 창(Modal dialog). 보내기 = '문구 수정' 티켓. 입력하는 동안 0.3초 뒤 검사 다시
+  $('app').addEventListener('click', e => {
+    const start = e.target.closest('[data-ce-start]');
+    if (start && ceMode && view.startsWith('step:') && cloud.lmsLevel === 'admin') {
+      const s = steps().find(x => x.id === view.slice(5)), [part, i] = start.dataset.ceStart.split(':'), index = part === 'kp' ? Number(i) : null;
+      const asis = part === 'purpose' ? s.purpose : s.keyPoints[index].text;
+      ceEdit = {step: s.id, part, index, asis, text: asis, reason: '', from: `[data-ce-start="${start.dataset.ceStart}"]`}; ceShow();
+      return;
+    }
+    if (e.target.closest('[data-ce-mode-off]')) { ceMode = false; ceHide(true); render(); }
+  });
+  ceDlg().addEventListener('click', async e => {
+    if (!ceEdit) return;
+    const box = ceDlg();
+    if (e.target.closest('[data-ce-keep]')) { box.querySelector('[data-ce-confirm]').hidden = true; box.querySelector('[data-ce-text]').focus(); return; }
+    if (e.target.closest('[data-ce-drop]')) { ceHide(true); return; }
+    if (e.target.closest('[data-ce-close]')) { ceHide(); return; }
+    const tab = e.target.closest('[data-ce-tab]');
+    if (tab) { box.querySelectorAll('[data-ce-tab]').forEach(x => x.setAttribute('aria-selected', String(x === tab))); box.querySelector('.v1-ce-body').dataset.cePane = tab.dataset.ceTab; return; }
+    if (e.target.closest('[data-ce-send]')) {
+      const s = steps().find(x => x.id === ceEdit.step), r = ceRun(), x = ceEdit;
+      if (r.items.some(i => i.level === 'block') || !x.reason.trim()) return;
+      const before = new Set((cloud.contentRequests || []).map(q => q.id));
+      const ok = await act('content.request', {target: {kind: 'item', id: s.id, title: s.title}, type: '문구 수정', field: x.part === 'purpose' ? '교육 목적' : `교육 내용 ${x.index + 1}`,
+        asis: x.asis, tobe: x.text.trim(), note: x.reason.trim(), edit: {part: x.part, index: x.index, kind: r.suggest, checks: r.items}});  // 변경 종류는 자동 추천(11/10: 고르는 칸은 BACKLOG 4번 때 다시)
+      if (ok) { const n = (cloud.contentRequests || []).find(q => !before.has(q.id)); ceHide(true); render(); toast(`${n ? n.no + ' ' : ''}검토 요청을 보냈어요. 원본과 맞는지 검토한 뒤 반영돼요.`); }
+    }
+  });
+  ceDlg().addEventListener('input', e => {
+    if (!ceEdit) return;
+    if (e.target.matches('[data-ce-text]')) { ceEdit.text = e.target.value; clearTimeout(ceTimer); ceTimer = setTimeout(ceRefresh, 300); }
+    else if (e.target.matches('[data-ce-reason]')) { ceEdit.reason = e.target.value; ceRefresh(); }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ceEdit && !ceDlg().hidden) { e.preventDefault(); const c = ceDlg().querySelector('[data-ce-confirm]'); if (!c.hidden) { c.hidden = true; return; } ceHide(); } });
   // 아직 이어지지 않은 반영 기록(최근 순) 고르기
   const logPick = r => (cloud.sourceLog || []).filter(e => !logsOf(r).includes(e)).slice(0, 30).map(e => `<option value="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</option>`).join('');
   $('app').addEventListener('click', async e => {
@@ -919,8 +1111,15 @@
       if (editMark) return `<div class="v1-khead"><label class="v1-kcheck"><input type="checkbox" data-mark="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''}><span class="v1-box"></span></label>${who}</div>`;
       return on ? `<div class="v1-khead v1-khead-ro">${who}</div>` : '';
     };
+    // 11/10 교육 문구 직접 수정: LMS관리자 admin 에게만 '문구 수정'(검토 중이면 티켓 번호)
+    // 11/10: 항목마다 버튼을 두지 않고 ⋮ › '문구 수정 모드'에서만 — 글을 누르면 고치는 칸. 모드 중에는 체크·본문 펼치기 대신 고치기
+    const ceOn = ceMode && cloud.lmsLevel === 'admin' && Boolean((s.keyPoints || []).length);
+    const cePick = (part, index, text, cls = '') => { const o = ceOpen(s.id, part, index), html = esc(text).replace(/\n/g, '<br>');
+      return o ? `<div class="v1-ce-busy ${cls}">${html}<button type="button" class="v1-ce-tag" data-open-req="${esc(o.no)}">검토 중 · ${esc(o.no)}</button></div>`
+        : `<button type="button" class="v1-ce-pick ${cls}" data-ce-start="${part}:${index ?? ''}" aria-label="${part === 'purpose' ? '교육 목적' : `교육 내용 ${index + 1}`} 고치기" ${busy ? 'disabled' : ''}>${html}</button>`; };
     const keyPoints = items.length ? `<ol class="v1-kp">${items.map((k, n) => {
       const keys = [...new Set(k.cites || [])];
+      if (ceOn) return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}" data-kp="${n}"><div class="v1-kcard">${cePick('kp', n, k.text)}</div></li>`;
       return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}" data-kp="${n}"><div class="v1-kcard">${head(n)}${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
         : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span></div>`}</div></li>`;
     }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
@@ -938,12 +1137,13 @@
     const memo = own || trainer ? `<section class="v1-card"><h2>의견 보내기</h2>` +
       `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="${trainer ? '교육 내용에서 고칠 점이나 의견을 입력해주세요.' : '궁금하거나 이해가 어려운 점을 입력해주세요.'}"></textarea>` +
       `<div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-feedback-send>보내기</button></div></section>` : '';
-    const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+    const purpose = s.purpose && ceOn ? cePick('purpose', null, s.purpose, 'v1-purpose') : s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
-    const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
+    const guide = ceOn ? '고칠 글을 누르세요. 수정 모드에서는 체크·본문 펼치기가 잠시 꺼져요.' : trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
       : '글을 누르면 근거 본문이 펼쳐져요.';
-    return learnerBar() + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
+    const ceBanner = ceOn ? `<div class="v1-ce-modebar" role="status"><span>문구 수정 모드 — 고칠 교육 목적이나 교육 내용을 누르세요.</span><button type="button" class="v1-ce-action" data-ce-mode-off>끝내기</button></div>` : '';
+    return learnerBar() + ceBanner + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
@@ -1081,6 +1281,8 @@
   function onMenuOpen() {
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
     $('v1ExportPdf').hidden = !s || planned(s);
+    const canEdit = Boolean(s && !planned(s) && cloud.lmsLevel === 'admin' && (s.keyPoints || []).length);
+    $('v1EditMode').hidden = $('v1EditSep').hidden = !canEdit; $('v1EditMode').textContent = ceMode ? '문구 수정 끝내기' : '문구 수정 모드';
     if (!s || planned(s)) return;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
@@ -1134,6 +1336,7 @@
   };
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); closeMe(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
+  $('v1EditMode').onclick = () => { closeMenu(); ceMode = !ceMode; ceEdit = null; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
