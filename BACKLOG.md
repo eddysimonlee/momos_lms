@@ -36,6 +36,12 @@
 - 선택지: ① 화면·PDF 에서 숨기기(파일엔 남김) ② LMS관리자에게만 보이기 ③ 지우기. 필요한 내용(예: 48번 냅킨 매수)은 원본 문서에 넣어 교육 내용으로
 - 정할 사람: 모모스커피 담당자(채수민 님)와 이재현
 
+### 6. WDS 0.5.0 으로 옮기기 — 디자인팀(SaaS Product Design) 확인 뒤 (11/10)
+- 지금: 0.4.0(2026-10-15 vendor, `wds/llms.txt`·`wds/web/variables.css`·`assets/wds-icons/`, `.wds/status.gen.json`). 새 버전: https://pages.navercorp.com/saas-product-design/wds/0.5.0/llms.txt
+- 0.5.0 대조 결과: 삭제 9개·값 변경 11개 모두 우리 화면에서 안 씀(깨지는 곳 없음). `surface.success-subtle` 값 보정(#E2F8DE → #DDF8E4)으로 초록 태그 배경만 미세하게 바뀜. 추가 244개. 색 primitive 규칙이 '금지' → '최후 수단'
+- 확인할 것(디자인팀): 0.5.0 '적용 전 확인' — Works 서비스 과제 또는 사전 협의 제품만 사용 가능. 이 LMS(모모스커피 PoC)는 등록 서비스 목록에 없음. 레포가 GitHub(외부)에도 있고 모모스커피(외부)와 함께 쓰는 것이 '유출' 기준에 걸리는지도 함께. 요청 창구: https://oss.navercorp.com/SaaS-Product-Design/wds/issues/new
+- 옮기는 일: `wds/` 두 파일·아이콘 새로 받기 → `.wds/status.gen.json`·AGENTS.md 버전 주소 → 화면 확인
+
 ## 제안만 하고 아직 정하지 않은 것
 - 화면별 주소(URL): 지금은 화면을 넘겨도 /v1 그대로라 링크 공유·뒤로가기 불가. 예: /v1#/person/…/step/…
 - 연결도(/v1/graph) '갱신' 표시: 파일명 날짜 기준이라 이번 MD SOP 교체(파일명 261020)가 잡히지 않음
