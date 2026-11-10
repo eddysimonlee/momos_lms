@@ -1,18 +1,5 @@
 {
- "note": "content_edit.py ↔ v1.js ContentEdit 같은 결과 확인용(11/10). expect 는 content_edit.py 결과",
- "cited": [
-  "피스타치오 크림 배합표 · 1배치 기준\n재료\t용량\t자일로스 설탕\t500g\t생크림\t1000g\t피스타치오 페이스트\t330g\n최소/제조 수량\t6~7배치\n얼그레이티\t매일 4-6통 유지\t물\t1,550g"
- ],
- "others": [
-  [
-   "같은 문서 6.5 말차 베이스",
-   "말차\t153g\t28잔 분량"
-  ],
-  [
-   "음료 레시피 3.1 에스프레소",
-   "베로나잔 또는 레알레잔"
-  ]
- ],
+ "note": "content_edit.py ↔ v1.js ContentEdit 같은 결과 확인용(11/10, 수정 필요 6개). expect 는 content_edit.py 결과",
  "cases": [
   {
    "name": "number",
@@ -21,13 +8,7 @@
    "tobe": "1배치: 자일로스 설탕 500g · 생크림 1200g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "block",
-      "code": "number",
-      "text": "근거 원문에 없는 수치: '1200g'"
-     }
-    ],
+    "items": [],
     "suggest": "재확인 필요"
    }
   },
@@ -60,13 +41,7 @@
    "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g, 말차 153g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
    "openReq": null,
    "expect": {
-    "items": [
-     {
-      "level": "block",
-      "code": "number",
-      "text": "근거 원문에 없는 수치: '153g' (같은 문서 6.5 말차 베이스에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)"
-     }
-    ],
+    "items": [],
     "suggest": "재확인 필요"
    }
   },

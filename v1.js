@@ -111,7 +111,7 @@
   const steps = () => content.units.flatMap(u => u.steps);
   const planned = s => s.lessonStatus === 'planned';
   // >>> content-edit-check (11/10 교육 문구 직접 수정 — 입력하는 동안 아래 '수정 필요'. content_edit.py 와 같은 규칙, content_edit_cases.json 으로 함께 테스트)
-  // 남기는 규칙은 7개(빈 문구·같은 문구·길이·줄바꿈·태그/링크/이모지·같은 줄 반영 대기·근거 원문에 없는 수치). 변경 종류 = 수치가 바뀌었는지로 자동 추천
+  // 남기는 규칙은 6개(빈 문구·같은 문구·길이·줄바꿈·태그/링크/이모지·같은 줄 반영 대기). 원문과 뜻이 맞는지는 글자 대조로 알 수 없어(3000g = 3kg) 배포 때 사람이 AI 와 확인. 변경 종류 = 수치가 바뀌었는지로 자동 추천
   const ContentEdit = (() => {
     const LIMIT = {purpose: 120, kp: 200}, BREAKS = {purpose: 0, kp: 1};
     const UNIT = '(?:kg|g|mL|ml|L|ℓ|℃|°C|cm|mm|%|시간|분|초|잔|배치|통|샷|개월|개|일|장|병|회|번|명|층|동|팩|봉|스푼|펌프|주|년|원)';
@@ -119,24 +119,17 @@
     const MARKUP = /<[^>]*>|https?:\/\/|www\.|[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
     const norm = s => String(s ?? '').replace(/\r\n/g, '\n').replace(/(\d),(?=\d{3}(?!\d))/g, '$1').replace(/(\d)\s*[~\-–]\s*(?=\d)/g, '$1~').replace(/(\d)[ \t]+(?=[^\d\s])/g, '$1');
     const numbers = s => [...new Set(norm(s).match(NUM) || [])];
-    const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const has = (text, token) => new RegExp('(?<![\\d.])' + reEsc(token)).test(text);
     const sectionText = sec => [...(sec.paragraphs || []), ...(sec.tables || []).map(t => [t.header || [], ...(t.rows || [])].flat().join('\t'))].join('\n');
-    function check(part, asis, tobe, cited, others = [], openReq = null) {
+    function check(part, asis, tobe, openReq = null) {
       const items = [], add = (code, text) => items.push({level: 'block', code, text});
-      const a = String(asis ?? '').replace(/\r\n/g, '\n').trim(), t = String(tobe ?? '').replace(/\r\n/g, '\n').trim(), src = norm(cited.join('\n'));
+      const a = String(asis ?? '').replace(/\r\n/g, '\n').trim(), t = String(tobe ?? '').replace(/\r\n/g, '\n').trim();
       if (openReq) add('open', `이 줄은 ${openReq} 로 이미 반영 대기 중이에요. 배포 뒤 다시 고쳐 주세요.`);
       if (!t) add('empty', '바꿀 문구를 적어 주세요.'); else if (t === a) add('same', '지금 문구와 같아요.');
       const len = [...t].length;
       if (len > LIMIT[part]) add('length', `${LIMIT[part]}자까지 쓸 수 있어요. (지금 ${len}자)`);
       if (t.split('\n').length - 1 > BREAKS[part]) add('breaks', part === 'purpose' ? '교육 목적은 줄바꿈 없이 써 주세요.' : '줄바꿈은 한 번까지 쓸 수 있어요.');
       if (MARKUP.test(t)) add('markup', '태그·링크·이모지는 쓸 수 없어요.');
-      const numsA = numbers(a), numsT = numbers(t);
-      for (const n of numsT) {
-        if (has(src, n) || numsA.includes(n)) continue;  // 원래 문구에 있던 값(근거 밖)은 이번 수정의 책임이 아니다
-        const where = [...new Set(others.filter(([, text]) => has(norm(text), n)).map(([label]) => label))].slice(0, 2);
-        add('number', `근거 원문에 없는 수치: '${n}'` + (where.length ? ` (${where.join(' · ')}에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)` : ''));
-      }
+      const numsA = numbers(a), numsT = numbers(t);  // 변경 종류 자동 추천에만 쓴다(검사 아님)
       const changed = [...numsT.filter(x => !numsA.includes(x)), ...numsA.filter(x => !numsT.includes(x))];
       return {items, suggest: t && changed.length ? '재확인 필요' : '단순 수정'};
     }
@@ -146,14 +139,7 @@
   // 11/10 교육 문구 직접 수정 — 화면 쪽(관리자만). 보내면 '문구 수정' 티켓(REQ-n)이 되고, 서비스 문구는 검토 → 커밋 뒤에만 바뀐다.
   const ceKeys = (s, part, index) => part === 'purpose' ? [...new Set((s.keyPoints || []).flatMap(k => k.cites || []))] : [...new Set((s.keyPoints[index] || {}).cites || [])];
   const ceOpen = (stepId, part, index) => (cloud.contentRequests || []).find(r => r.status === '진행중' && r.edit && r.target && r.target.id === stepId && r.edit.part === part && (r.edit.index ?? null) === (index ?? null));
-  function ceRun() {
-    const s = steps().find(x => x.id === ceEdit.step), keys = ceKeys(s, ceEdit.part, ceEdit.index), set = new Set(keys);
-    const docs = new Set(keys.map(k => (content.sections[k] || {}).doc));
-    const label = k => { const sec = content.sections[k], doc = content.documents[sec.doc] || {}; return `${docs.has(sec.doc) ? '같은 문서' : (doc.title || '')} ${sec.no || ''} ${sec.title || ''}`.trim(); };
-    const cited = keys.filter(k => content.sections[k]).map(k => ContentEdit.sectionText(content.sections[k]));
-    const others = Object.keys(content.sections).filter(k => !set.has(k)).map(k => [label(k), ContentEdit.sectionText(content.sections[k])]);
-    return ContentEdit.check(ceEdit.part, ceEdit.asis, ceEdit.text, cited, others);
-  }
+  function ceRun() { return ContentEdit.check(ceEdit.part, ceEdit.asis, ceEdit.text); }
   const CE_X = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
   // 근거 원문(오른쪽 칸): 지금 고친 문구에 나오는 수치·원래 문구에서 빠진 수치를 원문에서 표시한다
   function ceSource(keys, marks) {

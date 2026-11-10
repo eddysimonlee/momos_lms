@@ -6,7 +6,7 @@ assert(a > 0 && b > a, 'content-edit-check 표시를 찾지 못함');
 const ContentEdit = new Function(src.slice(a, b) + '\nreturn ContentEdit;')();
 const d = JSON.parse(fs.readFileSync(path.join(__dirname, 'content_edit_cases.json'), 'utf8'));
 let n = 0;
-for (const c of d.cases) { assert.deepStrictEqual(ContentEdit.check(c.part, c.asis, c.tobe, d.cited, d.others, c.openReq), c.expect, c.name); n++; }
+for (const c of d.cases) { assert.deepStrictEqual(ContentEdit.check(c.part, c.asis, c.tobe, c.openReq), c.expect, c.name); n++; }
 const content = JSON.parse(fs.readFileSync(path.join(__dirname, 'v1_content.json'), 'utf8'));
 const { execFileSync } = require('child_process');
 const sec = Object.values(content.sections)[0];
