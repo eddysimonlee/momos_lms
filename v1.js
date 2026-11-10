@@ -762,7 +762,8 @@
         : `<p class="v1-muted">${all.length ? '이 상태의 요청이 없어요.' : '아직 수정 요청이 없어요.'}</p>`) +
       // 11/10: 진행중 요청은 Codex 가 한 번에 처리 — 내려받은 파일 하나(문구 수정 = 자동 반영, 그 밖의 요청 = 절차대로 제안)
       (ceOpenAll().length ? `<p class="v1-muted v1-reqx"><button type="button" class="v1-tbtn" data-ce-export>진행중 요청 ${ceOpenAll().length}건 내려받기</button> — Codex에 "반영 대기 문구 반영해 줘"라고 하면 검수·커밋까지 해요.${ceWaiting().length ? ` (문구 수정 ${ceWaiting().length}건 포함)` : ''}</p>` : '') +
-      (list.length ? `<p class="v1-muted v1-reqx"><button type="button" class="v1-tbtn" data-req-copy-all>지금 목록 ${list.length}건 텍스트로 복사</button> — Claude 대화에 붙여 넣을 때 써요.</p>` : '') + '</section>';
+      // 11/10: 목록 '텍스트로 복사'는 뺌(헷갈림) — 티켓 하나 복사는 상세 화면의 '텍스트로 복사'
+      '' + '</section>';
   }
   function reqView(id) {
     const r = (cloud.contentRequests || []).find(x => x.id === id);
