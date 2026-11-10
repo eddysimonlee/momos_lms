@@ -1,0 +1,413 @@
+{
+ "note": "content_edit.py ↔ v1.js ContentEdit 같은 결과 확인용(11/10). expect 는 content_edit.py 결과",
+ "cited": [
+  "피스타치오 크림 배합표 · 1배치 기준\n재료\t용량\t자일로스 설탕\t500g\t생크림\t1000g\t피스타치오 페이스트\t330g\n최소/제조 수량\t6~7배치\n얼그레이티\t매일 4-6통 유지\t물\t1,550g"
+ ],
+ "others": [
+  [
+   "같은 문서 6.5 말차 베이스",
+   "말차\t153g\t28잔 분량"
+  ],
+  [
+   "음료 레시피 3.1 에스프레소",
+   "베로나잔 또는 레알레잔"
+  ]
+ ],
+ "terms": [
+  "리베르타잔",
+  "베로나잔",
+  "피카디잔",
+  "생크림"
+ ],
+ "cases": [
+  {
+   "name": "number",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1200g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "number",
+      "text": "근거 원문에 없는 수치: '1200g'"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '1000g'"
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 2곳 바뀜"
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "range",
+   "part": "kp",
+   "asis": "매일 6통 유지한다.",
+   "tobe": "매일 4~6통 유지한다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 2곳 바뀜"
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "comma",
+   "part": "kp",
+   "asis": "물 1550g을 넣는다.",
+   "tobe": "물 1,550 g을 계량해 넣는다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "other",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g, 말차 153g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "number",
+      "text": "근거 원문에 없는 수치: '153g' (같은 문서 6.5 말차 베이스에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)"
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 1곳 바뀜"
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "empty",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "   ",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "empty",
+      "text": "바꿀 문구를 적어 주세요."
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "same",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.  ",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "same",
+      "text": "지금 문구와 같아요."
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "length",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가가다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "length",
+      "text": "200자까지 쓸 수 있어요. (지금 203자)"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '1배치'"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '500g'"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '1000g'"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '330g'"
+     },
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '생크림'"
+     },
+     {
+      "level": "warn",
+      "code": "rewrite",
+      "text": "절반 넘게 바뀌었어요. 새 내용이면 '교육 내용 추가' 요청이 맞는지 확인해 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 4곳 바뀜"
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "breaks_kp",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.\n둘째 줄이다.\n셋째 줄이다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "breaks",
+      "text": "줄바꿈은 한 번까지 쓸 수 있어요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "breaks_purpose",
+   "part": "purpose",
+   "asis": "피스타치오 크림을 만들 수 있다.",
+   "tobe": "피스타치오 크림을\n만들 수 있다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "breaks",
+      "text": "교육 목적은 줄바꿈 없이 써 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "markup",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다. https://x.y 참고 😀",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "markup",
+      "text": "태그·링크·이모지는 쓸 수 없어요."
+     },
+     {
+      "level": "warn",
+      "code": "style",
+      "text": "교육 내용은 '~다.'로 끝내 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "open",
+   "part": "kp",
+   "asis": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 넣는다.",
+   "tobe": "1배치: 자일로스 설탕 500g · 생크림 1000g · 피스타치오 페이스트 330g. 생크림 → 설탕 → 페이스트 순으로 붓는다.",
+   "openReq": "REQ-9",
+   "expect": {
+    "items": [
+     {
+      "level": "block",
+      "code": "open",
+      "text": "이 줄은 REQ-9 로 이미 검토 중이에요. 검토가 끝난 뒤 다시 고쳐 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "term",
+   "part": "kp",
+   "asis": "에스프레소는 피카디잔과 낸다.",
+   "tobe": "에스프레소는 리베르타잔과 낸다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "warn",
+      "code": "term",
+      "text": "근거 원문에 없는 이름: '리베르타잔' — 다른 절 내용인지 확인해 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "negation",
+   "part": "kp",
+   "asis": "생크림은 먼저 넣는다.",
+   "tobe": "생크림은 먼저 넣지 않는다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "warn",
+      "code": "negation",
+      "text": "뜻을 바꿀 수 있는 말이 늘거나 줄었어요: '않' — 뜻이 뒤집히지 않았는지 확인해 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "재확인 필요"
+   }
+  },
+  {
+   "name": "rewrite",
+   "part": "kp",
+   "asis": "생크림을 먼저 넣고 설탕을 넣는다.",
+   "tobe": "휘핑볼은 세 배치까지만 쓴다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "warn",
+      "code": "dropped",
+      "text": "원문에 있는데 빠진 내용: '생크림'"
+     },
+     {
+      "level": "warn",
+      "code": "rewrite",
+      "text": "절반 넘게 바뀌었어요. 새 내용이면 '교육 내용 추가' 요청이 맞는지 확인해 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "style",
+   "part": "kp",
+   "asis": "생크림을 먼저 넣는다.",
+   "tobe": "생크림을 먼저 넣기",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "warn",
+      "code": "style",
+      "text": "교육 내용은 '~다.'로 끝내 주세요."
+     },
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "kept",
+   "part": "kp",
+   "asis": "타이머 5시간 55분으로 맞추고 생크림을 넣는다.",
+   "tobe": "타이머 5시간 55분으로 맞춘 뒤 생크림을 넣는다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  },
+  {
+   "name": "simple",
+   "part": "purpose",
+   "asis": "피스타치오 크림을 만들 수 있다.",
+   "tobe": "피스타치오 크림을 직접 만들 수 있다.",
+   "openReq": null,
+   "expect": {
+    "items": [
+     {
+      "level": "info",
+      "code": "summary",
+      "text": "수치 그대로"
+     }
+    ],
+    "suggest": "단순 수정"
+   }
+  }
+ ]
+}

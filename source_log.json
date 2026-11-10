@@ -11,6 +11,38 @@
   ],
   "entries": [
     {
+      "id": "2026-11-10-alpha-content-string-edit",
+      "at": "2026-11-10 12:00",
+      "approvedBy": "이재현",
+      "tickets": [],
+      "title": "알파 작업 — 교육 문구 직접 수정(교육 목적·교육 내용) + 자동 사전 검사",
+      "basis": {
+        "kind": "알파 작업",
+        "at": "2026-11-10",
+        "origin": "이재현 요청(content string 수정 프로세스)",
+        "copy": "관리자가 교육 화면에서 문구를 고쳐 검토 요청 → Claude 원본 대조 → 커밋으로만 반영",
+        "range": "교육 화면(관리자)·수정 요청 티켓·서버 검사"
+      },
+      "basisCount": 47,
+      "work": "LMS관리자 admin 이 교육 화면의 '문구 수정'으로 교육 목적·교육 내용 한 줄을 고쳐 '문구 수정' 티켓(REQ-n)으로 보낸다. 입력하는 동안 근거 원문과 대조한 자동 검사(고쳐야 함·확인·참고)가 아래에 보이고, 서버가 같은 규칙으로 다시 검사한다. 서비스 문구는 검토·커밋 전에는 바뀌지 않는다.",
+      "docs": [],
+      "removed": [],
+      "lessons": [],
+      "rules": [
+        "AS-IS: 문구를 고치려면 /v1/graph 에서 수정 요청(AS-IS 자동, TO-BE 직접 입력)만 가능. 원본 대조는 Claude 검토에서만.",
+        "TO-BE: ⋮ › '문구 수정 모드'(LMS관리자 admin) → 상단 Banner(blue, 끝내기) · 교육 목적·교육 내용이 고칠 수 있는 칸으로 바뀜(모드 중 체크·본문 펼치기 꺼짐, 검토 중이면 Tag '검토 중 · REQ-n') → 누르면 편집 창(WDS Modal dialog xxl: 왼쪽 고치기·오른쪽 근거 원문, 좁은 화면은 전체 화면 + Tab '고치기/근거 원문'). 편집 창: 문구 Input(글자 수)·자동 검사 Banner(빨강/노랑/회색)·바뀐 부분·수정 이유 Input·근거 원문에서 바뀐 수치 표시·고친 채 닫으면 Confirm dialog. 보내면 '문구 수정' 티켓에 edit(part·index·kind·suggest·checks) 저장(변경 종류는 고르지 않고 자동 추천 — 재확인 필요/단순 수정, BACKLOG 4번 때 고르는 칸 검토), 티켓 화면·텍스트로 복사에 변경 종류·자동 검사 표시.",
+        "자동 검사(content_edit.py ↔ v1.js ContentEdit, content_edit_cases.json 으로 같은 결과 테스트): 고쳐야 함 = 빈 문구·같은 문구·길이(목적 120자/내용 200자)·줄바꿈(목적 0/내용 1)·태그·링크·이모지·같은 줄 검토 중·근거 원문에 없는 수치(다른 절에 있으면 위치 안내). 확인 = 근거에 없는 이름·원문 내용 빠짐·뜻을 바꿀 수 있는 말 변화·절반 넘게 바뀜·문체. 참고 = 바뀐 수치 수. 변경 종류 자동 추천 = 수치나 뜻을 바꿀 수 있는 말이 바뀌면 '재확인 필요', 아니면 '단순 수정'.",
+        "새 UI 요소 — 이재현 검수 필요: 문구 수정 모드(⋮ 메뉴 항목·모드 Banner·고칠 칸), 편집 창(.v1-ce-dlg: Modal dialog·Tab·Input·Banner·Confirm dialog 토큰), 바뀐 부분 표시(del/ins), 근거 원문 수치 표시(mark). 닫기 X 는 아이콘 세트 미반입이라 인라인 SVG.",
+        "서비스 코드 변경 — 이재현 검수 필요: onboarding.content_request 에 edit 허용, Service.content_edit(지금 문구와 같은지·같은 줄 중복·수정 이유·서버 검사, 고쳐야 함이 있으면 거절). 새 파일 content_edit.py.",
+        "저장 형식: 기존 contentRequests 항목에 edit 필드만 추가. DB 테이블·스키마 변경 없음. 편집 범위는 교육 목적·교육 내용(사진 설명·체크 문구 제외)."
+      ],
+      "checks": [
+        "교육 콘텐츠·교육 내용 칸 수·순서·체크·완료 기록 변경 없음.",
+        "content_edit_test.py(규칙·서버) · content_edit_test.cjs(화면=서버 같은 결과) 추가, 전체 테스트 통과."
+      ],
+      "skipped": []
+    },
+    {
       "id": "2026-11-10-alpha-space-walk-summary",
       "at": "2026-11-10 10:33",
       "approvedBy": "채수민",

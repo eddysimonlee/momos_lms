@@ -20,6 +20,7 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 import lms_store as projects
+import content_edit
 
 ROOT = 2026100201
 FORMAT = 'momos-education-v1'
@@ -765,12 +766,13 @@ class Service:
     # LMS관리자 '수정 요청' 탭에서 처리 상태를 바꾼다. 실제 반영은 저장소(v1_lessons.json)에서 하고 커밋 번호를 남긴다.
     def content_request(self, root, user, d):
         if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청은 LMS관리자 admin 만 보낼 수 있어요.')
-        keys = {'target', 'type', 'field', 'asis', 'tobe', 'note'}
+        keys = {'target', 'type', 'field', 'asis', 'tobe', 'note', 'edit'}
         if not isinstance(d, dict) or set(d) - keys or not {'target', 'type', 'tobe'} <= set(d): raise ValueError('수정 요청 내용을 확인해 주세요.')
         t = d['target']
         if not isinstance(t, dict) or set(t) != {'kind', 'id', 'title'} or t['kind'] not in ('item', 'doc'): raise ValueError('요청 대상을 확인해 주세요.')
         if t['kind'] == 'item' and t['id'] not in STEPS: raise ValueError('요청할 교육을 확인해 주세요.')
         if d['type'] not in CONTENT_REQUEST_TYPES: raise ValueError('요청 종류를 확인해 주세요.')
+        edit = self.content_edit(root, d) if 'edit' in d else None
         # 11/03 티켓 번호: REQ-1, REQ-2 … (지우지 않고 계속 올라간다). 반영 기록(source_log.json)의 tickets 와 이어진다
         seq = int(root.get('contentRequestSeq') or 0) + 1
         root['contentRequestSeq'] = seq
@@ -779,9 +781,30 @@ class Service:
                     type=d['type'], field=projects.text(d.get('field', ''), 80), asis=projects.text(d.get('asis', ''), 4000),
                     tobe=projects.text(d['tobe'], 4000, True), note=projects.text(d.get('note', ''), 2000),
                     status='진행중', history=[dict(at=stamp(), by=user['name'], status='진행중')])
+        if edit: item.update(field=edit.pop('field'), edit=edit)
         items = root.setdefault('contentRequests', [])
         items.append(item)
         root['contentRequests'] = items[-2000:]
+
+    @staticmethod
+    def content_edit(root, d):
+        """11/10 교육 문구 직접 수정(교육 목적·교육 내용): 지금 문구와 같은지 보고, 화면과 같은 자동 사전 검사를 서버에서 다시 한다.
+        보낼 수 없는 것(block)이 있으면 거절, 경고(warn)·안내(info)는 티켓에 남긴다. 서비스 문구는 바뀌지 않는다(검토 → 커밋으로만 반영)."""
+        e, t = d['edit'], d['target']
+        if not isinstance(e, dict) or set(e) - {'part', 'index', 'kind', 'checks'} or 'part' not in e: raise ValueError('수정 내용을 확인해 주세요.')
+        if d['type'] != '문구 수정' or t['kind'] != 'item': raise ValueError('교육 문구 수정은 교육의 문구 수정 요청으로만 보낼 수 있어요.')
+        part, index = e['part'], e.get('index')
+        if part not in ('purpose', 'kp') or (part == 'purpose' and index is not None) or (part == 'kp' and type(index) is not int): raise ValueError('고칠 곳을 확인해 주세요.')
+        if 'kind' in e and e['kind'] not in content_edit.KINDS: raise ValueError('변경 종류를 확인해 주세요.')
+        if not str(d.get('note') or '').strip(): raise ValueError('수정 이유를 적어 주세요.')
+        busy = next((x for x in root.get('contentRequests') or [] if req_status(x.get('status')) == '진행중' and (x.get('edit') or {}).get('part') == part
+                     and (x.get('edit') or {}).get('index') == index and (x.get('target') or {}).get('id') == t['id']), None)
+        r = content_edit.review(Path(__file__).parent, t['id'], part, index, d.get('asis', ''), str(d['tobe']).strip(), busy and busy.get('no'))
+        block = [i for i in r['items'] if i['level'] == 'block']
+        if block: raise ValueError(block[0]['text'])
+        # 변경 종류 = 서버 자동 추천(11/10: 화면에서 고르지 않음. BACKLOG 4번 '이미 체크한 사람에게 알리기' 때 쓴다)
+        return dict(part=part, index=index, kind=r['suggest'], suggest=r['suggest'], checks=r['items'],
+                    field='교육 목적' if part == 'purpose' else f'교육 내용 {index + 1}')
 
     def content_status(self, root, user, d):
         if self.lms_level(root, user) != 'admin': raise PermissionError('수정 요청 처리는 LMS관리자 admin 만 할 수 있어요.')

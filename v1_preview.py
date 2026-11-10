@@ -100,7 +100,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-23';
+  const KEY = 'momos-v1-preview-24';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -108,11 +108,13 @@ MOCK = r'''
     return {revision: 0, join, startDate: join, records};
   }
   function fresh() {
-    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}, lmsAdmins: [], feedback: [], contentRequestSeq: 2,
+    const st = {rootRevision: 0, learners: {}, rooms: {}, profiles: {}, lmsAdmins: [], feedback: [], contentRequestSeq: 100,
       // 미리보기 전용 예시 티켓 2건: REQ-1 은 반영 기록 쪽 tickets 로 이어짐, REQ-2 는 화면에서 반영 기록을 골라 이어 볼 수 있다
       contentRequests: [
         {id: 'demo-1', no: 'REQ-1', at: '2026-11-03T10:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'item', id: 'stock-ecount', title: '6단계 에스프레소 › 6.9 재고 전산 처리 › 86. 재고 전산 처리'}, type: '문구 수정', field: '교육 제목', asis: '재고 전산 처리', tobe: '(예시)', note: '', status: '반영됨', assignee: '체험 담당자', commit: 'abc1234', history: [{at: '2026-11-03T10:00:00', by: '체험 담당자', status: '진행중'}, {at: '2026-11-04T10:00:00', by: '체험 담당자', status: '반영됨', commit: 'abc1234'}]},
-        {id: 'demo-2', no: 'REQ-2', at: '2026-11-04T09:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'doc', id: '본점-신입-교육-안내', title: '본점_신입_교육_안내_GUI_261020'}, type: '원본 문서 변경 확인', field: '파일', asis: '본점_신입_교육_안내_GUI_261020.docx', tobe: '파일: 본점_신입_교육_안내_GUI_261104.docx (이름 바뀜)\n바뀐 내용: 5.3.1과 5.3.2의 표를 삭제하고 넘버링 문구로 정리', note: '', status: '진행중', history: [{at: '2026-11-04T09:00:00', by: '체험 담당자', status: '진행중'}]}]};
+        {id: 'demo-2', no: 'REQ-2', at: '2026-11-04T09:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'doc', id: '본점-신입-교육-안내', title: '본점_신입_교육_안내_GUI_261020'}, type: '원본 문서 변경 확인', field: '파일', asis: '본점_신입_교육_안내_GUI_261020.docx', tobe: '파일: 본점_신입_교육_안내_GUI_261104.docx (이름 바뀜)\n바뀐 내용: 5.3.1과 5.3.2의 표를 삭제하고 넘버링 문구로 정리', note: '', status: '진행중', history: [{at: '2026-11-04T09:00:00', by: '체험 담당자', status: '진행중'}]},
+        // 11/10 교육 문구 직접 수정 예시(검토 중): 얼그레이티 교육 내용 1 에 '검토 중 · REQ-100'
+        {"id": "demo-3", "no": "REQ-100", "at": "2026-11-10T09:30:00", "user": "u-staff", "name": "체험 담당자", "email": "staff@local.test", "target": {"kind": "item", "id": "materials-product-5", "title": "얼그레이티 냉침·거르기 제조 연습"}, "type": "문구 수정", "field": "교육 내용 1", "asis": "상미기한 제조일+2일(냉장), 매일 4~6통 유지(메인 바리스타 확인). 배합: 얼그레이티 15.5g(소수점까지 정확히) · 물 1,550g.", "tobe": "상미기한 제조일+2일(냉장), 매일 4~6통 유지(남은 양은 메인 바리스타가 확인). 배합: 얼그레이티 15.5g(소수점까지 정확히) · 물 1,550g.", "note": "(예시) 누가 확인하는지 더 분명하게", "status": "진행중", "history": [{"at": "2026-11-10T09:30:00", "by": "체험 담당자", "status": "진행중"}], "edit": {"part": "kp", "index": 0, "kind": "단순 수정", "suggest": "단순 수정", "checks": [{"level": "warn", "code": "term", "text": "(예시) 근거 원문에 없는 이름: '남은 양' — 다른 절 내용인지 확인해 주세요."}, {"level": "info", "code": "summary", "text": "수치 그대로"}]}}]};
     // 11/06 미리보기 예시 의견: 체험 교육생이 보낸 의견 4건 · 관리자 댓글이 알림으로 간다(40일 전 댓글은 30일이 지나 알림에 안 보임)
     const ago = (days, h = 10) => new Date(Date.now() - days * 864e5 - h * 36e5).toISOString();
     const cm = (id, days, text) => ({id, at: ago(days), user: 'u-staff', name: '체험 담당자', text, notifyAuthor: true});
@@ -221,8 +223,17 @@ MOCK = r'''
       const at = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 19) + '+09:00', list = state.contentRequests = state.contentRequests || [];
       if (v.action === 'content.request') {
         if (!String(d.tobe || '').trim()) throw {status: 400, error: '바꿀 내용을 적어 주세요.'};
+        // 11/10 문구 수정(edit): 서버는 content_edit.py 로 다시 검사한다. 미리보기는 화면 검사 결과를 그대로 쓰고 같은 줄 중복·수정 이유만 본다
+        if (d.edit) {
+          if (!String(d.note || '').trim()) throw {status: 400, error: '수정 이유를 적어 주세요.'};
+          const busy = list.find(x => x.status === '진행중' && x.edit && x.target.id === d.target.id && x.edit.part === d.edit.part && (x.edit.index ?? null) === (d.edit.index ?? null));
+          if (busy) throw {status: 400, error: `이 줄은 ${busy.no} 로 이미 검토 중이에요. 검토가 끝난 뒤 다시 고쳐 주세요.`};
+          const block = (d.edit.checks || []).find(i => i.level === 'block'); if (block) throw {status: 400, error: block.text};
+        }
         state.contentRequestSeq = (state.contentRequestSeq || 0) + 1;
-        list.push({id: String(Date.now()), no: 'REQ-' + state.contentRequestSeq, at, user: u.id, name: u.name, email: u.email, target: d.target, type: d.type, field: d.field || '', asis: d.asis || '', tobe: d.tobe, note: d.note || '', status: '진행중', history: [{at, by: u.name, status: '진행중'}]});
+        const suggest = d.edit && d.edit.kind;
+        list.push({id: String(Date.now()), no: 'REQ-' + state.contentRequestSeq, at, user: u.id, name: u.name, email: u.email, target: d.target, type: d.type, field: d.field || '', asis: d.asis || '', tobe: d.tobe, note: d.note || '', status: '진행중', history: [{at, by: u.name, status: '진행중'}],
+          ...(d.edit ? {edit: {part: d.edit.part, index: d.edit.index, kind: d.edit.kind, suggest, checks: d.edit.checks || []}} : {})});
       } else if (v.action === 'content.delete') {
         const r = list.find(x => x.id === d.id); if (!r || r.status !== '반려') throw {status: 400, error: '반려한 요청만 지울 수 있어요.'};
         state.contentRequests = list.filter(x => x.id !== d.id);
