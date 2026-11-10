@@ -15,10 +15,10 @@ class Rules(unittest.TestCase):
             got = ce.check(c['part'], c['asis'], c['tobe'], c['openReq'])
             self.assertEqual(got, c['expect'], c['name'])
 
-    def test_only_six_block_rules(self):
+    def test_only_five_block_rules(self):
         codes = {c['name']: [i['code'] for i in c['expect']['items']] for c in CASES['cases']}
         for name in ('empty', 'same', 'length', 'markup', 'open'): self.assertEqual(codes[name], [name], name)
-        self.assertEqual(codes['breaks_kp'], ['breaks']); self.assertEqual(codes['breaks_purpose'], ['breaks'])
+        self.assertEqual(codes['breaks_kp'], []); self.assertEqual(codes['breaks_purpose'], [])  # 줄바꿈 횟수는 막지 않는다(11/10)
         # 원문과 맞는지(수치·이름·뜻)는 보지 않는다 — 배포 때 사람이 AI 와 확인(3000g = 3kg 을 글자로는 알 수 없음)
         for name in ('number', 'other', 'range', 'comma', 'kept', 'simple'): self.assertEqual(codes[name], [], name)
         self.assertEqual(ce.check('kp', '설탕 3000g 넣는다.', '설탕 3kg 넣는다.')['items'], [])
