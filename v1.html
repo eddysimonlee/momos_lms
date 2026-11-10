@@ -419,8 +419,10 @@ img{max-width:100%}
 
 .v1-fbtitle{appearance:none;border:0;background:none;padding:0;min-height:var(--spacing-32);color:var(--text-muted);font:var(--body-md);text-align:left;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .v1-fbtitle:hover{color:var(--text-default)}
-.v1-notice-toggle{position:relative}
-.v1-notice-count{position:absolute;right:0;top:0;display:inline-flex;align-items:center;justify-content:center;height:var(--component-badge-type-count-height);min-width:var(--component-badge-type-count-min-width);padding:0 var(--component-badge-type-count-padding-x);border-radius:var(--radius-full);background:var(--status-notification);color:var(--component-badge-type-count-text-color);font:var(--component-badge-type-count-text-typography);pointer-events:none}
+/* 검색·알림은 같은 정사각 버튼. 프로필(32)과 버튼(36)의 반폭 차이를 보정해 아이콘 중심 간격을 맞춘다. */
+#v1Find,.v1-notice-toggle{flex:none;width:calc(var(--component-icon-button-type-ghost-size-md-round-default-icon-size) + 2 * var(--component-icon-button-type-ghost-size-md-round-default-padding));height:calc(var(--component-icon-button-type-ghost-size-md-round-default-icon-size) + 2 * var(--component-icon-button-type-ghost-size-md-round-default-padding))}
+.v1-notice-toggle{position:relative;margin-right:var(--spacing-2)}
+.v1-notice-count{position:absolute;right:calc(-1 * var(--spacing-4));top:calc(-1 * var(--spacing-4));display:inline-flex;align-items:center;justify-content:center;height:var(--component-badge-type-count-height);min-width:var(--component-badge-type-count-min-width);padding:0 var(--component-badge-type-count-padding-x);border-radius:var(--radius-full);background:var(--status-notification);color:var(--component-badge-type-count-text-color);font:var(--component-badge-type-count-text-typography);pointer-events:none}
 .v1-notice-count[hidden]{display:none}
 .v1-unote{color:var(--text-muted);font:var(--body-sm);margin:var(--spacing-4) 0 0}
 .v1-item.planned{opacity:.62}.v1-item.planned .v1-num{background:transparent;border:var(--v1-hairline) dashed var(--border-default)}
