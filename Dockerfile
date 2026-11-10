@@ -24,7 +24,7 @@ RUN set -e; if dpkg -s python3-brotli >/dev/null 2>&1; then dpkg --remove --forc
     v="$(dpkg-query -W -f='${Version}' libbrotli1 2>/dev/null || true)"; \
     if [ -n "$v" ]; then dpkg --compare-versions "$v" ge 1.1.0-2ubuntu0.1 || { echo "libbrotli1 $v < 1.1.0-2ubuntu0.1"; exit 1; }; fi
 WORKDIR /app
-COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py dev_seed.py v1_pdf.py works_auth.py ./
+COPY --chown=lms:lms server.py lms_store.py access.py invitations.py cloud.py manual_wiki.py workspace_items.py onboarding.py content_edit.py dev_seed.py v1_pdf.py works_auth.py ./
 COPY --chown=lms:lms auth.js workspace_items.js onboarding.js styles.css ./
 COPY --chown=lms:lms onboarding_course.json onboarding_reviews.json onboarding.html onboarding_login.html ./
 COPY --chown=lms:lms v1.html v1.js v1_graph.html v1_content.json v1_lessons.json curriculum.json source_log.json source_manifest.json ./
