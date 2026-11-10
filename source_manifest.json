@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-09",
+  "updated": "2026-11-10",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -250,10 +250,10 @@
     {
       "id": "본점-신규-입사자-준비-및-첫날-교육-연계",
       "folder": "매장사업부 공통/입사·근무 준비",
-      "file": "본점_신규_입사자_준비_및_첫날_교육_연계_SOP_261020.docx",
+      "file": "신규_입사자_준비_및_첫날_교육_연계_SOP_261110.docx",
       "revised": "2026-09-30",
-      "sha1": "026bda2d3d697586f2d834621c9099931d36fc47",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "sha1": "3c687df9e166e3ccd58f899d8bcf853aebd28c9f",
+      "basis": "채수민 제공 개정 원본 2026-11-10 · 본점 기준 반영 승인",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc2NzYwMTkyOHxEfDA"
     },
     {
