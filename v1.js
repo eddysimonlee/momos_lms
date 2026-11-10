@@ -192,8 +192,9 @@
     let i = 0, j = 0, out = '';
     while (i < m || j < n) {
       if (i < m && j < n && x[i] === y[j]) { out += esc(x[i]); i++; j++; }
-      else if (i < m && (j === n || L[i + 1][j] >= L[i][j + 1])) { out += /^\s+$/.test(x[i]) ? esc(x[i]) : `<del>${esc(x[i])}</del>`; i++; }
-      else { out += /^\s+$/.test(y[j]) ? esc(y[j]) : `<ins>${esc(y[j])}</ins>`; j++; }
+      // 띄어쓰기만 다르면 표시하지 않고, 줄바꿈이 생기거나 없어지면 '줄바꿈'으로 보인다
+      else if (i < m && (j === n || L[i + 1][j] >= L[i][j + 1])) { out += !/^\s+$/.test(x[i]) ? `<del>${esc(x[i])}</del>` : x[i].includes('\n') ? '<del class="v1-ce-br">줄바꿈</del> ' : esc(x[i]); i++; }
+      else { out += !/^\s+$/.test(y[j]) ? `<ins>${esc(y[j])}</ins>` : y[j].includes('\n') ? ' <ins class="v1-ce-br">줄바꿈</ins>\n' : esc(y[j]); j++; }
     }
     return out.replace(/\n/g, '<br>');
   }
@@ -828,7 +829,7 @@
       `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
       `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
-      (r.edit ? `<div class="v1-ce-ticket"><div class="v1-ce-diff"><i>바뀐 부분</i>${ceDiff(r.asis, r.tobe)}</div><p class="v1-muted">변경 종류(자동 추천): <b>${esc(r.edit.kind)}</b></p>` +
+      (r.edit ? `<div class="v1-ce-ticket"><div class="v1-ce-diff"><p class="v1-ce-label">바뀐 부분</p><p>${ceDiff(r.asis, r.tobe)}</p></div><p class="v1-muted">변경 종류(자동 추천): <b>${esc(r.edit.kind)}</b></p>` +
         `<p class="v1-muted">자동 검사</p>${ceList((r.edit.checks || []).filter(i => i.level !== 'block')) || '<p class="v1-muted">걸린 것 없음</p>'}</div>` : '') +
       (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? (reqEdit === r.id
         ? `<div class="v1-reqform v1-replyedit"><textarea class="v1-pop-input" data-reply-text maxlength="2000" rows="3" aria-label="처리 메모 고치기">${esc(r.reply)}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-reply-cancel>취소</button><button type="button" class="v1-btn primary" data-reply-save>저장</button></div></div>`
