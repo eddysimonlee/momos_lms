@@ -12,31 +12,28 @@ CASES = json.loads((APP / 'content_edit_cases.json').read_text(encoding='utf-8')
 class Rules(unittest.TestCase):
     def test_cases_match_saved_results(self):
         for c in CASES['cases']:
-            got = ce.check(c['part'], c['asis'], c['tobe'], CASES['cited'], [tuple(x) for x in CASES['others']], c['openReq'])
+            got = ce.check(c['part'], c['asis'], c['tobe'], c['openReq'])
             self.assertEqual(got, c['expect'], c['name'])
 
-    def test_only_seven_block_rules(self):
+    def test_only_six_block_rules(self):
         codes = {c['name']: [i['code'] for i in c['expect']['items']] for c in CASES['cases']}
-        self.assertEqual(codes['number'], ['number'])
-        self.assertEqual(codes['range'], [])     # 4-6통 = 4~6통
-        self.assertEqual(codes['comma'], [])     # 1,550 g = 1550g
-        self.assertEqual(codes['kept'], [])      # 원래 문구에 있던 수치는 근거 밖이어도 통과
-        self.assertIn('같은 문서 6.5', next(c for c in CASES['cases'] if c['name'] == 'other')['expect']['items'][0]['text'])
         for name in ('empty', 'same', 'length', 'markup', 'open'): self.assertEqual(codes[name], [name], name)
         self.assertEqual(codes['breaks_kp'], ['breaks']); self.assertEqual(codes['breaks_purpose'], ['breaks'])
+        # 원문과 맞는지(수치·이름·뜻)는 보지 않는다 — 배포 때 사람이 AI 와 확인(3000g = 3kg 을 글자로는 알 수 없음)
+        for name in ('number', 'other', 'range', 'comma', 'kept', 'simple'): self.assertEqual(codes[name], [], name)
+        self.assertEqual(ce.check('kp', '설탕 3000g 넣는다.', '설탕 3kg 넣는다.')['items'], [])
         self.assertTrue(all(i['level'] == 'block' for c in CASES['cases'] for i in c['expect']['items']))
-        # 지운 규칙(이름·빠진 내용·뜻·절반·문체)은 걸리지 않는다
-        self.assertEqual(ce.check('kp', '생크림을 먼저 넣는다.', '휘핑볼은 세 배치까지만 쓰지 않기', CASES['cited'])['items'], [])
 
     def test_suggest_by_numbers(self):
-        self.assertEqual(ce.check('kp', '생크림 1000g 넣는다.', '생크림 1000g 부어 넣는다.', CASES['cited'])['suggest'], '단순 수정')
-        self.assertEqual(ce.check('kp', '6~7배치 만든다.', '6배치 만든다.', ['6배치'])['suggest'], '재확인 필요')
+        self.assertEqual(ce.check('kp', '생크림 1000g 넣는다.', '생크림 1000g 부어 넣는다.')['suggest'], '단순 수정')
+        self.assertEqual(ce.check('kp', '6~7배치 만든다.', '6배치 만든다.')['suggest'], '재확인 필요')
 
     def test_real_lesson(self):
         l = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']['materials-product-1']
         a = l['keyPoints'][1]['text']
         r = ce.review(APP, 'materials-product-1', 'kp', 1, a, a.replace('1000g', '1200g'))
-        self.assertEqual([i['code'] for i in r['items']], ['number'])
+        self.assertEqual((r['items'], r['suggest']), ([], '재확인 필요'))
+        self.assertTrue(any('1000g' in t for _, t in ce.cited(APP, 'materials-product-1', 'kp', 1)))
         self.assertEqual(ce.review(APP, 'materials-product-1', 'kp', 1, a, a.replace('넣는다', '부어 넣는다'))['suggest'], '단순 수정')
         with self.assertRaises(ValueError): ce.review(APP, 'materials-product-1', 'kp', 1, a + 'x', a)
         with self.assertRaises(ValueError): ce.review(APP, 'materials-product-1', 'kp', 99, a, a)
@@ -72,7 +69,7 @@ class Server(unittest.TestCase):
         self.assertEqual(self.req(root, lambda a: a.replace('완료', '끝'), index=2)['no'], 'REQ-2')
 
     def test_blocked(self):
-        with self.assertRaisesRegex(ValueError, '1200g'): self.req({}, lambda a: a.replace('1000g', '1200g'))
+        with self.assertRaisesRegex(ValueError, '태그·링크'): self.req({}, lambda a: a + ' https://x.y')
         with self.assertRaisesRegex(ValueError, '같아요'): self.req({}, lambda a: a)
         with self.assertRaisesRegex(ValueError, '변경 종류'): self.req({}, lambda a: a + ' 확인', kind='아무거나')
         # 변경 종류는 서버 자동 추천으로 저장(화면이 보낸 값보다 우선)
@@ -119,13 +116,14 @@ class ApplyAndClose(unittest.TestCase):
     def test_apply_then_close(self):
         a1 = self.l['keyPoints'][1]['text']
         ok = self.edit('REQ-5', 1, a1.replace('넣는다', '차례로 넣는다'))
-        bad = self.edit('REQ-6', 2, '휘핑 1200g', None)
+        bad = self.edit('REQ-6', 2, '휘핑 <b>세게</b>한다.', None)
         stale = self.edit('REQ-7', 3, '아무거나다.', asis='옛 문구')
         out = self.run_apply([ok, bad, stale], '--check')
-        self.assertIn('확인만', out)
+        self.assertIn('확인만', out); self.assertIn('근거 [', out)  # --check 는 근거 원문을 함께 보여 준다
+        self.assertIn('이번에는 빼기로 함', self.run_apply([ok], '--check', '--skip', 'REQ-5'))
         self.assertEqual(json.loads((self.dir / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']['materials-product-1']['keyPoints'][1]['text'], a1)
         out = self.run_apply([ok, bad, stale])
-        self.assertIn('반영  REQ-5', out); self.assertIn('건너뜀 REQ-6', out); self.assertIn('1200g', out); self.assertIn('건너뜀 REQ-7', out)
+        self.assertIn('반영  REQ-5', out); self.assertIn('건너뜀 REQ-6', out); self.assertIn('태그·링크', out); self.assertIn('건너뜀 REQ-7', out)
         les = json.loads((self.dir / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']['materials-product-1']
         self.assertEqual(les['keyPoints'][1]['text'], ok['tobe'])
         self.assertEqual(les['keyPoints'][1]['cites'], self.l['keyPoints'][1]['cites'])  # 근거는 그대로

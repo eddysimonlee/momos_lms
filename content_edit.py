@@ -2,8 +2,8 @@
 
 같은 규칙이 v1.js 의 ContentEdit(입력하는 동안 화면 아래 경고)에 있다. 두 쪽은 content_edit_cases.json 으로 같은 결과인지 테스트한다.
 검사 기준은 '그 줄의 근거 절'(교육 목적은 그 교육 모든 교육 내용의 근거 절). 근거에 없으면 다른 절 위치를 안내만 한다.
-11/10 이재현: 남기는 규칙은 '수정 필요'(block) 7개뿐 — 빈 문구·같은 문구·길이·줄바꿈·태그/링크/이모지·같은 줄 반영 대기·근거 원문에 없는 수치.
-(이름·빠진 내용·뜻을 바꾸는 말·절반 넘게 바뀜·문체·참고 안내는 틀리게 걸리는 경우가 많아 뺐다.)
+11/10 이재현: 남기는 규칙은 '수정 필요'(block) 6개뿐 — 빈 문구·같은 문구·길이·줄바꿈·태그/링크/이모지·같은 줄 반영 대기.
+원문과 뜻이 맞는지(수치·이름 포함)는 글자 대조로 판단할 수 없어(예: 3000g = 3kg) 빼고, 배포할 때 사람이 AI 와 함께 확인한다(AGENTS.md).
 변경 종류 자동 추천 = 수치가 바뀌면 '재확인 필요', 아니면 '단순 수정'(화면에는 안 보이고 티켓에만 남는다).
 """
 import json
@@ -33,35 +33,24 @@ def numbers(s):
     return out
 
 
-def has(text, token):
-    return re.search(r'(?<![\d.])' + re.escape(token), text) is not None
-
-
 def section_text(sec):
     return '\n'.join(list(sec.get('paragraphs') or []) + ['\t'.join(c for c in [t.get('header') or []] + (t.get('rows') or []) for c in c)
                                                            for t in sec.get('tables') or []])
 
 
-def check(part, asis, tobe, cited, others=(), open_req=None):
-    """part: 'purpose'|'kp'. cited: 근거 절 글 목록. others: [(위치 이름, 글)] 근거가 아닌 절. open_req: 같은 줄에 반영 대기 중인 티켓 번호.
+def check(part, asis, tobe, open_req=None):
+    """part: 'purpose'|'kp'. open_req: 같은 줄에 반영 대기 중인 티켓 번호.
     → {'items': [{level: 'block', code, text}], 'suggest': '재확인 필요'|'단순 수정'}"""
     items = []
     add = lambda code, text: items.append(dict(level='block', code=code, text=text))
     a, t = str(asis or '').replace('\r\n', '\n').strip(), str(tobe or '').replace('\r\n', '\n').strip()
-    src = norm('\n'.join(cited))
     if open_req: add('open', f'이 줄은 {open_req} 로 이미 반영 대기 중이에요. 배포 뒤 다시 고쳐 주세요.')
     if not t: add('empty', '바꿀 문구를 적어 주세요.')
     elif t == a: add('same', '지금 문구와 같아요.')
     if len(t) > LIMIT[part]: add('length', f'{LIMIT[part]}자까지 쓸 수 있어요. (지금 {len(t)}자)')
     if t.count('\n') > BREAKS[part]: add('breaks', '교육 목적은 줄바꿈 없이 써 주세요.' if part == 'purpose' else '줄바꿈은 한 번까지 쓸 수 있어요.')
     if MARKUP.search(t): add('markup', '태그·링크·이모지는 쓸 수 없어요.')
-    nums_a = numbers(a)
-    for n in numbers(t):
-        if has(src, n) or n in nums_a:
-            continue  # 원래 문구에 있던 값(근거 밖)은 이번 수정의 책임이 아니다
-        where = list(dict.fromkeys(label for label, text in others if has(norm(text), n)))[:2]
-        add('number', f"근거 원문에 없는 수치: '{n}'" + (f" ({' · '.join(where)}에 있음 — 근거를 바꾸려면 '원본 매핑 변경' 요청)" if where else ''))
-    changed = set(numbers(t)) ^ set(nums_a)
+    changed = set(numbers(t)) ^ set(numbers(a))  # 변경 종류 자동 추천에만 쓴다(검사 아님)
     return dict(items=items, suggest='재확인 필요' if t and changed else '단순 수정')
 
 
@@ -112,7 +101,14 @@ def review(app, step, part, index, asis, tobe, open_req=None):
     data = load(app)
     text, keys = current(data, step, part, index)
     if asis != text: raise ValueError('그 사이 문구가 바뀌었어요. 화면을 새로 고친 뒤 다시 고쳐 주세요.')
-    cited = [section_text(data['sections'][k]) for k in keys if k in data['sections']]
-    docs = {data['sections'][k].get('doc') for k in keys if k in data['sections']}
-    others = [(label(data, k, docs), section_text(s)) for k, s in data['sections'].items() if k not in keys]
-    return check(part, asis, tobe, cited, others, open_req)
+    return check(part, asis, tobe, open_req)
+
+
+def cited(app, step, part, index):
+    """그 줄의 근거 원문 [(위치 이름, 글)] — apply_edits.py --check 가 사람·AI 확인용으로 보여 준다."""
+    data = load(app)
+    _, keys = current(data, step, part, index)
+    def readable(sec):  # 표는 한 행에 한 줄
+        rows = [' | '.join(r) for t in sec.get('tables') or [] for r in [t.get('header') or []] + (t.get('rows') or []) if r]
+        return '\n'.join(list(sec.get('paragraphs') or []) + rows)
+    return [(label(data, k), readable(data['sections'][k])) for k in keys if k in data['sections']]

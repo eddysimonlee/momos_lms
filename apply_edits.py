@@ -1,10 +1,12 @@
 """반영 대기 문구(LMS관리자 › 수정 요청 › '반영 대기 문구 N건 내려받기' 파일)를 v1_lessons.json 에 넣는다. (11/10)
 
     python3 apply_edits.py content_edits_202611101530.json --commit  # 반영 → 빌드 → 테스트 → 커밋까지 한 번에(그다음 git push 만)
-    python3 apply_edits.py content_edits_202611101530.json --check   # 바꾸지 않고 확인만
+    python3 apply_edits.py content_edits_202611101530.json --check   # 바꾸지 않고 확인만(바뀐 문구 + 그 줄의 근거 원문을 보여 줌)
+    python3 apply_edits.py content_edits_202611101530.json --commit --skip REQ-103  # 원문과 안 맞는 건은 빼고
     python3 apply_edits.py content_edits_202611101530.json           # 반영만(빌드·테스트·커밋은 손으로)
 
-한 건씩: 지금 문구가 AS-IS 와 같은지 → 서버와 같은 검사(수정 필요 7개) → 교육 목적·교육 내용 문구만 바꾼다(근거·순서·칸 수는 그대로).
+한 건씩: 지금 문구가 AS-IS 와 같은지 → 서버와 같은 형식 검사(수정 필요 6개) → 교육 목적·교육 내용 문구만 바꾼다(근거·순서·칸 수는 그대로).
+원문과 뜻이 맞는지는 스크립트가 판단하지 않는다 — --check 로 근거 원문과 나란히 보고 사람(또는 AI)이 확인한 뒤, 안 맞는 건은 --skip 으로 뺀다.
 이미 TO-BE 이면 건너뛰고, AS-IS 와 다르거나 검사에 걸리면 건너뛰고 알린다. 바꾼 것은 source_log.json 에 기록 1건(tickets = REQ 번호).
 --commit: 그다음 python3 v1_build.py → 모든 *_test.py → git commit 까지 한다. 하나라도 실패하면 바꾼 파일을 되돌리고 커밋하지 않는다.
 사람은 git push 만 하면 되고, 배포된 서버가 문구가 같아진 티켓을 '반영됨'으로 닫는다.
@@ -52,6 +54,7 @@ def main(argv=None):
     ap.add_argument('file', help="LMS관리자 › 수정 요청 › '반영 대기 문구 내려받기' 파일")
     ap.add_argument('--check', action='store_true', help='바꾸지 않고 확인만')
     ap.add_argument('--commit', action='store_true', help='반영 뒤 빌드·테스트·커밋까지(실패하면 되돌림)')
+    ap.add_argument('--skip', nargs='*', default=[], metavar='REQ-n', help='이번에 반영하지 않을 티켓 번호(원문과 안 맞는 건 등)')
     a = ap.parse_args(argv)
     if a.check and a.commit: sys.exit('--check 와 --commit 은 같이 쓸 수 없어요.')
     if a.commit:
@@ -69,6 +72,8 @@ def main(argv=None):
     done, skipped = [], []
     for e in data.get('edits') or []:
         key = f"{e.get('no')} {e.get('field')} ({e.get('title')})"
+        if e.get('no') in a.skip:
+            skipped.append((key, '이번에는 빼기로 함(--skip)')); continue
         l = lessons['lessons'].get(e.get('step'))
         try:
             text, _ = ce.current(ce.load(APP), e.get('step'), e.get('part'), e.get('index'))
@@ -89,7 +94,12 @@ def main(argv=None):
         done.append(e)
     if a.check:
         lpath.write_text(lraw, encoding='utf-8'); ce._CACHE.clear()
-    for e in done: print(f"반영  {e['no']} {nos.get(e['step'], '?')}번 {e['title']} · {e['field']}: {e['tobe']}")
+    for e in done:
+        print(f"반영  {e['no']} {nos.get(e['step'], '?')}번 {e['title']} · {e['field']}{' (변경 종류: ' + e['kind'] + ')' if e.get('kind') else ''}")
+        print(f"      지금: {e['asis']}\n      수정: {e['tobe']}" + (f"\n      사유: {e['note']}" if e.get('note') else ''))
+        if a.check:  # 사람·AI 가 뜻이 맞는지 보도록 그 줄의 근거 원문을 함께
+            for label, text in ce.cited(APP, e['step'], e['part'], e.get('index')):
+                print(f"      근거 [{label}]\n        " + text.replace('\n', '\n        '))
     for k, why in skipped: print(f"건너뜀 {k}: {why}")
     for r in data.get('requests') or []:  # 문구 수정이 아닌 진행중 요청 — 이 스크립트는 건드리지 않는다
         print(f"따로  {r.get('no')} {r.get('type')} · {(r.get('target') or {}).get('title', '')}: AGENTS.md '콘텐츠 수정 요청 처리' 대로 제안·승인 뒤 반영")
