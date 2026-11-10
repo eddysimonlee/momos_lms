@@ -19,3 +19,4 @@ v1_graph_preview.html
 # Drive docs-check result (file ids) kept local for linking.
 docs_check*.json
 content_requests*.json
+content_edits_*.json
