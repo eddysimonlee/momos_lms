@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-10",
+  "updated": "2026-11-11",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -214,10 +214,10 @@
     {
       "id": "본점-근무-준비-및-위생-정돈-기준",
       "folder": "ST-002_온천본점/업무문서/입사·근무 준비",
-      "file": "본점_근무_준비_및_위생_정돈_기준_GUI_261020.docx",
+      "file": "본점_근무_준비_및_위생_정돈_기준_GUI_261110.docx",
       "revised": "2026-09-30",
-      "sha1": "b8cdc6a97ddfa2442f54cfda436079ba4ab199d9",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "sha1": "b314c40b07ab22b505a707f59ffe0461558e0138",
+      "basis": "채수민 제공 개정 원본 2026-11-11 · 본문 동일·잔 취급 안내 사진 2장 추가",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE2MjI0OXxEfDA"
     },
     {
