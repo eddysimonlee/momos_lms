@@ -24,6 +24,7 @@ def inline_file(path):
 def main():
     # 서버와 똑같은 내용: 빌드 산출물(v1_content.json) 위에 v1_lessons.json 을 덮는 것은 server.v1_content() 하나로만 한다.
     import server
+    import onboarding
     content = server.v1_content()
     for ph in content.get('photos', {}).values():  # 미리보기는 한 파일이므로 사진을 안에 넣는다
         f = APP / ph['src']
@@ -44,7 +45,8 @@ def main():
                     basis=dict(kind='수정 요청', origin='LMS관리자 › 수정 요청', range='REQ-1'), docs=[], removed=[], rules=[], checks=[], skipped=['미리보기 예시 기록이에요.'],
                     lessons=[dict(no=86, id='stock-ecount', title='재고 전산 처리', changes=[dict(item='교육 제목 (REQ-1)', cite='', asis='재고 전산 처리', tobe='(요청한 TO-BE)', note='예시')])])] + entries
     log = json.dumps(entries, ensure_ascii=False).replace('</', '<\\/')
-    mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';const SOURCE_LOG=' + log + ';')
+    moves = json.dumps(onboarding.KP_MOVES, ensure_ascii=False)
+    mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';const SOURCE_LOG=' + log + ';const KP_MOVES=' + moves + ';')
     page = page.replace('<script src="/auth.js"></script>', '<script>' + mock + '</script>')
     page = page.replace('<script src="/v1.js"></script>', '<script>' + (APP / 'v1.js').read_text(encoding='utf-8').replace('</script', '<\\/script') + '</script>')
     page = page.replace('<body class="auth-pending">', '<body class="auth-pending">' + BANNER, 1)
@@ -75,6 +77,25 @@ MOCK = r'''
   const STEPS = {}; for (const u of CONTENT.units) for (const s of u.steps) STEPS[s.id] = s;
   // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
   const N = s => (s.keyPoints && s.keyPoints.length ? s.keyPoints : s.checks).map(() => null);
+  // >>> preview-kp-moves
+  function fitMovedChecks(room) {
+    let changed = false;
+    for (const [id, [marker, oldCount, order]] of Object.entries(typeof KP_MOVES === 'undefined' ? {} : KP_MOVES)) {
+      const r = room.records?.[id];
+      if (!r || (r.kpMoves || []).includes(marker)) continue;
+      if ((r.teacher || []).length === oldCount) {
+        for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
+          if (!Array.isArray(r[key]) || r[key].length !== oldCount) continue;
+          const empty = key === 'teacher' ? r.status === 'done' : key === 'self' ? false : null;
+          r[key] = order.map(i => i === null ? empty : r[key][i]);
+        }
+      }
+      r.kpMoves = [...(r.kpMoves || []), marker];
+      changed = true;
+    }
+    return changed;
+  }
+  // <<< preview-kp-moves
   const ACCOUNTS = [
     {id: 'u-staff', name: '체험 담당자', email: 'staff@local.test', role: 'admin'},
     {id: 'u-learner', name: '체험 교육생', email: 'learner@local.test', role: 'member'},
@@ -133,6 +154,7 @@ MOCK = r'''
   const load = () => { let st; try { st = JSON.parse(localStorage.getItem(KEY)); } catch (e) {} return st && st.rooms ? st : fresh(); };
   let state = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+  if (Object.values(state.rooms).map(fitMovedChecks).some(Boolean)) save();
   let current = 'u-learner'; try { current = sessionStorage.getItem(KEY + '-who') || current; } catch (e) {}
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);

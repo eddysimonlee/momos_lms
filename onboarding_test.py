@@ -443,6 +443,29 @@ class EducationTests(unittest.TestCase):
         r['teacher'][2]=True;self.assertEqual(ob.fit(L)['records']['stock-beans']['teacher'],[True,False,True])  # 다시 옮기지 않는다
         fresh=ob.fit(dict(join='2026-11-01',planDates={},records={}))['records']['stock-beans'];self.assertEqual(len(fresh['teacher']),3)
 
+    def test_inserted_greeting_topic_preserves_checks_and_completion(self):
+        ident = 'safety-greet'
+        self.assertEqual(len(ob.STEPS[ident]['checks']), 6)
+        for status in ('practice', 'done'):
+            record = dict(status=status, self=[True, False, True, False, True],
+                          teacher=[True, True, False, True, False], checkBasis=ob.CHECK_BASIS,
+                          done='2026-11-01' if status == 'done' else None,
+                          memo='유지할 메모', history=[dict(event='preserved')])
+            for key in ('selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                record[key] = [f'{key}-{i}' for i in range(5)]
+            before = copy.deepcopy(record)
+            learner = dict(join='2026-11-01', planDates={}, records={ident: record})
+            migrated = ob.fit(learner)['records'][ident]
+            for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                empty = (status == 'done' if key == 'teacher' else False) if key in ('self', 'teacher') else None
+                self.assertEqual(migrated[key], before[key][:3] + [empty] + before[key][3:])
+            for key in ('status', 'done', 'memo', 'history'):
+                self.assertEqual(migrated[key], before[key])
+            once = copy.deepcopy(migrated)
+            self.assertEqual(ob.fit(learner)['records'][ident], once)
+        fresh = ob.fit(dict(join='2026-11-01', planDates={}, records={}))['records'][ident]
+        self.assertEqual(fresh['teacher'], [False] * 6)
+
     def test_org_chart_links_works_directory_to_education(self):
         # 11/02 주소록: WORKS 부서·구성원 저장본 + LMS 교육 기록. 교육을 시작하지 않은 사람은 id 없음(미접속)
         import works_auth
