@@ -206,6 +206,8 @@ def parse(path):
         ones = [i for i in range(toc_at + 1, first_sentence) if NUMBERED.match(paras[i]) and NUMBERED.match(paras[i]).group(1) == '1']
         if ones:
             body_start = ones[-1]
+    toc_titles = set(paras[toc_at + 1:body_start]) if toc_at >= 0 else set()
+    toc_parent = ''
     phase = 'front'
     pidx = -1
     last_text = ''  # 사진 바로 앞의 본문 단락(사진 설명 후보)
@@ -265,6 +267,13 @@ def parse(path):
                 no, title = mnum.group(1), mnum.group(2).strip()
             else:
                 no, title = '', text
+            # 목차 절 안의 일반 서식 예시 번호(1~10)는 문서의 1~10장과 구분한다.
+            # 원본 제목·표는 그대로 두고, 색인의 주소만 4.9.1 같은 하위 번호로 만든다.
+            if (toc_titles and text not in toc_titles and style in ('Normal', 'SOP 본문')
+                    and no.isdigit() and '.' in toc_parent):
+                no = toc_parent + '.' + no
+            else:
+                toc_parent = no
             cur = new_section(no, title, no.count('.') + 1 if no else 1)
             sections.append(cur)
             last_text = text
