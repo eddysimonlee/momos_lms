@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-11",
+  "updated": "2026-11-12",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -358,10 +358,10 @@
     {
       "id": "재료-제조-소분-라벨-부착-보관",
       "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
-      "file": "재료_제조_소분_라벨_부착_보관_SOP_261106.docx",
-      "revised": "2026-11-06",
-      "sha1": "377d456af13e9fa07a0936414d1ffa4628d84a54",
-      "basis": "수정 요청 REQ-17 첨부 파일 2026-11-09",
+      "file": "재료_제조_소분_라벨_부착_보관_261112_SOP.docx",
+      "revised": "2026-11-12",
+      "sha1": "6b4cbdf5c5e83f33556d3812567137f982ee7b33",
+      "basis": "채수민 제공 ST_매장사업부 스냅샷 2026-11-12 · AS-IS/TO-BE 승인",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE5MzQ4MHxEfDA"
     },
     {
