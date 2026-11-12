@@ -466,6 +466,52 @@ class EducationTests(unittest.TestCase):
         fresh = ob.fit(dict(join='2026-11-01', planDates={}, records={}))['records'][ident]
         self.assertEqual(fresh['teacher'], [False] * 6)
 
+    def test_split_op1_keeps_original_record_history_and_requires_new_checks(self):
+        ident = 'esp-shift'
+        move = ob.KP_MOVES[ident]
+        self.assertEqual(len(ob.STEPS[ident]['checks']), 6)
+        for status in ('ready', 'practice', 'review', 'done'):
+            for basis in (ob.CHECK_BASIS, 'older-check-basis'):
+                marks = [False] * 3 if status == 'ready' else [True] * 3 if status == 'done' else [True, False, True]
+                original = dict(status=status, teacher=marks, self=[True, False, True], checkBasis=basis,
+                                done='2026-11-01' if status == 'done' else None,
+                                request='2026-10-31' if status == 'review' else None,
+                                history=[dict(event='keep')], memo='이전 메모', start='2026-10-30',
+                                lessonVersion='previous-version')
+                if status == 'done':
+                    original.update(completedBy='admin-before', completedByName='이전 확인자', trainedBy=dict(name='교육자'))
+                for key in ('selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                    original[key] = [f'{key}-{i}' for i in range(3)]
+                before = copy.deepcopy(original)
+                learner = dict(join='2026-10-30', planDates={}, records={ident: original})
+                result = ob.fit(learner)['records'][ident]
+                for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                    empty = False if key in ('self', 'teacher') else None
+                    self.assertEqual(result[key], [empty] * 4 + before[key][1:])
+                self.assertEqual(result['history'][:-1], before['history'])
+                archived = result['history'][-1]
+                for key, value in before.items():
+                    if key != 'history': self.assertEqual(archived[key], value)
+                self.assertEqual(archived['checkTexts'], move[3]['previousChecks'])
+                self.assertEqual(archived['splitMigration'], move[0])
+                self.assertTrue(archived['splitAt'])
+                self.assertEqual(result['status'], 'practice' if status in ('review', 'done') else status)
+                self.assertEqual(result['checkBasis'], ob.CHECK_BASIS)
+                self.assertEqual((result['start'], result['memo']), (before['start'], before['memo']))
+                if status in ('review', 'done'):
+                    self.assertIsNone(result['done']); self.assertIsNone(result['request'])
+                    self.assertNotIn('completedBy', result)
+                once = copy.deepcopy(result)
+                self.assertEqual(ob.fit(learner)['records'][ident], once)
+        fresh = ob.fit(dict(join='2026-11-12', planDates={}, records={}))['records'][ident]
+        self.assertEqual(fresh['teacher'], [False] * 6)
+        self.assertEqual(fresh['history'], [])
+        # 새 기준으로 실제 완료한 기록에는 이관 표시가 없어도 과거 기준 이력을 만들지 않는다.
+        new_done = dict(status='done', teacher=[True] * 6, teacherAt=['2026-11-12'] * 6,
+                        checkBasis=ob.CHECK_BASIS, done='2026-11-12', history=[])
+        self.assertEqual(ob.fit(dict(join='2026-11-12', planDates={}, records={ident: new_done}))['records'][ident]['status'], 'done')
+        self.assertEqual(new_done['history'], [])
+
     def test_org_chart_links_works_directory_to_education(self):
         # 11/02 주소록: WORKS 부서·구성원 저장본 + LMS 교육 기록. 교육을 시작하지 않은 사람은 id 없음(미접속)
         import works_auth

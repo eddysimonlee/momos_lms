@@ -33,6 +33,44 @@ test('preview uses server check moves and preserves inserted-topic records once'
   context.fit(fresh);
   assert.deepEqual(fresh.records['safety-greet'].teacher, Array(6).fill(false));
 });
+test('preview archives split OP1 checks and completion without copying them into four new topics', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const context = vm.createContext({KP_MOVES: moves});
+  vm.runInContext(helper + ';globalThis.fit = fitMovedChecks;', context);
+  for (const status of ['ready', 'practice', 'review', 'done']) {
+    const r = {status, teacher: status === 'ready' ? [false, false, false] : status === 'done' ? [true, true, true] : [true, false, true],
+      self: [true, false, true], checkBasis: 'older-check-basis', done: status === 'done' ? '2026-11-01' : null,
+      request: status === 'review' ? '2026-10-31' : null, history: [{event: 'keep'}], memo: 'keep', start: '2026-10-30'};
+    if (status === 'done') Object.assign(r, {completedBy: 'before', completedByName: '이전 확인자', trainedBy: {name: '교육자'}});
+    for (const key of ['selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) r[key] = Array.from({length: 3}, (_, i) => `${key}-${i}`);
+    const before = structuredClone(r), room = {records: {'esp-shift': r}};
+    assert.equal(context.fit(room), true);
+    for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
+      const empty = ['self', 'teacher'].includes(key) ? false : null;
+      assert.deepEqual(Array.from(r[key]), [empty, empty, empty, empty, ...before[key].slice(1)]);
+    }
+    const archived = JSON.parse(JSON.stringify(r.history.at(-1)));
+    for (const [key, value] of Object.entries(before)) if (key !== 'history') assert.deepEqual(archived[key], value);
+    assert.deepEqual(JSON.parse(JSON.stringify(r.history.slice(0, -1))), before.history);
+    assert.deepEqual(archived.checkTexts, moves['esp-shift'][3].previousChecks);
+    assert.equal(archived.splitMigration, moves['esp-shift'][0]);
+    assert.ok(archived.splitAt);
+    assert.equal(r.status, ['review', 'done'].includes(status) ? 'practice' : status);
+    if (['review', 'done'].includes(status)) { assert.equal(r.done, null); assert.equal(r.request, null); assert.equal(r.completedBy, undefined); }
+    const once = JSON.stringify(r);
+    assert.equal(context.fit(room), false);
+    assert.equal(JSON.stringify(r), once);
+  }
+  for (const status of ['ready', 'done']) {
+    const r = {status, teacher: Array(6).fill(status === 'done'), history: []}, room = {records: {'esp-shift': r}};
+    context.fit(room);
+    assert.equal(r.status, status); assert.equal(r.history.length, 0);
+    assert.deepEqual(r.teacher, Array(6).fill(status === 'done'));
+  }
+});
+
 const line = start => {
   const found = source.split('\n').find(text => text.trimStart().startsWith(start));
   assert.ok(found, start);

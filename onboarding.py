@@ -31,11 +31,19 @@ STEPS = {s['id']: dict(s, unit=u['id'], plan=s.get('defaultDays', u['plan'])) fo
 _LESSONS = Path(__file__).with_name('v1_lessons.json')
 # 2026-10-29: '수행 확인'을 없애고 교육 내용(keyPoints) 항목마다 체크한다. 교육 내용이 없는 항목(첫날 OJT 17항목)만 기존 체크 목록.
 CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관리자)만. 교육생 체크는 쓰지 않는다
-# 교육 내용(체크 항목)을 중간에서 지웠을 때 이미 저장된 체크가 한 칸씩 밀리지 않도록, 남는 항목의 예전 번호를 적어 둔다(한 번만 옮긴다).
-# {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호)}
+# 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
+# {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
     'stock-beans': ('kp-2026-11-02-1kg', 4, [0, 1, 3]),  # 11/02: 3번 '1kg 예외' 삭제
     'safety-greet': ('kp-2026-11-11-expression-examples', 5, [0, 1, 2, None, 3, 4]),  # 응대 표현 교육 4번 추가
+    'esp-shift': ('kp-2026-11-12-op1-split', 3, [None, None, None, None, 1, 2], {
+        'checkBasis': CHECK_BASIS,
+        'previousChecks': [
+            'OP1은 출근 준비와 수질 측정·기록을 마친 뒤, 직전 날짜의 데이터를 참고해 에스프레소를 추출·시음하고 당일 세팅을 조정한다.',
+            'CL1 교대: OP1에게 추출 상태를 구두로 인계받고, 칼리브레이션과 실시간 메이킹을 함께 하며 결과를 구두로 공유한다.',
+            'CL1 마감: 머신·메이킹·에스프레소 스테이션을 마감한 뒤 정산·보고로 이어진다.',
+        ],
+    }),  # 원래 1번을 네 문항으로 분리: 원래 체크는 이력으로 보관하고 재확인
 }
 def _check_texts(l):
     kps = [k['text'] for k in l.get('keyPoints') or []]
@@ -183,6 +191,24 @@ def fit(learner):
         s = STEPS.get(ident)
         if not s: continue
         n = len(s['checks'])
+        move = KP_MOVES.get(ident)
+        if move and len(move) > 3 and move[0] not in (r.get('kpMoves') or []):
+            # 분리 전 기록은 기준 변환보다 먼저 보관한다. 새 문항에는 완료 체크를 승계하지 않는다.
+            if len(r.get('teacher') or []) == move[1]:
+                previous = copy.deepcopy(r)
+                previous.pop('history', None)
+                previous.update(checkTexts=list(move[3]['previousChecks']), splitMigration=move[0], splitAt=stamp())
+                r['history'] = (r.get('history') or []) + [previous]
+                for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                    if key in r and len(r[key]) == move[1]:
+                        empty = False if key in ('self', 'teacher') else None
+                        r[key] = [empty if i is None else r[key][i] for i in move[2]]
+                r['checkBasis'] = move[3]['checkBasis']
+                if r.get('status') in ('done', 'review'):
+                    r.update(status='practice', done=None, request=None)
+                    for key in ('completedBy', 'completedByName', 'trainedBy'):
+                        r.pop(key, None)
+            r['kpMoves'] = (r.get('kpMoves') or []) + [move[0]]
         if r.get('checkBasis') != CHECK_BASIS:
             # 체크 주체가 바뀔 때(수행 확인 → 교육 내용 → 관리자 체크) 이전 체크는 비운다. 완료된 항목은 완료로 둔다(모두 체크).
             done = r.get('status') == 'done'
