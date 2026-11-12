@@ -80,14 +80,26 @@ MOCK = r'''
   // >>> preview-kp-moves
   function fitMovedChecks(room) {
     let changed = false;
-    for (const [id, [marker, oldCount, order]] of Object.entries(typeof KP_MOVES === 'undefined' ? {} : KP_MOVES)) {
+    for (const [id, [marker, oldCount, order, split]] of Object.entries(typeof KP_MOVES === 'undefined' ? {} : KP_MOVES)) {
       const r = room.records?.[id];
       if (!r || (r.kpMoves || []).includes(marker)) continue;
       if ((r.teacher || []).length === oldCount) {
+        if (split) {
+          const previous = JSON.parse(JSON.stringify(r)); delete previous.history;
+          Object.assign(previous, {checkTexts: [...split.previousChecks], splitMigration: marker, splitAt: new Date().toISOString()});
+          r.history = [...(r.history || []), previous];
+        }
         for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
           if (!Array.isArray(r[key]) || r[key].length !== oldCount) continue;
-          const empty = key === 'teacher' ? r.status === 'done' : key === 'self' ? false : null;
+          const empty = key === 'teacher' ? !split && r.status === 'done' : key === 'self' ? false : null;
           r[key] = order.map(i => i === null ? empty : r[key][i]);
+        }
+        if (split) {
+          r.checkBasis = split.checkBasis;
+          if (['done', 'review'].includes(r.status)) {
+            Object.assign(r, {status: 'practice', done: null, request: null});
+            for (const key of ['completedBy', 'completedByName', 'trainedBy']) delete r[key];
+          }
         }
       }
       r.kpMoves = [...(r.kpMoves || []), marker];
