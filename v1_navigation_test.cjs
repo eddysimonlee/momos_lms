@@ -71,6 +71,24 @@ test('preview archives split OP1 checks and completion without copying them into
   }
 });
 
+test('tool guide renders numbered tools as an image caption, including no-tools and escaped content', () => {
+  const helper = source.split('// >>> tool-guide')[1].split('// <<< tool-guide')[0];
+  const context = vm.createContext({content: {photos: {guide: {src: 'v1_photos/fixture.jpg', caption: '제조 도구 안내'}}}});
+  const escapeLine = source.split('\n').find(line => line.trimStart().startsWith('const esc ='));
+  vm.runInContext(escapeLine + '\n' + helper + '\nglobalThis.renderGuide = toolGuideHTML;', context);
+  const html = context.renderGuide({toolGuide: {photo: 'guide', numbers: [2, 3], names: ['거름망', '스푼']}});
+  assert.ok(html.indexOf('<img ') < html.indexOf('[사용 도구 목록]'));
+  assert.match(html, /<figcaption>\[사용 도구 목록\] \(2 거름망, 3 스푼\)<\/figcaption>/);
+  assert.doesNotMatch(html, /checkbox|data-mark|data-kp|v1-note/);
+  const empty = context.renderGuide({toolGuide: {photo: 'guide', numbers: [], names: []}});
+  assert.match(empty, /\[사용 도구 목록\] \(사용 도구 없음\)/);
+  assert.equal(context.renderGuide({}), '');
+  assert.equal(context.renderGuide({toolGuide: {photo: 'missing'}}), '');
+  const escaped = context.renderGuide({toolGuide: {photo: 'guide', numbers: [1], names: ['<script>bad</script>']}});
+  assert.doesNotMatch(escaped, /<script>/);
+  assert.match(escaped, /&lt;script&gt;/);
+});
+
 const line = start => {
   const found = source.split('\n').find(text => text.trimStart().startsWith(start));
   assert.ok(found, start);

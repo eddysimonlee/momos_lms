@@ -1032,6 +1032,15 @@
       stepActions(s);
   }
 
+  // >>> tool-guide
+  function toolGuideHTML(s) {
+    const guide = s.toolGuide, photo = guide && content.photos[guide.photo];
+    if (!photo) return '';
+    const tools = guide.numbers.length ? guide.numbers.map((number, i) => `${number} ${guide.names[i]}`).join(', ') : '사용 도구 없음';
+    return `<figure class="v1-photo v1-photo-wide"><img src="${esc(photo.src)}" alt="${esc(photo.caption)}" loading="lazy"><figcaption>[사용 도구 목록] (${esc(tools)})</figcaption></figure>`;
+  }
+  // <<< tool-guide
+
   function stepView(s) {
     if (planned(s)) return plannedView(s);
     const r = record(s.id), st = r.status, who = role(), own = who === 'learner', staff = who === 'staff';
@@ -1099,7 +1108,7 @@
       : '글을 누르면 근거 본문이 펼쳐져요.';
     const ceBanner = ceOn ? `<div class="v1-ce-modebar" role="status"><span>문구 수정 모드 — 고칠 교육 목적이나 교육 내용을 누르세요.</span><button type="button" class="v1-ce-action" data-ce-mode-off>끝내기</button></div>` : '';
     return learnerBar() + ceBanner + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
-      `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${photos}` +
+      `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${toolGuideHTML(s)}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
       memo +

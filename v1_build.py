@@ -86,6 +86,17 @@ def find_section(doc, ref):
     return hits[0]
 
 
+def validate_tool_guide(guide, docs):
+    if len(guide['numbers']) != len(guide['names']):
+        raise ValueError('도구 번호와 이름 수가 다름')
+    if guide.get('cite'):
+        doc, no, part = guide['cite']
+        tab, _ = table_part(find_section(docs[doc], no), part)
+        expected = [guide['menu'], ', '.join(map(str, guide['numbers'])), ', '.join(guide['names'])]
+        if tab['rows'] != [expected]:
+            raise ValueError('사용 도구가 원본 표의 해당 메뉴 행과 다름')
+
+
 def main():
     course = json.loads((APP / 'onboarding_course.json').read_text(encoding='utf-8'))
     lessons = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']
@@ -135,9 +146,15 @@ def main():
     def lesson_step(s):
         """교육과정의 항목 1개 + v1_lessons.json 의 교육안 → 화면용 항목."""
         l = lessons.get(s['id'], {})
+        guide = l.get('toolGuide')
+        guide_cites = []
+        if guide:
+            guide_cites = [tuple(guide['photo']['cite'])]
+            if guide.get('cite'):
+                guide_cites.append(tuple(guide['cite']))
         checks = l.get('checks')  # [{text, cites}] — 없으면 교육과정의 체크 문구
         cites = [tuple(c) for kp in l.get('keyPoints', []) + (checks or []) for c in kp['cites']] + [tuple(c) for c in l.get('sources', [])] \
-            + [tuple(ph['cite']) for ph in l.get('photos', [])]
+            + [tuple(ph['cite']) for ph in l.get('photos', [])] + guide_cites
         sources = [list(c) for c in l['sources']] if l.get('sources') else list(dict.fromkeys(cites))
         for c in cites:
             doc, no, part = (list(c) + [None])[:3]
@@ -170,6 +187,10 @@ def main():
                     lessonStatus=l.get('status', 'none'),
                     # 교육안이 keyPoints 를 일부러 비워 둔 세션(예: 첫날 OJT 체크 — 수행 확인만): 화면에서 '교육 내용' 카드를 숨긴다
                     contentOmitted='keyPoints' in l and not l['keyPoints'])
+        if guide:
+            validate_tool_guide(guide, docs)
+            photo = lesson_photos(dict(photos=[guide['photo']]))[0]
+            step['toolGuide'] = dict(photo=photo, numbers=guide['numbers'], names=guide['names'])
         return step
 
     def planned_step(sess):
