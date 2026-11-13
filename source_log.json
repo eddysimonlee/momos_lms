@@ -11,6 +11,73 @@
   ],
   "entries": [
     {
+      "id": "2026-11-13-remove-author-notes",
+      "at": "2026-11-13",
+      "approvedBy": "이재현",
+      "tickets": [],
+      "title": "작성 메모(노란 상자) 4개 삭제 — 11·44·54·67번",
+      "basis": {
+        "kind": "문구 정리",
+        "at": "2026-11-13",
+        "origin": "이재현 결정(BACKLOG 5번 정리) — 교육 목적과 나란히 읽고 4개 모두 삭제",
+        "copy": "(없음 — 원본 근거 없는 교육안 작성자 메모)",
+        "range": "11·44·54·67번 안내 상자"
+      },
+      "work": "10/13 옛 교육안(onboarding_course.json)의 note 가 교육 화면·PDF 노란 상자로 나오던 것을 v1_lessons.json 에 note '' 를 두어 표시하지 않음. onboarding_course.json 은 그대로.",
+      "docs": [],
+      "removed": [],
+      "lessons": [
+        {
+          "no": 11,
+          "id": "welcome-ojt",
+          "title": "첫날 OJT 체크 17항목",
+          "changes": [
+            {
+              "item": "안내 상자(노란 상자)",
+              "asis": "원고에 열거된 앱·채널의 현재 운영 여부는 매장에서 확인합니다. 웍스 안에서 교육 도구를 써야 한다는 뜻은 아닙니다.",
+              "tobe": "(없앰)"
+            }
+          ]
+        },
+        {
+          "no": 44,
+          "id": "daily-open-form",
+          "title": "OP3 담당 구역 점검·이상 확인·OP1 전달",
+          "changes": [
+            {
+              "item": "안내 상자(노란 상자)",
+              "asis": "실제 운영 점검표의 완료 시각·서명·보고는 기존 기록 양식을 사용합니다.",
+              "tobe": "(없앰)"
+            }
+          ]
+        },
+        {
+          "no": 54,
+          "id": "pickup-layout",
+          "title": "냅킨·커트러리 직접 배치하기",
+          "changes": [
+            {
+              "item": "안내 상자(노란 상자)",
+              "asis": "원고의 냅킨 매수는 공란입니다. 이 시안에서 수량을 정하지 않았습니다.",
+              "tobe": "(없앰)"
+            }
+          ]
+        },
+        {
+          "no": 67,
+          "id": "menu-sequence",
+          "title": "제조 순서 신호와 포지션 간 협업 / 주문 유형별 KDS 완료 처리",
+          "changes": [
+            {
+              "item": "안내 상자(노란 상자)",
+              "asis": "주문 전체의 특정 제조 순서는 공식 정답으로 확정하지 않았습니다.",
+              "tobe": "(없앰)"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "2026-11-13-weekly-hygiene-note-merge",
       "at": "2026-11-13",
       "approvedBy": "이재현",
