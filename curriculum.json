@@ -406,7 +406,74 @@
               ],
               "shift": [
                 "CL"
-              ]
+              ],
+              "title": "월요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-tue",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "화요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-wed",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "수요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-thu",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "목요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-fri",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "금요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-sat",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "토요일 주간위생업무"
+            },
+            {
+              "kind": "추가",
+              "id": "floor-weekly-sun",
+              "from": [
+                32
+              ],
+              "shift": [
+                "CL"
+              ],
+              "title": "일요일 주간위생업무"
             },
             {
               "kind": "기존",

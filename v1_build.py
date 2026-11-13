@@ -177,7 +177,7 @@ def main():
         step = dict(id=s['id'], title=l.get('title') or s['title'], copy=s['copy'],
                     checks=[c['text'] for c in checks] if checks else s['checks'],
                     checkCites=[[section_key(*c) for c in k['cites']] for k in checks] if checks else [],
-                    note=s.get('note') or '', photos=lesson_photos(l),  # 원본 docx 의 사진만(예전 원고 사진은 쓰지 않음)
+                    note=l.get('note', s.get('note') or ''), photos=lesson_photos(l),  # 원본 docx 의 사진만(예전 원고 사진은 쓰지 않음)
                     purpose=l.get('purpose', ''),
                     keyPoints=[dict(text=kp['text'], cites=[section_key(*c) for c in kp['cites']]) for kp in l.get('keyPoints', [])],
                     sources=[section_key(*c) for c in sources],

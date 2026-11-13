@@ -34,6 +34,17 @@ CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관�
 # 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
 # {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
+    'floor-weekly': ('kp-2026-11-13-weekly-days', 9, [None] * 6, {
+        'checkBasis': CHECK_BASIS,
+        'previousTitle': '요일별 주간 위생 업무',
+        'previousChecks': [
+            '월요일 업무', '화요일 업무', '수요일 업무', '목요일 업무', '금요일 업무', '토요일 업무', '일요일 업무',
+            '당일 요일 항목을 수행하고, 격주 항목은 직전 주에 했는지 확인한다.',
+            '다음 날 근무자는 수요일 시향돔의 원두와, 목요일에 세척한 시럽병·설탕병의 내용물을 채운다.',
+        ],
+        'addedSteps': {'floor-weekly-tue': 8, 'floor-weekly-wed': 7, 'floor-weekly-thu': 7,
+                       'floor-weekly-fri': 6, 'floor-weekly-sat': 4, 'floor-weekly-sun': 5},
+    }),  # 기존 요일 단위 완료를 새 업무별 체크에 복제하지 않고 이력에 보존
     'stock-beans': ('kp-2026-11-02-1kg', 4, [0, 1, 3]),  # 11/02: 3번 '1kg 예외' 삭제
     'safety-greet': ('kp-2026-11-11-expression-examples', 5, [0, 1, 2, None, 3, 4]),  # 응대 표현 교육 4번 추가
     'esp-shift': ('kp-2026-11-12-op1-split', 3, [None, None, None, None, 1, 2], {
@@ -66,7 +77,9 @@ if _LESSONS.exists():
                     if _s['id'] not in STEPS and _check_texts(_l):
                         STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
                                                checks=_check_texts(_l),
-                                               unit='curriculum-' + _u['no'], plan=_u.get('plan') or [1, 180])
+                                               unit='curriculum-' + _u['no'], plan=_u.get('plan') or STEPS.get(_l.get('planFrom'), {}).get('plan') or [1, 180])
+                        if _l.get('planFrom'):
+                            STEPS[_s['id']]['planFrom'] = _l['planFrom']
                     elif _s['id'] in STEPS and _u.get('plan'):
                         STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
 TESTS = {t['id']: t for t in COURSE['tests']}
@@ -186,7 +199,8 @@ def fit(learner):
             records[ident] = dict(status='ready', self=[False]*n, teacher=[False]*n, selfAt=[None]*n, teacherAt=[None]*n, start=None,
                                   done=None, request=None, attempt=1, memo='', feedback='', history=[], lessonVersion=COURSE['version'], checkBasis=CHECK_BASIS)
         if ident not in plans:
-            plans[ident] = dict(start=plus(join, s['plan'][0]-1), end=plus(join, s['plan'][1]-1), edited=False)
+            source_plan = plans.get(s.get('planFrom'))
+            plans[ident] = copy.deepcopy(source_plan) if source_plan else dict(start=plus(join, s['plan'][0]-1), end=plus(join, s['plan'][1]-1), edited=False)
     for ident, r in learner.get('records', {}).items():
         s = STEPS.get(ident)
         if not s: continue
@@ -198,6 +212,8 @@ def fit(learner):
                 previous = copy.deepcopy(r)
                 previous.pop('history', None)
                 previous.update(checkTexts=list(move[3]['previousChecks']), splitMigration=move[0], splitAt=stamp())
+                if move[3].get('previousTitle'):
+                    previous['lessonTitle'] = move[3]['previousTitle']
                 r['history'] = (r.get('history') or []) + [previous]
                 for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
                     if key in r and len(r[key]) == move[1]:

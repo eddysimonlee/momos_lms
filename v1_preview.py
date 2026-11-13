@@ -81,12 +81,21 @@ MOCK = r'''
   function fitMovedChecks(room) {
     let changed = false;
     for (const [id, [marker, oldCount, order, split]] of Object.entries(typeof KP_MOVES === 'undefined' ? {} : KP_MOVES)) {
+      for (const [added, n] of Object.entries(split?.addedSteps || {})) {
+        if (!room.records || room.records[added]) continue;
+        const empty = () => Array(n).fill(null);
+        room.records[added] = {status: 'ready', self: Array(n).fill(false), teacher: Array(n).fill(false),
+          selfAt: empty(), teacherAt: empty(), teacherBy: empty(), teacherName: empty(), start: null, done: null,
+          request: null, attempt: 1, memo: '', feedback: '', history: [], checkBasis: split.checkBasis};
+        changed = true;
+      }
       const r = room.records?.[id];
       if (!r || (r.kpMoves || []).includes(marker)) continue;
       if ((r.teacher || []).length === oldCount) {
         if (split) {
           const previous = JSON.parse(JSON.stringify(r)); delete previous.history;
           Object.assign(previous, {checkTexts: [...split.previousChecks], splitMigration: marker, splitAt: new Date().toISOString()});
+          if (split.previousTitle) previous.lessonTitle = split.previousTitle;
           r.history = [...(r.history || []), previous];
         }
         for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
