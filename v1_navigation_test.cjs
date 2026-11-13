@@ -71,6 +71,39 @@ test('preview archives split OP1 checks and completion without copying them into
   }
 });
 
+test('preview splits weekly hygiene without copying old checks or overwriting new weekday records', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const context = vm.createContext({KP_MOVES: moves});
+  vm.runInContext(helper + ';globalThis.fit = fitMovedChecks;', context);
+  for (const status of ['ready', 'practice', 'review', 'done']) {
+    const old = {status, teacher: Array(9).fill(true), self: Array(9).fill(false), teacherAt: Array(9).fill('2026-11-12'),
+      teacherBy: Array(9).fill('old-trainer'), teacherName: Array(9).fill('이전 교육자'), teacherWhen: Array(9).fill('2026-11-12T10:00:00Z'),
+      done: status === 'done' ? '2026-11-12' : null, request: status === 'review' ? '2026-11-12' : null,
+      completedBy: 'old-trainer', memo: 'keep memo', history: [{event: 'keep'}]};
+    const before = structuredClone(old), existing = {status: 'done', teacher: Array(8).fill(true), history: []};
+    const room = {records: {'floor-weekly': old, 'floor-weekly-tue': existing}};
+    assert.equal(context.fit(room), true);
+    assert.deepEqual(Array.from(old.teacher), Array(6).fill(false));
+    assert.deepEqual(Array.from(old.teacherWhen), Array(6).fill(null));
+    assert.equal(old.status, ['done', 'review'].includes(status) ? 'practice' : status);
+    const archived = old.history.at(-1);
+    assert.equal(archived.lessonTitle, '요일별 주간 위생 업무');
+    assert.equal(archived.checkTexts.length, 9);
+    for (const key of Object.keys(before).filter(k => k !== 'history')) assert.deepEqual(JSON.parse(JSON.stringify(archived[key])), before[key]);
+    assert.equal(room.records['floor-weekly-tue'], existing);
+    for (const [id, n] of Object.entries(moves['floor-weekly'][3].addedSteps)) {
+      if (id === 'floor-weekly-tue') continue;
+      assert.equal(room.records[id].status, 'ready');
+      assert.deepEqual(Array.from(room.records[id].teacher), Array(n).fill(false));
+    }
+    const once = JSON.stringify(room);
+    assert.equal(context.fit(room), false);
+    assert.equal(JSON.stringify(room), once);
+  }
+});
+
 test('tool guide renders numbered tools as an image caption, including no-tools and escaped content', () => {
   const helper = source.split('// >>> tool-guide')[1].split('// <<< tool-guide')[0];
   const context = vm.createContext({content: {photos: {guide: {src: 'v1_photos/fixture.jpg', caption: '제조 도구 안내'}}}});

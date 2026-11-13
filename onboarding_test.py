@@ -279,7 +279,7 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),57)  # curriculum.json: 6단계 57단원(2.10 OP2 / 2.11 OP3 분리, 2.12 MD / 2.13 CL 출근)
-            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),86)
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),92)  # 11/13 주간위생을 요일별 7개로 분리(+6)
             # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
             fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
             for s in steps:
@@ -465,6 +465,23 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(ob.fit(learner)['records'][ident], once)
         fresh = ob.fit(dict(join='2026-11-01', planDates={}, records={}))['records'][ident]
         self.assertEqual(fresh['teacher'], [False] * 6)
+
+    def test_weekly_tasks_and_weekday_completion_are_independent(self):
+        target = self.learner['id']
+        monday, tuesday = 'floor-weekly', 'floor-weekly-tue'
+        before = copy.deepcopy(self.service.get(self.other, target)['learner']['records'])
+        result = self.act(self.other, 'step.mark', dict(step=tuesday, index=0, on=True), target)
+        records = result['learner']['records']
+        self.assertEqual(records[tuesday]['teacher'], [True] + [False] * 7)
+        self.assertEqual(records[monday], before[monday])
+        with self.assertRaises(ValueError):
+            self.act(self.other, 'step.close', dict(step=tuesday), target)
+        for i in range(1, 8):
+            self.act(self.other, 'step.mark', dict(step=tuesday, index=i, on=True), target)
+        result = self.act(self.other, 'step.close', dict(step=tuesday), target)
+        self.assertEqual(result['learner']['records'][tuesday]['status'], 'done')
+        self.assertEqual(result['learner']['records'][monday], before[monday])
+        self.assertEqual(result['learner']['records']['floor-cleaning'], before['floor-cleaning'])
 
     def test_split_op1_keeps_original_record_history_and_requires_new_checks(self):
         ident = 'esp-shift'
@@ -757,7 +774,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),116)  # 기존 82 + 6단계 교육과정 새 세션 34(10-26 OP3 담당 구역과 오픈 준비, 10-27 입사 후 오리엔테이션 일정, 10-30 MD·CL 출근 직후 업무, 11-05 REQ-14 OP2·OP3 비품 채우기)
+        self.assertEqual(len(ob.STEPS),122)  # 기존 82 + 6단계 교육과정 새 세션 34 + 11/13 주간위생 화~일 6개
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 
