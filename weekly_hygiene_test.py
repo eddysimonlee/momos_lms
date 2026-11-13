@@ -86,9 +86,10 @@ class WeeklyHygieneTests(unittest.TestCase):
                 self.assertEqual(sec['tables'][0]['header'], ['업무 항목', '수행 방법'])
                 self.assertEqual(len(sec['tables'][0]['rows']), 1)
                 self.assertEqual(sec['paragraphs'], [])
-            self.assertIn('격주', step['note'])
-        for step in steps[31:33]:
-            self.assertIn('다음 날 근무자', step['note'])
+            self.assertIn('격주 항목은 직전 주 실시 여부를 확인한다', step['purpose'])
+            self.assertEqual(step['note'], '')
+        for step, word in zip(steps[31:33], ('다음 날 원두 보충', '다음 날 내용물 보충')):
+            self.assertTrue(any(word in kp['text'] for kp in step['keyPoints']))
 
 
 if __name__ == '__main__':
