@@ -1,0 +1,420 @@
+"""원본 변경 확인(BACKLOG 3 · 11/16).
+
+WORKS 드라이브 ST_매장사업부(works_auth.DOCS_PATH) 원본을 'LMS 를 만든 기준'과 비교한다.
+  기준  source_manifest.json(문서 id·폴더·파일) + source_sections.json(문서 sha1·절 해시 — v1_build.py 가 만든다)
+        + v1_content.json(교육이 인용한 절의 본문과 교육 내용)
+  결과  문서마다: 그대로 / 바뀜 / 새 판(같은 폴더, 날짜만 다른 파일) / 이동 / 내용 같음(파일만 다름) / 없음 / 확인 실패.
+        바뀐 문서는 절 단위로: 교육이 인용한 절의 AS-IS·TO-BE 와 영향받는 교육, 교육에 안 쓰인 바뀐 절·새 절·없어진 절.
+  바뀐 곳 찾기는 코드(sha1·절 해시)가 하고, 교육 문구 고치기는 사람·LLM 이 한다(AGENTS.md '드라이브 sync 맞춰줘').
+
+실행
+  LMS관리자 › 원본 변경 › '지금 확인'      누른 사람의 WORKS 로그인 열쇠(없으면 저장된 열쇠)
+  매일 아침 Render Cron Job              python3 drive_sync.py --cron   (켜기/끄기는 관리자 화면)
+  LLM                                    GET /api/sync/report · /api/sync/file (사람별 LLM 연결 키) — drive_pull.py
+"""
+import hashlib
+import json
+import os
+import re
+import secrets
+import sys
+import tempfile
+import threading
+import time
+import unicodedata
+from datetime import datetime, timezone
+from pathlib import Path
+
+import lms_store as projects
+
+APP = Path(__file__).parent
+STATE_KEY = 30_000_000_001      # 마지막 확인 결과 · 파일 sha1 캐시 · 아침 확인 켜기/끄기 · 확인함 표시
+LLM_KEYS_KEY = 30_000_000_003   # 사람별 LLM 연결 키(지문만)
+EXTRA_LIMIT = 200
+_LOCK = threading.Lock()
+_RUNNING = {}
+
+
+class Busy(RuntimeError):
+    pass
+
+
+def stamp():
+    return datetime.now(timezone.utc).isoformat(timespec='seconds')
+
+
+def nfc(t):
+    return unicodedata.normalize('NFC', str(t or '')).strip()
+
+
+def stem(name):
+    """파일 이름 → 같은 문서인지 볼 이름. 날짜(_YYMMDD)·유형 뒤(_SOP/_GUI/_FRM…)·확장자를 뺀다(source_parse.py 의 id 규칙)."""
+    fn = nfc(name).rsplit('/', 1)[-1]
+    return re.sub(r'[^0-9A-Za-z가-힣]+', '-', re.sub(r'_\d{6}|_(SOP|GUI|FRM).*$|\.docx$', '', fn)).strip('-')
+
+
+def load_base(app=APP):
+    j = lambda n: json.loads((Path(app) / n).read_text(encoding='utf-8'))
+    m = j('source_manifest.json')
+    return dict(manifest=m['documents'], manifestUpdated=m.get('updated', ''), sections=j('source_sections.json')['documents'], content=j('v1_content.json'))
+
+
+# --- 비교 -------------------------------------------------------------------------------------------
+
+def cite_refs(content):
+    """절 키 → 그 절을 쓰는 교육 [{no, id, title, part: 'kp'|'other', index, text}]. kp = 교육 내용 몇 번째(0부터)."""
+    keys, photos, refs = set(content['sections']), content.get('photos') or {}, {}
+    steps = [s for u in content['units'] for s in u['steps']]
+    for n, s in enumerate(steps, 1):
+        base, seen = dict(no=n, id=s['id'], title=s['title']), set()
+        for i, kp in enumerate(s.get('keyPoints') or []):
+            for k in kp.get('cites') or []:
+                refs.setdefault(k, []).append(dict(base, part='kp', index=i, text=kp['text']))
+                seen.add(k)
+
+        def walk(x):
+            if isinstance(x, str):
+                if x in keys and x not in seen:
+                    refs.setdefault(x, []).append(dict(base, part='other'))
+                    seen.add(x)
+                elif x in photos:
+                    walk(photos[x].get('cite'))
+            elif isinstance(x, dict):
+                for k, v in x.items():
+                    if k != 'keyPoints':
+                        walk(v)
+            elif isinstance(x, list):
+                for v in x:
+                    walk(v)
+        walk(s)
+    return refs
+
+
+def entry_of(sec, part):
+    """v1_build.py 가 인용 절을 싣는 방식 그대로(문단 일부 'p…', 표 행·열 'r…'/'c…')."""
+    import v1_build as vb
+    e = dict(title=sec['title'], paragraphs=sec['paragraphs'], tables=sec['tables'])
+    if part and part.startswith('p'):
+        nums = vb._nums(part[1:])
+        if not nums or not all(1 <= n <= len(sec['paragraphs']) for n in nums):
+            raise KeyError(f'{sec["no"]} {sec["title"]}: 문단 "{part}" 이 없음')
+        paras = [sec['paragraphs'][n - 1] for n in nums]
+        e.update(paragraphs=paras[1:] if len(paras) > 1 else paras, tables=[], partLabel=paras[0][:40])
+    elif part:
+        tab, label = vb.table_part(sec, part)
+        e.update(paragraphs=[], tables=[tab], partLabel=label)
+    return e
+
+
+def text_of(e):
+    out = [e.get('title') or ''] + ([f"[{e['partLabel']}]"] if e.get('partLabel') else []) + list(e.get('paragraphs') or [])
+    for t in e.get('tables') or []:
+        out.append(' | '.join(t.get('header') or []))
+        out += [' | '.join(r) for r in t.get('rows') or []]
+    return '\n'.join(out)
+
+
+def compare_doc(m, base_doc, newdoc, content, refs):
+    import v1_build as vb
+    newdoc = dict(newdoc, id=m['id'])
+    cited, cited_keys = [], set()
+    for key, e in content['sections'].items():
+        if e.get('doc') != m['id']:
+            continue
+        cited_keys.add(e.get('no') or e.get('title'))
+        ref, _, part = key.split('|', 1)[1].partition('#')
+        new, err = None, ''
+        try:
+            new = entry_of(vb.find_section(newdoc, ref), part or None)
+        except (KeyError, IndexError, ValueError) as x:
+            err = str(x).strip("'\"")[:200]
+        old_t, new_t = text_of(e), text_of(new) if new else ''
+        if new is None or old_t != new_t:
+            cited.append(dict(key=key, no=e.get('no'), title=e.get('title'), part=e.get('partLabel') or '', asis=old_t, tobe=new_t,
+                              missing=new is None, note=err, lessons=refs.get(key, [])))
+    old = {(s[0] or s[1]): s for s in base_doc.get('sections') or []}
+    now = {(s['no'] or s['title']): s for s in newdoc.get('sections') or []}
+    other = [[s['no'], s['title']] for k, s in now.items() if k in old and old[k][2] != s['hash'] and k not in cited_keys]
+    added = [[s['no'], s['title']] for k, s in now.items() if k not in old]
+    removed = [[s[0], s[1]] for k, s in old.items() if k not in now]
+    return dict(cited=cited, other=other, added=added, removed=removed)
+
+
+def parse_docx(raw, name):
+    try:
+        import source_parse
+    except SystemExit:  # python-docx 가 없으면 source_parse 가 끝낸다
+        raise RuntimeError('python-docx 가 없어 원본을 읽을 수 없어요.')
+    with tempfile.TemporaryDirectory() as d:
+        p = Path(d) / (Path(nfc(name)).name or 'doc.docx')
+        p.write_bytes(raw)
+        return source_parse.parse(str(p))
+
+
+def is_doc(path):
+    name = nfc(path).rsplit('/', 1)[-1]
+    return name.lower().endswith('.docx') and not name.startswith(('~$', '.'))
+
+
+def compare(base, tree, fetch):
+    """tree = [{path, fileId, size, modified}] (ST_매장사업부 아래 경로). fetch(f, force) → (sha1, 받은 바이트 또는 None)."""
+    manifest, sections, content = base['manifest'], base['sections'], base['content']
+    refs = cite_refs(content)
+    titles = {k: v.get('title') for k, v in (content.get('documents') or {}).items()}
+    files = [f for f in tree if is_doc(f['path'])]
+    by_path = {nfc(f['path']): f for f in files}
+    newest = lambda xs: max(xs, key=lambda x: x.get('modified') or '')
+    used, docs = set(), []
+    for m in manifest:
+        rel = nfc(f"{m['folder']}/{m['file']}")
+        f, how = by_path.get(rel), None
+        if not f:  # 파일 이름이 바뀌었으면: 같은 폴더에서 날짜만 다른 파일 → 새 판, 다른 폴더의 같은 이름(또는 같은 문서 이름) → 이동
+            folder, st = nfc(m['folder']), stem(m['file'])
+            same = [x for x in files if nfc(x['path']).rsplit('/', 1)[0] == folder and stem(x['path']) == st and nfc(x['path']) not in used]
+            if same:
+                f, how = newest(same), '새 판'
+            else:
+                hits = [x for x in files if nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file'])] or [x for x in files if stem(x['path']) == st]
+                if hits:
+                    f, how = newest(hits), '이동'
+        rec = dict(id=m['id'], title=titles.get(m['id']) or m['id'], folder=m['folder'], file=m['file'])
+        if not f:
+            docs.append(dict(rec, status='없음'))
+            continue
+        used.add(nfc(f['path']))
+        rec.update(path=nfc(f['path']), modified=f.get('modified'), fileId=f.get('fileId'))
+        bd = sections.get(m['id']) or {}
+        try:
+            sha, raw = fetch(f, False)
+            if sha == (bd.get('sha1') or m.get('sha1')):
+                docs.append(dict(rec, sha1=sha, status=how or '그대로'))
+                continue
+            if raw is None:
+                sha, raw = fetch(f, True)
+            nd = parse_docx(raw, f['path'])
+            diff = compare_doc(m, bd, nd, content, refs)
+            changed = any(diff.values())
+            docs.append(dict(rec, sha1=sha, status=how or ('바뀜' if changed else '내용 같음'), version=nd.get('version'), revised=nd.get('revised_at'), **diff))
+        except Exception as e:
+            docs.append(dict(rec, status='확인 실패', error=f'{type(e).__name__}: {str(e)[:200]}'))
+    extra = sorted(({'path': nfc(f['path']), 'modified': f.get('modified'), 'fileId': f.get('fileId')} for f in files if nfc(f['path']) not in used), key=lambda x: x['modified'] or '', reverse=True)
+    counts = {}
+    for d in docs:
+        counts[d['status']] = counts.get(d['status'], 0) + 1
+    lessons = {}
+    for d in docs:
+        for c in d.get('cited') or []:
+            for r in c['lessons']:
+                lessons[r['id']] = dict(no=r['no'], id=r['id'], title=r['title'])
+    return dict(format='momos-lms-drive-sync', version=1, baseline=dict(manifestUpdated=base.get('manifestUpdated', ''), documents=len(manifest)),
+                counts=counts, lessons=sorted(lessons.values(), key=lambda x: x['no']), docs=docs, extra=extra[:EXTRA_LIMIT], extraCount=len(extra))
+
+
+def pending(state):
+    """확인할 문서 수: 그대로가 아니고, '확인함'으로 표시하지 않은(또는 그 뒤 또 바뀐) 문서."""
+    rep, ack = state.get('report') or {}, state.get('ack') or {}
+    return sum(1 for d in rep.get('docs') or [] if d['status'] != '그대로' and ack.get(d['id']) != (d.get('sha1') or d['status']))
+
+
+# --- 상태(DB metadata 한 줄) ----------------------------------------------------------------------------
+
+def read_state(store):
+    with store.connect() as db:
+        return projects.Rooms.read(db, STATE_KEY) or {}
+
+
+def update_state(store, fn):
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        st = projects.Rooms.read(db, STATE_KEY) or {}
+        fn(st)
+        st['kind'] = 'drive-sync'
+        projects.Rooms.write(db, STATE_KEY, st)
+        return st
+
+
+def _reason(e):
+    from urllib.error import HTTPError
+    if isinstance(e, HTTPError):
+        return f'WORKS 드라이브 응답 {e.code}'
+    return str(e)[:200] if re.search('[가-힣]', str(e)) else type(e).__name__
+
+
+def run(store, token, by, base=None):
+    """드라이브를 읽어 비교하고 결과를 저장한다. 한 번에 하나만(이미 돌고 있으면 Busy)."""
+    if not _LOCK.acquire(blocking=False):
+        raise Busy('이미 확인하고 있어요. 잠시 후 결과를 보세요.')
+    try:
+        _RUNNING.update(by=by, at=stamp())
+        import works_auth as wa
+        drive, folder, _ = wa.docs_folder(token)
+        if not folder:
+            raise RuntimeError('드라이브에서 ST_매장사업부 폴더를 찾지 못했어요.')
+        tree = wa.docs_tree(token, drive, folder)
+        cache = dict(read_state(store).get('cache') or {})
+
+        def fetch(f, force):
+            c = cache.get(f['fileId'])
+            if not force and c and c.get('modified') == f.get('modified') and c.get('size') == f.get('size'):
+                return c['sha1'], None
+            raw = wa.docs_download(token, drive, f['fileId'])
+            sha = hashlib.sha1(raw).hexdigest()
+            cache[f['fileId']] = dict(modified=f.get('modified'), size=f.get('size'), sha1=sha)
+            return sha, raw
+        report = compare(base or load_base(), tree, fetch)
+        report.update(at=stamp(), by=by, sharedriveId=drive)
+        ids = {f['fileId'] for f in tree}
+
+        def save(st):
+            st.update(report=report, cache={k: v for k, v in cache.items() if k in ids}, lastRun=dict(at=report['at'], by=by, ok=True))
+        update_state(store, save)
+        print(f"drive sync: {by} ok docs={len(report['docs'])} counts={report['counts']}", flush=True)
+        return report
+    except Busy:
+        raise
+    except Exception as e:
+        msg = _reason(e)
+        print(f'drive sync: {by} failed {type(e).__name__}', flush=True)
+        try:
+            update_state(store, lambda st: st.update(lastRun=dict(at=stamp(), by=by, ok=False, error=msg)))
+        except Exception:
+            pass
+        raise
+    finally:
+        _RUNNING.clear()
+        _LOCK.release()
+
+
+def run_background(store, token, by):
+    if _LOCK.locked():
+        raise Busy('이미 확인하고 있어요. 잠시 후 결과를 보세요.')
+
+    def go():
+        try:
+            run(store, token, by)
+        except Exception:
+            pass
+    threading.Thread(target=go, daemon=True).start()
+    time.sleep(0.05)
+
+
+def set_auto(store, on, user):
+    update_state(store, lambda st: st.update(auto=bool(on), autoBy=user.get('name') or '', autoAt=stamp()))
+
+
+def set_ack(store, ident, on):
+    def fn(st):
+        doc = next((d for d in (st.get('report') or {}).get('docs') or [] if d['id'] == ident), None)
+        if not doc:
+            raise ValueError('확인할 문서를 찾지 못했어요.')
+        ack = st.setdefault('ack', {})
+        if on:
+            ack[ident] = doc.get('sha1') or doc['status']
+        else:
+            ack.pop(ident, None)
+    update_state(store, fn)
+
+
+def view(store):
+    st = read_state(store)
+    return dict(auto=bool(st.get('auto')), autoBy=st.get('autoBy'), autoAt=st.get('autoAt'), lastRun=st.get('lastRun'),
+                report=st.get('report'), ack=st.get('ack') or {}, pending=pending(st), running=dict(_RUNNING) or None)
+
+
+# --- 사람별 LLM 연결 키 ---------------------------------------------------------------------------------
+# LMS관리자가 화면에서 만든다. 원문은 한 번만 보여 주고 서버에는 sha256 지문만 둔다. LMS관리자에서 해제되면 쓸 수 없다.
+
+def _digest(raw):
+    return hashlib.sha256(str(raw).encode()).hexdigest()
+
+
+def _edit_keys(store, fn):
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        data = projects.Rooms.read(db, LLM_KEYS_KEY) or {}
+        keys = data.get('keys') or {}
+        out = fn(keys)
+        projects.Rooms.write(db, LLM_KEYS_KEY, dict(kind='llm-keys', keys=keys))
+        return out
+
+
+def new_llm_key(store, user):
+    raw = 'mlk_' + secrets.token_urlsafe(32)
+    email = str(user.get('email') or '').lower()
+    _edit_keys(store, lambda keys: keys.__setitem__(_digest(raw), dict(id=secrets.token_hex(4), email=email, name=user.get('name') or '', at=stamp(), last=None)))
+    return raw
+
+
+def revoke_llm_key(store, kid):
+    def fn(keys):
+        hit = [h for h, k in keys.items() if k.get('id') == kid]
+        if not hit:
+            raise ValueError('키를 찾지 못했어요.')
+        for h in hit:
+            keys.pop(h)
+    _edit_keys(store, fn)
+
+
+def list_llm_keys(store, admins):
+    with store.connect() as db:
+        keys = ((projects.Rooms.read(db, LLM_KEYS_KEY) or {}).get('keys') or {}).values()
+    return sorted((dict(k, active=k.get('email') in admins) for k in keys), key=lambda k: k.get('at') or '', reverse=True)
+
+
+def check_llm_key(store, header, admins):
+    """Authorization: Bearer mlk_… → 그 키의 주인(LMS관리자일 때만). 마지막 사용 시각은 10분에 한 번만 적는다."""
+    raw = header[7:].strip() if str(header or '').startswith('Bearer ') else ''
+    if not raw.startswith('mlk_'):
+        return None
+    h = _digest(raw)
+    with store.connect() as db:
+        k = ((projects.Rooms.read(db, LLM_KEYS_KEY) or {}).get('keys') or {}).get(h)
+    if not k or k.get('email') not in admins:
+        return None
+    last = k.get('last') or ''
+    if not last or last < datetime.fromtimestamp(time.time() - 600, timezone.utc).isoformat(timespec='seconds'):
+        try:
+            _edit_keys(store, lambda keys: keys.get(h, {}).__setitem__('last', stamp()))
+        except Exception:
+            pass
+    return k
+
+
+# --- 아침 자동 확인(Render Cron Job) --------------------------------------------------------------------
+
+class _DbStore:
+    def __init__(self, database):
+        self.database = database
+
+    def connect(self):
+        return self.database.connect()
+
+
+def cron():
+    """Render Cron Job: 아침 자동 확인이 켜져 있으면 저장된 LMS관리자 열쇠로 확인한다. 꺼져 있으면 아무것도 하지 않는다."""
+    if os.environ.get('LMS_DATABASE_URL'):
+        import cloud
+        database = cloud.Database(cloud.Config.from_env(require_public=False).database_url)
+        database.verify()
+        store = _DbStore(database)
+    else:
+        import server
+        store = server.Store(Path(os.environ.get('LMS_DATA_DIR') or APP / 'data'))
+    if not read_state(store).get('auto'):
+        print('drive sync: 아침 자동 확인이 꺼져 있어요(LMS관리자 › 원본 변경).', flush=True)
+        return 0
+    import works_auth
+    try:
+        token = works_auth.service_token(store)
+    except works_auth.DirectoryUnavailable as e:
+        update_state(store, lambda st: st.update(lastRun=dict(at=stamp(), by='아침 자동 확인', ok=False, error=str(e))))
+        print('drive sync: 열쇠 없음', flush=True)
+        return 1
+    run(store, token, '아침 자동 확인')
+    return 0
+
+
+if __name__ == '__main__':
+    if sys.argv[1:] == ['--cron']:
+        sys.exit(cron())
+    sys.exit('사용법: python3 drive_sync.py --cron')

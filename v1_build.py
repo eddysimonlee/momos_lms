@@ -97,6 +97,19 @@ def validate_tool_guide(guide, docs):
             raise ValueError('사용 도구가 원본 표의 해당 메뉴 행과 다름')
 
 
+def write_source_sections(index, manifest):
+    """11/16 원본 변경 확인(drive_sync.py)의 기준: LMS 를 만든 원본의 문서별 sha1 과 절 목록(번호·제목·본문 해시).
+    source_index.json 은 저장소에 없으므로, 비교에 필요한 지문만 따로 커밋한다(본문 글자는 넣지 않는다)."""
+    lines = []
+    for d in index['documents']:
+        if d['id'] not in manifest:
+            continue
+        secs = [[s['no'], s['title'], s['hash']] for s in d['sections']]
+        lines.append('  ' + json.dumps(d['id'], ensure_ascii=False) + ': ' + json.dumps(dict(file=d['file'], sha1=d.get('file_sha1'), sections=secs), ensure_ascii=False))
+    head = '{\n "format": "momos-lms-source-sections",\n "note": "v1_build.py 가 만든다. drive_sync.py 가 드라이브 원본과 비교하는 기준(문서 sha1·절 해시)",\n "documents": {\n'
+    (APP / 'source_sections.json').write_text(head + ',\n'.join(lines) + '\n }\n}\n', encoding='utf-8')
+
+
 def main():
     course = json.loads((APP / 'onboarding_course.json').read_text(encoding='utf-8'))
     lessons = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']
@@ -276,6 +289,7 @@ def main():
         if not dest.exists():
             dest.write_bytes((images_dir / f'{pid}.jpg').read_bytes())
     (APP / 'v1_content.json').write_text(json.dumps(out, ensure_ascii=False), encoding='utf-8')
+    write_source_sections(index, manifest)
     print('v1_content.json:', sum(len(u['steps']) for u in units), 'steps,', len(out['documents']), 'documents,', len(out['sections']), 'sections,', len(out['photos']), 'photos')
 
 

@@ -182,6 +182,10 @@ def callback(handler, query):
     except Exception as e:
         _log_failure('hired', e)
     remember_token(user['id'], token)  # LMS관리자 화면의 구성원 검색(주소록)에 쓴다. 서버 메모리에만, 화면·DB·로그로는 보내지 않는다
+    try:  # 11/16 LMS관리자면 재발급 열쇠를 암호화해 저장(아침 원본 변경 확인용). 실패해도 로그인은 계속
+        keep_refresh(handler.server.store, user, token)
+    except Exception as e:
+        _log_failure('refresh-keep', e)
     handler.server.access.logout(handler.headers.get('Cookie'))  # 이전 LMS 세션이 있으면 끝내고 새로 시작
     _, session_token = handler.server.access.new_session(user)
     secure = _secure(handler)
@@ -455,6 +459,140 @@ def _token_for(user_id):
     if not tok or tok[1] < time.time():
         raise DirectoryUnavailable('WORKS 주소록을 불러오려면 다시 로그인해 주세요(서버가 다시 시작되면 로그인이 한 번 더 필요해요).')
     return tok[0]
+
+
+# --- 11/16 원본 변경 확인(drive_sync.py): 아무도 로그인하지 않은 시간(아침 자동 확인·LLM 파일 받기)에 드라이브를 읽을 열쇠.
+# LMS관리자가 로그인할 때 받은 재발급 열쇠(refresh token)를 암호화(Fernet, Render 환경변수 LMS_TOKEN_KEY)해 DB 에 둔다.
+# LMS관리자만 저장하고, 해제되거나 일반 구성원으로 로그인하면 지운다. 원문은 화면·로그·저장소에 남기지 않는다(11/16 이재현 결정).
+REFRESH_KEY = 30_000_000_002
+_SERVICE = {}  # 'token' → (access_token, 만료 시각, 이메일)
+
+
+def _fernet():
+    key = os.environ.get('LMS_TOKEN_KEY', '').strip()
+    if not key:
+        return None
+    try:
+        from cryptography.fernet import Fernet
+        return Fernet(key.encode())
+    except Exception:
+        return None
+
+
+def key_ready():
+    return _fernet() is not None
+
+
+def admin_emails(store):
+    import lms_store as projects
+    import onboarding
+    with store.connect() as db:
+        root = projects.Rooms.read(db, onboarding.ROOT) or {}
+    return set(onboarding.Service(store).lms_admins(root)[1])
+
+
+def _edit_refresh(store, fn):
+    import lms_store as projects
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        keys = (projects.Rooms.read(db, REFRESH_KEY) or {}).get('keys') or {}
+        out = fn(keys)
+        projects.Rooms.write(db, REFRESH_KEY, dict(kind='works-refresh', keys=keys))
+        return out
+
+
+def keep_refresh(store, user, token):
+    """로그인 직후: LMS관리자면 재발급 열쇠를 암호화해 저장(최신 것으로 바꿈), 아니면 남아 있던 것을 지운다."""
+    email = str(user.get('email') or '').lower()
+    rt, f = token.get('refresh_token'), _fernet()
+    admin = user.get('company') == 'momos' and email in admin_emails(store)
+    keep = bool(admin and rt and f)
+
+    def fn(keys):
+        if keep:
+            keys[email] = dict(name=user.get('name') or '', at=time.time(), token=f.encrypt(rt.encode()).decode())
+        elif not admin:
+            keys.pop(email, None)
+    _edit_refresh(store, fn)
+    print(f'works login: refresh_token received={bool(rt)} kept={keep}', flush=True)
+
+
+def forget_refresh(db, email):
+    """LMS관리자 해제(onboarding 'lms.admin')와 같은 거래 안에서 그 사람의 저장된 열쇠를 지운다."""
+    import lms_store as projects
+    data = projects.Rooms.read(db, REFRESH_KEY)
+    if data and str(email or '').lower() in (data.get('keys') or {}):
+        data['keys'].pop(str(email).lower())
+        projects.Rooms.write(db, REFRESH_KEY, data)
+    _SERVICE.clear()
+
+
+def saved_refresh(store, admins):
+    """화면용: 저장된 열쇠의 주인과 저장 시각만(열쇠 원문·암호문은 내보내지 않는다)."""
+    import lms_store as projects
+    with store.connect() as db:
+        keys = (projects.Rooms.read(db, REFRESH_KEY) or {}).get('keys') or {}
+    return sorted((dict(email=e, name=k.get('name') or '', at=k.get('at')) for e, k in keys.items() if e in admins), key=lambda k: -(k['at'] or 0))
+
+
+def service_token(store):
+    """저장된 LMS관리자 열쇠(최근 로그인 순)로 새 접근 열쇠를 받는다. 만료·무효인 열쇠와 LMS관리자가 아닌 사람의 열쇠는 지운다."""
+    tok = _SERVICE.get('token')
+    if tok and tok[1] > time.time():
+        return tok[0]
+    f, cfg = _fernet(), config()
+    if not f:
+        raise DirectoryUnavailable('암호화 키(LMS_TOKEN_KEY)가 설정되지 않아 저장된 열쇠를 쓸 수 없어요.')
+    admins = admin_emails(store)
+    import lms_store as projects
+    with store.connect() as db:
+        keys = (projects.Rooms.read(db, REFRESH_KEY) or {}).get('keys') or {}
+    drop, renew = [], {}
+    try:
+        for email, k in sorted(keys.items(), key=lambda kv: -(kv[1].get('at') or 0)):
+            if email not in admins:
+                drop.append(email); continue
+            try:
+                rt = f.decrypt(str(k.get('token') or '').encode()).decode()
+            except Exception:
+                drop.append(email); continue
+            try:
+                got = _post_form(f'{AUTH_BASE}/oauth2/v2.0/token', dict(grant_type='refresh_token', refresh_token=rt,
+                                                                         client_id=cfg['client_id'], client_secret=cfg['client_secret']))
+            except HTTPError as e:
+                _log_failure('refresh', e)
+                if e.code in (400, 401):
+                    drop.append(email); continue
+                raise DirectoryUnavailable('WORKS 와 통신하지 못했어요. 잠시 후 다시 시도해 주세요.')
+            except (URLError, TimeoutError, ValueError) as e:
+                _log_failure('refresh', e)
+                raise DirectoryUnavailable('WORKS 와 통신하지 못했어요. 잠시 후 다시 시도해 주세요.')
+            if not got.get('access_token'):
+                drop.append(email); continue
+            if got.get('refresh_token') and got['refresh_token'] != rt:
+                renew[email] = f.encrypt(got['refresh_token'].encode()).decode()
+            _SERVICE['token'] = (got['access_token'], time.time() + max(60, int(got.get('expires_in') or 3600)) - 60, email)
+            return got['access_token']
+    finally:
+        if drop or renew:
+            def fn(ks):
+                for e in drop:
+                    ks.pop(e, None)
+                for e, v in renew.items():
+                    if e in ks:
+                        ks[e]['token'] = v
+            _edit_refresh(store, fn)
+    raise DirectoryUnavailable('저장된 LMS관리자 열쇠가 없거나 만료됐어요. LMS관리자 중 한 명이 로그아웃 후 다시 로그인해 주세요.')
+
+
+def drive_token(store, user_id=None):
+    """드라이브를 읽을 열쇠: 그 사람의 로그인 열쇠가 있으면 그것, 없으면 저장된 LMS관리자 열쇠."""
+    if user_id:
+        try:
+            return _token_for(user_id)
+        except DirectoryUnavailable:
+            pass
+    return service_token(store)
 
 
 def _member(u, allowed):

@@ -176,6 +176,50 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def sync_api(self, path, query, store):
+        """11/16 LLM 이 원본 변경 결과(/api/sync/report)와 드라이브 원본 docx(/api/sync/file?doc=문서id 또는 ?path=경로)를 받는다.
+        키 = LMS관리자가 화면에서 만든 사람별 LLM 연결 키(지문만 저장). 파일은 저장된 LMS관리자 드라이브 열쇠로 받는다."""
+        import drive_sync, works_auth
+        self.server.access.rate('sync:' + self.client_address[0], limit=120)
+        who = drive_sync.check_llm_key(store, self.headers.get('Authorization'), works_auth.admin_emails(store))
+        if not who:
+            print(f'401 GET {path} llm-key', flush=True)
+            return self.send(401, {'error': 'LLM 연결 키가 없거나 쓸 수 없어요. LMS관리자 › 원본 변경에서 만든 키를 Authorization: Bearer 로 보내 주세요.'})
+        if path == '/api/sync/report':
+            if query.get('fresh', [''])[0] == '1':
+                try:
+                    drive_sync.run(store, works_auth.service_token(store), 'LLM · ' + (who.get('name') or who.get('email') or ''))
+                except (works_auth.DirectoryUnavailable, drive_sync.Busy) as e:
+                    return self.send(409, {'error': str(e)})
+                except Exception as e:
+                    return self.send(502, {'error': '원본을 확인하지 못했어요: ' + drive_sync._reason(e)})
+            state = drive_sync.view(store)
+            if not state['report']:
+                return self.send(404, {'error': '아직 확인 결과가 없어요. ?fresh=1 로 지금 확인하세요.'})
+            return self.send(200, dict(state['report'], ack=state['ack'], pending=state['pending'], lastRun=state['lastRun']))
+        report = drive_sync.read_state(store).get('report') or {}
+        ident, want = query.get('doc', [''])[0], drive_sync.nfc(query.get('path', [''])[0])
+        hit = next((d for d in report.get('docs') or [] if d.get('fileId') and ((ident and d['id'] == ident) or (want and d.get('path') == want))), None) \
+            or next((x for x in report.get('extra') or [] if want and x.get('fileId') and x['path'] == want), None)
+        if not hit or not report.get('sharedriveId'):
+            return self.send(404, {'error': '그 문서를 최근 확인 결과에서 찾지 못했어요. /api/sync/report?fresh=1 로 다시 확인하세요.'})
+        try:
+            raw = works_auth.docs_download(works_auth.service_token(store), report['sharedriveId'], hit['fileId'])
+        except works_auth.DirectoryUnavailable as e:
+            return self.send(409, {'error': str(e)})
+        except Exception as e:
+            return self.send(502, {'error': '파일을 받지 못했어요: ' + drive_sync._reason(e)})
+        name = hit['path'].rsplit('/', 1)[-1]
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        self.send_header('Content-Length', str(len(raw)))
+        self.send_header('Content-Disposition', "attachment; filename*=UTF-8''" + quote(name))
+        self.send_header('X-Drive-Path', quote(hit['path']))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.end_headers()
+        self.wfile.write(raw)
+
     def body(self, json_body=True):
         if self.headers.get('Transfer-Encoding'):
             raise ValueError('Chunked bodies unsupported')
@@ -243,6 +287,9 @@ class Handler(BaseHTTPRequestHandler):
                 # NAVER WORKS 로그인: 시작(→ WORKS)과 돌아오는 곳. 세션 없이 열리고, 끝나면 LMS 세션을 만든다.
                 import works_auth
                 return works_auth.login(self, query) if path.endswith('/login') else works_auth.callback(self, query)
+            if method == 'GET' and path in ('/api/sync/report', '/api/sync/file'):
+                # 11/16 LLM 전용 읽기(사람별 LLM 연결 키 Authorization: Bearer mlk_…). 세션·쿠키 없이, 읽기만 한다 — drive_pull.py
+                return self.sync_api(path, query, store)
             auth = self.server.access
             filename = path[1:]
             public_get = method == 'GET' and (path == '/api/health' or filename in STATIC)
@@ -476,6 +523,39 @@ class Handler(BaseHTTPRequestHandler):
                 if level != 'admin':
                     raise PermissionError('업무문서 폴더 확인은 LMS관리자 admin 만 할 수 있습니다.')
                 return self.send(200, works_auth.docs_check(user['id']))
+            if path == '/api/drive-sync':
+                # 11/16 원본 변경 확인(LMS관리자 › 원본 변경): 결과 보기 · 지금 확인 · 아침 자동 확인 켜기/끄기 · 확인함 · LLM 연결 키
+                import onboarding, works_auth, drive_sync
+                education = onboarding.Service(store)
+                with store.connect() as db:
+                    me = education.identity(db, user); level = education.lms_level(education.root(db), me)
+                if level != 'admin':
+                    raise PermissionError('원본 변경 확인은 LMS관리자 admin 만 할 수 있습니다.')
+                extra = {}
+                if method == 'POST':
+                    d = self.body(); act = d.get('action')
+                    if act == 'run':
+                        try:
+                            token = works_auth.drive_token(store, user['id'])
+                            drive_sync.run_background(store, token, me.get('name') or '관리자')
+                        except (works_auth.DirectoryUnavailable, drive_sync.Busy) as e:
+                            return self.send(409, {'error': str(e)})
+                    elif act == 'auto':
+                        drive_sync.set_auto(store, d.get('on') is True, me)
+                    elif act in ('ack', 'unack'):
+                        drive_sync.set_ack(store, str(d.get('id') or ''), act == 'ack')
+                    elif act == 'llm-key':
+                        extra['newKey'] = drive_sync.new_llm_key(store, me)
+                    elif act == 'llm-revoke':
+                        drive_sync.revoke_llm_key(store, str(d.get('id') or ''))
+                    else:
+                        raise ValueError('요청을 확인해 주세요.')
+                elif method != 'GET':
+                    raise FileNotFoundError()
+                admins = works_auth.admin_emails(store)
+                result = drive_sync.view(store)
+                result.update(extra, keyReady=works_auth.key_ready(), keys=works_auth.saved_refresh(store, admins), llmKeys=drive_sync.list_llm_keys(store, admins))
+                return self.send(200, result)
             if path == '/api/works/members' and method == 'GET':
                 # LMS관리자 화면: 관리자로 추가할 구성원 검색(WORKS 주소록). admin 만, 20명까지
                 import onboarding

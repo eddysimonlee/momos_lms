@@ -625,12 +625,115 @@
       `<ul class="v1-admins">${admins}</ul></section>`;
     // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
     if (adminTab === 'fb') adminTab = 'admins';  // 11/06: 보낸 의견은 LNB '의견 리스트'로 옮겼다
-    const tab = adminTab, n = {log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '진행중').length};
+    const tab = adminTab, n = {log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '진행중').length, drive: driveData ? driveData.pending : (cloud.drivePending || 0)};
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-admin-tab="${k}">${label}</button>`;
-    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('req', `수정 요청 <b>${n.req}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}</div>` +
-      (tab === 'req' ? reqListCard() : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : adminsHtml);
+    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('req', `수정 요청 <b>${n.req}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}${segBtn('drive', `원본 변경 <b>${n.drive}</b>`)}</div>` +
+      (tab === 'req' ? reqListCard() : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : tab === 'drive' ? driveView() : adminsHtml);
   }
   let adminTab = 'admins';
+
+  // 11/16 원본 변경(BACKLOG 3): 드라이브 ST_매장사업부 원본을 LMS 기준과 비교한 결과. 탭을 열 때 /api/drive-sync 로 받는다.
+  // 지금 확인 · 아침 자동 확인 켜기/끄기 · 문서별 '확인함' · 사람별 LLM 연결 키(LLM 이 결과·원본을 직접 받아 교육 문구 수정을 제안)
+  let driveData = null, driveLoading = false, driveNewKey = '', drivePoll = 0;
+  async function driveApi(body, retried) {
+    const r = await fetch('/api/drive-sync', {method: body ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''}, ...(body ? {body: JSON.stringify(body)} : {})});
+    let d; try { d = await r.json(); } catch { throw new Error('서버 응답을 확인하지 못했습니다.'); }
+    if (r.status === 403 && d.code === 'csrf' && !retried) { let ok = false; try { ok = await refreshCsrf(); } catch {} if (ok) return driveApi(body, true); }
+    if (!r.ok) throw new Error(d.error || '처리하지 못했어요.');
+    return d;
+  }
+  async function driveLoad(body, done) {
+    driveLoading = true; if (body) render();
+    try { const d = await driveApi(body); if (d.newKey) driveNewKey = d.newKey; delete d.newKey; driveData = d; cloud.drivePending = d.pending; if (done) toast(done); }
+    catch (e) { toast(e.message); if (!driveData) driveData = {error: e.message}; }
+    finally { driveLoading = false; if (view === 'admin' && adminTab === 'drive') render(); }
+    clearTimeout(drivePoll);
+    if (driveData && driveData.running) drivePoll = setTimeout(() => { if (view === 'admin' && adminTab === 'drive') driveLoad(); }, 3000);
+  }
+  const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
+  const driveAck = (d, x) => (d.ack || {})[x.id] === (x.sha1 || x.status);
+  const driveWhen = iso => iso ? fmtAt(iso) : '';
+  // 줄 단위 비교(같은 줄이 길게 이어지면 접는다). 표 행은 '열 | 열' 한 줄
+  function driveDiff(asis, tobe) {
+    const a = String(asis || '').split('\n'), b = tobe ? String(tobe).split('\n') : [];
+    const L = Array.from({length: a.length + 1}, () => new Array(b.length + 1).fill(0));
+    for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    const out = []; let i = 0, j = 0;
+    while (i < a.length || j < b.length) {
+      if (i < a.length && j < b.length && a[i] === b[j]) { out.push(['s', a[i]]); i++; j++; }
+      else if (i < a.length && (j >= b.length || L[i + 1][j] >= L[i][j + 1])) out.push(['d', a[i++]]);  // AS-IS(지운 줄) 먼저
+      else out.push(['i', b[j++]]);
+    }
+    const html = []; let k = 0;
+    while (k < out.length) {
+      if (out[k][0] !== 's') { html.push(`<li class="${out[k][0] === 'i' ? 'ins' : 'del'}"><span aria-hidden="true">${out[k][0] === 'i' ? '+' : '−'}</span><span class="v1-sr">${out[k][0] === 'i' ? 'TO-BE' : 'AS-IS'}</span>${esc(out[k][1])}</li>`); k++; continue; }
+      let e = k; while (e < out.length && out[e][0] === 's') e++;
+      const run = out.slice(k, e), keep = k === 0 ? 1 : 0;  // 맨 앞 제목 줄은 남긴다
+      if (run.length - keep > 2) { run.slice(0, keep).forEach(x => html.push(`<li>${esc(x[1])}</li>`)); html.push(`<li class="skip">⋯ 같은 줄 ${run.length - keep}개</li>`); }
+      else run.forEach(x => html.push(`<li>${esc(x[1])}</li>`));
+      k = e;
+    }
+    return `<ul class="v1-drv-diff">${html.join('')}</ul>`;
+  }
+  function driveDoc(d, x) {
+    const acked = driveAck(d, x), moved = x.path && x.path !== `${x.folder}/${x.file}`;
+    const lesson = r => `<button type="button" class="v1-link" data-drive-step="${esc(r.id)}">${r.no}. ${esc(r.title)}</button>${r.part === 'kp' ? ` <small>교육 내용 ${r.index + 1}</small>` : ''}`;
+    const sec = c => `<div class="v1-drv-sec"><h4>${esc(c.no || '')} ${esc(c.title || '')}${c.part ? ` <small>· ${esc(c.part)}</small>` : ''}</h4>` +
+      `<p class="v1-drv-who">${c.lessons.length ? '영향받는 교육 ' + c.lessons.map(lesson).join(', ') : '교육에 직접 연결되지 않은 인용'}</p>` +
+      (c.missing ? `<p class="v1-note warn">새 원본에서 이 절(또는 인용한 행)을 찾지 못했어요. 절 번호·표 행이 바뀌었는지 확인이 필요해요.</p>` : '') + driveDiff(c.asis, c.tobe) + '</div>';
+    const names = (label, list) => list && list.length ? `<p class="v1-drv-who"><b>${label}</b> ${list.map(([no, title]) => esc(`${no} ${title}`.trim())).join(', ')}</p>` : '';
+    const body = (x.error ? `<p class="v1-note warn">${esc(x.error)}</p>` : '') +
+      `<dl class="v1-snap-meta"><dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>${moved ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
+      (x.status === '없음' ? '<p class="v1-muted">드라이브에서 이 문서를 찾지 못했어요(삭제·이름 변경·이동). 기준 폴더와 파일 이름을 확인해 주세요.</p>' : '') +
+      (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두어도 돼요.</p>' : '') +
+      (x.cited || []).map(sec).join('') + names('교육에 안 쓰인 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed) +
+      `<p class="v1-drv-act"><button type="button" class="v1-tbtn" data-drive-ack="${esc(x.id)}" data-on="${acked ? 0 : 1}">${acked ? '확인함 취소' : '확인함'}</button></p>`;
+    return `<details class="v1-drv"${acked ? '' : ' open'}><summary><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${acked ? '<span class="v1-lst g">확인함</span>' : ''}<b>${esc(x.title)}</b>` +
+      `<small>${(x.cited || []).length ? `인용 절 ${(x.cited || []).length}곳 바뀜` : ''}</small></summary>${body}</details>`;
+  }
+  function driveView() {
+    const d = driveData;
+    if (!d) { if (!driveLoading) driveLoad(); return '<section class="v1-card"><h2>원본 변경</h2><p class="v1-muted">불러오는 중…</p></section>'; }
+    if (d.error && !d.report && d.auto === undefined) return `<section class="v1-card"><h2>원본 변경</h2><p class="v1-note warn">${esc(d.error)}</p></section>`;
+    const run = d.lastRun, rep = d.report, keys = d.keys || [];
+    const keyLine = !d.keyReady ? '<span class="v1-lst r">설정 필요</span> 서버 암호화 키(LMS_TOKEN_KEY)가 없어 열쇠를 저장하지 않아요. 아침 자동 확인을 쓰려면 Render 에 설정해 주세요.'
+      : keys.length ? `${keys.map(k => esc(k.name || k.email)).join(', ')} <small class="v1-muted">(최근 저장 ${esc(fmtAt(new Date(keys[0].at * 1000).toISOString()))})</small>`
+      : '<span class="v1-lst r">없음</span> LMS관리자 중 한 명이 로그아웃 후 다시 로그인하면 저장돼요.';
+    const head = '<section class="v1-card"><h2>원본 변경 확인</h2><p class="v1-muted">드라이브 ST_매장사업부의 원본 문서를 지금 LMS 교육이 만들어진 기준과 비교해요. 바뀐 절의 AS-IS·TO-BE 와 영향받는 교육을 보여 주고, 교육 문구는 담당자나 LLM 이 고쳐요.</p>' +
+      `<dl class="v1-snap-meta"><dt>마지막 확인</dt><dd>${run ? `${esc(driveWhen(run.at))} · ${esc(run.by)}${run.ok ? '' : ` <span class="v1-lst r">실패</span> ${esc(run.error || '')}`}` : '아직 없음'}</dd>` +
+      `<dt>아침 자동 확인</dt><dd>${d.auto ? '<span class="v1-lst g">켜짐</span>' : '<span class="v1-lst n">꺼짐</span>'} <button type="button" class="v1-tbtn" data-drive-auto="${d.auto ? 0 : 1}">${d.auto ? '끄기' : '켜기'}</button>${d.autoBy ? ` <small class="v1-muted">${esc(d.autoBy)} · ${esc(driveWhen(d.autoAt))}</small>` : ''}</dd>` +
+      `<dt>드라이브 열쇠</dt><dd>${keyLine}</dd></dl>` +
+      `<p class="v1-drv-act"><button type="button" class="v1-btn" data-drive-run${d.running || driveLoading ? ' disabled' : ''}>${d.running ? '확인 중… (문서가 많으면 1~2분)' : '지금 확인'}</button></p></section>`;
+    let result = '';
+    if (rep) {
+      const list = rep.docs.filter(x => x.status !== '그대로'), open = list.filter(x => !driveAck(d, x)), done = list.filter(x => driveAck(d, x));
+      result = `<section class="v1-card"><h2>확인 결과 <small class="v1-muted">${esc(driveWhen(rep.at))}</small></h2>` +
+        `<p class="v1-muted">근거 문서 ${rep.docs.length}편 중 그대로 ${rep.counts['그대로'] || 0}편 · 확인할 문서 ${open.length}편${done.length ? ` · 확인함 ${done.length}편` : ''}</p>` +
+        (rep.lessons.length ? `<p class="v1-drv-who"><b>영향받는 교육</b> ${rep.lessons.map(r => `<button type="button" class="v1-link" data-drive-step="${esc(r.id)}">${r.no}. ${esc(r.title)}</button>`).join(', ')}</p>` : '') +
+        (list.length ? open.concat(done).map(x => driveDoc(d, x)).join('') : '<p class="v1-note ok">모든 근거 문서가 LMS 기준과 같아요.</p>') +
+        (rep.extraCount ? `<details class="v1-drv"><summary><b>교육 근거가 아닌 문서 ${rep.extraCount}개</b><small>새로 올린 문서는 교육에 쓰려면 근거 문서로 등록해야 해요</small></summary><ul class="v1-drv-extra">${rep.extra.map(x => `<li>${esc(x.path)} <small class="v1-muted">${esc(driveWhen(x.modified))}</small></li>`).join('')}</ul></details>` : '') +
+        '</section>';
+    }
+    const me = String(cloud.user.email || '').toLowerCase();
+    const llm = '<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-muted">LLM(Claude·Codex)이 이 결과와 드라이브 원본을 직접 받아 교육 문구 수정을 제안할 때 써요. 사람마다 따로 만들어 본인 LLM 설정(환경변수 LMS_SYNC_KEY)에만 넣어 주세요. LMS관리자에서 해제되면 그 사람의 키는 쓸 수 없어요.</p>' +
+      (driveNewKey ? `<div class="v1-note warn"><b>새 키 — 지금 한 번만 보여요.</b><code class="v1-drv-key">${esc(driveNewKey)}</code><button type="button" class="v1-tbtn" data-drive-copy>복사</button></div>` : '') +
+      ((d.llmKeys || []).length ? `<ul class="v1-admins">${d.llmKeys.map(k => `<li><span class="v1-admin-mail">${esc(k.name || k.email)} <span class="v1-muted">(${esc(k.email)})</span><small class="v1-muted"> 만든 날 ${esc(driveWhen(k.at).slice(0, 10))} · 마지막 사용 ${k.last ? esc(driveWhen(k.last)) : '없음'}${k.active ? '' : ' · LMS관리자 아님(쓸 수 없음)'}</small></span><span class="v1-admin-ctl"><button type="button" class="v1-tbtn v1-danger" data-drive-revoke="${esc(k.id)}">끊기</button></span></li>`).join('')}</ul>` : '<p class="v1-muted">아직 만든 키가 없어요.</p>') +
+      `<p class="v1-drv-act"><button type="button" class="v1-tbtn" data-drive-key>${(d.llmKeys || []).some(k => k.email === me) ? '내 키 하나 더 만들기' : '내 LLM 연결 키 만들기'}</button></p></section>`;
+    return head + result + llm;
+  }
+  $('app').addEventListener('click', e => {
+    if (view !== 'admin' || adminTab !== 'drive' || cloud.lmsLevel !== 'admin') return;
+    const b = e.target.closest('[data-drive-run],[data-drive-auto],[data-drive-ack],[data-drive-key],[data-drive-revoke],[data-drive-copy],[data-drive-step]');
+    if (!b || driveLoading) return;
+    if (b.matches('[data-drive-run]')) driveLoad({action: 'run'}, '원본 확인을 시작했어요.');
+    else if (b.matches('[data-drive-auto]')) driveLoad({action: 'auto', on: b.dataset.driveAuto === '1'}, b.dataset.driveAuto === '1' ? '매일 아침 자동 확인을 켰어요.' : '아침 자동 확인을 껐어요.');
+    else if (b.matches('[data-drive-ack]')) driveLoad({action: b.dataset.on === '1' ? 'ack' : 'unack', id: b.dataset.driveAck});
+    else if (b.matches('[data-drive-key]')) driveLoad({action: 'llm-key'}, '키를 만들었어요. 지금 복사해 두세요.');
+    else if (b.matches('[data-drive-revoke]')) { if (confirm('이 키를 끊을까요? 그 키를 쓰는 LLM 은 더 이상 결과를 받을 수 없어요.')) driveLoad({action: 'llm-revoke', id: b.dataset.driveRevoke}, '키를 끊었어요.'); }
+    else if (b.matches('[data-drive-copy]')) copyText(driveNewKey, '키를 복사했어요. LLM 설정에 붙여 넣으세요.');
+    else if (b.matches('[data-drive-step]')) { view = 'step:' + b.dataset.driveStep; render(); window.scrollTo({top: 0, behavior: 'instant'}); }
+  });
   // 11/06 의견 리스트(LNB): admin 은 모든 의견, 그 밖의 구성원은 내가 보낸 의견. 표 모양은 예전 'LMS관리자 › 보낸 의견' 그대로
   function opinionsView() {
     const titleOf = id => { const st = steps().find(x => x.id === id); return st ? `${stepIndex(id) + 1}. ${st.title}` : ''; };
