@@ -9,9 +9,9 @@ WORKS 드라이브 ST_매장사업부(works_auth.DOCS_PATH) 원본을 'LMS 를 �
   바뀐 문서마다 수정 요청 티켓('원본 문서 변경 확인', REQ-n)을 만들고, 배포 뒤 '그대로'가 되면 '반영됨'으로 닫는다(onboarding.sync_drive_tickets).
 
 실행
-  LMS관리자 › 원본 변경 › '지금 확인'      누른 사람의 WORKS 로그인 열쇠(없으면 저장된 열쇠)
-  매일 아침 Render Cron Job              python3 drive_sync.py --cron   (켜기/끄기는 관리자 화면)
-  LLM                                    GET /api/sync/report · /api/sync/file (사람별 LLM 연결 키) — drive_pull.py
+  LMS관리자 › 수정 요청 › [동기화]         누른 사람의 WORKS 로그인 열쇠(없으면 저장된 열쇠). 11/16 지금은 이것으로만 동기화한다
+  (아침 자동 확인 --cron 은 남겨 두었지만 화면에서 켤 수 없다 — BACKLOG 3)
+  LLM                                    GET /api/sync/report · /api/sync/file (사람별 LLM 연결 키, 마지막 동기화 결과 읽기만) — drive_pull.py
 """
 import hashlib
 import json
@@ -263,9 +263,10 @@ def run(store, token, by, base=None):
         def save(st):
             st.update(report=report, cache={k: v for k, v in cache.items() if k in ids}, lastRun=dict(at=report['at'], by=by, ok=True))
         update_state(store, save)
-        try:  # 바뀐 문서 → 수정 요청 티켓(REQ-n). 실패해도 확인 결과는 남는다
+        try:  # 바뀐 문서 → 수정 요청 티켓(REQ-n). 실패해도 확인 결과는 남는다. 새로 생긴 티켓 수는 화면 '동기화 완료' 안내에 쓴다
             import onboarding
             report['tickets'] = onboarding.sync_drive_tickets(store, report, by)
+            update_state(store, lambda st: st['lastRun'].update(tickets=report['tickets']))
         except Exception as e:
             print(f'drive sync: tickets failed {type(e).__name__}', flush=True)
         print(f"drive sync: {by} ok docs={len(report['docs'])} counts={report['counts']} tickets={report.get('tickets')}", flush=True)

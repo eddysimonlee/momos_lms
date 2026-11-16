@@ -574,7 +574,7 @@
   let adminTab = 'req';
 
   // 11/16 원본 변경(BACKLOG 3): 드라이브 ST_매장사업부 원본을 LMS 기준과 비교한 결과. 탭을 열 때 /api/drive-sync 로 받는다.
-  // 지금 확인 · 아침 자동 확인 켜기/끄기 · 문서별 '확인함' · 사람별 LLM 연결 키(LLM 이 결과·원본을 직접 받아 교육 문구 수정을 제안)
+  // 11/16 드라이브 원본 동기화(수정 요청 탭 [동기화]) · 사람별 LLM 연결 키(LLM 이 결과·원본을 직접 받아 교육 문구 수정을 제안). 바뀐 문서는 '원본 문서 변경 확인' 티켓
   let driveData = null, driveLoading = false, driveNewKey = '', drivePoll = 0;
   const driveTab = () => adminTab === 'req' || adminTab === 'settings';
   async function driveApi(body, retried) {
@@ -589,7 +589,9 @@
     driveLoading = true; if (body) render();
     const wasRunning = driveData && driveData.running;
     try { const d = await driveApi(body); if (d.newKey) driveNewKey = d.newKey; delete d.newKey; driveData = d; if (done) toast(done);
-      if (wasRunning && !d.running) { cloud = await api('GET', null, cloud.target); toast('원본 확인이 끝났어요. 바뀐 문서는 수정 요청 목록에 있어요.'); } }
+      if (wasRunning && !d.running) {  // 11/16 동기화 끝: 성공이면 새로 생긴 티켓 수, 실패면 이유
+        cloud = await api('GET', null, cloud.target); const run = d.lastRun || {};
+        toast(run.ok ? `동기화 완료되었습니다. 문서변경으로 인해 수정 필요한 항목은 ${((run.tickets || {}).created || []).length}개 입니다` : `동기화하지 못했어요. ${run.error || ''}`.trim()); } }
     catch (e) { toast(e.message); if (!driveData) driveData = {error: e.message}; }
     finally { driveLoading = false; if (view === 'admin' && driveTab()) render(); }
     clearTimeout(drivePoll);
@@ -633,40 +635,37 @@
       (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두고 기준만 갱신하면 돼요.</p>' : '') +
       (x.cited || []).map(sec).join('') + names('교육에 안 쓰인 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed);
   }
-  // 수정 요청 탭 목록 위 한 줄: 원본 변경 확인(마지막 확인 · 지금 확인). 바뀐 문서는 아래 목록의 '원본 문서 변경 확인' 티켓
+  // 수정 요청 탭 목록 위 한 줄: 드라이브 원본 동기화(마지막 동기화 · [동기화]). 바뀐 문서는 아래 목록의 '원본 문서 변경 확인' 티켓
   function driveBar() {
     const d = driveData;
-    if (!d) { if (!driveLoading) driveLoad(); return '<div class="v1-drvbar"><p class="v1-muted">원본 변경 확인 불러오는 중…</p></div>'; }
+    if (!d) { if (!driveLoading) driveLoad(); return '<div class="v1-drvbar"><p class="v1-muted">드라이브 원본 동기화 불러오는 중…</p></div>'; }
     if (d.error && d.auto === undefined) return `<p class="v1-note warn">${esc(d.error)}</p>`;
     const run = d.lastRun;
-    return `<div class="v1-drvbar"><p class="v1-muted"><b>원본 변경 확인</b> ${run ? `마지막 확인 ${esc(driveWhen(run.at))} (${esc(run.by)})${run.ok ? '' : ` <span class="v1-lst r">실패</span> ${esc(run.error || '')}`}` : '아직 확인한 적이 없어요.'} · 아침 자동 확인 ${d.auto ? '켜짐' : '꺼짐'}</p>` +
-      `<button type="button" class="v1-tbtn" data-drive-run${d.running || driveLoading ? ' disabled' : ''}>${d.running ? '확인 중… (1~2분)' : '지금 확인'}</button></div>`;
+    return `<div class="v1-drvbar"><p class="v1-muted"><b>드라이브 원본 동기화</b> ${run ? `마지막 동기화 ${esc(driveWhen(run.at))} (${esc(run.by)})${run.ok ? '' : ` <span class="v1-lst r">실패</span> ${esc(run.error || '')}`}` : '아직 동기화한 적이 없어요.'}</p>` +
+      `<button type="button" class="v1-tbtn" data-drive-run${d.running || driveLoading ? ' disabled' : ''}>${d.running ? '진행중...' : '동기화'}</button></div>`;
   }
-  // 설정 탭: 원본 자동 확인(아침 확인 켜기/끄기 · 드라이브 열쇠) · LLM 연결 키
+  // 설정 탭: LLM 연결 키(+ LLM 이 원본을 받을 때 쓰는 드라이브 열쇠 상태). 11/16 아침 자동 확인은 화면에서 뺐다 — 동기화는 수정 요청 탭의 [동기화]로만
   function driveSettingsCards() {
     const d = driveData;
-    if (!d) { if (!driveLoading) driveLoad(); return '<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-muted">불러오는 중…</p></section>'; }
-    if (d.error && d.auto === undefined) return `<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-note warn">${esc(d.error)}</p></section>`;
+    if (!d) { if (!driveLoading) driveLoad(); return '<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-muted">불러오는 중…</p></section>'; }
+    if (d.error && d.auto === undefined) return `<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-note warn">${esc(d.error)}</p></section>`;
     const keys = d.keys || [];
-    const keyLine = !d.keyReady ? '<span class="v1-lst r">설정 필요</span> 서버 암호화 키(LMS_TOKEN_KEY)가 없어 열쇠를 저장하지 않아요. 아침 자동 확인을 쓰려면 Render 에 설정해 주세요.'
+    const keyLine = !d.keyReady ? '<span class="v1-lst r">설정 필요</span> 서버 암호화 키(LMS_TOKEN_KEY)가 없어요. LLM 이 드라이브 원본을 받으려면 Render 에 설정해 주세요.'
       : keys.length ? `${keys.map(k => esc(k.name || k.email)).join(', ')} <small class="v1-muted">(최근 저장 ${esc(fmtAt(new Date(keys[0].at * 1000).toISOString()))})</small>`
       : '<span class="v1-lst r">없음</span> LMS관리자 중 한 명이 로그아웃 후 다시 로그인하면 저장돼요.';
-    const auto = '<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-muted">매일 아침 드라이브 ST_매장사업부 원본을 LMS 기준과 비교해요. 바뀐 문서는 수정 요청 탭에 \'원본 문서 변경 확인\' 티켓으로 올라오고, 배포로 반영되면 자동으로 \'반영됨\'이 돼요.</p>' +
-      `<dl class="v1-snap-meta"><dt>아침 자동 확인</dt><dd>${d.auto ? '<span class="v1-lst g">켜짐</span>' : '<span class="v1-lst n">꺼짐</span>'} <button type="button" class="v1-tbtn" data-drive-auto="${d.auto ? 0 : 1}">${d.auto ? '끄기' : '켜기'}</button>${d.autoBy ? ` <small class="v1-muted">${esc(d.autoBy)} · ${esc(driveWhen(d.autoAt))}</small>` : ''}</dd>` +
-      `<dt>드라이브 열쇠</dt><dd>${keyLine}</dd></dl></section>`;
     const me = String(cloud.user.email || '').toLowerCase();
     const llm = '<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-muted">LLM(Claude·Codex)이 원본 변경 결과와 드라이브 원본을 직접 받아 교육 문구 수정을 제안할 때 써요. 사람마다 따로 만들어 본인 LLM 설정(환경변수 LMS_SYNC_KEY)에만 넣어 주세요. LMS관리자에서 해제되면 그 사람의 키는 쓸 수 없어요.</p>' +
       (driveNewKey ? `<div class="v1-note warn"><b>새 키 — 지금 한 번만 보여요.</b><code class="v1-drv-key">${esc(driveNewKey)}</code><button type="button" class="v1-tbtn" data-drive-copy>복사</button></div>` : '') +
       ((d.llmKeys || []).length ? `<ul class="v1-admins">${d.llmKeys.map(k => `<li><span class="v1-admin-mail">${esc(k.name || k.email)} <span class="v1-muted">(${esc(k.email)})</span><small class="v1-muted"> 만든 날 ${esc(driveWhen(k.at).slice(0, 10))} · 마지막 사용 ${k.last ? esc(driveWhen(k.last)) : '없음'}${k.active ? '' : ' · LMS관리자 아님(쓸 수 없음)'}</small></span><span class="v1-admin-ctl"><button type="button" class="v1-tbtn v1-danger" data-drive-revoke="${esc(k.id)}">끊기</button></span></li>`).join('')}</ul>` : '<p class="v1-muted">아직 만든 키가 없어요.</p>') +
+      `<dl class="v1-snap-meta"><dt>드라이브 열쇠</dt><dd>${keyLine}</dd></dl>` +
       `<p class="v1-drv-act"><button type="button" class="v1-tbtn" data-drive-key>${(d.llmKeys || []).some(k => k.email === me) ? '내 키 하나 더 만들기' : '내 LLM 연결 키 만들기'}</button></p></section>`;
-    return auto + llm;
+    return llm;
   }
   $('app').addEventListener('click', e => {
     if (!(view === 'admin' && driveTab() || view.startsWith('req:')) || cloud.lmsLevel !== 'admin') return;
-    const b = e.target.closest('[data-drive-run],[data-drive-auto],[data-drive-key],[data-drive-revoke],[data-drive-copy],[data-drive-step]');
+    const b = e.target.closest('[data-drive-run],[data-drive-key],[data-drive-revoke],[data-drive-copy],[data-drive-step]');
     if (!b || driveLoading && !b.matches('[data-drive-step]')) return;
-    if (b.matches('[data-drive-run]')) driveLoad({action: 'run'}, '원본 확인을 시작했어요.');
-    else if (b.matches('[data-drive-auto]')) driveLoad({action: 'auto', on: b.dataset.driveAuto === '1'}, b.dataset.driveAuto === '1' ? '매일 아침 자동 확인을 켰어요.' : '아침 자동 확인을 껐어요.');
+    if (b.matches('[data-drive-run]')) driveLoad({action: 'run'}, '동기화가 진행중입니다.');
     else if (b.matches('[data-drive-key]')) driveLoad({action: 'llm-key'}, '키를 만들었어요. 지금 복사해 두세요.');
     else if (b.matches('[data-drive-revoke]')) { if (confirm('이 키를 끊을까요? 그 키를 쓰는 LLM 은 더 이상 결과를 받을 수 없어요.')) driveLoad({action: 'llm-revoke', id: b.dataset.driveRevoke}, '키를 끊었어요.'); }
     else if (b.matches('[data-drive-copy]')) copyText(driveNewKey, '키를 복사했어요. LLM 설정에 붙여 넣으세요.');
@@ -776,6 +775,10 @@
   const fmtAt = kstAt;
   // 11/03 티켓 보드: 번호(REQ-n)·상태 필터·담당·연결된 반영 기록. 반영 기록(source_log.json)의 tickets 로 서로 이어진다
   const tkey = r => r.no || 'REQ-?';
+  // 11/16 안 본 티켓 = 빨간 점: 남이 만든(원본 변경 티켓 포함) 11/16 이후 티켓을 내가 아직 열지 않음. 한 번 열면 꺼진다(원본이 또 바뀌면 새 티켓이 생긴다)
+  const tver = () => 'v1';
+  const unseen = r => cloud.ticketSeenSince !== undefined && r.user !== cloud.user.id && String(r.at || '') >= cloud.ticketSeenSince && (cloud.ticketSeen || {})[r.id] !== tver(r);
+  const tkeyHtml = r => `<b class="v1-tkey${unseen(r) ? ' v1-unseen' : ''}">${esc(tkey(r))}${unseen(r) ? '<span class="v1-sr"> 새 티켓</span>' : ''}</b>`;
   // 11/04 연결 = 반영 기록의 tickets(저장소) 또는 티켓의 logs(화면에서 고름) — 어느 쪽이든 양쪽에 보인다
   const logsOf = r => (cloud.sourceLog || []).filter(e => (e.tickets || []).includes(r.no) || (r.logs || []).includes(e.id));
   const ticketsOfLog = e => [...new Set([...(e.tickets || []), ...(cloud.contentRequests || []).filter(r => r.no && (r.logs || []).includes(e.id)).map(r => r.no)])];
@@ -788,11 +791,11 @@
     const all = cloud.contentRequests || [], f = REQ_FILTERS.find(x => x[0] === reqFilter) || REQ_FILTERS[1], list = all.filter(f[2]), rp = pageOf('req', list);
     const chips = REQ_FILTERS.map(([k, label, fn]) => `<button type="button" class="v1-fchip${k === reqFilter ? ' on' : ''}" data-req-filter="${esc(k)}" aria-pressed="${k === reqFilter}">${esc(label)} <b>${all.filter(fn).length}</b></button>`).join('');
     const rows = rp.items.map(r => { const logs = logsOf(r);
-      return `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(tkey(r) + ' ' + reqHead(r).name)} 상세 보기"><td class="v1-nowrap"><b class="v1-tkey">${esc(tkey(r))}</b></td>` +
+      return `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(tkey(r) + ' ' + reqHead(r).name)} 상세 보기"><td class="v1-nowrap">${tkeyHtml(r)}</td>` +
         `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}${fbsOf(r).length ? ' · 의견 ' + fbsOf(r).length : ''}</small></td>` +
         `<td class="v1-nowrap">${esc(r.name)}<small>${esc(fmtAt(r.at).slice(0, 10))}</small></td><td class="v1-nowrap">${esc(r.assignee || '—')}</td>` +
         `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`; }).join('');
-    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">교육 화면 ⋮ 메뉴의 '수정 요청'으로 보낸 요청과, 원본 변경 확인이 찾은 원본 문서 변경('원본 문서 변경 확인')이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` + driveBar() +
+    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">교육 화면 ⋮ 메뉴의 '수정 요청'으로 보낸 요청과, [동기화]로 찾은 드라이브 원본 문서 변경('원본 문서 변경 확인')이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` + driveBar() +
       `<div class="v1-fbar" role="group" aria-label="상태 필터">${chips}</div>` +
       (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist v1-tlist"><thead><tr><th>티켓</th><th>대상 · 종류</th><th>요청</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}`
         : `<p class="v1-muted">${all.length ? '이 상태의 요청이 없어요.' : '아직 수정 요청이 없어요.'}</p>`) +
@@ -881,7 +884,7 @@
     const ffb = e.target.closest('[data-fb-filter]'); if (ffb && view === 'opinions') { fbFilter = ffb.dataset.fbFilter; adminPage.fb = 1; keepFocus = `[data-fb-filter="${fbFilter}"]`; render(); return; }
     const f = e.target.closest('[data-req-filter]'); if (f && view === 'admin') { reqFilter = f.dataset.reqFilter; adminPage.req = 1; keepFocus = `[data-req-filter="${reqFilter}"]`; render(); return; }
     const l = e.target.closest('[data-open-log]'); if (l) { view = 'log:' + l.dataset.openLog; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
-    const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) { view = 'req:' + r.id; render(); window.scrollTo({top: 0, behavior: 'instant'}); } }
+    const t = e.target.closest('[data-open-req]'); if (t) { const r = reqOfKey(t.dataset.openReq); if (r) openReqView(r.id); }
   });
   // 11/05 텍스트로 복사: 캡처 대신 Claude 세션에 붙여 넣기 좋게(티켓 번호·대상 id·AS-IS/TO-BE·메모)
   const reqText = r => [`[${tkey(r)}] ${r.type} · ${r.status}`,
@@ -1055,7 +1058,14 @@
     const id = view.slice(4); view = 'admin';
     if (await act('content.delete', {id})) toast('반려한 요청을 지웠어요.'); else { view = 'req:' + id; render(); }
   });
-  const openReqView = id => { view = 'req:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  const openReqView = id => {
+    const r = (cloud.contentRequests || []).find(x => x.id === id);
+    if (r && unseen(r)) {  // 열면 빨간 점을 끈다(화면은 먼저 끄고, 서버에는 조용히 저장)
+      cloud.ticketSeen = Object.assign({}, cloud.ticketSeen, {[id]: tver(r)});
+      api('POST', {action: 'notification.ticket', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision, requestId: uid(), data: {id}})
+        .then(fresh => { if (fresh.target === cloud.target) { cloud = fresh; if (view === 'admin') render(); } }).catch(() => {});
+    }
+    view = 'req:' + id; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   $('app').addEventListener('click', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin') openReqView(t.dataset.req); });
   $('app').addEventListener('keydown', e => { const t = e.target.closest('[data-req]'); if (t && view === 'admin' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openReqView(t.dataset.req); } });
   $('app').addEventListener('click', async e => {
@@ -1357,6 +1367,7 @@
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
     $('v1ExportPdf').hidden = !s || planned(s);
     $('v1ReqOpen').hidden = $('v1EditSep').hidden = !(s && !planned(s) && cloud.lmsLevel === 'admin');  // 11/16 '문구 수정 모드'는 없애고 '수정 요청' 하나로
+    if (s && !$('v1ReqOpen').hidden) { const n = stepOpenReqs(s).length; $('v1ReqOpen').textContent = n ? `수정 요청 (진행중 ${n}건)` : '수정 요청'; $('v1ReqOpen').setAttribute('aria-disabled', String(Boolean(n))); }
     if (!s || planned(s)) return;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
@@ -1410,7 +1421,14 @@
   };
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); closeMe(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
-  $('v1ReqOpen').onclick = () => { closeMenu(); const s = view.startsWith('step:') && steps().find(x => x.id === view.slice(5)); if (s && !rqe) { rqeStart(s); render(); window.scrollTo({top: 0, behavior: 'instant'}); } };
+  // 11/16 중복 수정 막기: 이 교육에 진행중 수정 요청(이 교육의 요청, 또는 이 교육이 영향받는 원본 변경 티켓)이 있으면 수정 요청 화면에 들어가지 않는다
+  const stepOpenReqs = s => (cloud.contentRequests || []).filter(r => r.status === '진행중' && ((r.target || {}).kind === 'item' && r.target.id === s.id
+    || (r.drive && (r.drive.cited || []).some(c => (c.lessons || []).some(l => l.id === s.id)))));
+  $('v1ReqOpen').onclick = () => {
+    closeMenu(); const s = view.startsWith('step:') && steps().find(x => x.id === view.slice(5)); if (!s || rqe) return;
+    const open = stepOpenReqs(s);
+    if (open.length) return toast(`이 교육에는 진행중인 수정 요청이 있어요(${open.map(r => r.no).join(', ')}). 반영되거나 반려된 뒤 다시 요청할 수 있어요.`);
+    rqeStart(s); render(); window.scrollTo({top: 0, behavior: 'instant'}); };
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 
