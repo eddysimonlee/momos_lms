@@ -244,6 +244,14 @@ img{max-width:100%}
 .v1-hseg button b{margin-left:var(--spacing-2)}
 .v1-hseg button.on{background:var(--surface-default);color:var(--text-default);font:var(--body-md-bold);box-shadow:var(--shadow-sm)}
 .v1-hseg+.v1-orghead{margin-top:var(--spacing-16)}
+/* 11/16 LMS관리자 탭: WDS tab(text, md) — 글자 탭 + 선택 밑줄(WORKS 어드민 화면과 같은 모양) */
+.v1-tabs{display:flex;gap:var(--component-tab-container-text-gap);margin:var(--spacing-4) 0 var(--spacing-16);border-bottom:var(--component-tab-container-text-border-bottom-width) solid var(--component-tab-container-text-border-bottom-color);overflow-x:auto;scrollbar-width:none}
+.v1-tabs::-webkit-scrollbar{display:none}
+.v1-tabs button{appearance:none;position:relative;flex:none;height:var(--component-tab-text-md-default-height);padding:var(--component-tab-text-md-default-padding-y) var(--component-tab-text-md-default-padding-x);border:0;background:none;color:var(--component-tab-text-md-default-text);font:var(--component-tab-text-md-default-typography);white-space:nowrap;cursor:pointer}
+.v1-tabs button b{margin-left:var(--spacing-4)}
+.v1-tabs button:focus-visible{outline-offset:calc(-1 * var(--spacing-2));border-radius:var(--radius-sm)}
+.v1-tabs button.on{color:var(--component-tab-text-md-selected-text);font:var(--component-tab-text-md-selected-typography)}
+.v1-tabs button.on::after{content:'';position:absolute;left:0;right:0;bottom:calc(-1 * var(--component-tab-container-text-border-bottom-width));height:var(--component-tab-indicator-height);border-radius:var(--component-tab-indicator-radius);background:var(--component-tab-indicator-color)}
 .v1-hempty{margin:var(--spacing-24) 0;text-align:center;line-height:1.6}
 .v1-orghead small{display:block;color:var(--text-muted);font:var(--label-sm)}
 .v1-orghead h2{margin:0;font:var(--title-xs-bold)}
@@ -603,7 +611,33 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
   .v1-ce-btns{width:100%}
   .v1-ce-btns .v1-btn{flex:1}
 }
-/* 11/16 원본 변경(LMS관리자 › 원본 변경) */
+/* 11/16 교육 화면 ⋮ › 수정 요청: 그 화면이 입력칸으로(근거 본문 펼친 채) + 아래 고정 바 */
+.v1-rqe-h{margin:var(--spacing-16) 0 var(--spacing-8)}
+.v1-rqe-in.changed{border-color:var(--border-primary);background:var(--surface-info-subtle)}
+.v1-rqe-list{list-style:none}
+.v1-rqe-card{padding:var(--spacing-12) var(--spacing-16);display:flex;flex-direction:column;gap:var(--spacing-6)}
+.v1-rqe-del .v1-kcard{background:var(--surface-error-subtle)}
+.v1-rqe-deltext{margin:0;text-decoration:line-through;color:var(--text-muted)}
+.v1-rqe-tools{display:flex;gap:var(--spacing-8);flex-wrap:wrap}
+.v1-kp li.v1-rqe-slot,.v1-kp li.v1-rqe-add{counter-increment:none}
+.v1-kp li.v1-rqe-slot::before{visibility:hidden}
+.v1-kp li.v1-rqe-add::before{content:'+'}
+.v1-rqe-slot{margin:calc(-1 * var(--spacing-8)) 0}
+.v1-rqe-slot .v1-tbtn{justify-self:start}
+.v1-rqe-src>summary{cursor:pointer;font:var(--label-sm-bold);color:var(--text-muted)}
+.v1-rqe-src .v1-src-body{border-top:0;padding:var(--spacing-8) 0 0}
+.v1-rqe-photo{display:flex;flex-direction:column;gap:var(--spacing-6);margin-bottom:var(--spacing-12)}
+.v1-rqe-photo .v1-photo{max-width:calc(var(--spacing-100) * 3)}
+.v1-rqe-photo.v1-rqe-del img{opacity:.35} /* wds-allow: 삭제 요청한 사진 흐리게(불투명도 토큰 없음) */
+.v1-rqe-bar{position:sticky;bottom:0;z-index:2;margin:var(--spacing-16) calc(-1 * var(--spacing-4)) 0;padding:var(--spacing-12) var(--spacing-16);background:var(--surface-default);border:var(--v1-hairline) solid var(--border-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-md)}
+.v1-rqe-barin{display:flex;align-items:center;gap:var(--spacing-12);flex-wrap:wrap}
+.v1-rqe-barin .v1-ce-input{flex:1;min-width:calc(var(--spacing-100) * 2)}
+.v1-rqe-count{margin:0;font:var(--label-sm);white-space:nowrap}
+.v1-rqe-count b{color:var(--text-primary)}
+.v1-ce-help{margin:0}
+.v1-drvbar{display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-8);flex-wrap:wrap;margin:var(--spacing-12) 0 0;padding:var(--spacing-8) var(--spacing-12);border-radius:var(--radius-md);background:var(--surface-default)}
+.v1-drvbar p{margin:0;font:var(--label-sm)}
+/* 11/16 원본 변경(수정 요청 티켓 상세·설정) */
 .v1-drv{border-top:var(--v1-hairline) solid var(--border-subtle);padding:var(--spacing-12) 0}
 .v1-drv>summary{display:flex;flex-wrap:wrap;align-items:center;gap:var(--spacing-6);cursor:pointer;font:var(--body-md)}
 .v1-drv>summary small{flex-basis:100%;color:var(--text-muted);font:var(--label-sm)}
@@ -635,7 +669,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
       <div id="v1MeMenu" class="v1-menu v1-me-menu" role="menu" hidden><div class="v1-me-who"><b id="v1MeName"></b><small id="v1MeMail"></small></div><button type="button" role="menuitem" id="v1Logout">로그아웃</button></div></div>
     <div id="v1More" class="v1-more" hidden>
       <button id="v1MoreBtn" class="v1-icon-btn" aria-label="더보기" aria-haspopup="menu" aria-expanded="false" aria-controls="v1Menu"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.5" r="1.5" fill="currentColor"/><circle cx="10" cy="10" r="1.5" fill="currentColor"/><circle cx="10" cy="15.5" r="1.5" fill="currentColor"/></svg></button><!-- wds-allow: 세로 점 3개 아이콘 없음 -->
-      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button><hr class="v1-menu-sep" id="v1EditSep" hidden><button type="button" role="menuitem" id="v1EditMode" hidden>문구 수정 모드</button></div>
+      <div id="v1Menu" class="v1-menu" role="menu" hidden><button type="button" role="menuitem" id="v1ExportPdf">PDF로 내보내기</button><hr class="v1-menu-sep" id="v1EditSep" hidden><button type="button" role="menuitem" id="v1ReqOpen" hidden>수정 요청</button></div>
     </div>
   </header>
   <main id="app" class="v1-main"></main>
@@ -650,7 +684,6 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
   <div id="v1Notices" class="v1-notices" hidden><div class="v1-notices-scrim" data-notices-close></div><div class="v1-notices-panel" role="dialog" aria-modal="false" aria-labelledby="v1NoticesTitle"><h2 id="v1NoticesTitle" class="v1-notices-title">알림</h2><div id="v1NoticeList" class="v1-notices-list" tabindex="-1"></div></div></div>
 </div>
 <div id="v1Print" class="v1-print" aria-hidden="true"></div>
-<div id="v1Ce" class="v1-ce-dlg" hidden><div class="v1-scrim" data-ce-close></div><div class="v1-ce-panel" role="dialog" aria-modal="true" aria-labelledby="v1CeTitle"></div></div>
 <dialog id="accountDialog"></dialog>
 <span id="accountName" hidden></span><span id="accountInitial" hidden></span>
 <script src="/auth.js"></script>

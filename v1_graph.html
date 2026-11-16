@@ -216,7 +216,8 @@ try {
   const st = await fetch('/api/auth/status', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.json()); CSRF = st.csrfToken || '';
   const r = await fetch('/api/onboarding', {credentials: 'same-origin', cache: 'no-store'}); if (r.ok) ME = await r.json();
 } catch {}
-const canReq = () => !!(ME && ME.lmsLevel === 'admin');
+// 11/16 수정 요청은 교육 화면 ⋮ › '수정 요청'으로 옮겼다. 연결도는 보기만 한다(원본 문서 변경은 원본 변경 확인이 티켓을 만든다)
+const canReq = () => false;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

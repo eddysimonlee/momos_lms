@@ -13,6 +13,7 @@ from urllib.error import HTTPError
 
 import drive_sync
 import lms_store
+import onboarding
 import server
 import works_auth
 
@@ -127,16 +128,35 @@ class StoreTests(unittest.TestCase):
             drive_sync.run(self.store, 'tok', '테스트', base=b)
         self.assertEqual(downloads, ['fa'])  # 수정일·크기가 같으면 다시 받지 않는다
         st = drive_sync.read_state(self.store)
-        self.assertEqual((st['lastRun']['ok'], drive_sync.pending(st)), (True, 0))
-        st['report']['docs'][0].update(status='바뀜', sha1='zz')
-        drive_sync.update_state(self.store, lambda s: s.update(report=st['report']))
-        self.assertEqual(drive_sync.pending(drive_sync.read_state(self.store)), 1)
-        drive_sync.set_ack(self.store, 'a-doc', True)
-        self.assertEqual(drive_sync.pending(drive_sync.read_state(self.store)), 0)
+        self.assertEqual((st['lastRun']['ok'], rep['tickets']), (True, dict(created=[], updated=[], closed=[])))
         drive_sync.set_auto(self.store, True, dict(name='이재현'))
         v = drive_sync.view(self.store)
-        self.assertEqual((v['auto'], v['autoBy'], v['ack']), (True, '이재현', {'a-doc': 'zz'}))
+        self.assertEqual((v['auto'], v['autoBy']), (True, '이재현'))
         self.assertNotIn('cache', v)
+
+    def tickets(self):
+        with self.store.connect() as db:
+            return (lms_store.Rooms.read(db, onboarding.ROOT) or {}).get('contentRequests') or []
+
+    def test_changed_docs_become_tickets_and_close_after_deploy(self):
+        changed = dict(id='a-doc', title='A 문서', folder='F/G', file='A.docx', status='바뀜', sha1='v1', path='F/G/A.docx',
+                       cited=[dict(key='a-doc|1', no='1', title='개요', part='', asis='개요\np1', tobe='개요\np2', missing=False, note='',
+                                   lessons=[dict(no=3, id='s1', title='교육1', part='kp', index=0, text='t')])], other=[], added=[['4', '새 절']], removed=[])
+        rep = lambda *docs: dict(at='2026-11-16T00:00:00+00:00', docs=list(docs))
+        out = onboarding.sync_drive_tickets(self.store, rep(changed, dict(id='b-doc', status='그대로'), dict(id='c-doc', status='확인 실패')), '아침 자동 확인')
+        self.assertEqual(out, dict(created=['REQ-1'], updated=[], closed=[]))
+        t = self.tickets()[0]
+        self.assertEqual((t['type'], t['status'], t['target']['kind'], t['target']['title'], t['drive']['version']), ('원본 문서 변경 확인', '진행중', 'doc', 'F › G › A 문서', 'v1'))
+        self.assertIn('영향받는 교육: 3. 교육1', t['tobe'])
+        self.assertIn('새 절: 4 새 절', t['tobe'])
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(changed), 'x'), dict(created=[], updated=[], closed=[]))  # 같은 판은 그대로
+        out = onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), '지금 확인')  # 또 바뀌면 같은 티켓을 갱신
+        self.assertEqual((out['updated'], len(self.tickets()), self.tickets()[0]['drive']['version']), (['REQ-1'], 1, 'v2'))
+        out = onboarding.sync_drive_tickets(self.store, rep(dict(id='a-doc', status='그대로')), '아침 자동 확인')  # 배포 뒤 기준 = 드라이브
+        self.assertEqual((out['closed'], self.tickets()[0]['status']), (['REQ-1'], '반영됨'))
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), 'x')['created'], [])  # 처리한 판은 다시 만들지 않는다
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v3')), 'x')['created'], ['REQ-2'])
+        self.assertEqual({k['no']: k['version'] for k in drive_sync.drive_tickets(self.store).values()}, {'REQ-2': 'v3'})
 
     def test_failed_run_is_recorded(self):
         with mock.patch.object(works_auth, 'docs_folder', return_value=(None, None, [])):
@@ -255,7 +275,7 @@ class SyncApiTests(unittest.TestCase):
         report = dict(format='momos-lms-drive-sync', sharedriveId='d1', docs=[dict(id='a-doc', status='바뀜', sha1='x', path='F/가.docx', fileId='fa')], extra=[], counts={})
         drive_sync.update_state(self.store, lambda s: s.update(report=report))
         code, _, body = self.get('/api/sync/report', key)
-        self.assertEqual((code, json.loads(body)['pending']), (200, 1))
+        self.assertEqual((code, json.loads(body)['tickets']), (200, {}))
         with mock.patch.object(works_auth, 'service_token', return_value='AT'), \
                 mock.patch.object(works_auth, 'docs_download', return_value=b'PK-docx') as dl:
             code, _, body = self.get('/api/sync/file?doc=a-doc', key)

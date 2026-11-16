@@ -85,6 +85,81 @@ if _LESSONS.exists():
 TESTS = {t['id']: t for t in COURSE['tests']}
 
 
+DRIVE_TICKET = '원본 문서 변경 확인'
+
+
+def _drive_payload(d, checked):
+    """원본 변경 확인 결과(문서 1편) → 티켓의 drive 필드. 저장 한도(교육 기록 4MB)를 넘지 않게 절 본문은 4000자, 인용 절은 30곳까지."""
+    cut = lambda s: s if len(s) <= 4000 else s[:4000] + '\n…(이하 생략)'
+    cited = [dict(c, asis=cut(c.get('asis') or ''), tobe=cut(c.get('tobe') or '')) for c in (d.get('cited') or [])[:30]]
+    return dict(docId=d['id'], version=d.get('sha1') or d['status'], status=d['status'], sha1=d.get('sha1'), title=d.get('title'), folder=d.get('folder'), file=d.get('file'),
+                path=d.get('path'), modified=d.get('modified'), error=d.get('error'), cited=cited, other=d.get('other') or [], added=d.get('added') or [],
+                removed=d.get('removed') or [], checkedAt=checked)
+
+
+def _drive_text(d):
+    lessons = sorted({(r['no'], r['title']) for c in d.get('cited') or [] for r in c.get('lessons') or []})
+    tobe = f"지금 드라이브: {d.get('path') or '(찾지 못함)'} — {d['status']}"
+    if d.get('cited'):
+        tobe += f"\n교육이 인용한 절 {len(d['cited'])}곳 바뀜: " + ', '.join(f"{c.get('no') or ''} {c.get('title') or ''}".strip() for c in d['cited'])
+    if lessons:
+        tobe += '\n영향받는 교육: ' + ', '.join(f'{n}. {t}' for n, t in lessons)
+    for k, label in (('other', '교육에 안 쓰인 바뀐 절'), ('added', '새 절'), ('removed', '없어진 절')):
+        if d.get(k):
+            tobe += f'\n{label}: ' + ', '.join(f'{n} {x}'.strip() for n, x in d[k])
+    return f"기준 파일: {d.get('folder')}/{d.get('file')}", tobe
+
+
+def sync_drive_tickets(store, report, by):
+    """11/16 원본 변경 확인 결과 → 수정 요청 티켓('원본 문서 변경 확인', REQ-n).
+    바뀐 문서(그대로·확인 실패가 아닌 것)마다 진행중 티켓 하나. 같은 문서의 진행중 티켓이 있으면 새 결과로 갱신(이력에 남김),
+    같은 판을 이미 처리했으면(반영됨·반려) 다시 만들지 않는다. 문서가 '그대로'가 되면(배포된 기준 = 드라이브) 진행중 티켓을 '반영됨'으로 닫는다."""
+    out = dict(created=[], updated=[], closed=[])
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        root = projects.Rooms.read(db, ROOT) or Service(store).root(db)
+        items = root.setdefault('contentRequests', [])
+        mine = [r for r in items if (r.get('drive') or {}).get('docId')]
+        for d in report.get('docs') or []:
+            same = [r for r in mine if r['drive']['docId'] == d['id']]
+            live = next((r for r in reversed(same) if req_status(r.get('status')) == '진행중'), None)
+            if d['status'] == '그대로':
+                if live:
+                    live['status'] = '반영됨'
+                    live['history'] = (live.get('history') or []) + [dict(at=stamp(), by='원본 확인 자동 처리', status='반영됨', note='배포된 LMS 기준이 드라이브 원본과 같아져 자동으로 반영됨 처리')]
+                    out['closed'].append(live['no'])
+                continue
+            if d['status'] == '확인 실패':
+                continue
+            payload = _drive_payload(d, report.get('at') or stamp())
+            asis, tobe = _drive_text(d)
+            if live:
+                if live['drive'].get('version') == payload['version']:
+                    live['drive']['checkedAt'] = payload['checkedAt']
+                    continue
+                live.update(asis=asis, tobe=tobe, field=d['status'], drive=payload)
+                live['history'] = (live.get('history') or []) + [dict(at=stamp(), by=by, edit='원본이 다시 바뀌어 최신 확인 결과로 갱신')]
+                out['updated'].append(live['no'])
+                continue
+            if any(r['drive'].get('version') == payload['version'] for r in same):
+                continue  # 이 판은 이미 처리함(반영됨·반려)
+            seq = int(root.get('contentRequestSeq') or 0) + 1
+            root['contentRequestSeq'] = seq
+            folder = ' › '.join(x for x in str(d.get('folder') or '').split('/') if x)
+            item = dict(id=uuid.uuid4().hex, no=f'REQ-{seq}', at=stamp(), user='system', name=by, email='',
+                        target=dict(kind='doc', id=d['id'], title=(folder + ' › ' if folder else '') + str(d.get('title') or d['id'])),
+                        type=DRIVE_TICKET, field=d['status'], asis=asis, tobe=tobe, note='원본 변경 확인이 자동으로 만든 요청',
+                        status='진행중', history=[dict(at=stamp(), by=by, status='진행중')], drive=payload)
+            items.append(item)
+            mine.append(item)
+            out['created'].append(item['no'])
+        if any(out.values()):
+            root['contentRequests'] = items[-2000:]
+            root['revision'] = root.get('revision', 0) + 1
+            projects.Rooms.write(db, ROOT, root)
+    return out
+
+
 def close_applied_edits(store):
     """11/10 배포 뒤 서버가 시작할 때 한 번: 반영 대기(진행중) 문구 수정 티켓 중 지금 서비스 문구가 TO-BE 와 같아진 것을 '반영됨'으로 닫는다.
     (apply_edits.py 로 v1_lessons.json 에 반영·커밋·배포된 것) 문구가 다르면 그대로 둔다. → 닫은 티켓 번호 목록"""
@@ -272,7 +347,7 @@ TARGET_MONTHS = 6
 MENTEE_RESET = 'mentee-reset-2026-11-02'
 # 11/03 조직도 직책 순서(위가 먼저). 목록에 없는 직책은 그 뒤에 WORKS 순서·이름순
 POSITION_ORDER = ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원']
-CONTENT_REQUEST_TYPES = ('문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '원본 매핑 변경', '원본 문서 변경 확인', '기타')
+CONTENT_REQUEST_TYPES = ('문구 수정', '문구 삭제', '교육 내용 추가', '사진 교체', '사진 추가', '사진 삭제', '원본 매핑 변경', '원본 문서 변경 확인', '기타')  # 11/16 사진 추가·삭제
 CONTENT_REQUEST_STATUS = ('진행중', '반영됨', '반려')
 # 11/06: '요청'·'처리 중'은 사실상 같은 상태 → '진행중' 하나로. 예전 기록은 읽을 때 바꿔 보여 준다(저장된 값은 그대로)
 LEGACY_STATUS = {'요청': '진행중', '처리 중': '진행중', '진행 중': '진행중'}
@@ -816,11 +891,7 @@ class Service:
         for m in org.get('members') or []:
             if m.get('email') and m.get('name'): names[str(m['email']).lower()] = m['name']
         admins = sorted((dict(email=e, name=names.get(e, ''), level=l, seed=e in seed) for e, l in levels.items()), key=lambda x: (not x['name'], x['name'], x['email']))
-        try:  # 11/16 원본 변경 탭 숫자(확인할 문서 수). 결과 자체는 탭을 열 때 /api/drive-sync 로 받는다
-            import drive_sync; drive_pending = drive_sync.pending(projects.Rooms.read(db, drive_sync.STATE_KEY) or {})
-        except Exception:
-            drive_pending = 0
-        return dict(lmsAdmins=admins, drivePending=drive_pending,
+        return dict(lmsAdmins=admins,
                     feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
                     sourceLog=source_log(),
                     contentRequests=[dict(r, status=req_status(r.get('status')), history=[dict(h, status=req_status(h.get('status'))) for h in r.get('history') or []]) for r in reversed((root.get('contentRequests') or [])[-300:])])
