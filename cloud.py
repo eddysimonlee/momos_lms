@@ -287,6 +287,11 @@ def run():
         if closed: print(f"문구 수정 {len(closed)}건을 반영됨으로 닫았습니다: {', '.join(closed)}", flush=True)
     except Exception as e:  # 티켓 정리가 실패해도 서비스는 뜬다
         print('문구 수정 자동 처리 실패:', type(e).__name__, flush=True)
+    try:  # 11/16 배포 뒤: 배포된 기준이 드라이브 원본과 같아진 '원본 문서 변경 확인' 티켓을 '반영됨'으로
+        closed = onboarding.close_synced_drive_tickets(store)
+        if closed: print(f"원본 변경 티켓 {len(closed)}건을 반영됨으로 닫았습니다: {', '.join(closed)}", flush=True)
+    except Exception as e:
+        print('원본 변경 티켓 자동 처리 실패:', type(e).__name__, flush=True)
     httpd.daemon_threads=False
     stop = threading.Event()
     def terminate(signum,frame):

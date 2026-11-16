@@ -86,6 +86,34 @@ TESTS = {t['id']: t for t in COURSE['tests']}
 
 
 DRIVE_TICKET = '원본 문서 변경 확인'
+TICKET_SEEN_SINCE = '2026-11-16'  # 11/16 이날부터 생긴 티켓만 '안 본 티켓'(빨간 점)으로 센다 — 그 전 티켓은 본 것으로
+
+
+def ticket_version(r):
+    """'봤다'의 기준: 티켓마다 처음 한 번(원본이 다시 바뀌면 새 티켓이 생기므로 한 티켓의 점이 다시 켜지는 일은 없다)."""
+    return 'v1'
+
+
+def close_synced_drive_tickets(store):
+    """11/16 배포 뒤 서버가 시작할 때 한 번: 진행중 원본 변경 티켓 중 배포된 기준(source_sections.json 의 문서 sha1)이
+    티켓의 드라이브 원본(drive.sha1)과 같아진 것을 '반영됨'으로 닫는다(동기화를 다시 누르지 않아도). → 닫은 티켓 번호 목록"""
+    base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8')).get('documents') or {}
+    with store.connect() as db:
+        db.execute('BEGIN IMMEDIATE')
+        root = projects.Rooms.read(db, ROOT)
+        if not root: return []
+        done = []
+        for r in root.get('contentRequests') or []:
+            d = r.get('drive') or {}
+            if not d.get('sha1') or req_status(r.get('status')) != '진행중': continue
+            if (base.get(d.get('docId')) or {}).get('sha1') != d['sha1']: continue
+            r['status'] = '반영됨'
+            r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='배포된 LMS 기준이 이 티켓의 드라이브 원본과 같아 자동으로 반영됨 처리')]
+            done.append(r.get('no'))
+        if done:
+            root['revision'] = root.get('revision', 0) + 1
+            projects.Rooms.write(db, ROOT, root)
+        return done
 
 
 def _drive_payload(d, checked):
@@ -112,9 +140,10 @@ def _drive_text(d):
 
 def sync_drive_tickets(store, report, by):
     """11/16 원본 변경 확인 결과 → 수정 요청 티켓('원본 문서 변경 확인', REQ-n).
-    바뀐 문서(그대로·확인 실패가 아닌 것)마다 진행중 티켓 하나. 같은 문서의 진행중 티켓이 있으면 새 결과로 갱신(이력에 남김),
-    같은 판을 이미 처리했으면(반영됨·반려) 다시 만들지 않는다. 문서가 '그대로'가 되면(배포된 기준 = 드라이브) 진행중 티켓을 '반영됨'으로 닫는다."""
-    out = dict(created=[], updated=[], closed=[])
+    바뀐 문서(그대로·확인 실패가 아닌 것)마다 진행중 티켓 하나. 원본이 다시 바뀌면(판이 다름) 새 티켓을 만들고, 그 문서의 이전 진행중 티켓은
+    '반려'(새 티켓으로 이어짐)로 닫는다 — 한 티켓의 내용은 바뀌지 않는다(11/16). 같은 판을 이미 처리했으면(반영됨·반려) 다시 만들지 않는다.
+    문서가 '그대로'가 되면(배포된 기준 = 드라이브) 진행중 티켓을 '반영됨'으로 닫는다."""
+    out = dict(created=[], replaced=[], closed=[])
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         root = projects.Rooms.read(db, ROOT) or Service(store).root(db)
@@ -133,17 +162,17 @@ def sync_drive_tickets(store, report, by):
                 continue
             payload = _drive_payload(d, report.get('at') or stamp())
             asis, tobe = _drive_text(d)
-            if live:
-                if live['drive'].get('version') == payload['version']:
-                    live['drive']['checkedAt'] = payload['checkedAt']
-                    continue
-                live.update(asis=asis, tobe=tobe, field=d['status'], drive=payload)
-                live['history'] = (live.get('history') or []) + [dict(at=stamp(), by=by, edit='원본이 다시 바뀌어 최신 확인 결과로 갱신')]
-                out['updated'].append(live['no'])
+            if live and live['drive'].get('version') == payload['version']:
+                live['drive']['checkedAt'] = payload['checkedAt']
                 continue
-            if any(r['drive'].get('version') == payload['version'] for r in same):
+            if not live and any(r['drive'].get('version') == payload['version'] for r in same):
                 continue  # 이 판은 이미 처리함(반영됨·반려)
             seq = int(root.get('contentRequestSeq') or 0) + 1
+            if live:  # 원본이 또 바뀜: 이전 티켓은 닫고 최신 원본 기준으로 새 티켓
+                live['status'] = '반려'
+                live['reply'] = f'원본이 다시 바뀌어 REQ-{seq}(최신 원본 기준)로 이어서 처리'
+                live['history'] = (live.get('history') or []) + [dict(at=stamp(), by=by, status='반려', note=live['reply'])]
+                out['replaced'].append(live['no'])
             root['contentRequestSeq'] = seq
             folder = ' › '.join(x for x in str(d.get('folder') or '').split('/') if x)
             item = dict(id=uuid.uuid4().hex, no=f'REQ-{seq}', at=stamp(), user='system', name=by, email='',
@@ -532,7 +561,7 @@ class Service:
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
-                    myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
+                    myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), **(dict(ticketSeen=(root.get('ticketSeen') or {}).get(user['id']) or {}, ticketSeenSince=TICKET_SEEN_SINCE) if self.lms_staff(root,user) else {}), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
@@ -701,7 +730,7 @@ class Service:
             # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
             # 저장은 한 건씩 차례로 처리되고(BEGIN IMMEDIATE / advisory lock), 상태 규칙은 education() 이 최신 기록으로 다시 확인한다.
             latest_ok = action in LATEST_OK
-            if root_action and action!='notification.read' and not latest_ok and v['rootRevision']!=root['revision']:
+            if root_action and not action.startswith('notification.') and not latest_ok and v['rootRevision']!=root['revision']:
                 raise projects.Conflict('교육 배정·문의 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
             p = self.roles(root,user,target)
             if action == 'notification.read':
@@ -712,6 +741,14 @@ class Service:
                     raise PermissionError('본인에게 보이는 알림만 읽음 처리할 수 있습니다.')
                 readers=root.setdefault('noticeReads',{})
                 readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))
+            elif action=='notification.ticket':  # 11/16 수정 요청 티켓을 열어 봄 → 그 사람 목록에서 빨간 점을 끈다(원본 변경 티켓은 다시 바뀌면 다시 켜짐)
+                if self.lms_level(root,user)!='admin': raise PermissionError('수정 요청은 LMS관리자 admin 만 볼 수 있어요.')
+                if set(data)!={'id'} or not isinstance(data['id'],str): raise ValueError('수정 요청을 확인해 주세요.')
+                r=next((x for x in root.get('contentRequests') or [] if x.get('id')==data['id']),None)
+                if not r: raise ValueError('수정 요청을 찾지 못했어요.')
+                live={x.get('id') for x in root.get('contentRequests') or []}
+                seen={k:v for k,v in ((root.setdefault('ticketSeen',{})).get(user['id']) or {}).items() if k in live}
+                seen[r['id']]=ticket_version(r); root['ticketSeen'][user['id']]=seen
             elif action=='config.selfEnrol':
                 self.self_enrol(db,root,user,data)
             elif action=='profile.set':
@@ -762,8 +799,8 @@ class Service:
                                              detail={k:copy.deepcopy(data[k]) for k in ('step','item','index','on','date','test','question','result','reason') if k in data},
                                              lessonVersion=COURSE['version'],sourceVersion=COURSE['sourceVersion']))
                 projects.Rooms.write(db,entry['key'],learner)
-            if action!='notification.read':root['revision']+=1
-            if root_action:
+            if not action.startswith('notification.'):root['revision']+=1
+            if root_action and action!='notification.ticket':
                 root['audit'].append(dict(at=stamp(),date=today(),actor=user['id'],name=user['name'],target=target,action=action,requestId=rid))
             root['requests'].append(dict(user=user['id'],id=rid,digest=digest))
             root['requests']=root['requests'][-2000:]

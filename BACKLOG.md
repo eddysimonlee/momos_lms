@@ -16,9 +16,9 @@
 ### 3. WORKS Drive 원본 주기적 읽기(동기화) — 11/16 방안 2 구현(실서비스)
 - 방안 2(구현): 원본 변경 확인(`drive_sync.py`). 드라이브 ST_매장사업부를 LMS 기준(manifest·`source_sections.json`·교육 인용 절)과 비교 → 문서별 상태, 바뀐 절 AS-IS/TO-BE, 영향받는 교육
   - 바뀐 문서마다 수정 요청 티켓('원본 문서 변경 확인', REQ-n, 바뀐 절 AS-IS/TO-BE). 배포 뒤 '그대로'가 되면 자동 '반영됨', 반려한 판은 다시 안 올라옴
-  - LMS관리자 › 수정 요청(목록 위 '지금 확인') · 설정(아침 자동 확인 켜기/끄기 · 드라이브 열쇠 · 사람별 LLM 연결 키 · admin 지정)
+  - LMS관리자 › 수정 요청(목록 위 [동기화] — 11/16 지금은 이 버튼으로만 동기화) · 설정(사람별 LLM 연결 키·드라이브 열쇠 · admin 지정)
   - 원본은 드라이브에서만(PC 사본·첨부 docx 로는 반영하지 않음). /v1/graph 의 수정 요청은 교육 화면 ⋮ › 수정 요청으로 옮김
-  - 아침 자동 확인: Render Cron Job `python3 drive_sync.py --cron`. 드라이브 열쇠 = LMS관리자가 로그인할 때 받은 WORKS 재발급 열쇠를 암호화(`LMS_TOKEN_KEY`)해 DB 에 저장(11/16 이재현 결정 — '토큰은 서버 메모리에만'에서 바꿈). LMS관리자만, 해제하면 삭제
+  - 아침 자동 확인(11/16 화면에서 뺌, 나중에 필요하면 다시): Render Cron Job `python3 drive_sync.py --cron`. 드라이브 열쇠 = LMS관리자가 로그인할 때 받은 WORKS 재발급 열쇠를 암호화(`LMS_TOKEN_KEY`)해 DB 에 저장(11/16 이재현 결정 — '토큰은 서버 메모리에만'에서 바꿈). LMS관리자만, 해제하면 삭제
   - LLM: "드라이브 sync 맞춰줘" → `drive_pull.py` 가 `/api/sync/report`·`/api/sync/file` 에서 결과와 원본을 받아 반영안 제안(AGENTS.md). 점장님들이 각자 키·GitHub 협업자 권한으로 직접 커밋하거나, 채수민 님이 중앙에서 커밋
   - 남은 일: 처음 실제 드라이브로 확인(재발급 열쇠가 오는지·유효기간) · Render Cron 설정 · WORKS 메시지 알림(지금은 탭 숫자만)
 - 방안 1(보류): 버튼 → 서버가 LLM API 로 교육 문구 초안 → 관리자 승인 → GitHub Actions 가 apply_edits·커밋·배포. LLM API 사내 승인·GitHub 토큰 필요

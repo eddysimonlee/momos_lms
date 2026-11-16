@@ -667,6 +667,19 @@ class EducationTests(unittest.TestCase):
             fb=self.service.get(a)['feedback'][0];self.assertEqual((fb['name'],fb['menteeName'],fb['text']),(b['name'],self.learner['name'],'5번 문장 확인 필요'))
             with self.assertRaises(PermissionError):self.act(self.tech,'feedback.send',dict(step=ident,text='x'),self.learner['id'])  # 모모스 계정이 아니면 못 보냄
 
+    def test_ticket_seen_dot(self):
+        # 11/16 안 본 티켓(빨간 점): 열면 그 사람만 꺼진다. 다른 관리자에겐 그대로, 판이 바뀐 원본 변경 티켓은 다시 켜진다
+        a,b=self.other,self.content;ident='welcome-prep'
+        with patch.object(ob,'LMS_ADMIN_SEED',[a['email'].lower(),b['email'].lower()]):
+            c=self.act(a,'content.request',dict(target=dict(kind='item',id=ident,title='1. 첫 출근 준비'),type='기타',tobe='사진이 흐려요'))
+            r=c['contentRequests'][0];self.assertEqual((c['ticketSeen'],c['ticketSeenSince']),({},ob.TICKET_SEEN_SINCE))
+            rev=self.service.get(b)['rootRevision']
+            c=self.act(b,'notification.ticket',dict(id=r['id']))
+            self.assertEqual((c['ticketSeen'],c['rootRevision']),({r['id']:'v1'},rev))  # 판본은 그대로(다른 사람 저장과 부딪치지 않게)
+            self.assertEqual(self.service.get(a)['ticketSeen'],{})
+            with self.assertRaises(ValueError):self.act(b,'notification.ticket',dict(id='nope'))
+            with self.assertRaises(PermissionError):self.act(self.tech,'notification.ticket',dict(id=r['id']))
+
     def test_content_requests_from_graph(self):
         # 11/03 /v1/graph 콘텐츠 수정 요청: admin 만 보내고 처리 상태를 바꾼다
         a,b=self.other,self.content;ident='welcome-prep'

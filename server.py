@@ -186,23 +186,16 @@ class Handler(BaseHTTPRequestHandler):
             print(f'401 GET {path} llm-key', flush=True)
             return self.send(401, {'error': 'LLM 연결 키가 없거나 쓸 수 없어요. LMS관리자 › 원본 변경에서 만든 키를 Authorization: Bearer 로 보내 주세요.'})
         if path == '/api/sync/report':
-            if query.get('fresh', [''])[0] == '1':
-                try:
-                    drive_sync.run(store, works_auth.service_token(store), 'LLM · ' + (who.get('name') or who.get('email') or ''))
-                except (works_auth.DirectoryUnavailable, drive_sync.Busy) as e:
-                    return self.send(409, {'error': str(e)})
-                except Exception as e:
-                    return self.send(502, {'error': '원본을 확인하지 못했어요: ' + drive_sync._reason(e)})
             state = drive_sync.view(store)
             if not state['report']:
-                return self.send(404, {'error': '아직 확인 결과가 없어요. ?fresh=1 로 지금 확인하세요.'})
+                return self.send(404, {'error': '아직 동기화 결과가 없어요. LMS관리자 › 수정 요청에서 [동기화]를 먼저 눌러 주세요.'})
             return self.send(200, dict(state['report'], tickets=drive_sync.drive_tickets(store), lastRun=state['lastRun']))
         report = drive_sync.read_state(store).get('report') or {}
         ident, want = query.get('doc', [''])[0], drive_sync.nfc(query.get('path', [''])[0])
         hit = next((d for d in report.get('docs') or [] if d.get('fileId') and ((ident and d['id'] == ident) or (want and d.get('path') == want))), None) \
             or next((x for x in report.get('extra') or [] if want and x.get('fileId') and x['path'] == want), None)
         if not hit or not report.get('sharedriveId'):
-            return self.send(404, {'error': '그 문서를 최근 확인 결과에서 찾지 못했어요. /api/sync/report?fresh=1 로 다시 확인하세요.'})
+            return self.send(404, {'error': '그 문서를 마지막 동기화 결과에서 찾지 못했어요. LMS관리자 › 수정 요청에서 [동기화]를 다시 눌러 주세요.'})
         try:
             raw = works_auth.docs_download(works_auth.service_token(store), report['sharedriveId'], hit['fileId'])
         except works_auth.DirectoryUnavailable as e:
@@ -524,7 +517,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise PermissionError('업무문서 폴더 확인은 LMS관리자 admin 만 할 수 있습니다.')
                 return self.send(200, works_auth.docs_check(user['id']))
             if path == '/api/drive-sync':
-                # 11/16 원본 변경 확인(LMS관리자 › 수정 요청·설정): 지금 확인 · 아침 자동 확인 켜기/끄기 · LLM 연결 키. 바뀐 문서는 수정 요청 티켓이 된다
+                # 11/16 드라이브 원본 동기화(LMS관리자 › 수정 요청 [동기화]) · LLM 연결 키(설정). 바뀐 문서는 수정 요청 티켓이 된다
                 import onboarding, works_auth, drive_sync
                 education = onboarding.Service(store)
                 with store.connect() as db:
@@ -540,8 +533,6 @@ class Handler(BaseHTTPRequestHandler):
                             drive_sync.run_background(store, token, me.get('name') or '관리자')
                         except (works_auth.DirectoryUnavailable, drive_sync.Busy) as e:
                             return self.send(409, {'error': str(e)})
-                    elif act == 'auto':
-                        drive_sync.set_auto(store, d.get('on') is True, me)
                     elif act == 'llm-key':
                         extra['newKey'] = drive_sync.new_llm_key(store, me)
                     elif act == 'llm-revoke':

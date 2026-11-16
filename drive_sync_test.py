@@ -128,7 +128,7 @@ class StoreTests(unittest.TestCase):
             drive_sync.run(self.store, 'tok', '테스트', base=b)
         self.assertEqual(downloads, ['fa'])  # 수정일·크기가 같으면 다시 받지 않는다
         st = drive_sync.read_state(self.store)
-        self.assertEqual((st['lastRun']['ok'], rep['tickets']), (True, dict(created=[], updated=[], closed=[])))
+        self.assertEqual((st['lastRun']['ok'], rep['tickets'], st['lastRun']['tickets']), (True, dict(created=[], replaced=[], closed=[]), dict(created=[], replaced=[], closed=[])))  # 화면 '동기화 완료 … n개'
         drive_sync.set_auto(self.store, True, dict(name='이재현'))
         v = drive_sync.view(self.store)
         self.assertEqual((v['auto'], v['autoBy']), (True, '이재현'))
@@ -144,19 +144,30 @@ class StoreTests(unittest.TestCase):
                                    lessons=[dict(no=3, id='s1', title='교육1', part='kp', index=0, text='t')])], other=[], added=[['4', '새 절']], removed=[])
         rep = lambda *docs: dict(at='2026-11-16T00:00:00+00:00', docs=list(docs))
         out = onboarding.sync_drive_tickets(self.store, rep(changed, dict(id='b-doc', status='그대로'), dict(id='c-doc', status='확인 실패')), '아침 자동 확인')
-        self.assertEqual(out, dict(created=['REQ-1'], updated=[], closed=[]))
+        self.assertEqual(out, dict(created=['REQ-1'], replaced=[], closed=[]))
         t = self.tickets()[0]
         self.assertEqual((t['type'], t['status'], t['target']['kind'], t['target']['title'], t['drive']['version']), ('원본 문서 변경 확인', '진행중', 'doc', 'F › G › A 문서', 'v1'))
         self.assertIn('영향받는 교육: 3. 교육1', t['tobe'])
         self.assertIn('새 절: 4 새 절', t['tobe'])
-        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(changed), 'x'), dict(created=[], updated=[], closed=[]))  # 같은 판은 그대로
-        out = onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), '지금 확인')  # 또 바뀌면 같은 티켓을 갱신
-        self.assertEqual((out['updated'], len(self.tickets()), self.tickets()[0]['drive']['version']), (['REQ-1'], 1, 'v2'))
-        out = onboarding.sync_drive_tickets(self.store, rep(dict(id='a-doc', status='그대로')), '아침 자동 확인')  # 배포 뒤 기준 = 드라이브
-        self.assertEqual((out['closed'], self.tickets()[0]['status']), (['REQ-1'], '반영됨'))
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(changed), 'x'), dict(created=[], replaced=[], closed=[]))  # 같은 판은 그대로
+        out = onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), '이재현')  # 또 바뀌면 새 티켓, 이전 티켓은 반려(이어짐)
+        self.assertEqual((out['created'], out['replaced']), (['REQ-2'], ['REQ-1']))
+        old, new = self.tickets()
+        self.assertEqual((old['status'], old['drive']['version'], new['status'], new['drive']['version'], new['name']), ('반려', 'v1', '진행중', 'v2', '이재현'))
+        self.assertIn('REQ-2', old['reply'])
+        out = onboarding.sync_drive_tickets(self.store, rep(dict(id='a-doc', status='그대로')), '이재현')  # 배포 뒤 기준 = 드라이브
+        self.assertEqual((out['closed'], self.tickets()[1]['status']), (['REQ-2'], '반영됨'))
         self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), 'x')['created'], [])  # 처리한 판은 다시 만들지 않는다
-        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v3')), 'x')['created'], ['REQ-2'])
-        self.assertEqual({k['no']: k['version'] for k in drive_sync.drive_tickets(self.store).values()}, {'REQ-2': 'v3'})
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v3')), 'x')['created'], ['REQ-3'])
+        self.assertEqual({k['no']: k['version'] for k in drive_sync.drive_tickets(self.store).values()}, {'REQ-3': 'v3'})
+
+    def test_deploy_closes_ticket_when_baseline_matches(self):
+        base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8'))['documents']
+        doc, info = next(iter(base.items()))
+        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id=doc, title='T', folder='F', file='f.docx', status='바뀜', sha1=info['sha1'])]), '동기화')
+        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id='other-doc', title='O', folder='F', file='o.docx', status='바뀜', sha1='not-deployed')]), '동기화')
+        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])  # 배포된 기준 sha1 = 티켓의 원본 → 반영됨
+        self.assertEqual([t['status'] for t in self.tickets()], ['반영됨', '진행중'])
 
     def test_failed_run_is_recorded(self):
         with mock.patch.object(works_auth, 'docs_folder', return_value=(None, None, [])):
