@@ -20,7 +20,6 @@
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
   let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
   const feedbackDrafts = new Map();
-  let ceMode = false, ceEdit = null, ceTimer = null;  // ceMode: ⋮ › 문구 수정 모드(관리자). 항목 화면을 벗어나면 끝난다  // 11/10 교육 문구 직접 수정(관리자): 고치는 중인 줄 하나
   let noticeBusy = false;
 
   function toast(message) {
@@ -136,67 +135,8 @@
   })();
   // <<< content-edit-check
   // 11/10 교육 문구 직접 수정 — 화면 쪽(관리자만). 보내면 '문구 수정' 티켓(REQ-n)이 되고, 서비스 문구는 검토 → 커밋 뒤에만 바뀐다.
-  const ceKeys = (s, part, index) => part === 'purpose' ? [...new Set((s.keyPoints || []).flatMap(k => k.cites || []))] : [...new Set((s.keyPoints[index] || {}).cites || [])];
   const ceOpen = (stepId, part, index) => (cloud.contentRequests || []).find(r => r.status === '진행중' && r.edit && r.target && r.target.id === stepId && r.edit.part === part && (r.edit.index ?? null) === (index ?? null));
-  function ceRun() { return ContentEdit.check(ceEdit.part, ceEdit.asis, ceEdit.text); }
   const CE_X = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
-  // 근거 원문(오른쪽 칸): 표시만 한다(11/10: 바뀐 수치 노란 표시도 글자 대조라 뺌)
-  function ceSource(keys) {
-    const mark = s => esc(s);
-    return keys.map(k => {
-      const sec = content.sections[k]; if (!sec) return '';
-      const doc = content.documents[sec.doc] || {};
-      const tables = (sec.tables || []).map(t => `<div class="table-wrap"><table><thead><tr>${(t.header || []).map(h => `<th>${mark(h)}</th>`).join('')}</tr></thead><tbody>${(t.rows || []).map(r =>
-        `<tr>${r.map(c => `<td>${mark(c).replace(/\n/g, '<br>')}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`).join('');
-      return `<section class="v1-ce-sec"><p class="v1-ce-doc">${esc(doc.title || '')}</p><h4>${esc(sec.no)} ${esc(sec.title)}${sec.partLabel ? ' · ' + esc(sec.partLabel) : ''}</h4>` +
-        (sec.paragraphs || []).map(p => `<p>${mark(p).replace(/\n/g, '<br>')}</p>`).join('') + tables + '</section>';
-    }).join('') || '<p class="v1-muted">연결된 근거 원문이 없어요.</p>';
-  }
-  const ceDlg = () => $('v1Ce');
-  function ceRefresh() {
-    const box = ceDlg(); if (box.hidden || !ceEdit) return;
-    const r = ceRun(), blocked = r.items.some(i => i.level === 'block'), t = ceEdit.text.trim(), untouched = t === ceEdit.asis;
-    const n = [...t].length, max = ContentEdit.LIMIT[ceEdit.part];
-    box.querySelector('[data-ce-count]').textContent = `${n} / ${max}`;
-    box.querySelector('[data-ce-text]').classList.toggle('error', !untouched && blocked);
-    // 11/10: 검사에 걸리면 수정 문구 칸 아래 빨간 글씨(WDS Input error: 테두리 border-error · helper text text-error), 통과하면 아무것도 보이지 않음
-    const err = untouched ? [] : r.items.map(i => i.text), help = box.querySelector('[data-ce-err]');
-    help.innerHTML = err.map(x => `<span>${esc(x)}</span>`).join(''); help.hidden = !err.length;
-    box.querySelector('[data-ce-text]').setAttribute('aria-invalid', String(Boolean(err.length)));
-    box.querySelector('[data-ce-send]').disabled = busy || untouched || blocked || !ceEdit.reason.trim();
-    const s = steps().find(x => x.id === ceEdit.step);
-    const src = box.querySelector('[data-ce-src]'); if (!src.dataset.ready) { src.innerHTML = ceSource(ceKeys(s, ceEdit.part, ceEdit.index)); src.dataset.ready = '1'; }
-  }
-  // WDS Modal dialog(xxl): 왼쪽 = 고치기, 오른쪽 = 근거 원문. 좁은 화면은 전체 화면 + Tab(고치기 / 근거 원문)
-  function ceShow() {
-    const e = ceEdit, s = steps().find(x => x.id === e.step), title = e.part === 'purpose' ? '교육 목적 수정' : `교육 내용 ${e.index + 1} 수정`;
-    const box = ceDlg(), panel = box.querySelector('.v1-ce-panel');
-    panel.innerHTML = `<div class="v1-ce-top"><div><h2 id="v1CeTitle">${title}</h2><p class="v1-ce-meta">${stepIndex(s.id) + 1}. ${esc(s.title)}</p></div>` +
-      `<button type="button" class="v1-icon-btn v1-ce-x" data-ce-close aria-label="닫기">${CE_X}</button></div>` +
-      `<div class="v1-ce-tabs" role="tablist"><button type="button" role="tab" data-ce-tab="edit" aria-selected="true">고치기</button><button type="button" role="tab" data-ce-tab="src" aria-selected="false">근거 원문</button></div>` +
-      `<div class="v1-ce-body" data-ce-pane="edit"><div class="v1-ce-edit">` +
-        `<p class="v1-ce-label">현재 문구</p><p class="v1-ce-now">${esc(e.asis).replace(/\n/g, '<br>')}</p>` +
-        `<label class="v1-ce-label" for="v1CeText">수정 문구</label><textarea id="v1CeText" class="v1-ce-input" data-ce-text rows="4" aria-describedby="v1CeErr">${esc(e.text)}</textarea>` +
-        `<div class="v1-ce-helprow"><p class="v1-ce-err" id="v1CeErr" data-ce-err aria-live="polite" hidden></p><p class="v1-ce-count" data-ce-count></p></div>` +
-        `<label class="v1-ce-label" for="v1CeReason">수정 사유</label><input id="v1CeReason" class="v1-ce-input v1-ce-one" data-ce-reason maxlength="300" placeholder="반영 기록에 함께 남아요" value="${esc(e.reason)}">` +
-      `</div><div class="v1-ce-src" data-ce-src></div></div>` +
-      `<div class="v1-ce-foot"><p class="v1-ce-help v1-ce-note">수정하면 '반영 대기'로 저장되고, 다음 배포 때 서비스 문구가 바뀌어요.</p>` +
-      `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-close>취소</button><button type="button" class="v1-btn primary" data-ce-send>수정하기</button></div></div>` ;
-    // 버리기 확인(Confirm dialog)은 편집 창 밖 — 화면 전체(편집 창 테두리까지)를 어둡게
-    box.querySelector('[data-ce-confirm]')?.remove();
-    box.insertAdjacentHTML('beforeend', `<div class="v1-ce-confirm" data-ce-confirm hidden><div class="v1-ce-confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="v1CeAsk"><h3 id="v1CeAsk">고치던 내용을 버릴까요?</h3><p>지금 닫으면 고친 문구와 수정 사유가 사라져요.</p>` +
-        `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-ce-keep>계속 고치기</button><button type="button" class="v1-btn v1-btn-danger" data-ce-drop>버리기</button></div></div></div>`);
-    box.hidden = false; document.body.classList.add('v1-noscroll');
-    ceRefresh();
-    const ta = box.querySelector('[data-ce-text]'); ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
-  }
-  function ceHide(force) {
-    if (!ceEdit) return;
-    const dirty = ceEdit.text.trim() !== ceEdit.asis || ceEdit.reason.trim();
-    if (dirty && !force) { const c = ceDlg().querySelector('[data-ce-confirm]'); c.hidden = false; c.querySelector('[data-ce-keep]').focus(); return; }
-    const back = ceEdit.from; ceEdit = null; ceDlg().hidden = true; document.body.classList.remove('v1-noscroll');
-    const el = back && $('app').querySelector(back); if (el) el.focus({preventScroll: true});
-  }
   // 체크할 항목 = 교육 내용(keyPoints). 교육 내용이 없는 항목(첫날 OJT)은 체크 목록 자체. 서버(onboarding.STEPS)와 같은 규칙.
   const checkItems = s => s.keyPoints && s.keyPoints.length ? s.keyPoints : (s.checks || []).map(text => ({text, cites: []}));  // 교육안 준비 중(추가·교체 세션): 수행 확인 없음
   // 서버에 아직 기록 칸이 없는 새 세션도 화면이 깨지지 않도록 빈 기록을 돌려준다.
@@ -417,9 +357,10 @@
   // --- rendering
   function render() {
     if (!cloud || !content) return;
+    if (rqe && view !== 'step:' + rqe.step) {  // 수정 요청 중에 다른 화면으로: 고친 게 있으면 묻는다
+      if (rqeDirty() && !confirm('고치던 수정 요청을 버릴까요?')) view = 'step:' + rqe.step; else rqe = null;
+    }
     const step = view.startsWith('step:') ? steps()[stepIndex(view.slice(5))] : null;
-    if (ceEdit && !(step && step.id === ceEdit.step)) ceHide(true);  // 다른 화면으로 가면 고치던 것은 버린다
-    if (!step) ceMode = false;
     const branch = view === 'branch';
     if (view !== 'all' && !(step && returnView === 'all')) filt = null;  // 전체 교육을 벗어나면 필터 초기화
     // 처음: 지점 선택 → 역할 선택 → 홈. 저장된 뒤에는 홈이 첫 화면이고, 지점·역할은 우상단 ⋮ 에서 바꾼다.
@@ -457,7 +398,6 @@
     const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
     app.innerHTML = view === 'admin' ? adminView() : view === 'opinions' ? opinionsView() : view.startsWith('log:') ? logView(view.slice(4)) : view.startsWith('req:') ? reqView(view.slice(4)) : view.startsWith('fb:') ? fbView(view.slice(3)) : view === 'branch' ? branchView() : step ? stepView(step) : view === 'stage' ? stageView() : view === 'all' ? stageView(true) : view === 'person' ? progressView() : homeView();
     bind(step);
-    if (ceEdit) ceRefresh();
     const lbar = app.querySelector('.v1-learner-bar');  // 고정 위치 = 상단바 바로 아래(항목 화면은 상단바가 두 줄이라 높이를 잰다)
     if (lbar) lbar.style.top = document.querySelector('.v1-top').offsetHeight + 'px';
     const mbar = app.querySelector('.v1-ce-modebar');  // 11/10 문구 수정 모드 띠: 스크롤해도 상단바(+교육생 띠) 바로 아래에 고정
@@ -624,17 +564,19 @@
       (canEdit ? `<div class="v1-admin-add v1-admin-add-top"><input type="search" class="v1-pop-input" data-admin-email placeholder="이름·이메일 검색" autocomplete="off" enterkeyhint="search" aria-label="추가할 구성원 검색(NAVER WORKS 주소록)" aria-controls="v1AdminResults"><button type="button" class="v1-btn" data-admin-add>지정</button></div><div id="v1AdminResults" class="v1-pop-list v1-admin-results" role="list"></div>` : '') +
       `<ul class="v1-admins">${admins}</ul></section>`;
     // 11/03: admin 지정 · 보낸 의견 · 반영 기록을 탭으로(교육 현황 탭과 같은 모양). 상세에서 돌아와도 고른 탭 유지
-    if (adminTab === 'fb') adminTab = 'admins';  // 11/06: 보낸 의견은 LNB '의견 리스트'로 옮겼다
-    const tab = adminTab, n = {log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '진행중').length, drive: driveData ? driveData.pending : (cloud.drivePending || 0)};
+    // 11/16 탭 3개(WORKS 어드민처럼 글자 탭 + 밑줄): 수정 요청(교육 화면 요청 + 원본 변경 티켓) · 반영 기록 · 설정(원본 자동 확인 · LLM 연결 키 · admin 지정)
+    if (!['req', 'log', 'settings'].includes(adminTab)) adminTab = adminTab === 'log' ? 'log' : adminTab === 'req' ? 'req' : 'settings';
+    const tab = adminTab, n = {log: (cloud.sourceLog || []).length, req: (cloud.contentRequests || []).filter(r => r.status === '진행중').length};
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-admin-tab="${k}">${label}</button>`;
-    return `<div class="v1-hseg" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('admins', 'admin 지정')}${segBtn('req', `수정 요청 <b>${n.req}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}${segBtn('drive', `원본 변경 <b>${n.drive}</b>`)}</div>` +
-      (tab === 'req' ? reqListCard() : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : tab === 'drive' ? driveView() : adminsHtml);
+    return `<div class="v1-tabs" role="tablist" aria-label="LMS관리자 메뉴">${segBtn('req', `수정 요청 <b>${n.req}</b>`)}${segBtn('log', `반영 기록 <b>${n.log}</b>`)}${segBtn('settings', '설정')}</div>` +
+      (tab === 'req' ? reqListCard() : tab === 'log' ? (sourceLogCard() || '<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">아직 반영 기록이 없어요.</p></section>') : driveSettingsCards() + adminsHtml);
   }
-  let adminTab = 'admins';
+  let adminTab = 'req';
 
   // 11/16 원본 변경(BACKLOG 3): 드라이브 ST_매장사업부 원본을 LMS 기준과 비교한 결과. 탭을 열 때 /api/drive-sync 로 받는다.
   // 지금 확인 · 아침 자동 확인 켜기/끄기 · 문서별 '확인함' · 사람별 LLM 연결 키(LLM 이 결과·원본을 직접 받아 교육 문구 수정을 제안)
   let driveData = null, driveLoading = false, driveNewKey = '', drivePoll = 0;
+  const driveTab = () => adminTab === 'req' || adminTab === 'settings';
   async function driveApi(body, retried) {
     const r = await fetch('/api/drive-sync', {method: body ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store',
       headers: {'Content-Type': 'application/json', 'X-CSRF-Token': ERPAuth.csrfToken || ''}, ...(body ? {body: JSON.stringify(body)} : {})});
@@ -645,14 +587,15 @@
   }
   async function driveLoad(body, done) {
     driveLoading = true; if (body) render();
-    try { const d = await driveApi(body); if (d.newKey) driveNewKey = d.newKey; delete d.newKey; driveData = d; cloud.drivePending = d.pending; if (done) toast(done); }
+    const wasRunning = driveData && driveData.running;
+    try { const d = await driveApi(body); if (d.newKey) driveNewKey = d.newKey; delete d.newKey; driveData = d; if (done) toast(done);
+      if (wasRunning && !d.running) { cloud = await api('GET', null, cloud.target); toast('원본 확인이 끝났어요. 바뀐 문서는 수정 요청 목록에 있어요.'); } }
     catch (e) { toast(e.message); if (!driveData) driveData = {error: e.message}; }
-    finally { driveLoading = false; if (view === 'admin' && adminTab === 'drive') render(); }
+    finally { driveLoading = false; if (view === 'admin' && driveTab()) render(); }
     clearTimeout(drivePoll);
-    if (driveData && driveData.running) drivePoll = setTimeout(() => { if (view === 'admin' && adminTab === 'drive') driveLoad(); }, 3000);
+    if (driveData && driveData.running) drivePoll = setTimeout(() => driveLoad(), 3000);
   }
   const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
-  const driveAck = (d, x) => (d.ack || {})[x.id] === (x.sha1 || x.status);
   const driveWhen = iso => iso ? fmtAt(iso) : '';
   // 줄 단위 비교(같은 줄이 길게 이어지면 접는다). 표 행은 '열 | 열' 한 줄
   function driveDiff(asis, tobe) {
@@ -676,59 +619,54 @@
     }
     return `<ul class="v1-drv-diff">${html.join('')}</ul>`;
   }
-  function driveDoc(d, x) {
-    const acked = driveAck(d, x), moved = x.path && x.path !== `${x.folder}/${x.file}`;
+  // 원본 변경 티켓(REQ-n) 상세: 문서 위치·바뀐 인용 절 AS-IS/TO-BE(줄 단위)·영향받는 교육·안 쓰인 바뀐 절·새 절·없어진 절
+  function driveDocBody(x) {
+    const moved = x.path && x.path !== `${x.folder}/${x.file}`;
     const lesson = r => `<button type="button" class="v1-link" data-drive-step="${esc(r.id)}">${r.no}. ${esc(r.title)}</button>${r.part === 'kp' ? ` <small>교육 내용 ${r.index + 1}</small>` : ''}`;
     const sec = c => `<div class="v1-drv-sec"><h4>${esc(c.no || '')} ${esc(c.title || '')}${c.part ? ` <small>· ${esc(c.part)}</small>` : ''}</h4>` +
-      `<p class="v1-drv-who">${c.lessons.length ? '영향받는 교육 ' + c.lessons.map(lesson).join(', ') : '교육에 직접 연결되지 않은 인용'}</p>` +
+      `<p class="v1-drv-who">${(c.lessons || []).length ? '영향받는 교육 ' + c.lessons.map(lesson).join(', ') : '교육에 직접 연결되지 않은 인용'}</p>` +
       (c.missing ? `<p class="v1-note warn">새 원본에서 이 절(또는 인용한 행)을 찾지 못했어요. 절 번호·표 행이 바뀌었는지 확인이 필요해요.</p>` : '') + driveDiff(c.asis, c.tobe) + '</div>';
     const names = (label, list) => list && list.length ? `<p class="v1-drv-who"><b>${label}</b> ${list.map(([no, title]) => esc(`${no} ${title}`.trim())).join(', ')}</p>` : '';
-    const body = (x.error ? `<p class="v1-note warn">${esc(x.error)}</p>` : '') +
-      `<dl class="v1-snap-meta"><dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>${moved ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
+    return (x.error ? `<p class="v1-note warn">${esc(x.error)}</p>` : '') +
+      `<dl class="v1-snap-meta"><dt>원본 상태</dt><dd><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${x.checkedAt ? ` <small class="v1-muted">확인 ${esc(driveWhen(x.checkedAt))}</small>` : ''}</dd><dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>${moved ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
       (x.status === '없음' ? '<p class="v1-muted">드라이브에서 이 문서를 찾지 못했어요(삭제·이름 변경·이동). 기준 폴더와 파일 이름을 확인해 주세요.</p>' : '') +
-      (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두어도 돼요.</p>' : '') +
-      (x.cited || []).map(sec).join('') + names('교육에 안 쓰인 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed) +
-      `<p class="v1-drv-act"><button type="button" class="v1-tbtn" data-drive-ack="${esc(x.id)}" data-on="${acked ? 0 : 1}">${acked ? '확인함 취소' : '확인함'}</button></p>`;
-    return `<details class="v1-drv"${acked ? '' : ' open'}><summary><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${acked ? '<span class="v1-lst g">확인함</span>' : ''}<b>${esc(x.title)}</b>` +
-      `<small>${(x.cited || []).length ? `인용 절 ${(x.cited || []).length}곳 바뀜` : ''}</small></summary>${body}</details>`;
+      (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두고 기준만 갱신하면 돼요.</p>' : '') +
+      (x.cited || []).map(sec).join('') + names('교육에 안 쓰인 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed);
   }
-  function driveView() {
+  // 수정 요청 탭 목록 위 한 줄: 원본 변경 확인(마지막 확인 · 지금 확인). 바뀐 문서는 아래 목록의 '원본 문서 변경 확인' 티켓
+  function driveBar() {
     const d = driveData;
-    if (!d) { if (!driveLoading) driveLoad(); return '<section class="v1-card"><h2>원본 변경</h2><p class="v1-muted">불러오는 중…</p></section>'; }
-    if (d.error && !d.report && d.auto === undefined) return `<section class="v1-card"><h2>원본 변경</h2><p class="v1-note warn">${esc(d.error)}</p></section>`;
-    const run = d.lastRun, rep = d.report, keys = d.keys || [];
+    if (!d) { if (!driveLoading) driveLoad(); return '<div class="v1-drvbar"><p class="v1-muted">원본 변경 확인 불러오는 중…</p></div>'; }
+    if (d.error && d.auto === undefined) return `<p class="v1-note warn">${esc(d.error)}</p>`;
+    const run = d.lastRun;
+    return `<div class="v1-drvbar"><p class="v1-muted"><b>원본 변경 확인</b> ${run ? `마지막 확인 ${esc(driveWhen(run.at))} (${esc(run.by)})${run.ok ? '' : ` <span class="v1-lst r">실패</span> ${esc(run.error || '')}`}` : '아직 확인한 적이 없어요.'} · 아침 자동 확인 ${d.auto ? '켜짐' : '꺼짐'}</p>` +
+      `<button type="button" class="v1-tbtn" data-drive-run${d.running || driveLoading ? ' disabled' : ''}>${d.running ? '확인 중… (1~2분)' : '지금 확인'}</button></div>`;
+  }
+  // 설정 탭: 원본 자동 확인(아침 확인 켜기/끄기 · 드라이브 열쇠) · LLM 연결 키
+  function driveSettingsCards() {
+    const d = driveData;
+    if (!d) { if (!driveLoading) driveLoad(); return '<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-muted">불러오는 중…</p></section>'; }
+    if (d.error && d.auto === undefined) return `<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-note warn">${esc(d.error)}</p></section>`;
+    const keys = d.keys || [];
     const keyLine = !d.keyReady ? '<span class="v1-lst r">설정 필요</span> 서버 암호화 키(LMS_TOKEN_KEY)가 없어 열쇠를 저장하지 않아요. 아침 자동 확인을 쓰려면 Render 에 설정해 주세요.'
       : keys.length ? `${keys.map(k => esc(k.name || k.email)).join(', ')} <small class="v1-muted">(최근 저장 ${esc(fmtAt(new Date(keys[0].at * 1000).toISOString()))})</small>`
       : '<span class="v1-lst r">없음</span> LMS관리자 중 한 명이 로그아웃 후 다시 로그인하면 저장돼요.';
-    const head = '<section class="v1-card"><h2>원본 변경 확인</h2><p class="v1-muted">드라이브 ST_매장사업부의 원본 문서를 지금 LMS 교육이 만들어진 기준과 비교해요. 바뀐 절의 AS-IS·TO-BE 와 영향받는 교육을 보여 주고, 교육 문구는 담당자나 LLM 이 고쳐요.</p>' +
-      `<dl class="v1-snap-meta"><dt>마지막 확인</dt><dd>${run ? `${esc(driveWhen(run.at))} · ${esc(run.by)}${run.ok ? '' : ` <span class="v1-lst r">실패</span> ${esc(run.error || '')}`}` : '아직 없음'}</dd>` +
-      `<dt>아침 자동 확인</dt><dd>${d.auto ? '<span class="v1-lst g">켜짐</span>' : '<span class="v1-lst n">꺼짐</span>'} <button type="button" class="v1-tbtn" data-drive-auto="${d.auto ? 0 : 1}">${d.auto ? '끄기' : '켜기'}</button>${d.autoBy ? ` <small class="v1-muted">${esc(d.autoBy)} · ${esc(driveWhen(d.autoAt))}</small>` : ''}</dd>` +
-      `<dt>드라이브 열쇠</dt><dd>${keyLine}</dd></dl>` +
-      `<p class="v1-drv-act"><button type="button" class="v1-btn" data-drive-run${d.running || driveLoading ? ' disabled' : ''}>${d.running ? '확인 중… (문서가 많으면 1~2분)' : '지금 확인'}</button></p></section>`;
-    let result = '';
-    if (rep) {
-      const list = rep.docs.filter(x => x.status !== '그대로'), open = list.filter(x => !driveAck(d, x)), done = list.filter(x => driveAck(d, x));
-      result = `<section class="v1-card"><h2>확인 결과 <small class="v1-muted">${esc(driveWhen(rep.at))}</small></h2>` +
-        `<p class="v1-muted">근거 문서 ${rep.docs.length}편 중 그대로 ${rep.counts['그대로'] || 0}편 · 확인할 문서 ${open.length}편${done.length ? ` · 확인함 ${done.length}편` : ''}</p>` +
-        (rep.lessons.length ? `<p class="v1-drv-who"><b>영향받는 교육</b> ${rep.lessons.map(r => `<button type="button" class="v1-link" data-drive-step="${esc(r.id)}">${r.no}. ${esc(r.title)}</button>`).join(', ')}</p>` : '') +
-        (list.length ? open.concat(done).map(x => driveDoc(d, x)).join('') : '<p class="v1-note ok">모든 근거 문서가 LMS 기준과 같아요.</p>') +
-        (rep.extraCount ? `<details class="v1-drv"><summary><b>교육 근거가 아닌 문서 ${rep.extraCount}개</b><small>새로 올린 문서는 교육에 쓰려면 근거 문서로 등록해야 해요</small></summary><ul class="v1-drv-extra">${rep.extra.map(x => `<li>${esc(x.path)} <small class="v1-muted">${esc(driveWhen(x.modified))}</small></li>`).join('')}</ul></details>` : '') +
-        '</section>';
-    }
+    const auto = '<section class="v1-card"><h2>원본 변경 자동 확인</h2><p class="v1-muted">매일 아침 드라이브 ST_매장사업부 원본을 LMS 기준과 비교해요. 바뀐 문서는 수정 요청 탭에 \'원본 문서 변경 확인\' 티켓으로 올라오고, 배포로 반영되면 자동으로 \'반영됨\'이 돼요.</p>' +
+      `<dl class="v1-snap-meta"><dt>아침 자동 확인</dt><dd>${d.auto ? '<span class="v1-lst g">켜짐</span>' : '<span class="v1-lst n">꺼짐</span>'} <button type="button" class="v1-tbtn" data-drive-auto="${d.auto ? 0 : 1}">${d.auto ? '끄기' : '켜기'}</button>${d.autoBy ? ` <small class="v1-muted">${esc(d.autoBy)} · ${esc(driveWhen(d.autoAt))}</small>` : ''}</dd>` +
+      `<dt>드라이브 열쇠</dt><dd>${keyLine}</dd></dl></section>`;
     const me = String(cloud.user.email || '').toLowerCase();
-    const llm = '<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-muted">LLM(Claude·Codex)이 이 결과와 드라이브 원본을 직접 받아 교육 문구 수정을 제안할 때 써요. 사람마다 따로 만들어 본인 LLM 설정(환경변수 LMS_SYNC_KEY)에만 넣어 주세요. LMS관리자에서 해제되면 그 사람의 키는 쓸 수 없어요.</p>' +
+    const llm = '<section class="v1-card"><h2>LLM 연결 키</h2><p class="v1-muted">LLM(Claude·Codex)이 원본 변경 결과와 드라이브 원본을 직접 받아 교육 문구 수정을 제안할 때 써요. 사람마다 따로 만들어 본인 LLM 설정(환경변수 LMS_SYNC_KEY)에만 넣어 주세요. LMS관리자에서 해제되면 그 사람의 키는 쓸 수 없어요.</p>' +
       (driveNewKey ? `<div class="v1-note warn"><b>새 키 — 지금 한 번만 보여요.</b><code class="v1-drv-key">${esc(driveNewKey)}</code><button type="button" class="v1-tbtn" data-drive-copy>복사</button></div>` : '') +
       ((d.llmKeys || []).length ? `<ul class="v1-admins">${d.llmKeys.map(k => `<li><span class="v1-admin-mail">${esc(k.name || k.email)} <span class="v1-muted">(${esc(k.email)})</span><small class="v1-muted"> 만든 날 ${esc(driveWhen(k.at).slice(0, 10))} · 마지막 사용 ${k.last ? esc(driveWhen(k.last)) : '없음'}${k.active ? '' : ' · LMS관리자 아님(쓸 수 없음)'}</small></span><span class="v1-admin-ctl"><button type="button" class="v1-tbtn v1-danger" data-drive-revoke="${esc(k.id)}">끊기</button></span></li>`).join('')}</ul>` : '<p class="v1-muted">아직 만든 키가 없어요.</p>') +
       `<p class="v1-drv-act"><button type="button" class="v1-tbtn" data-drive-key>${(d.llmKeys || []).some(k => k.email === me) ? '내 키 하나 더 만들기' : '내 LLM 연결 키 만들기'}</button></p></section>`;
-    return head + result + llm;
+    return auto + llm;
   }
   $('app').addEventListener('click', e => {
-    if (view !== 'admin' || adminTab !== 'drive' || cloud.lmsLevel !== 'admin') return;
-    const b = e.target.closest('[data-drive-run],[data-drive-auto],[data-drive-ack],[data-drive-key],[data-drive-revoke],[data-drive-copy],[data-drive-step]');
-    if (!b || driveLoading) return;
+    if (!(view === 'admin' && driveTab() || view.startsWith('req:')) || cloud.lmsLevel !== 'admin') return;
+    const b = e.target.closest('[data-drive-run],[data-drive-auto],[data-drive-key],[data-drive-revoke],[data-drive-copy],[data-drive-step]');
+    if (!b || driveLoading && !b.matches('[data-drive-step]')) return;
     if (b.matches('[data-drive-run]')) driveLoad({action: 'run'}, '원본 확인을 시작했어요.');
     else if (b.matches('[data-drive-auto]')) driveLoad({action: 'auto', on: b.dataset.driveAuto === '1'}, b.dataset.driveAuto === '1' ? '매일 아침 자동 확인을 켰어요.' : '아침 자동 확인을 껐어요.');
-    else if (b.matches('[data-drive-ack]')) driveLoad({action: b.dataset.on === '1' ? 'ack' : 'unack', id: b.dataset.driveAck});
     else if (b.matches('[data-drive-key]')) driveLoad({action: 'llm-key'}, '키를 만들었어요. 지금 복사해 두세요.');
     else if (b.matches('[data-drive-revoke]')) { if (confirm('이 키를 끊을까요? 그 키를 쓰는 LLM 은 더 이상 결과를 받을 수 없어요.')) driveLoad({action: 'llm-revoke', id: b.dataset.driveRevoke}, '키를 끊었어요.'); }
     else if (b.matches('[data-drive-copy]')) copyText(driveNewKey, '키를 복사했어요. LLM 설정에 붙여 넣으세요.');
@@ -854,7 +792,7 @@
         `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}${fbsOf(r).length ? ' · 의견 ' + fbsOf(r).length : ''}</small></td>` +
         `<td class="v1-nowrap">${esc(r.name)}<small>${esc(fmtAt(r.at).slice(0, 10))}</small></td><td class="v1-nowrap">${esc(r.assignee || '—')}</td>` +
         `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`; }).join('');
-    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">모모스 담당자가 <a class="v1-link" href="/v1/graph">교육항목·원본 문서 연결도</a>에서 보낸 요청이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` +
+    return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">교육 화면 ⋮ 메뉴의 '수정 요청'으로 보낸 요청과, 원본 변경 확인이 찾은 원본 문서 변경('원본 문서 변경 확인')이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` + driveBar() +
       `<div class="v1-fbar" role="group" aria-label="상태 필터">${chips}</div>` +
       (rows ? `<div class="v1-table"><table class="v1-ltable v1-llist v1-tlist"><thead><tr><th>티켓</th><th>대상 · 종류</th><th>요청</th><th>담당</th><th>상태</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${rp.nav}`
         : `<p class="v1-muted">${all.length ? '이 상태의 요청이 없어요.' : '아직 수정 요청이 없어요.'}</p>`) +
@@ -872,7 +810,7 @@
     return `<section class="v1-card v1-logd"><div class="v1-reqtop"><p class="v1-snap-chips"><b class="v1-tkey">${esc(tkey(r))}</b><span class="v1-lkind">${esc(r.type)}</span><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span>${r.commit ? `<span class="v1-lchip">커밋 ${esc(r.commit)}</span>` : ''}</p><button type="button" class="v1-tbtn" data-req-copy>텍스트로 복사</button></div>` +
       `${reqHead(r).path ? `<p class="v1-muted v1-reqpath">${esc(reqHead(r).path)}</p>` : ''}<h2>${esc(reqHead(r).name)}</h2>` +
       `<dl class="v1-snap-meta"><dt>대상</dt><dd>${esc(r.target.kind === 'doc' ? '원본 문서' : '교육')}${r.field ? ' · ' + esc(r.field) : ''}</dd><dt>요청</dt><dd>${esc(r.name)} · ${esc(fmtAt(r.at))}</dd><dt>담당</dt><dd>${esc(r.assignee || '—')}</dd></dl>` +
-      `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>` +
+      (r.drive ? driveDocBody(r.drive) : `<div class="v1-lab v1-reqab">${r.asis ? `<div><i>AS-IS</i>${esc(r.asis).replace(/\n/g, '<br>')}</div>` : ''}<div><i>TO-BE</i>${esc(r.tobe).replace(/\n/g, '<br>')}</div></div>`) +
       (r.edit ? `<p class="v1-muted v1-ce-ticket">변경 종류(자동 추천): <b>${esc(r.edit.kind)}</b>${r.status === '진행중' ? ' · 다음 배포 때 반영' : ''}</p>` : '') +
       (r.note ? `<p class="v1-muted">메모: ${esc(r.note)}</p>` : '') + (r.reply ? (reqEdit === r.id
         ? `<div class="v1-reqform v1-replyedit"><textarea class="v1-pop-input" data-reply-text maxlength="2000" rows="3" aria-label="처리 메모 고치기">${esc(r.reply)}</textarea><div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-reply-cancel>취소</button><button type="button" class="v1-btn primary" data-reply-save>저장</button></div></div>`
@@ -974,46 +912,123 @@
       edits: ceWaiting().map(r => ({no: r.no, id: r.id, step: r.target.id, title: r.target.title, part: r.edit.part, index: r.edit.index, field: r.field,
         asis: r.asis, tobe: r.tobe, kind: r.edit.kind, note: r.note || '', by: r.name, at: r.at})),
       // 문구 수정이 아닌 진행중 요청(사진 교체·매핑 변경·원본 문서 변경 확인 등): Codex 가 AGENTS.md '콘텐츠 수정 요청 처리' 대로 제안하고 승인받아 반영
-      requests: ceOpenAll().filter(r => !r.edit).map(r => ({no: r.no, id: r.id, type: r.type, target: r.target, field: r.field, asis: r.asis, tobe: r.tobe, note: r.note || '', by: r.name, at: r.at}))};
+      requests: ceOpenAll().filter(r => !r.edit).map(r => ({no: r.no, id: r.id, type: r.type, target: r.target, field: r.field, asis: r.asis, tobe: r.tobe, note: r.note || '', by: r.name, at: r.at, ...(r.drive ? {drive: r.drive} : {})}))};
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2) + '\n'], {type: 'application/json'}));
     a.download = `content_edits_${now}.json`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     toast(`진행중 요청 ${data.edits.length + data.requests.length}건을 내려받았어요.`);
   }
   $('app').addEventListener('click', e => { if (e.target.closest('[data-ce-export]') && cloud.lmsLevel === 'admin') ceExport(); });
-  // 11/10 교육 문구 직접 수정: 줄을 누르면 편집 창(Modal dialog). 보내기 = '문구 수정' 티켓. 입력하는 동안 0.3초 뒤 검사 다시
-  $('app').addEventListener('click', e => {
-    const start = e.target.closest('[data-ce-start]');
-    if (start && ceMode && view.startsWith('step:') && cloud.lmsLevel === 'admin') {
-      const s = steps().find(x => x.id === view.slice(5)), [part, i] = start.dataset.ceStart.split(':'), index = part === 'kp' ? Number(i) : null;
-      const asis = part === 'purpose' ? s.purpose : s.keyPoints[index].text;
-      ceEdit = {step: s.id, part, index, asis, text: asis, reason: '', from: `[data-ce-start="${start.dataset.ceStart}"]`}; ceShow();
-      return;
+  // 11/16 교육 화면에서 바로 '수정 요청'(⋮ › 수정 요청, LMS관리자 admin. 예전 /v1/graph 의 수정 요청과 '문구 수정 모드'를 합쳤다):
+  // 화면이 그대로 입력칸으로 바뀌고 교육 내용마다 근거 본문이 펼쳐진다. 바꾼 곳마다 수정 요청 티켓(REQ-n) 하나.
+  // 교육 목적·교육 내용 문구는 형식 검사(ContentEdit = content_edit.py) 후 반영 대기(edit)로 — 다음 배포 때 바뀌고 티켓은 자동으로 닫힌다
+  const RQ_HINT = {'사진 교체': '원본 문서의 어느 사진으로 바꿀지 적어 주세요(예: 이카운트 SOP 5.2 두 번째 사진). 원본 문서에 있는 사진만 쓸 수 있어요.',
+    '원본 매핑 변경': '새로 근거로 삼을 원본 문서와 절을 적어 주세요(예: 매장 공간 안내 4.2).', '기타': '그 밖의 요청을 적어 주세요. 화면 구조 변경은 서비스 기획에서 따로 검토해요.'};
+  let rqe = null;
+  const rqCite = k => { const sec = content.sections[k], d = sec && content.documents[sec.doc]; return sec ? `${d ? d.title : sec.doc} ${sec.no || ''} ${sec.title || ''}${sec.partLabel ? ' · ' + sec.partLabel : ''}`.replace(/\s+/g, ' ').trim() : k; };
+  function rqeStart(s) {
+    rqe = {step: s.id, title: s.title, purpose: s.purpose || '', kps: checkItems(s).map(k => ({to: k.text, del: false, cite: null})), adds: {},
+      photos: s.photos.map(() => ({to: null, del: false})), photoAdd: null, other: '', note: '', err: {}, busy: false};  // 사진: to = 교체 요청(null = 안 함)
+  }
+  // 바꾼 곳 → 보낼 요청 목록(화면 순서). key = 입력칸
+  function rqeChanges(s) {
+    const items = checkItems(s), hasKp = (s.keyPoints || []).length, L = hasKp ? '교육 내용' : '체크 항목', t = x => String(x || '').trim(), out = [];
+    if (t(rqe.title) !== s.title) out.push({key: 'title', type: '문구 수정', field: '교육 제목', asis: s.title, tobe: t(rqe.title)});
+    if (t(rqe.purpose) !== t(s.purpose)) out.push({key: 'purpose', type: '문구 수정', field: '교육 목적', asis: s.purpose || '', tobe: t(rqe.purpose), edit: hasKp ? {part: 'purpose', index: null} : null});
+    rqe.photos.forEach((v, i) => { const ph = content.photos[s.photos[i]] || {}, asis = `${ph.caption || '(설명 없음)'}${ph.cite ? '\n원본: ' + rqCite(ph.cite) : ''}`;
+      if (v.del) out.push({key: 'photo' + i, type: '사진 삭제', field: `사진 ${i + 1}`, asis, tobe: '(삭제)'});
+      else if (v.to !== null && t(v.to)) out.push({key: 'photo' + i, type: '사진 교체', field: `사진 ${i + 1}`, asis, tobe: t(v.to)}); });
+    if (rqe.photoAdd !== null && t(rqe.photoAdd)) out.push({key: 'photoAdd', type: '사진 추가', field: '사진 추가', asis: '(새 사진)', tobe: t(rqe.photoAdd)});
+    const add = p => { if (t(rqe.adds[p])) out.push({key: 'add' + p, type: '교육 내용 추가', field: p === 0 ? `${L} 맨 앞에 추가` : `${L} ${p}번 뒤에 추가`,
+      asis: p === 0 ? (items[0] ? `(지금 1번) ${items[0].text}` : '(교육 내용 없음)') : `(지금 ${p}번) ${items[p - 1].text}`, tobe: t(rqe.adds[p])}); };
+    add(0);
+    items.forEach((k, i) => {
+      const e = rqe.kps[i];
+      if (e.del) out.push({key: 'kp' + i, type: '문구 삭제', field: `${L} ${i + 1}`, asis: k.text, tobe: '(삭제)'});
+      else if (t(e.to) !== k.text) out.push({key: 'kp' + i, type: '문구 수정', field: `${L} ${i + 1}`, asis: k.text, tobe: t(e.to), edit: hasKp ? {part: 'kp', index: i} : null});
+      if (e.cite !== null && t(e.cite)) out.push({key: 'cite' + i, type: '원본 매핑 변경', field: `${L} ${i + 1}의 근거`, asis: `${k.text}\n근거: ${(k.cites || []).map(rqCite).join(' / ') || '(없음)'}`, tobe: t(e.cite)});
+      add(i + 1);
+    });
+    if (t(rqe.other)) out.push({key: 'other', type: '기타', field: '', asis: '', tobe: t(rqe.other)});
+    return out;
+  }
+  const rqeDirty = () => { const s = rqe && steps().find(x => x.id === rqe.step); return Boolean(s && (rqeChanges(s).length || String(rqe.note).trim())); };
+  function rqeView(s, inlineSource) {
+    const items = checkItems(s), L = (s.keyPoints || []).length ? '교육 내용' : '체크 항목', ch = rqeChanges(s), changed = new Set(ch.map(c => c.key)), err = rqe.err;
+    const help = key => err[key] ? `<p class="v1-ce-err" role="alert">${esc(err[key])}</p>` : '';
+    const ta = (key, val, rows, label, ph = '') => `<textarea class="v1-ce-input v1-rqe-in${changed.has(key) ? ' changed' : ''}${err[key] ? ' error' : ''}" data-rqe="${key}" rows="${rows}" aria-label="${esc(label)}"${ph ? ` placeholder="${esc(ph)}"` : ''}>${esc(val)}</textarea>${help(key)}`;
+    const src = keys => keys.length ? `<details class="v1-rqe-src" open><summary>근거 본문</summary><div class="v1-src-body">${keys.map(inlineSource).join('')}</div></details>` : '';
+    const addSlot = p => rqe.adds[p] !== undefined
+      ? `<li class="v1-rqe-add"><div class="v1-kcard v1-rqe-card"><p class="v1-ce-label">새 ${L} (${p === 0 ? '맨 앞' : p + '번 뒤'})</p>${ta('add' + p, rqe.adds[p], 2, `새 ${L}`)}<div class="v1-rqe-tools"><button type="button" class="v1-tbtn" data-rqe-unadd="${p}">추가 취소</button></div></div></li>`
+      : `<li class="v1-rqe-slot"><button type="button" class="v1-tbtn" data-rqe-add="${p}">+ 여기에 ${L} 추가</button></li>`;
+    const kps = `<ol class="v1-kp v1-rqe-list">${addSlot(0)}${items.map((k, i) => { const e = rqe.kps[i];
+      return `<li class="v1-kc${e.del ? ' v1-rqe-del' : ''}"><div class="v1-kcard v1-rqe-card"><p class="v1-ce-label">${L} ${i + 1}${e.del ? ' <span class="v1-lst r">삭제 요청</span>' : changed.has('kp' + i) ? ' <span class="v1-lst b">고침</span>' : ''}</p>` +
+        (e.del ? `<p class="v1-rqe-deltext">${esc(k.text).replace(/\n/g, '<br>')}</p>` : ta('kp' + i, e.to, 2, `${L} ${i + 1}`)) +
+        `<div class="v1-rqe-tools"><button type="button" class="v1-tbtn" data-rqe-del="${i}">${e.del ? '삭제 취소' : '삭제'}</button><button type="button" class="v1-tbtn" data-rqe-cite="${i}">${e.cite === null ? '근거 변경' : '근거 변경 취소'}</button></div>` +
+        (e.cite !== null ? `<p class="v1-ce-label">새 근거 (원본 문서·절)</p>${ta('cite' + i, e.cite, 1, '새 근거', RQ_HINT['원본 매핑 변경'])}` : '') +
+        src([...new Set(k.cites || [])]) + '</div></li>' + addSlot(i + 1); }).join('')}</ol>`;
+    // 사진: 올라간 사진마다 [교체]·[삭제], 맨 아래 [+ 사진 추가]. 어느 사진으로 바꿀지·넣을지는 원본 문서의 사진으로 적는다(반영할 때 원본에서 찾아 넣는다)
+    const shots = s.photos.map(p => content.photos[p]);
+    const photos = `<h2 class="v1-rqe-h">사진</h2>` + shots.map((p, i) => { if (!p) return ''; const v = rqe.photos[i];
+        return `<div class="v1-rqe-photo${v.del ? ' v1-rqe-del' : ''}"><figure class="v1-photo"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy"><figcaption>사진 ${i + 1} · ${esc(p.caption || '')}${p.cite ? ` <small class="v1-muted">(원본: ${esc(rqCite(p.cite))})</small>` : ''}${v.del ? ' <span class="v1-lst r">삭제 요청</span>' : ''}</figcaption></figure>` +
+        `<div class="v1-rqe-tools"><button type="button" class="v1-tbtn" data-rqe-ptoggle="${i}"${v.del ? ' disabled' : ''}>${v.to === null ? '교체' : '교체 취소'}</button><button type="button" class="v1-tbtn" data-rqe-pdel="${i}">${v.del ? '삭제 취소' : '삭제'}</button></div>` +
+        (v.to !== null && !v.del ? `<p class="v1-ce-label">바꿀 사진</p>${ta('photo' + i, v.to, 2, `사진 ${i + 1} 교체`, RQ_HINT['사진 교체'])}` : '') + '</div>'; }).join('') +
+      (rqe.photoAdd === null ? `<p><button type="button" class="v1-tbtn" data-rqe-padd>+ 사진 추가</button></p>`
+        : `<p class="v1-ce-label">새 사진</p>${ta('photoAdd', rqe.photoAdd, 2, '사진 추가', RQ_HINT['사진 교체'])}<p><button type="button" class="v1-tbtn" data-rqe-padd>추가 취소</button></p>`);
+    const needNote = ch.some(c => c.edit);
+    return learnerBar() + `<div class="v1-ce-modebar" role="status"><span>수정 요청 중 — 고칠 곳을 바로 고치세요. 바꾼 곳마다 수정 요청(REQ)이 하나씩 만들어지고, 아래 [취소]로 나갈 수 있어요.</span></div>` +
+      `<section class="v1-card"><p class="v1-ce-label">교육 제목${changed.has('title') ? ' <span class="v1-lst b">고침</span>' : ''}</p><input class="v1-ce-input v1-ce-one v1-rqe-in${changed.has('title') ? ' changed' : ''}" data-rqe="title" value="${esc(rqe.title)}" aria-label="교육 제목">` +
+      `<h2 class="v1-rqe-h">교육 목적${changed.has('purpose') ? ' <span class="v1-lst b">고침</span>' : ''}</h2>${ta('purpose', rqe.purpose, 2, '교육 목적')}${photos}</section>` +
+      `<section class="v1-card"><h2>${L}</h2><p class="v1-muted">글을 바로 고치거나, 줄마다 삭제·근거 변경, 줄 사이에 새 ${L}을 넣을 수 있어요. 근거 본문을 보면서 고치세요.</p>${kps}</section>` +
+      `<section class="v1-card"><h2>그 밖의 요청</h2>${ta('other', rqe.other, 2, '그 밖의 요청', RQ_HINT['기타'])}</section>` +
+      `<div class="v1-rqe-bar"><div class="v1-rqe-barin"><p class="v1-rqe-count" data-rqe-count>바꾼 곳 <b>${ch.length}</b>개</p>` +
+      `<input class="v1-ce-input v1-ce-one${err.note ? ' error' : ''}" data-rqe="note" maxlength="2000" value="${esc(rqe.note)}" placeholder="메모(이유·근거)${needNote ? ' — 교육 목적·내용 문구를 고치면 필수' : ''}" aria-label="메모">` +
+      `<div class="v1-ce-btns"><button type="button" class="v1-btn" data-rqe-cancel>취소</button><button type="button" class="v1-btn primary" data-rqe-send${rqe.busy ? ' disabled' : ''}>요청 보내기</button></div></div>${help('note')}</div>`;
+  }
+  $('app').addEventListener('input', e => {
+    const el = e.target.closest('[data-rqe]'); if (!el || !rqe) return;
+    const k = el.dataset.rqe, v = el.value, m = k.match(/^(kp|cite|add|photo)(\d+)$/);
+    if (!m) rqe[k] = v; else if (m[1] === 'kp') rqe.kps[+m[2]].to = v; else if (m[1] === 'cite') rqe.kps[+m[2]].cite = v; else if (m[1] === 'add') rqe.adds[+m[2]] = v; else rqe.photos[+m[2]].to = v;
+    const s = steps().find(x => x.id === rqe.step), ch = rqeChanges(s), cnt = $('app').querySelector('[data-rqe-count]');
+    if (cnt) cnt.innerHTML = `바꾼 곳 <b>${ch.length}</b>개`;
+    if (k !== 'note') el.classList.toggle('changed', ch.some(c => c.key === k));
+  });
+  $('app').addEventListener('click', async e => {
+    if (!rqe || view !== 'step:' + rqe.step) return;
+    const b = e.target.closest('[data-rqe-del],[data-rqe-cite],[data-rqe-add],[data-rqe-unadd],[data-rqe-ptoggle],[data-rqe-pdel],[data-rqe-padd],[data-rqe-cancel],[data-rqe-send]'); if (!b) return;
+    if (b.dataset.rqePtoggle !== undefined) { const x = rqe.photos[+b.dataset.rqePtoggle]; x.to = x.to === null ? '' : null; return render(); }
+    if (b.dataset.rqePdel !== undefined) { const x = rqe.photos[+b.dataset.rqePdel]; x.del = !x.del; return render(); }
+    if (b.matches('[data-rqe-padd]')) { rqe.photoAdd = rqe.photoAdd === null ? '' : null; return render(); }
+    if (b.dataset.rqeDel !== undefined) { const x = rqe.kps[+b.dataset.rqeDel]; x.del = !x.del; return render(); }
+    if (b.dataset.rqeCite !== undefined) { const x = rqe.kps[+b.dataset.rqeCite]; x.cite = x.cite === null ? '' : null; return render(); }
+    if (b.dataset.rqeAdd !== undefined) { rqe.adds[+b.dataset.rqeAdd] = ''; render(); $('app').querySelector(`[data-rqe="add${b.dataset.rqeAdd}"]`)?.focus(); return; }
+    if (b.dataset.rqeUnadd !== undefined) { delete rqe.adds[+b.dataset.rqeUnadd]; return render(); }
+    if (b.matches('[data-rqe-cancel]')) { if (rqeDirty() && !confirm('고치던 수정 요청을 버릴까요?')) return; rqe = null; render(); return; }
+    // 보내기: 모두 먼저 검사하고(형식 검사·메모), 통과하면 바꾼 곳마다 차례로 보낸다
+    const s = steps().find(x => x.id === rqe.step), ch = rqeChanges(s);
+    rqe.err = {};
+    if (!ch.length) { toast('바꾼 곳이 없어요.'); return; }
+    for (const c of ch) if (c.edit) {
+      const o = ceOpen(s.id, c.edit.part, c.edit.index), block = ContentEdit.check(c.edit.part, c.asis, c.tobe, o && o.no).items.find(i => i.level === 'block');
+      if (block) rqe.err[c.key] = block.text;
     }
-    if (e.target.closest('[data-ce-mode-off]')) { ceMode = false; ceHide(true); render(); }
-  });
-  ceDlg().addEventListener('click', async e => {
-    if (!ceEdit) return;
-    const box = ceDlg();
-    if (e.target.closest('[data-ce-keep]')) { box.querySelector('[data-ce-confirm]').hidden = true; box.querySelector('[data-ce-text]').focus(); return; }
-    if (e.target.closest('[data-ce-drop]')) { ceHide(true); return; }
-    if (e.target.closest('[data-ce-close]')) { ceHide(); return; }
-    const tab = e.target.closest('[data-ce-tab]');
-    if (tab) { box.querySelectorAll('[data-ce-tab]').forEach(x => x.setAttribute('aria-selected', String(x === tab))); box.querySelector('.v1-ce-body').dataset.cePane = tab.dataset.ceTab; return; }
-    if (e.target.closest('[data-ce-send]')) {
-      const s = steps().find(x => x.id === ceEdit.step), r = ceRun(), x = ceEdit;
-      if (r.items.some(i => i.level === 'block') || !x.reason.trim()) return;
-      const before = new Set((cloud.contentRequests || []).map(q => q.id));
-      const ok = await act('content.request', {target: {kind: 'item', id: s.id, title: s.title}, type: '문구 수정', field: x.part === 'purpose' ? '교육 목적' : `교육 내용 ${x.index + 1}`,
-        asis: x.asis, tobe: x.text.trim(), note: x.reason.trim(), edit: {part: x.part, index: x.index, kind: r.suggest}});  // 변경 종류는 자동 추천(11/10: 고르는 칸은 BACKLOG 4번 때 다시)
-      if (ok) { const n = (cloud.contentRequests || []).find(q => !before.has(q.id)); ceHide(true); render(); toast(`${n ? n.no + ' ' : ''}반영 대기로 저장했어요. 다음 배포 때 반영돼요.`); }
+    if (ch.some(c => c.edit) && !rqe.note.trim()) rqe.err.note = '교육 목적·교육 내용 문구를 고치면 메모(수정 사유)를 적어 주세요.';
+    if (Object.keys(rqe.err).length) { render(); const f = $('app').querySelector('.v1-rqe-in.error, [data-rqe="note"].error'); if (f) { f.scrollIntoView({block: 'center'}); f.focus({preventScroll: true}); } return; }
+    rqe.busy = true; render();
+    const sent = [];
+    try {
+      for (const c of ch) {
+        const before = new Set((cloud.contentRequests || []).map(q => q.id));
+        cloud = await api('POST', {action: 'content.request', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision, requestId: uid(),
+          data: {target: {kind: 'item', id: s.id, title: s.title}, type: c.type, field: c.field, asis: c.asis, tobe: c.tobe, note: rqe.note.trim(), ...(c.edit ? {edit: c.edit} : {})}});
+        const n = (cloud.contentRequests || []).find(q => !before.has(q.id)); if (n) sent.push(n.no);
+        if (c.key === 'title') rqe.title = s.title; else if (c.key === 'purpose') rqe.purpose = s.purpose || '';
+      }
+      rqe = null; render(); window.scrollTo({top: 0, behavior: 'instant'});
+      toast(`수정 요청 ${sent.length}건을 보냈어요${sent.length ? ' (' + sent.join(', ') + ')' : ''}. LMS관리자 › 수정 요청에서 볼 수 있어요.`);
+    } catch (err) {
+      rqe.busy = false; rqe.err.note = (sent.length ? `${sent.join(', ')} 은 보냈고, ` : '') + err.message; render();
     }
   });
-  ceDlg().addEventListener('input', e => {
-    if (!ceEdit) return;
-    if (e.target.matches('[data-ce-text]')) { ceEdit.text = e.target.value; clearTimeout(ceTimer); ceTimer = setTimeout(ceRefresh, 300); }
-    else if (e.target.matches('[data-ce-reason]')) { ceEdit.reason = e.target.value; ceRefresh(); }
-  });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ceEdit && !ceDlg().hidden) { e.preventDefault(); const c = ceDlg().querySelector('[data-ce-confirm]'); if (!c.hidden) { c.hidden = true; return; } ceHide(); } });
   // 아직 이어지지 않은 반영 기록(최근 순) 고르기
   const logPick = r => (cloud.sourceLog || []).filter(e => !logsOf(r).includes(e)).slice(0, 30).map(e => `<option value="${esc(e.id)}">${esc(String(e.at).slice(0, 10))} · ${esc(e.title)}</option>`).join('');
   $('app').addEventListener('click', async e => {
@@ -1178,15 +1193,9 @@
       if (editMark) return `<div class="v1-khead"><label class="v1-kcheck"><input type="checkbox" data-mark="${k}" aria-label="${k + 1}번 교육 내용 체크" ${on ? 'checked' : ''}><span class="v1-box"></span></label>${who}</div>`;
       return on ? `<div class="v1-khead v1-khead-ro">${who}</div>` : '';
     };
-    // 11/10 교육 문구 직접 수정: LMS관리자 admin 에게만 '문구 수정'(검토 중이면 티켓 번호)
-    // 11/10: 항목마다 버튼을 두지 않고 ⋮ › '문구 수정 모드'에서만 — 글을 누르면 고치는 칸. 모드 중에는 체크·본문 펼치기 대신 고치기
-    const ceOn = ceMode && cloud.lmsLevel === 'admin' && Boolean((s.keyPoints || []).length);
-    const cePick = (part, index, text, cls = '') => { const o = ceOpen(s.id, part, index), html = esc(text).replace(/\n/g, '<br>');
-      return o ? `<div class="v1-ce-busy ${cls}">${html}<button type="button" class="v1-ce-tag" data-open-req="${esc(o.no)}">반영 대기 · ${esc(o.no)}</button></div>`
-        : `<button type="button" class="v1-ce-pick ${cls}" data-ce-start="${part}:${index ?? ''}" aria-label="${part === 'purpose' ? '교육 목적' : `교육 내용 ${index + 1}`} 고치기" ${busy ? 'disabled' : ''}>${html}</button>`; };
+    if (rqe && rqe.step === s.id && cloud.lmsLevel === 'admin') return rqeView(s, inlineSource);  // 11/16 수정 요청 중: 입력칸 화면
     const keyPoints = items.length ? `<ol class="v1-kp">${items.map((k, n) => {
       const keys = [...new Set(k.cites || [])];
-      if (ceOn) return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}" data-kp="${n}"><div class="v1-kcard">${cePick('kp', n, k.text)}</div></li>`;
       return `<li class="v1-kc${r.teacher[n] ? ' on' : ''}" data-kp="${n}"><div class="v1-kcard">${head(n)}${keys.length ? `<details class="v1-topic${k.text.length <= 12 ? ' short' : ''}" id="kp-${n}"><summary><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span><span class="v1-topic-foot">${hint}</span></summary>${body(keys)}</details>`
         : `<div class="v1-topic"><span class="v1-topic-text">${esc(k.text).replace(/\n/g, '<br>')}</span></div>`}</div></li>`;
     }).join('')}</ol>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
@@ -1204,13 +1213,12 @@
     const memo = own || trainer ? `<section class="v1-card"><h2>의견 보내기</h2>` +
       `<textarea class="v1-memo" data-feedback maxlength="2000" placeholder="${trainer ? '교육 내용에서 고칠 점이나 의견을 입력해주세요.' : '궁금하거나 이해가 어려운 점을 입력해주세요.'}"></textarea>` +
       `<div class="v1-actions v1-actions-inline"><button type="button" class="v1-btn" data-feedback-send>보내기</button></div></section>` : '';
-    const purpose = s.purpose && ceOn ? cePick('purpose', null, s.purpose, 'v1-purpose') : s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
+    const purpose = s.purpose ? `<p class="v1-purpose">${esc(s.purpose).replace(/\n/g, '<br>')}</p>` : `<div class="v1-copy">${s.copy.map(p => `<p>${esc(p)}</p>`).join('')}</div>`;
     const u = unitOf(s.id);
     const rework = s.reworkPending ? `<div class="v1-note">보완 예정 세션 — 지금 내용은 이전 교육안이에요.${s.sessionNote ? ' ' + esc(s.sessionNote) : ''}</div>` : '';
-    const guide = ceOn ? '고칠 글을 누르세요. 수정 모드에서는 체크·본문 펼치기가 잠시 꺼져요.' : trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
+    const guide = trainer ? (st === 'done' ? '완료한 교육이에요. 고칠 게 있으면 아래 「완료 취소」를 누르세요.' : '교육한 항목을 체크하세요. 모두 체크하면 「완료」를 누를 수 있어요. 글을 누르면 근거 본문이 펼쳐져요.')
       : '글을 누르면 근거 본문이 펼쳐져요.';
-    const ceBanner = ceOn ? `<div class="v1-ce-modebar" role="status"><span>문구 수정 모드 — 고칠 교육 목적이나 교육 내용을 누르세요.</span><button type="button" class="v1-ce-action" data-ce-mode-off>끝내기</button></div>` : '';
-    return learnerBar() + ceBanner + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
+    return learnerBar() + `<section class="v1-card"><span class="v1-pill ${st}">${esc(STATUS[st])}</span> <span class="v1-muted">${esc(u.no || '')} ${esc(u.title)}</span>${rework}` +
       `<h2 style="margin-top:var(--spacing-12)">교육 목적</h2>${purpose}${toolGuideHTML(s)}${photos}` +
       (s.note ? `<div class="v1-note warn">${esc(s.note)}</div>` : '') + `${enrolNotice()}${status}</section>` +
       `<section class="v1-card"><h2>교육 내용</h2><p class="v1-muted">${guide}</p>${keyPoints}${refDocs}</section>` +
@@ -1348,8 +1356,7 @@
   function onMenuOpen() {
     const s = view.startsWith('step:') && steps()[stepIndex(view.slice(5))];
     $('v1ExportPdf').hidden = !s || planned(s);
-    const canEdit = Boolean(s && !planned(s) && cloud.lmsLevel === 'admin' && (s.keyPoints || []).length);
-    $('v1EditMode').hidden = $('v1EditSep').hidden = !canEdit; $('v1EditMode').textContent = ceMode ? '문구 수정 끝내기' : '문구 수정 모드';
+    $('v1ReqOpen').hidden = $('v1EditSep').hidden = !(s && !planned(s) && cloud.lmsLevel === 'admin');  // 11/16 '문구 수정 모드'는 없애고 '수정 요청' 하나로
     if (!s || planned(s)) return;
     if (androidWebView || canShareFiles()) prepPdf(s);
   }
@@ -1403,7 +1410,7 @@
   };
   $('v1MoreBtn').onclick = e => { e.stopPropagation(); closeMe(); const open = $('v1Menu').hidden; if (open) onMenuOpen(); $('v1Menu').hidden = !open; $('v1MoreBtn').setAttribute('aria-expanded', String(open)); };
   $('v1ExportPdf').onclick = exportPdf;
-  $('v1EditMode').onclick = () => { closeMenu(); ceMode = !ceMode; ceEdit = null; render(); window.scrollTo({top: 0, behavior: 'instant'}); };
+  $('v1ReqOpen').onclick = () => { closeMenu(); const s = view.startsWith('step:') && steps().find(x => x.id === view.slice(5)); if (s && !rqe) { rqeStart(s); render(); window.scrollTo({top: 0, behavior: 'instant'}); } };
   document.addEventListener('click', e => { if (!$('v1More').contains(e.target)) closeMenu(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Menu').hidden) { closeMenu(); $('v1MoreBtn').focus(); } });
 

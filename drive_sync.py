@@ -6,6 +6,7 @@ WORKS 드라이브 ST_매장사업부(works_auth.DOCS_PATH) 원본을 'LMS 를 �
   결과  문서마다: 그대로 / 바뀜 / 새 판(같은 폴더, 날짜만 다른 파일) / 이동 / 내용 같음(파일만 다름) / 없음 / 확인 실패.
         바뀐 문서는 절 단위로: 교육이 인용한 절의 AS-IS·TO-BE 와 영향받는 교육, 교육에 안 쓰인 바뀐 절·새 절·없어진 절.
   바뀐 곳 찾기는 코드(sha1·절 해시)가 하고, 교육 문구 고치기는 사람·LLM 이 한다(AGENTS.md '드라이브 sync 맞춰줘').
+  바뀐 문서마다 수정 요청 티켓('원본 문서 변경 확인', REQ-n)을 만들고, 배포 뒤 '그대로'가 되면 '반영됨'으로 닫는다(onboarding.sync_drive_tickets).
 
 실행
   LMS관리자 › 원본 변경 › '지금 확인'      누른 사람의 WORKS 로그인 열쇠(없으면 저장된 열쇠)
@@ -28,7 +29,7 @@ from pathlib import Path
 import lms_store as projects
 
 APP = Path(__file__).parent
-STATE_KEY = 30_000_000_001      # 마지막 확인 결과 · 파일 sha1 캐시 · 아침 확인 켜기/끄기 · 확인함 표시
+STATE_KEY = 30_000_000_001      # 마지막 확인 결과 · 파일 sha1 캐시 · 아침 확인 켜기/끄기
 LLM_KEYS_KEY = 30_000_000_003   # 사람별 LLM 연결 키(지문만)
 EXTRA_LIMIT = 200
 _LOCK = threading.Lock()
@@ -210,12 +211,6 @@ def compare(base, tree, fetch):
                 counts=counts, lessons=sorted(lessons.values(), key=lambda x: x['no']), docs=docs, extra=extra[:EXTRA_LIMIT], extraCount=len(extra))
 
 
-def pending(state):
-    """확인할 문서 수: 그대로가 아니고, '확인함'으로 표시하지 않은(또는 그 뒤 또 바뀐) 문서."""
-    rep, ack = state.get('report') or {}, state.get('ack') or {}
-    return sum(1 for d in rep.get('docs') or [] if d['status'] != '그대로' and ack.get(d['id']) != (d.get('sha1') or d['status']))
-
-
 # --- 상태(DB metadata 한 줄) ----------------------------------------------------------------------------
 
 def read_state(store):
@@ -268,7 +263,12 @@ def run(store, token, by, base=None):
         def save(st):
             st.update(report=report, cache={k: v for k, v in cache.items() if k in ids}, lastRun=dict(at=report['at'], by=by, ok=True))
         update_state(store, save)
-        print(f"drive sync: {by} ok docs={len(report['docs'])} counts={report['counts']}", flush=True)
+        try:  # 바뀐 문서 → 수정 요청 티켓(REQ-n). 실패해도 확인 결과는 남는다
+            import onboarding
+            report['tickets'] = onboarding.sync_drive_tickets(store, report, by)
+        except Exception as e:
+            print(f'drive sync: tickets failed {type(e).__name__}', flush=True)
+        print(f"drive sync: {by} ok docs={len(report['docs'])} counts={report['counts']} tickets={report.get('tickets')}", flush=True)
         return report
     except Busy:
         raise
@@ -302,23 +302,23 @@ def set_auto(store, on, user):
     update_state(store, lambda st: st.update(auto=bool(on), autoBy=user.get('name') or '', autoAt=stamp()))
 
 
-def set_ack(store, ident, on):
-    def fn(st):
-        doc = next((d for d in (st.get('report') or {}).get('docs') or [] if d['id'] == ident), None)
-        if not doc:
-            raise ValueError('확인할 문서를 찾지 못했어요.')
-        ack = st.setdefault('ack', {})
-        if on:
-            ack[ident] = doc.get('sha1') or doc['status']
-        else:
-            ack.pop(ident, None)
-    update_state(store, fn)
-
-
 def view(store):
     st = read_state(store)
     return dict(auto=bool(st.get('auto')), autoBy=st.get('autoBy'), autoAt=st.get('autoAt'), lastRun=st.get('lastRun'),
-                report=st.get('report'), ack=st.get('ack') or {}, pending=pending(st), running=dict(_RUNNING) or None)
+                report=st.get('report'), running=dict(_RUNNING) or None)
+
+
+def drive_tickets(store):
+    """문서 id → 그 문서의 원본 변경 티켓(가장 최근) {no, status}. LLM 이 반영 기록 tickets 에 적을 번호."""
+    import onboarding
+    with store.connect() as db:
+        root = projects.Rooms.read(db, onboarding.ROOT) or {}
+    out = {}
+    for r in root.get('contentRequests') or []:
+        d = r.get('drive') or {}
+        if d.get('docId'):
+            out[d['docId']] = dict(no=r.get('no'), status=onboarding.req_status(r.get('status')), version=d.get('version'))
+    return out
 
 
 # --- 사람별 LLM 연결 키 ---------------------------------------------------------------------------------

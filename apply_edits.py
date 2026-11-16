@@ -70,10 +70,14 @@ def main(argv=None):
     lessons, log = json.loads(lraw), json.loads(graw)
     nos = lesson_numbers()
     done, skipped = [], []
+    # 11/16 같은 교육 내용 줄에 '원본 매핑 변경'(근거 변경) 요청도 진행중이면 문구만 먼저 바꾸지 않는다 — 새 문구와 새 근거가 맞는지 함께 확인(AGENTS.md)
+    remap = {(r.get('target') or {}).get('id') + '|' + str(r.get('field') or '').replace('의 근거', '') for r in data.get('requests') or [] if r.get('type') == '원본 매핑 변경'}
     for e in data.get('edits') or []:
         key = f"{e.get('no')} {e.get('field')} ({e.get('title')})"
         if e.get('no') in a.skip:
             skipped.append((key, '이번에는 빼기로 함(--skip)')); continue
+        if f"{e.get('step')}|{e.get('field')}" in remap:
+            skipped.append((key, '같은 줄의 근거 변경 요청과 함께 확인해야 해요 — 새 문구·새 근거가 원문과 맞는지 보고 함께 반영')); continue
         l = lessons['lessons'].get(e.get('step'))
         try:
             text, _ = ce.current(ce.load(APP), e.get('step'), e.get('part'), e.get('index'))
@@ -110,8 +114,8 @@ def main(argv=None):
     for e in done: by.setdefault(e['step'], []).append(e)
     log['entries'].insert(0, dict(
         id=f"{now:%Y-%m-%d}-content-edits-{now:%H%M}", at=f"{now:%Y-%m-%d %H:%M}", approvedBy=', '.join(dict.fromkeys(e.get('by') or '' for e in done)),
-        tickets=[e['no'] for e in done], title=f"문구 수정 {len(done)}건 반영 — LMS 화면 '문구 수정 모드'",
-        basis=dict(kind='문구 수정', at=f"{now:%Y-%m-%d}", origin="LMS관리자 › 문구 수정 모드 → 반영 대기 문구 내려받기", copy=Path(a.file).name,
+        tickets=[e['no'] for e in done], title=f"문구 수정 {len(done)}건 반영 — LMS 화면 '수정 요청 › 문구 수정'",
+        basis=dict(kind='문구 수정', at=f"{now:%Y-%m-%d}", origin="LMS관리자 › 수정 요청(문구 수정) → 반영 대기 문구 내려받기", copy=Path(a.file).name,
                    range=', '.join(e['no'] for e in done)),
         basisCount=len(json.loads((APP / 'source_manifest.json').read_text(encoding='utf-8')).get('documents', [])),
         work='화면에서 고친 교육 목적·교육 내용 문구를 apply_edits.py 로 v1_lessons.json 에 반영(근거·순서·칸 수 그대로, 수정 필요 7개 검사 통과).',
@@ -138,7 +142,7 @@ def finish(nos, branch):
             print(f"\n{name} 에서 멈췄어요. 바꾼 파일은 되돌렸고 커밋하지 않았어요.\n{out}")
             return 1
     git('add', '--', *FILES)
-    msg = f"문구 수정 반영 {', '.join(nos)} — LMS 화면 '문구 수정 모드'"
+    msg = f"문구 수정 반영 {', '.join(nos)} — LMS 화면 '수정 요청 › 문구 수정'"
     if git('commit', '-m', msg) is None:
         git('reset', '-q', '--', *FILES); git('checkout', '--', *FILES)
         print('\n커밋하지 못했어요(git 설정을 확인해 주세요). 바꾼 파일은 되돌렸어요.'); return 1

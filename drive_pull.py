@@ -5,7 +5,7 @@
   LMS_SYNC_KEY  LMS관리자 › 원본 변경 › 'LLM 연결 키 만들기'로 받은 사람별 키. 저장소·로그에 넣지 않는다(환경변수로만).
   --fresh       서버가 드라이브를 지금 다시 확인한 뒤 결과를 준다(없으면 마지막 확인 결과 — 아침 자동 확인 등).
 결과
-  <out>/report.json                 확인 결과 전체(문서별 상태, 교육이 인용한 절 AS-IS·TO-BE, 영향받는 교육)
+  <out>/report.json                 확인 결과 전체(문서별 상태, 교육이 인용한 절 AS-IS·TO-BE, 영향받는 교육, 문서별 수정 요청 티켓 REQ-n)
   <out>/ST_매장사업부/<폴더>/<파일>   지금 드라이브의 원본 docx(교육 근거 문서 전부 — 다시 색인하려면 전부 필요)
   화면에는 바뀐 문서·절·교육 요약과 다음 할 일을 적는다. <out> 은 저장소에 커밋하지 않는다(.gitignore).
 """
@@ -37,11 +37,12 @@ def get(url, key, timeout=600):
 def summary(rep):
     lines = [f"확인: {rep.get('at', '')} · {rep.get('by', '')} · 기준 manifest {rep['baseline'].get('manifestUpdated', '')} · 문서 {len(rep['docs'])}편",
              '상태: ' + ', '.join(f'{k} {v}' for k, v in sorted(rep['counts'].items()))]
-    ack = rep.get('ack') or {}
+    tickets = rep.get('tickets') or {}
     for d in rep['docs']:
         if d['status'] == '그대로':
             continue
-        done = ' (관리자 확인함)' if ack.get(d['id']) == (d.get('sha1') or d['status']) else ''
+        tk = tickets.get(d['id'])
+        done = f" {tk['no']}({tk['status']})" if tk else ''
         lines.append(f"\n[{d['status']}]{done} {d['title']} — {d['folder']}/{d['file']}" + (f" → {d['path']}" if d.get('path') and d['path'] != f"{d['folder']}/{d['file']}" else ''))
         if d.get('error'):
             lines.append('  오류: ' + d['error'])

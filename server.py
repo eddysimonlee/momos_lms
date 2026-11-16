@@ -196,7 +196,7 @@ class Handler(BaseHTTPRequestHandler):
             state = drive_sync.view(store)
             if not state['report']:
                 return self.send(404, {'error': '아직 확인 결과가 없어요. ?fresh=1 로 지금 확인하세요.'})
-            return self.send(200, dict(state['report'], ack=state['ack'], pending=state['pending'], lastRun=state['lastRun']))
+            return self.send(200, dict(state['report'], tickets=drive_sync.drive_tickets(store), lastRun=state['lastRun']))
         report = drive_sync.read_state(store).get('report') or {}
         ident, want = query.get('doc', [''])[0], drive_sync.nfc(query.get('path', [''])[0])
         hit = next((d for d in report.get('docs') or [] if d.get('fileId') and ((ident and d['id'] == ident) or (want and d.get('path') == want))), None) \
@@ -524,7 +524,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise PermissionError('업무문서 폴더 확인은 LMS관리자 admin 만 할 수 있습니다.')
                 return self.send(200, works_auth.docs_check(user['id']))
             if path == '/api/drive-sync':
-                # 11/16 원본 변경 확인(LMS관리자 › 원본 변경): 결과 보기 · 지금 확인 · 아침 자동 확인 켜기/끄기 · 확인함 · LLM 연결 키
+                # 11/16 원본 변경 확인(LMS관리자 › 수정 요청·설정): 지금 확인 · 아침 자동 확인 켜기/끄기 · LLM 연결 키. 바뀐 문서는 수정 요청 티켓이 된다
                 import onboarding, works_auth, drive_sync
                 education = onboarding.Service(store)
                 with store.connect() as db:
@@ -542,8 +542,6 @@ class Handler(BaseHTTPRequestHandler):
                             return self.send(409, {'error': str(e)})
                     elif act == 'auto':
                         drive_sync.set_auto(store, d.get('on') is True, me)
-                    elif act in ('ack', 'unack'):
-                        drive_sync.set_ack(store, str(d.get('id') or ''), act == 'ack')
                     elif act == 'llm-key':
                         extra['newKey'] = drive_sync.new_llm_key(store, me)
                     elif act == 'llm-revoke':

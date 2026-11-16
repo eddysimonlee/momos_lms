@@ -142,7 +142,7 @@ MOCK = r'''
     {id: 'w-manager', name: '체험 매니저', email: 'manager@local.test', org: '바리스타팀 · 매니저'},
     {id: 'w-store', name: '체험 점장', email: 'store@local.test', org: '온천 본점 · 점장'},
     {id: 'w-newbie', name: '체험 신입', email: 'newbie@local.test', org: '바리스타팀'}];
-  const KEY = 'momos-v1-preview-24';
+  const KEY = 'momos-v1-preview-25';
   function blank(join) {
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
@@ -154,7 +154,8 @@ MOCK = r'''
       // 미리보기 전용 예시 티켓 2건: REQ-1 은 반영 기록 쪽 tickets 로 이어짐, REQ-2 는 화면에서 반영 기록을 골라 이어 볼 수 있다
       contentRequests: [
         {id: 'demo-1', no: 'REQ-1', at: '2026-11-03T10:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'item', id: 'stock-ecount', title: '6단계 에스프레소 › 6.9 재고 전산 처리 › 86. 재고 전산 처리'}, type: '문구 수정', field: '교육 제목', asis: '재고 전산 처리', tobe: '(예시)', note: '', status: '반영됨', assignee: '체험 담당자', commit: 'abc1234', history: [{at: '2026-11-03T10:00:00', by: '체험 담당자', status: '진행중'}, {at: '2026-11-04T10:00:00', by: '체험 담당자', status: '반영됨', commit: 'abc1234'}]},
-        {id: 'demo-2', no: 'REQ-2', at: '2026-11-04T09:00:00', user: 'u-staff', name: '체험 담당자', email: 'staff@local.test', target: {kind: 'doc', id: '본점-신입-교육-안내', title: '본점_신입_교육_안내_GUI_261020'}, type: '원본 문서 변경 확인', field: '파일', asis: '본점_신입_교육_안내_GUI_261020.docx', tobe: '파일: 본점_신입_교육_안내_GUI_261104.docx (이름 바뀜)\n바뀐 내용: 5.3.1과 5.3.2의 표를 삭제하고 넘버링 문구로 정리', note: '', status: '진행중', history: [{at: '2026-11-04T09:00:00', by: '체험 담당자', status: '진행중'}]},
+        // 11/16 원본 변경 확인이 만든 티켓 예시(드라이브 원본이 바뀜 — '과탄산소다'→'구연산'은 미리보기용 가정)
+        {id: 'demo-2', no: 'REQ-2', at: '2026-11-16T09:31:00', user: 'system', name: '아침 자동 확인', email: '', target: {kind: 'doc', id: '주간-위생-업무', title: 'ST-002_온천본점 › 업무문서 › 근무조별 운영 › 주간 위생 업무'}, type: '원본 문서 변경 확인', field: '새 판', asis: "기준 파일: ST-002_온천본점/업무문서/근무조별 운영/주간_위생_업무_SOP_261020.docx", tobe: "지금 드라이브: ST-002_온천본점/업무문서/근무조별 운영/주간_위생_업무_SOP_261116.docx — 새 판\n교육이 인용한 절 2곳 바뀜: 5.2 월요일 업무, 5.2 월요일 업무\n영향받는 교육: 28. 재고조사·수량 인계·파손 기록, 30. 월요일 주간위생업무", note: '원본 변경 확인이 자동으로 만든 요청', status: '진행중', history: [{at: '2026-11-16T09:31:00', by: '아침 자동 확인', status: '진행중'}], drive: {"docId": "주간-위생-업무", "version": "3d0af93f201ed3cf6978a853c6c6468272872d0f", "status": "새 판", "sha1": "3d0af93f201ed3cf6978a853c6c6468272872d0f", "title": "주간 위생 업무", "folder": "ST-002_온천본점/업무문서/근무조별 운영", "file": "주간_위생_업무_SOP_261020.docx", "path": "ST-002_온천본점/업무문서/근무조별 운영/주간_위생_업무_SOP_261116.docx", "modified": "2026-11-16T00:30:00Z", "error": null, "cited": [{"key": "주간-위생-업무|5.2", "no": "5.2", "title": "월요일 업무", "part": "", "asis": "월요일 업무\n업무 항목 | 수행 방법\n2층 원두방 냉장고 청소 | 2층 직원실 원두방 재료 냉장고 청소 및 물통 비우기\n에스프레소 머신 위 청소 | 머신 위 컵을 트레이로 전부 치운 뒤 갈색 행주에 크린콜을 뿌려 닦는다\n싱크대 과탄산 청소 | 얼음 피쳐에 과탄산소다 정수컵 반 컵을 붓고 뜨거운 물로 녹인 뒤 싱크대에 붓는다\n바 냉장고 내부 청소 | 물품을 전부 빼서 내부·문·손잡이를 갈색 행주에 크린콜을 뿌려 닦는다\n재고조사 (MD6 · 09:00~18:00) | 상품용 원두·음료용 원두 수량 파악 후 이카운트 근무자에게 전달 (웍스 공유)\n커트러리 기름 자국제거, 재고조사 | 커트러리 기름때를 제거하고 커트러리 수량체크합니다.", "tobe": "월요일 업무\n업무 항목 | 수행 방법\n2층 원두방 냉장고 청소 | 2층 직원실 원두방 재료 냉장고 청소 및 물통 비우기\n에스프레소 머신 위 청소 | 머신 위 컵을 트레이로 전부 치운 뒤 갈색 행주에 크린콜을 뿌려 닦는다\n싱크대 과탄산 청소 | 얼음 피쳐에 구연산 정수컵 반 컵을 붓고 뜨거운 물로 녹인 뒤 싱크대에 붓는다\n바 냉장고 내부 청소 | 물품을 전부 빼서 내부·문·손잡이를 갈색 행주에 크린콜을 뿌려 닦는다\n재고조사 (MD6 · 09:00~18:00) | 상품용 원두·음료용 원두 수량 파악 후 이카운트 근무자에게 전달 (웍스 공유)\n커트러리 기름 자국제거, 재고조사 | 커트러리 기름때를 제거하고 커트러리 수량체크합니다.", "missing": false, "note": "", "lessons": [{"no": 28, "id": "stock-count", "title": "재고조사·수량 인계·파손 기록", "part": "kp", "index": 1}]}, {"key": "주간-위생-업무|5.2#r3", "no": "5.2", "title": "월요일 업무", "part": "3행", "asis": "월요일 업무\n[3행]\n업무 항목 | 수행 방법\n싱크대 과탄산 청소 | 얼음 피쳐에 과탄산소다 정수컵 반 컵을 붓고 뜨거운 물로 녹인 뒤 싱크대에 붓는다", "tobe": "월요일 업무\n[3행]\n업무 항목 | 수행 방법\n싱크대 과탄산 청소 | 얼음 피쳐에 구연산 정수컵 반 컵을 붓고 뜨거운 물로 녹인 뒤 싱크대에 붓는다", "missing": false, "note": "", "lessons": [{"no": 30, "id": "floor-weekly", "title": "월요일 주간위생업무", "part": "kp", "index": 2}]}], "other": [], "added": [], "removed": [], "checkedAt": "2026-11-16T00:31:00+00:00"}},
         // 11/10 교육 문구 직접 수정 예시(검토 중): 얼그레이티 교육 내용 1 에 '반영 대기 · REQ-100'
         {"id": "demo-3", "no": "REQ-100", "at": "2026-11-10T09:30:00", "user": "u-staff", "name": "체험 담당자", "email": "staff@local.test", "target": {"kind": "item", "id": "materials-product-5", "title": "얼그레이티 냉침·거르기 제조 연습"}, "type": "문구 수정", "field": "교육 내용 1", "asis": "상미기한 제조일+2일(냉장), 매일 4~6통 유지(메인 바리스타 확인). 배합: 얼그레이티 15.5g(소수점까지 정확히) · 물 1,550g.", "tobe": "상미기한 제조일+2일(냉장), 매일 4~6통 유지(남은 양은 메인 바리스타가 확인). 배합: 얼그레이티 15.5g(소수점까지 정확히) · 물 1,550g.", "note": "(예시) 누가 확인하는지 더 분명하게", "status": "진행중", "history": [{"at": "2026-11-10T09:30:00", "by": "체험 담당자", "status": "진행중"}], "edit": {"part": "kp", "index": 0, "kind": "단순 수정", "suggest": "단순 수정"}}]};
     // 11/06 미리보기 예시 의견: 체험 교육생이 보낸 의견 4건 · 관리자 댓글이 알림으로 간다(40일 전 댓글은 30일이 지나 알림에 안 보임)
@@ -345,6 +346,19 @@ MOCK = r'''
         const q = (url.searchParams.get('q') || '').trim().toLowerCase();
         await new Promise(r => setTimeout(r, 200));
         return json({members: DIRECTORY.filter(m => m.email !== user().email && (!q || `${m.name} ${m.email} ${m.org}`.toLowerCase().includes(q))).slice(0, 20)});
+      }
+      if (url.pathname === '/api/drive-sync') {  // 11/16 원본 변경 확인(미리보기: 마지막 확인 예시 · 지금 확인은 3초 흉내 · LLM 키는 예시 값)
+        if (levelOf(user()) !== 'admin') return json({error: '원본 변경 확인은 LMS관리자 admin 만 할 수 있습니다.'}, 403);
+        const ds = state.drive = state.drive || {auto: true, autoBy: '체험 담당자', autoAt: '2026-11-16T09:10:00+09:00', lastRun: {at: '2026-11-16T09:31:00+09:00', by: '아침 자동 확인', ok: true}, llmKeys: []};
+        let extra = {};
+        if (method === 'POST') { const d = JSON.parse(init.body || '{}'), now = new Date().toISOString();
+          if (d.action === 'run') { ds.running = {by: user().name, at: now}; ds.until = Date.now() + 3000; }
+          else if (d.action === 'auto') Object.assign(ds, {auto: d.on, autoBy: user().name, autoAt: now});
+          else if (d.action === 'llm-key') { const id = Math.random().toString(16).slice(2, 6); ds.llmKeys.unshift({id, email: user().email, name: user().name, at: now, last: null, active: true}); extra = {newKey: 'mlk_PREVIEW-' + id + '-예시(실제 키 아님)'}; }
+          else if (d.action === 'llm-revoke') ds.llmKeys = ds.llmKeys.filter(k => k.id !== d.id);
+          save(); }
+        if (ds.running && Date.now() > ds.until) { ds.running = null; ds.lastRun = {at: new Date().toISOString(), by: user().name, ok: true}; save(); }
+        return json({...ds, keyReady: true, keys: [{email: user().email, name: user().name, at: Date.now() / 1000}], report: null, ...extra});
       }
       if (url.pathname === '/api/onboarding') {
         const target = url.searchParams.get('target') || undefined;
