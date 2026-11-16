@@ -13,6 +13,9 @@
 !dev_seed.py
 !v1_pdf.py
 !works_auth.py
+!drive_sync.py
+!source_parse.py
+!v1_build.py
 !auth.js
 !workspace_items.js
 !onboarding.js
@@ -29,6 +32,7 @@
 !curriculum.json
 !source_log.json
 !source_manifest.json
+!source_sections.json
 !wds/
 !wds/**
 !v1_photos/

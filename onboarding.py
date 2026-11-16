@@ -643,6 +643,8 @@ class Service:
                 self.set_profile(root,user,target,data)
             elif action=='lms.admin':
                 self.set_lms_admin(root,user,data)
+                if data.get('level') is None:  # 11/16 해제되면 저장된 드라이브 열쇠도 바로 지운다
+                    import works_auth; works_auth.forget_refresh(db, data.get('email'))
             elif action=='feedback.send':
                 self.send_feedback(db,root,user,target,data)
             elif action=='feedback.comment':
@@ -814,7 +816,11 @@ class Service:
         for m in org.get('members') or []:
             if m.get('email') and m.get('name'): names[str(m['email']).lower()] = m['name']
         admins = sorted((dict(email=e, name=names.get(e, ''), level=l, seed=e in seed) for e, l in levels.items()), key=lambda x: (not x['name'], x['name'], x['email']))
-        return dict(lmsAdmins=admins,
+        try:  # 11/16 원본 변경 탭 숫자(확인할 문서 수). 결과 자체는 탭을 열 때 /api/drive-sync 로 받는다
+            import drive_sync; drive_pending = drive_sync.pending(projects.Rooms.read(db, drive_sync.STATE_KEY) or {})
+        except Exception:
+            drive_pending = 0
+        return dict(lmsAdmins=admins, drivePending=drive_pending,
                     feedback=[row(f) for f in reversed((root.get('feedback') or [])[-300:])],
                     sourceLog=source_log(),
                     contentRequests=[dict(r, status=req_status(r.get('status')), history=[dict(h, status=req_status(h.get('status'))) for h in r.get('history') or []]) for r in reversed((root.get('contentRequests') or [])[-300:])])

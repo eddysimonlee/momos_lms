@@ -21,6 +21,16 @@ LMS 교육 내용의 근거는 드라이브 `공용 드라이브/SOP/ST_매장�
 5. **기록**: `source_log.json` 에 받은 것 1건 = 기록 1건(받은 것·폴더·드라이브 기준 시각·범위·문서별 상태·바뀐 교육 AS-IS/TO-BE·근거에서 뺀 문서·링크 갱신)을 남기고, `source_manifest.json` 의 문서별 기준을 갱신한다. 문서 상태 이름: 바뀌어 교육 반영 / 새 문서로 교육 반영 / 바뀌었지만 교육 영향 없음 / 바뀐 것 없음 / 근거에서 뺌.
 6. **확인 후 커밋**: `python3 v1_build.py` → 테스트(`*_test.py`) → `python3 v1_preview.py` 미리보기를 보여 주고 승인 후 커밋한다. 배포는 이재현이 push 한다(`github` = Render, `origin` = 사내 OSS).
 
+## 드라이브 sync 맞춰줘 (11/16 원본 변경 확인)
+
+"드라이브 sync 맞춰줘"·"원본 변경 반영해 줘"라고 하면 LMS 서버가 드라이브 원본을 LMS 기준과 비교한 결과를 받아 업무문서 반영 절차(위 2~6)대로 처리한다. 바뀐 곳 찾기는 서버 코드(`drive_sync.py`: 문서 sha1·절 해시)가 하고, 교육 문구 AS-IS/TO-BE 제안은 에이전트가 한다.
+
+1. **받기**: `LMS_SYNC_KEY` 환경변수(LMS관리자 › 원본 변경 › 'LLM 연결 키 만들기'로 받은 사람별 키, `mlk_…`)가 있어야 한다. 없으면 만들어 달라고 한다 — 키를 대화·파일·커밋에 적지 않는다. `python3 drive_pull.py --fresh` (실서비스 기본, 알파는 `--url https://momos-lms-alpha.onrender.com`) → `.drive_sync/report.json`(결과)과 `.drive_sync/ST_매장사업부/…`(지금 드라이브의 근거 문서 docx 전부)를 받는다. `.drive_sync/` 는 커밋하지 않는다.
+2. **결과 읽기**: 문서 상태 = 그대로 / 바뀜 / 새 판(같은 폴더·날짜만 다른 파일) / 이동 / 내용 같음 / 없음 / 확인 실패. 바뀐 문서의 `cited` = 교육이 인용한 절의 AS-IS·TO-BE 와 영향받는 교육(`lessons`: 번호·id·교육 내용 몇 번째·지금 문구), `other`·`added`·`removed` = 교육에 안 쓰인 바뀐 절·새 절·없어진 절. 관리자가 '확인함'으로 표시한 문서는 `ack` 에 있다.
+3. **반영**: 바뀐·새 판·이동 문서는 `source_manifest.json` 의 file·sha1·revised(·folder·folderKey)를 고치고(문서 `id` 는 그대로), `python3 source_parse.py --base .drive_sync/ST_매장사업부 --images source_images` 로 색인을 다시 만든다. 교육마다 AS-IS/TO-BE 를 보여 주고 승인받은 것만 `v1_lessons.json` 에 반영한다. 내용 같음·교육 영향 없음이면 manifest 기준만 갱신한다. 없음·확인 실패는 고치지 않고 알린다.
+4. **확인·커밋**: `python3 v1_build.py`(→ `source_sections.json` 도 새 기준으로 갱신) → 모든 테스트 → 미리보기 → 승인 후 커밋, `source_log.json` 에 `basis.kind` = '드라이브 sync'. 배포되면 다음 확인부터 그 문서는 '그대로'가 된다. LMS관리자 화면(원본 변경 탭)에서는 커밋 없이도 결과를 보고 '확인함'만 표시할 수 있다.
+5. 서버 쪽: 아침 자동 확인 = Render Cron Job `python3 drive_sync.py --cron`(켜기/끄기는 화면). 저장된 열쇠 = LMS관리자의 WORKS 재발급 열쇠를 `LMS_TOKEN_KEY` 로 암호화해 DB 에(LMS관리자만, 해제하면 삭제). 이 설정과 키는 이재현이 Render 에서 한다.
+
 ## 콘텐츠 수정 요청 처리 (11/03)
 
 역할: 모모스커피 담당자 = 콘텐츠 기획(무엇을 바꿀지 정한다), 이재현(NAVER WORKS) = 서비스 기획(화면·기능).
