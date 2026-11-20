@@ -107,7 +107,14 @@ def close_synced_drive_tickets(store):
         done = []
         for r in root.get('contentRequests') or []:
             d = r.get('drive') or {}
-            if not d.get('sha1') or req_status(r.get('status')) != '진행중': continue
+            if req_status(r.get('status')) != '진행중': continue
+            if str(d.get('docId', '')).startswith('new:'):  # 새 문서: 근거 문서로 등록(manifest 에 그 경로)되면 반영됨
+                if d.get('path') in set(paths.values()):
+                    r['status'] = '반영됨'
+                    r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='이 문서가 LMS 근거 문서로 등록되어 자동으로 반영됨 처리')]
+                    done.append(r.get('no'))
+                continue
+            if not d.get('sha1'): continue
             if (base.get(d.get('docId')) or {}).get('sha1') != d['sha1']: continue
             if d.get('path') and paths.get(d.get('docId')) != d['path']: continue
             r['status'] = '반영됨'
@@ -125,17 +132,22 @@ def _drive_payload(d, checked):
     cited = [dict(c, asis=cut(c.get('asis') or ''), tobe=cut(c.get('tobe') or '')) for c in (d.get('cited') or [])[:30]]
     return dict(docId=d['id'], version=d.get('sha1') or d['status'], status=d['status'], sha1=d.get('sha1'), title=d.get('title'), folder=d.get('folder'), file=d.get('file'),
                 path=d.get('path'), modified=d.get('modified'), error=d.get('error'), cited=cited, other=d.get('other') or [], added=d.get('added') or [],
-                removed=d.get('removed') or [], checkedAt=checked)
+                removed=d.get('removed') or [], match=d.get('match'), checkedAt=checked)
 
 
 def _drive_text(d):
+    if d['status'] == '새 문서':
+        return '(LMS 교육 근거 문서 아님)', f"새 문서: {d.get('path')}\n교육에 써야 하면 근거 문서로 등록하고 교육 내용을 정해 주세요. 교육과 관계없으면 반려해 주세요."
     lessons = sorted({(r['no'], r['title']) for c in d.get('cited') or [] for r in c.get('lessons') or []})
     tobe = f"지금 드라이브: {d.get('path') or '(찾지 못함)'} — {d['status']}"
+    if d.get('match'):
+        mt = d['match']
+        tobe += f"\n이름이 바뀐 파일을 내용으로 짝지음: 절 {mt.get('baseSections')}개 중 같은 절 {mt.get('sameSections')}개·같은 제목 {mt.get('sameTitles')}개 — 같은 문서가 맞는지 확인 필요"
     if d.get('cited'):
         tobe += f"\n교육이 인용한 절 {len(d['cited'])}곳 바뀜: " + ', '.join(f"{c.get('no') or ''} {c.get('title') or ''}".strip() for c in d['cited'])
     if lessons:
         tobe += '\n영향받는 교육: ' + ', '.join(f'{n}. {t}' for n, t in lessons)
-    for k, label in (('other', '교육에 안 쓰인 바뀐 절'), ('added', '새 절'), ('removed', '없어진 절')):
+    for k, label in (('other', '인용한 부분 밖에서 바뀐 절'), ('added', '새 절'), ('removed', '없어진 절')):
         if d.get(k):
             tobe += f'\n{label}: ' + ', '.join(f'{n} {x}'.strip() for n, x in d[k])
     return f"기준 파일: {d.get('folder')}/{d.get('file')}", tobe
@@ -184,6 +196,31 @@ def sync_drive_tickets(store, report, by):
                         status='진행중', history=[dict(at=stamp(), by=by, status='진행중')], drive=payload)
             items.append(item)
             mine.append(item)
+            out['created'].append(item['no'])
+        # 11/20 새 문서(근거 문서가 아닌 새 docx) → 티켓. 근거 문서로 등록되면(그 파일이 근거 문서와 짝지어지면) 반영됨
+        linked = {d.get('fileId') for d in report.get('docs') or [] if d.get('fileId')}
+        for r in items:
+            dv = r.get('drive') or {}
+            if str(dv.get('docId', '')).startswith('new:') and req_status(r.get('status')) == '진행중' and dv['docId'][4:] in linked:
+                r['status'] = '반영됨'
+                r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='원본 확인 자동 처리', status='반영됨', note='이 문서가 LMS 근거 문서로 등록되어 자동으로 반영됨 처리')]
+                out['closed'].append(r['no'])
+        for a in report.get('added') or []:
+            key = 'new:' + str(a.get('fileId'))
+            if any((r.get('drive') or {}).get('docId') == key for r in items):
+                continue
+            name = str(a.get('path') or '').rsplit('/', 1)[-1]
+            d = dict(id=key, title=re.sub(r'\.docx$', '', name), folder=str(a.get('path') or '').rsplit('/', 1)[0], file=name, status='새 문서', sha1=None,
+                     path=a.get('path'), modified=a.get('modified'))
+            asis, tobe = _drive_text(d)
+            seq = int(root.get('contentRequestSeq') or 0) + 1
+            root['contentRequestSeq'] = seq
+            folder = ' › '.join(x for x in d['folder'].split('/') if x)
+            item = dict(id=uuid.uuid4().hex, no=f'REQ-{seq}', at=stamp(), user='system', name=by, email='',
+                        target=dict(kind='doc', id=key, title=(folder + ' › ' if folder else '') + d['title']),
+                        type=DRIVE_TICKET, field='새 문서', asis=asis, tobe=tobe, note='동기화가 찾은 새 문서',
+                        status='진행중', history=[dict(at=stamp(), by=by, status='진행중')], drive=dict(_drive_payload(d, report.get('at') or stamp()), version='new'))
+            items.append(item)
             out['created'].append(item['no'])
         if any(out.values()):
             root['contentRequests'] = items[-2000:]

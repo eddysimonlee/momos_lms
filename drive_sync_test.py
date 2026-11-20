@@ -85,6 +85,34 @@ class CompareTests(unittest.TestCase):
         rep = drive_sync.compare(b, tree, lambda f, force: ({'fa': 's0'}.get(f['fileId'], 'b0'), None))
         self.assertEqual([(d['status'], d.get('path')) for d in rep['docs'] if d['id'] == 'b-doc'], [('이동', 'F/새폴더/B_261001.docx')])
 
+    def test_renamed_doc_matched_by_content_and_new_docs(self):
+        # 11/20 이름까지 바뀐 새 판: 위치·이름으로 못 찾으면 후보 폴더 안 문서의 절을 읽어 내용으로 짝짓는다. 새로 생긴 문서는 '새 문서'
+        b = base()
+        b['manifest'] = b['manifest'][:1]
+        b['sections'] = {'a-doc': dict(sha1='s0', sections=[['1', '개요', 'h1'], ['2', '절차', 'h2'], ['3', '기타', 'h3']])}
+        tree = [dict(path='F/본점_EK43_A_문서_261118_SOP.docx', fileId='renamed', size=1, modified='m'),
+                dict(path='F/무관한_문서.docx', fileId='other', size=1, modified='m'),
+                dict(path='F/아카이브/A_문서_261020_SOP.docx', fileId='arch', size=1, modified='m'),
+                dict(path='Z/A_문서_261020_SOP.docx', fileId='store', size=1, modified='m')]
+        secs = {'renamed': [['1', '개요', 'h1'], ['2', '절차', 'h2x'], ['4', '새 절', 'h4']], 'other': [['1', '전혀 다른', 'zz']]}
+        asked = []
+        sections_of = lambda f: asked.append(f['fileId']) or secs[f['fileId']]
+        with mock.patch.object(drive_sync, 'parse_docx', return_value=NEW_A):
+            rep = drive_sync.compare(b, tree, lambda f, force: ('s9', b'x'), sections_of, seen={'other'})
+        a = rep['docs'][0]
+        self.assertEqual((a['status'], a['path'], a['match']['sameSections'], a['match']['sameTitles']), ('이름 바뀐 새 판', 'F/본점_EK43_A_문서_261118_SOP.docx', 1, 2))
+        self.assertEqual(len(a['cited']), 1)  # 짝지은 뒤에는 바뀐 절 AS-IS/TO-BE 를 그대로 보여 준다
+        self.assertEqual(sorted(asked), ['other', 'renamed'])  # 아카이브·다른 지점 사본은 읽지도 않는다
+        self.assertEqual(rep['added'], [])  # 짝지어진 새 파일은 새 문서가 아니고, 'other' 는 지난번에도 있었다
+        tree.append(dict(path='F/새로운_안내_GUI_261119.docx', fileId='brand-new', size=1, modified='m2'))
+        secs['brand-new'] = [['1', '안내', 'n1']]
+        with mock.patch.object(drive_sync, 'parse_docx', return_value=NEW_A):
+            rep = drive_sync.compare(b, tree, lambda f, force: ('s9', b'x'), sections_of, seen={'other', 'renamed'})
+        self.assertEqual([x['path'] for x in rep['added']], ['F/새로운_안내_GUI_261119.docx'])
+        self.assertEqual(rep['counts'].get('새 문서'), 1)
+        rep0 = drive_sync.compare(b, tree, lambda f, force: ('s0', None), None, None)  # 처음 동기화(seen 없음)는 새 문서로 보지 않는다
+        self.assertEqual((rep0['added'], rep0['docs'][0]['status']), ([], '없음'))
+
     def test_unchanged_doc_is_not_parsed(self):
         tree = [dict(path=A_PATH, fileId='fa', size=10, modified='m')]
         with mock.patch.object(drive_sync, 'parse_docx') as parse:
@@ -173,6 +201,15 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v3')), 'x')['created'], ['REQ-3'])
         self.assertEqual({k['no']: k['version'] for k in drive_sync.drive_tickets(self.store).values()}, {'REQ-3': 'v3'})
 
+    def test_new_doc_ticket_and_close(self):
+        rep = dict(at='x', docs=[], added=[dict(path='F/G/새 안내.docx', fileId='f1', modified='m')])
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep, '이재현')['created'], ['REQ-1'])
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep, '이재현')['created'], [])  # 같은 파일은 한 번만
+        t = self.tickets()[0]
+        self.assertEqual((t['field'], t['target']['title'], t['drive']['docId']), ('새 문서', 'F › G › 새 안내', 'new:f1'))
+        out = onboarding.sync_drive_tickets(self.store, dict(at='y', docs=[dict(id='new-doc', status='그대로', fileId='f1', sha1='s')]), '이재현')
+        self.assertEqual((out['closed'], self.tickets()[0]['status']), (['REQ-1'], '반영됨'))  # 근거 문서로 등록되면 반영됨
+
     def test_deploy_closes_ticket_when_baseline_matches(self):
         base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8'))['documents']
         man = {m['id']: m for m in json.loads((Path(__file__).parent / 'source_manifest.json').read_text(encoding='utf-8'))['documents']}
@@ -186,6 +223,28 @@ class StoreTests(unittest.TestCase):
             lms_store.Rooms.write(db, onboarding.ROOT, root)
         self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])  # 배포된 기준 sha1·경로 = 티켓의 원본 → 반영됨
         self.assertEqual([t['status'] for t in self.tickets()], ['반영됨', '진행중'])
+
+    def test_failed_run_is_recorded(self):
+        with mock.patch.object(works_auth, 'docs_folder', return_value=(None, None, [])):
+            with self.assertRaises(RuntimeError):
+                drive_sync.run(self.store, 'tok', '테스트', base=base())
+        st = drive_sync.read_state(self.store)
+        self.assertEqual((st['lastRun']['ok'], st['lastRun']['error']), (False, '드라이브에서 ST_매장사업부 폴더를 찾지 못했어요.'))
+
+    def test_llm_keys(self):
+        raw = drive_sync.new_llm_key(self.store, dict(email='boss@momos.co.kr', name='점장'))
+        self.assertTrue(raw.startswith('mlk_'))
+        with self.store.connect() as db:
+            self.assertNotIn(raw, json.dumps(lms_store.Rooms.read(db, drive_sync.LLM_KEYS_KEY)))  # 원문은 저장하지 않는다
+        boss = {'boss@momos.co.kr'}
+        self.assertEqual(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, boss)['name'], '점장')
+        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, {'other@momos.co.kr'}))  # 관리자에서 빠지면 못 쓴다
+        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer mlk_wrong', boss))
+        self.assertIsNone(drive_sync.check_llm_key(self.store, raw, boss))
+        keys = drive_sync.list_llm_keys(self.store, set())
+        self.assertEqual((len(keys), keys[0]['active'], bool(keys[0]['last'])), (1, False, True))
+        drive_sync.revoke_llm_key(self.store, keys[0]['id'])
+        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, boss))
 
 
 BOSS = dict(email='boss@momos.co.kr', name='점장', company='momos')

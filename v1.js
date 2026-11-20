@@ -597,7 +597,7 @@
     clearTimeout(drivePoll);
     if (driveData && driveData.running) drivePoll = setTimeout(() => driveLoad(), 3000);
   }
-  const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
+  const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '이름 바뀐 새 판': 'b', '새 문서': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
   const driveWhen = iso => iso ? fmtAt(iso) : '';
   // 줄 단위 비교(같은 줄이 길게 이어지면 접는다). 표 행은 '열 | 열' 한 줄
   function driveDiff(asis, tobe) {
@@ -630,10 +630,13 @@
       (c.missing ? `<p class="v1-note warn">새 원본에서 이 절(또는 인용한 행)을 찾지 못했어요. 절 번호·표 행이 바뀌었는지 확인이 필요해요.</p>` : '') + driveDiff(c.asis, c.tobe) + '</div>';
     const names = (label, list) => list && list.length ? `<p class="v1-drv-who"><b>${label}</b> ${list.map(([no, title]) => esc(`${no} ${title}`.trim())).join(', ')}</p>` : '';
     return (x.error ? `<p class="v1-note warn">${esc(x.error)}</p>` : '') +
-      `<dl class="v1-snap-meta"><dt>원본 상태</dt><dd><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${x.checkedAt ? ` <small class="v1-muted">확인 ${esc(driveWhen(x.checkedAt))}</small>` : ''}</dd><dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>${moved ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
-      (x.status === '없음' ? '<p class="v1-muted">드라이브에서 이 문서를 찾지 못했어요(삭제·이름 변경·이동). 기준 폴더와 파일 이름을 확인해 주세요.</p>' : '') +
+      `<dl class="v1-snap-meta"><dt>원본 상태</dt><dd><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${x.checkedAt ? ` <small class="v1-muted">확인 ${esc(driveWhen(x.checkedAt))}</small>` : ''}</dd>${x.status === '새 문서' ? '' : `<dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>`}${moved || x.status === '새 문서' ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
+      (x.status === '없음' ? '<p class="v1-muted">드라이브에서 이 문서를 찾지 못했어요(삭제·이름 변경·이동). 내용이 비슷한 새 파일도 없었어요. 기준 폴더와 파일 이름을 확인해 주세요.</p>' : '') +
+      (x.match ? `<p class="v1-note warn">파일 이름이 바뀌어 내용으로 짝지었어요 — 기준 문서 절 ${x.match.baseSections}개 중 같은 절 ${x.match.sameSections}개·같은 제목 ${x.match.sameTitles}개. 같은 문서가 맞는지 확인해 주세요.</p>` : '') +
+      (x.status === '새 문서' ? '<p class="v1-muted">근거 문서가 아닌 새 문서가 드라이브에 생겼어요. 교육에 써야 하면 근거 문서로 등록하고 교육 내용을 정해야 해요("드라이브 sync 맞춰줘"). 교육과 관계없으면 반려해 주세요.</p>' : '') +
       (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두고 기준만 갱신하면 돼요.</p>' : '') +
-      (x.cited || []).map(sec).join('') + names('교육에 안 쓰인 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed);
+      (['새 판', '이동', '이름 바뀐 새 판'].includes(x.status) && !['cited', 'other', 'added', 'removed'].some(k => (x[k] || []).length) ? '<p class="v1-muted">절 내용은 기준과 같아요. 교육은 그대로 두고 기준(파일 위치·이름)만 갱신하면 돼요.</p>' : '') +
+      (x.cited || []).map(sec).join('') + names('인용한 부분 밖에서 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed);
   }
   // 수정 요청 탭 목록 위 한 줄: 드라이브 원본 동기화(마지막 동기화 · [동기화]). 바뀐 문서는 아래 목록의 '원본 문서 변경 확인' 티켓
   function driveBar() {
