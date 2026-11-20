@@ -118,11 +118,10 @@ def text_of(e):
 def compare_doc(m, base_doc, newdoc, content, refs):
     import v1_build as vb
     newdoc = dict(newdoc, id=m['id'])
-    cited, cited_keys = [], set()
+    cited = []
     for key, e in content['sections'].items():
         if e.get('doc') != m['id']:
             continue
-        cited_keys.add(e.get('no') or e.get('title'))
         ref, _, part = key.split('|', 1)[1].partition('#')
         new, err = None, ''
         try:
@@ -135,7 +134,9 @@ def compare_doc(m, base_doc, newdoc, content, refs):
                               missing=new is None, note=err, lessons=refs.get(key, [])))
     old = {(s[0] or s[1]): s for s in base_doc.get('sections') or []}
     now = {(s['no'] or s['title']): s for s in newdoc.get('sections') or []}
-    other = [[s['no'], s['title']] for k, s in now.items() if k in old and old[k][2] != s['hash'] and k not in cited_keys]
+    # 바뀐 절 중 위에서 AS-IS/TO-BE 로 보여 주지 않은 것: 교육에 안 쓰인 절 + 교육이 일부(행·문단)만 인용했는데 인용 밖이 바뀐 절(11/20)
+    shown = {c['no'] or c['title'] for c in cited}
+    other = [[s['no'], s['title']] for k, s in now.items() if k in old and old[k][2] != s['hash'] and k not in shown]
     added = [[s['no'], s['title']] for k, s in now.items() if k not in old]
     removed = [[s[0], s[1]] for k, s in old.items() if k not in now]
     return dict(cited=cited, other=other, added=added, removed=removed)
@@ -157,37 +158,77 @@ def is_doc(path):
     return name.lower().endswith('.docx') and not name.startswith(('~$', '.'))
 
 
-def compare(base, tree, fetch):
-    """tree = [{path, fileId, size, modified}] (ST_매장사업부 아래 경로). fetch(f, force) → (sha1, 받은 바이트 또는 None)."""
+MATCH_MIN = 0.4         # 이름이 바뀐 새 판으로 볼 최소 내용 유사도(절 본문 해시·절 제목이 겹치는 정도, 0~1)
+EMPTY_HASH = hashlib.sha1(b'').hexdigest()[:12]
+
+
+def similarity(base_secs, cand_secs):
+    """기준 문서의 절 목록 [[번호, 제목, 해시]] 과 후보 문서의 절 목록이 얼마나 겹치는지(0~1)와 같은 절·같은 제목 수."""
+    norm = lambda s: re.sub(r'\s+', '', nfc(s))
+    bh = {s[2] for s in base_secs if s[2] and s[2] != EMPTY_HASH}
+    ch = {s[2] for s in cand_secs if s[2] and s[2] != EMPTY_HASH}
+    bt = {norm(s[1]) for s in base_secs if s[1]}
+    ct = {norm(s[1]) for s in cand_secs if s[1]}
+    if not bt:
+        return 0.0, 0, 0
+    same, titles = len(bh & ch), len(bt & ct)
+    return round(0.5 * same / max(1, len(bh)) + 0.5 * titles / len(bt), 3), same, titles
+
+
+def compare(base, tree, fetch, sections_of=None, seen=None):
+    """tree = [{path, fileId, size, modified}] (ST_매장사업부 아래 경로). fetch(f, force) → (sha1, 받은 바이트 또는 None).
+    sections_of(f) → 그 파일의 절 목록 [[번호, 제목, 해시]] (이름이 바뀐 새 판을 내용으로 찾을 때). seen = 지난 동기화 때 본 fileId(새 문서 찾기)."""
     manifest, sections, content = base['manifest'], base['sections'], base['content']
     refs = cite_refs(content)
     titles = {k: v.get('title') for k, v in (content.get('documents') or {}).items()}
     files = [f for f in tree if is_doc(f['path'])]
     by_path = {nfc(f['path']): f for f in files}
-    # 11/20 '이동' 후보는 근거 문서가 있는 맨 위 폴더(매장사업부 공통·ST-002_온천본점 등) 안에서만, 아카이브 폴더는 빼고 찾는다
+    # 11/20 짝지을 후보·새 문서는 근거 문서가 있는 맨 위 폴더(매장사업부 공통·ST-002_온천본점 등) 안에서만, 아카이브 폴더는 빼고 찾는다
     # — 다른 지점 폴더·아카이브에 있는 같은 이름 사본을 '옮긴 문서'로 잘못 짝짓지 않게(REQ-22: 온천본점 아카이브 사본과 짝지어짐)
     roots = {nfc(m['folder']).split('/', 1)[0] for m in manifest}
     movable = [x for x in files if nfc(x['path']).split('/', 1)[0] in roots and not any('아카이브' in seg for seg in nfc(x['path']).split('/')[:-1])]
     newest = lambda xs: max(xs, key=lambda x: x.get('modified') or '')
-    used, docs = set(), []
+    # 1) 위치·이름으로 찾기: 그대로 → 같은 폴더에서 날짜만 다른 파일(새 판) → 다른 폴더의 같은 이름(이동)
+    found, used = {}, set()
     for m in manifest:
-        rel = nfc(f"{m['folder']}/{m['file']}")
-        f, how = by_path.get(rel), None
-        if not f:  # 파일 이름이 바뀌었으면: 같은 폴더에서 날짜만 다른 파일 → 새 판, 다른 폴더의 같은 이름(또는 같은 문서 이름) → 이동
-            folder, st = nfc(m['folder']), stem(m['file'])
-            same = [x for x in files if nfc(x['path']).rsplit('/', 1)[0] == folder and stem(x['path']) == st and nfc(x['path']) not in used]
-            if same:
-                f, how = newest(same), '새 판'
-            else:
-                hits = [x for x in movable if nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file'])] or [x for x in movable if stem(x['path']) == st]
-                if hits:
-                    f, how = newest(hits), '이동'
+        f = by_path.get(nfc(f"{m['folder']}/{m['file']}"))
+        if f:
+            found[m['id']] = (f, None, None); used.add(nfc(f['path']))
+    for m in manifest:
+        if m['id'] in found:
+            continue
+        folder, st = nfc(m['folder']), stem(m['file'])
+        same = [x for x in files if nfc(x['path']).rsplit('/', 1)[0] == folder and stem(x['path']) == st and nfc(x['path']) not in used]
+        hits = same or [x for x in movable if nfc(x['path']) not in used and (nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file']) or stem(x['path']) == st)]
+        if hits:
+            f = newest(hits); found[m['id']] = (f, '새 판' if same else '이동', None); used.add(nfc(f['path']))
+    # 2) 11/20 그래도 없으면 내용으로: 아직 짝이 없는 문서(후보 폴더 안)의 절을 읽어 기준 문서와 가장 많이 겹치는 것 → 이름 바뀐 새 판
+    if sections_of:
+        for m in manifest:
+            if m['id'] in found:
+                continue
+            bsec = (sections.get(m['id']) or {}).get('sections') or []
+            best = None
+            for x in movable:
+                if nfc(x['path']) in used:
+                    continue
+                try:
+                    score, same, tl = similarity(bsec, sections_of(x))
+                except Exception:
+                    continue
+                key = (score, nfc(x['path']).rsplit('/', 1)[0] == nfc(m['folder']))
+                if score >= MATCH_MIN and (not best or key > best[0]):
+                    best = (key, x, dict(score=score, sameSections=same, sameTitles=tl, baseSections=len(bsec)))
+            if best:
+                found[m['id']] = (best[1], '이름 바뀐 새 판', best[2]); used.add(nfc(best[1]['path']))
+    docs = []
+    for m in manifest:
+        f, how, match = found.get(m['id'], (None, None, None))
         rec = dict(id=m['id'], title=titles.get(m['id']) or m['id'], folder=m['folder'], file=m['file'])
         if not f:
             docs.append(dict(rec, status='없음'))
             continue
-        used.add(nfc(f['path']))
-        rec.update(path=nfc(f['path']), modified=f.get('modified'), fileId=f.get('fileId'))
+        rec.update(path=nfc(f['path']), modified=f.get('modified'), fileId=f.get('fileId'), **({'match': match} if match else {}))
         bd = sections.get(m['id']) or {}
         try:
             sha, raw = fetch(f, False)
@@ -203,16 +244,23 @@ def compare(base, tree, fetch):
         except Exception as e:
             docs.append(dict(rec, status='확인 실패', error=f'{type(e).__name__}: {str(e)[:200]}'))
     extra = sorted(({'path': nfc(f['path']), 'modified': f.get('modified'), 'fileId': f.get('fileId')} for f in files if nfc(f['path']) not in used), key=lambda x: x['modified'] or '', reverse=True)
+    # 3) 11/20 새 문서: 후보 폴더 안에 지난 동기화 뒤 새로 생긴, 근거 문서와 짝지어지지 않은 docx(처음 동기화는 기준만 잡고 새 문서로 보지 않는다)
+    ids = sorted({x.get('fileId') for x in movable if x.get('fileId')})
+    added = [] if seen is None else [{'path': nfc(x['path']), 'modified': x.get('modified'), 'fileId': x.get('fileId')}
+                                    for x in movable if nfc(x['path']) not in used and x.get('fileId') not in seen]
     counts = {}
     for d in docs:
         counts[d['status']] = counts.get(d['status'], 0) + 1
+    if added:
+        counts['새 문서'] = len(added)
     lessons = {}
     for d in docs:
         for c in d.get('cited') or []:
             for r in c['lessons']:
                 lessons[r['id']] = dict(no=r['no'], id=r['id'], title=r['title'])
     return dict(format='momos-lms-drive-sync', version=1, baseline=dict(manifestUpdated=base.get('manifestUpdated', ''), documents=len(manifest)),
-                counts=counts, lessons=sorted(lessons.values(), key=lambda x: x['no']), docs=docs, extra=extra[:EXTRA_LIMIT], extraCount=len(extra))
+                counts=counts, lessons=sorted(lessons.values(), key=lambda x: x['no']), docs=docs, added=added, seenIds=ids,
+                extra=extra[:EXTRA_LIMIT], extraCount=len(extra))
 
 
 # --- 상태(DB metadata 한 줄) ----------------------------------------------------------------------------
@@ -250,7 +298,9 @@ def run(store, token, by, base=None):
         if not folder:
             raise RuntimeError('드라이브에서 ST_매장사업부 폴더를 찾지 못했어요.')
         tree = wa.docs_tree(token, drive, folder)
-        cache = dict(read_state(store).get('cache') or {})
+        prev = read_state(store)
+        cache, fp = dict(prev.get('cache') or {}), dict(prev.get('fp') or {})
+        seen = set(prev['seen']) if prev.get('seen') is not None else None
 
         def fetch(f, force):
             c = cache.get(f['fileId'])
@@ -260,12 +310,21 @@ def run(store, token, by, base=None):
             sha = hashlib.sha1(raw).hexdigest()
             cache[f['fileId']] = dict(modified=f.get('modified'), size=f.get('size'), sha1=sha)
             return sha, raw
-        report = compare(base or load_base(), tree, fetch)
+        def sections_of(f):  # 짝 후보 문서의 절 목록(수정일·크기가 같으면 저장해 둔 것)
+            c = fp.get(f['fileId'])
+            if c and c.get('modified') == f.get('modified') and c.get('size') == f.get('size'):
+                return c['secs']
+            _, raw = fetch(f, True)
+            secs = [[s['no'], s['title'], s['hash']] for s in parse_docx(raw, f['path'])['sections']]
+            fp[f['fileId']] = dict(modified=f.get('modified'), size=f.get('size'), secs=secs)
+            return secs
+        report = compare(base or load_base(), tree, fetch, sections_of, seen)
         report.update(at=stamp(), by=by, sharedriveId=drive)
         ids = {f['fileId'] for f in tree}
 
         def save(st):
-            st.update(report=report, cache={k: v for k, v in cache.items() if k in ids}, lastRun=dict(at=report['at'], by=by, ok=True))
+            st.update(report={k: v for k, v in report.items() if k != 'seenIds'}, cache={k: v for k, v in cache.items() if k in ids},
+                      fp={k: v for k, v in fp.items() if k in ids}, seen=report['seenIds'], lastRun=dict(at=report['at'], by=by, ok=True))
         update_state(store, save)
         try:  # 바뀐 문서 → 수정 요청 티켓(REQ-n). 실패해도 확인 결과는 남는다. 새로 생긴 티켓 수는 화면 '동기화 완료' 안내에 쓴다
             import onboarding
