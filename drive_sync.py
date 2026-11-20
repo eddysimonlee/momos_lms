@@ -164,6 +164,10 @@ def compare(base, tree, fetch):
     titles = {k: v.get('title') for k, v in (content.get('documents') or {}).items()}
     files = [f for f in tree if is_doc(f['path'])]
     by_path = {nfc(f['path']): f for f in files}
+    # 11/20 '이동' 후보는 근거 문서가 있는 맨 위 폴더(매장사업부 공통·ST-002_온천본점 등) 안에서만, 아카이브 폴더는 빼고 찾는다
+    # — 다른 지점 폴더·아카이브에 있는 같은 이름 사본을 '옮긴 문서'로 잘못 짝짓지 않게(REQ-22: 온천본점 아카이브 사본과 짝지어짐)
+    roots = {nfc(m['folder']).split('/', 1)[0] for m in manifest}
+    movable = [x for x in files if nfc(x['path']).split('/', 1)[0] in roots and not any('아카이브' in seg for seg in nfc(x['path']).split('/')[:-1])]
     newest = lambda xs: max(xs, key=lambda x: x.get('modified') or '')
     used, docs = set(), []
     for m in manifest:
@@ -175,7 +179,7 @@ def compare(base, tree, fetch):
             if same:
                 f, how = newest(same), '새 판'
             else:
-                hits = [x for x in files if nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file'])] or [x for x in files if stem(x['path']) == st]
+                hits = [x for x in movable if nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file'])] or [x for x in movable if stem(x['path']) == st]
                 if hits:
                     f, how = newest(hits), '이동'
         rec = dict(id=m['id'], title=titles.get(m['id']) or m['id'], folder=m['folder'], file=m['file'])

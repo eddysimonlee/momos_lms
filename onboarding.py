@@ -95,9 +95,11 @@ def ticket_version(r):
 
 
 def close_synced_drive_tickets(store):
-    """11/16 배포 뒤 서버가 시작할 때 한 번: 진행중 원본 변경 티켓 중 배포된 기준(source_sections.json 의 문서 sha1)이
-    티켓의 드라이브 원본(drive.sha1)과 같아진 것을 '반영됨'으로 닫는다(동기화를 다시 누르지 않아도). → 닫은 티켓 번호 목록"""
+    """11/16 배포 뒤 서버가 시작할 때 한 번: 진행중 원본 변경 티켓 중 배포된 기준(source_sections.json 의 문서 sha1, manifest 의 경로)이
+    티켓의 드라이브 원본(drive.sha1·drive.path)과 같아진 것을 '반영됨'으로 닫는다(동기화를 다시 누르지 않아도). → 닫은 티켓 번호 목록"""
     base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8')).get('documents') or {}
+    # 11/20 파일 내용(sha1)만이 아니라 위치도 같아야 반영된 것: '이동'·'새 판'은 내용이 같아도 manifest 의 폴더·파일이 드라이브 경로로 바뀌어야 닫는다
+    paths = {m['id']: f"{m['folder']}/{m['file']}" for m in json.loads((Path(__file__).parent / 'source_manifest.json').read_text(encoding='utf-8')).get('documents') or []}
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         root = projects.Rooms.read(db, ROOT)
@@ -107,6 +109,7 @@ def close_synced_drive_tickets(store):
             d = r.get('drive') or {}
             if not d.get('sha1') or req_status(r.get('status')) != '진행중': continue
             if (base.get(d.get('docId')) or {}).get('sha1') != d['sha1']: continue
+            if d.get('path') and paths.get(d.get('docId')) != d['path']: continue
             r['status'] = '반영됨'
             r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='배포된 LMS 기준이 이 티켓의 드라이브 원본과 같아 자동으로 반영됨 처리')]
             done.append(r.get('no'))

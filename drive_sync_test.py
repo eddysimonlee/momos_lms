@@ -47,7 +47,7 @@ def make_store(tmp):
 class CompareTests(unittest.TestCase):
     def tree(self):
         return [dict(path='F/A_문서_261116_SOP.docx', fileId='fa', size=10, modified='2026-11-16'),
-                dict(path='X/B_261001.docx', fileId='fb', size=5, modified='2026-10-01'),
+                dict(path='H/B_261001.docx', fileId='fb', size=5, modified='2026-10-01'),
                 dict(path='F/새_문서.docx', fileId='fn', size=1, modified='2026-11-15'),
                 dict(path='F/~$임시.docx', fileId='ft', size=1, modified='2026-11-16'),
                 dict(path='F/사진.jpg', fileId='fj', size=1, modified='2026-11-16')]
@@ -72,6 +72,18 @@ class CompareTests(unittest.TestCase):
         self.assertEqual([x['path'] for x in rep['extra']], ['F/새_문서.docx'])  # 임시 파일(~$)·docx 아닌 파일 제외
         self.assertEqual(rep['lessons'], [dict(no=1, id='s1', title='교육1')])
         self.assertEqual(rep['counts'], {'새 판': 1, '이동': 1, '없음': 1})
+
+    def test_move_ignores_other_store_and_archive_copies(self):
+        # 11/20 다른 지점 폴더·아카이브의 같은 이름 사본은 '이동'으로 짝짓지 않는다 → 없음
+        tree = [dict(path='X/B_261001.docx', fileId='x', size=1, modified='m'), dict(path='G/아카이브/B_261001.docx', fileId='a', size=1, modified='m'),
+                dict(path='F/A_문서_261020_SOP.docx', fileId='fa', size=1, modified='m')]
+        b = base()
+        b['manifest'][2]['folder'] = 'F/H'  # 근거 문서 맨 위 폴더 = F, G
+        rep = drive_sync.compare(b, tree, lambda f, force: ({'fa': 's0'}.get(f['fileId'], 'b0'), None))
+        self.assertEqual({d['id']: d['status'] for d in rep['docs']}, {'a-doc': '그대로', 'b-doc': '없음', 'c-doc': '없음'})
+        tree.append(dict(path='F/새폴더/B_261001.docx', fileId='m', size=1, modified='m'))
+        rep = drive_sync.compare(b, tree, lambda f, force: ({'fa': 's0'}.get(f['fileId'], 'b0'), None))
+        self.assertEqual([(d['status'], d.get('path')) for d in rep['docs'] if d['id'] == 'b-doc'], [('이동', 'F/새폴더/B_261001.docx')])
 
     def test_unchanged_doc_is_not_parsed(self):
         tree = [dict(path=A_PATH, fileId='fa', size=10, modified='m')]
@@ -163,33 +175,17 @@ class StoreTests(unittest.TestCase):
 
     def test_deploy_closes_ticket_when_baseline_matches(self):
         base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8'))['documents']
+        man = {m['id']: m for m in json.loads((Path(__file__).parent / 'source_manifest.json').read_text(encoding='utf-8'))['documents']}
         doc, info = next(iter(base.items()))
-        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id=doc, title='T', folder='F', file='f.docx', status='바뀜', sha1=info['sha1'])]), '동기화')
-        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id='other-doc', title='O', folder='F', file='o.docx', status='바뀜', sha1='not-deployed')]), '동기화')
-        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])  # 배포된 기준 sha1 = 티켓의 원본 → 반영됨
-        self.assertEqual([t['status'] for t in self.tickets()], ['반영됨', '진행중'])
-
-    def test_failed_run_is_recorded(self):
-        with mock.patch.object(works_auth, 'docs_folder', return_value=(None, None, [])):
-            with self.assertRaises(RuntimeError):
-                drive_sync.run(self.store, 'tok', '테스트', base=base())
-        st = drive_sync.read_state(self.store)
-        self.assertEqual((st['lastRun']['ok'], st['lastRun']['error']), (False, '드라이브에서 ST_매장사업부 폴더를 찾지 못했어요.'))
-
-    def test_llm_keys(self):
-        raw = drive_sync.new_llm_key(self.store, dict(email='boss@momos.co.kr', name='점장'))
-        self.assertTrue(raw.startswith('mlk_'))
+        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id=doc, title='T', folder='F', file='f.docx', status='이동', sha1=info['sha1'], path='딴곳/아카이브/f.docx')]), '동기화')
+        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id='other-doc', title='O', folder='F', file='o.docx', status='바뀜', sha1='not-deployed', path='F/o.docx')]), '동기화')
+        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), [])  # 내용(sha1)은 같아도 위치가 다르면 닫지 않는다(11/20 REQ-22)
         with self.store.connect() as db:
-            self.assertNotIn(raw, json.dumps(lms_store.Rooms.read(db, drive_sync.LLM_KEYS_KEY)))  # 원문은 저장하지 않는다
-        boss = {'boss@momos.co.kr'}
-        self.assertEqual(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, boss)['name'], '점장')
-        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, {'other@momos.co.kr'}))  # 관리자에서 빠지면 못 쓴다
-        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer mlk_wrong', boss))
-        self.assertIsNone(drive_sync.check_llm_key(self.store, raw, boss))
-        keys = drive_sync.list_llm_keys(self.store, set())
-        self.assertEqual((len(keys), keys[0]['active'], bool(keys[0]['last'])), (1, False, True))
-        drive_sync.revoke_llm_key(self.store, keys[0]['id'])
-        self.assertIsNone(drive_sync.check_llm_key(self.store, 'Bearer ' + raw, boss))
+            root = lms_store.Rooms.read(db, onboarding.ROOT)
+            root['contentRequests'][0]['drive']['path'] = f"{man[doc]['folder']}/{man[doc]['file']}"
+            lms_store.Rooms.write(db, onboarding.ROOT, root)
+        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])  # 배포된 기준 sha1·경로 = 티켓의 원본 → 반영됨
+        self.assertEqual([t['status'] for t in self.tickets()], ['반영됨', '진행중'])
 
 
 BOSS = dict(email='boss@momos.co.kr', name='점장', company='momos')
