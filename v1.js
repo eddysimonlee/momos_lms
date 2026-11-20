@@ -792,7 +792,7 @@
     const chips = REQ_FILTERS.map(([k, label, fn]) => `<button type="button" class="v1-fchip${k === reqFilter ? ' on' : ''}" data-req-filter="${esc(k)}" aria-pressed="${k === reqFilter}">${esc(label)} <b>${all.filter(fn).length}</b></button>`).join('');
     const rows = rp.items.map(r => { const logs = logsOf(r);
       return `<tr class="v1-lrow" data-req="${esc(r.id)}" tabindex="0" role="link" aria-label="${esc(tkey(r) + ' ' + reqHead(r).name)} 상세 보기"><td class="v1-nowrap">${tkeyHtml(r)}</td>` +
-        `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}${fbsOf(r).length ? ' · 의견 ' + fbsOf(r).length : ''}</small></td>` +
+        `<td>${reqHead(r).path ? `<small class="v1-reqpath">${esc(reqHead(r).path)}</small>` : ''}<b${unseen(r) ? '' : ' class="v1-seen"'}>${esc(reqHead(r).name)}</b><small>${esc(r.type)}${r.field ? ' · ' + esc(r.field) : ''}${logs.length ? ' · 반영 기록 ' + logs.length : ''}${fbsOf(r).length ? ' · 의견 ' + fbsOf(r).length : ''}</small></td>` +
         `<td class="v1-nowrap">${esc(r.name)}<small>${esc(fmtAt(r.at).slice(0, 10))}</small></td><td class="v1-nowrap">${esc(r.assignee || '—')}</td>` +
         `<td><span class="v1-lst ${REQ_ST[r.status] || 'n'}">${esc(r.status)}</span></td><td class="v1-chev">›</td></tr>`; }).join('');
     return `<section class="v1-card"><h2>수정 요청</h2><p class="v1-muted">교육 화면 ⋮ 메뉴의 '수정 요청'으로 보낸 요청과, [동기화]로 찾은 드라이브 원본 문서 변경('원본 문서 변경 확인')이에요. 티켓 번호(REQ-n)로 반영 기록과 이어져요.</p>` + driveBar() +
