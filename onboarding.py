@@ -129,10 +129,11 @@ def close_synced_drive_tickets(store):
 def _drive_payload(d, checked):
     """원본 변경 확인 결과(문서 1편) → 티켓의 drive 필드. 저장 한도(교육 기록 4MB)를 넘지 않게 절 본문은 4000자, 인용 절은 30곳까지."""
     cut = lambda s: s if len(s) <= 4000 else s[:4000] + '\n…(이하 생략)'
-    cited = [dict(c, asis=cut(c.get('asis') or ''), tobe=cut(c.get('tobe') or '')) for c in (d.get('cited') or [])[:30]]
+    cited = [dict(c, asis=cut(c.get('asis') or ''), tobe=cut(c.get('tobe') or ''), **({'variants': [dict(v, tobe=cut(v.get('tobe') or '')) for v in c['variants']]} if c.get('variants') else {}))
+             for c in (d.get('cited') or [])[:30]]
     return dict(docId=d['id'], version=d.get('sha1') or d['status'], status=d['status'], sha1=d.get('sha1'), title=d.get('title'), folder=d.get('folder'), file=d.get('file'),
                 path=d.get('path'), modified=d.get('modified'), error=d.get('error'), cited=cited, other=d.get('other') or [], added=d.get('added') or [],
-                removed=d.get('removed') or [], match=d.get('match'), checkedAt=checked)
+                removed=d.get('removed') or [], match=d.get('match'), parts=d.get('parts'), checkedAt=checked)
 
 
 def _drive_text(d):
@@ -140,6 +141,8 @@ def _drive_text(d):
         return '(LMS 교육 근거 문서 아님)', f"새 문서: {d.get('path')}\n교육에 써야 하면 근거 문서로 등록하고 교육 내용을 정해 주세요. 교육과 관계없으면 반려해 주세요."
     lessons = sorted({(r['no'], r['title']) for c in d.get('cited') or [] for r in c.get('lessons') or []})
     tobe = f"지금 드라이브: {d.get('path') or '(찾지 못함)'} — {d['status']}"
+    if d.get('parts'):
+        tobe += '\n나뉜 파일: ' + ', '.join(f"{p['path']}(같은 절 {p.get('sameSections')}개)" for p in d['parts'])
     if d.get('match'):
         mt = d['match']
         tobe += f"\n이름이 바뀐 파일을 내용으로 짝지음: 절 {mt.get('baseSections')}개 중 같은 절 {mt.get('sameSections')}개·같은 제목 {mt.get('sameTitles')}개 — 같은 문서가 맞는지 확인 필요"
@@ -149,7 +152,7 @@ def _drive_text(d):
         tobe += '\n영향받는 교육: ' + ', '.join(f'{n}. {t}' for n, t in lessons)
     for k, label in (('other', '인용한 부분 밖에서 바뀐 절'), ('added', '새 절'), ('removed', '없어진 절')):
         if d.get(k):
-            tobe += f'\n{label}: ' + ', '.join(f'{n} {x}'.strip() for n, x in d[k])
+            tobe += f'\n{label}: ' + ', '.join(f'{x[0]} {x[1]}'.strip() + (f' ({x[2].rsplit("/", 1)[-1]})' if len(x) > 2 else '') for x in d[k])
     return f"기준 파일: {d.get('folder')}/{d.get('file')}", tobe
 
 
@@ -197,6 +200,7 @@ def sync_drive_tickets(store, report, by):
             items.append(item)
             mine.append(item)
             out['created'].append(item['no'])
+            out.setdefault('kinds', {})[d['status']] = out.setdefault('kinds', {}).get(d['status'], 0) + 1
         # 11/20 새 문서(근거 문서가 아닌 새 docx) → 티켓. 근거 문서로 등록되면(그 파일이 근거 문서와 짝지어지면) 반영됨
         linked = {d.get('fileId') for d in report.get('docs') or [] if d.get('fileId')}
         for r in items:
@@ -222,6 +226,7 @@ def sync_drive_tickets(store, report, by):
                         status='진행중', history=[dict(at=stamp(), by=by, status='진행중')], drive=dict(_drive_payload(d, report.get('at') or stamp()), version='new'))
             items.append(item)
             out['created'].append(item['no'])
+            out.setdefault('kinds', {})['새 문서'] = out.setdefault('kinds', {}).get('새 문서', 0) + 1
         if any(out.values()):
             root['contentRequests'] = items[-2000:]
             root['revision'] = root.get('revision', 0) + 1

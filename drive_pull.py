@@ -46,12 +46,16 @@ def summary(rep):
         lines.append(f"\n[{d['status']}]{done} {d['title']} — {d['folder']}/{d['file']}" + (f" → {d['path']}" if d.get('path') and d['path'] != f"{d['folder']}/{d['file']}" else ''))
         if d.get('error'):
             lines.append('  오류: ' + d['error'])
+        for p in d.get('parts') or []:
+            lines.append(f"  · 나뉜 파일: {p['path']} (기준 절 {p.get('baseSections')}개 중 같은 절 {p.get('sameSections')}개, 점수 {p.get('score')})")
+        if d.get('match'):
+            lines.append(f"  · 이름 바뀐 파일과 내용으로 짝지음: 같은 절 {d['match'].get('sameSections')}개, 점수 {d['match'].get('score')}")
         for c in d.get('cited') or []:
             who = ', '.join(sorted({f"{r['no']}번 {r['title']}" for r in c['lessons']})) or '(교육 없음)'
             lines.append(f"  · 인용 절 {c['no']} {c['title']}{' [' + c['part'] + ']' if c['part'] else ''} — 교육: {who}" + (' — 절을 찾지 못함: ' + c['note'] if c['missing'] else ''))
         for k, label in (('other', '인용한 부분 밖에서 바뀐 절'), ('added', '새 절'), ('removed', '없어진 절')):
             if d.get(k):
-                lines.append(f"  · {label}: " + ', '.join(f'{n} {t}'.strip() for n, t in d[k]))
+                lines.append(f"  · {label}: " + ', '.join(f'{x[0]} {x[1]}'.strip() + (f' ({x[2]})' if len(x) > 2 else '') for x in d[k]))
     if rep.get('lessons'):
         lines.append('\n영향받는 교육: ' + ', '.join(f"{x['no']}번 {x['title']}" for x in rep['lessons']))
     if rep.get('added'):
@@ -79,13 +83,26 @@ def main():
         return
     root, n = out / 'ST_매장사업부', 0
     for d in rep['docs']:
+        for p in (d.get('parts') or [])[1:]:  # 11/23 나뉜 문서는 나머지 파일도 받는다
+            dest = root / p['path']
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(get(base + '/api/sync/file?' + urlencode({'path': p['path']}), key, timeout=120))
+            n += 1
         if not d.get('fileId'):
             continue
         dest = root / d['path']
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(get(base + '/api/sync/file?' + urlencode({'doc': d['id']}), key, timeout=120))
         n += 1
-    for x in rep.get('added') or []:  # 11/20 새 문서(근거 문서 아님)도 받아 둔다 — 근거로 등록할지 판단용
+    # 11/23 근거 문서가 아닌 docx 중 근거 문서가 있는 맨 위 폴더(아카이브 제외)에서 LMS 기준일(manifest updated) 뒤에 생기거나 고쳐진 것도 받는다
+    # — 나뉜 문서·새 문서를 교육에 반영할지 판단하려면 원문이 필요하다(동기화 화면이 아직 못 잡는 경우 포함)
+    man = json.loads((Path(__file__).with_name('source_manifest.json')).read_text(encoding='utf-8'))
+    roots, since = {m['folder'].split('/', 1)[0] for m in man['documents']}, man.get('updated') or ''
+    recent = [x for x in rep.get('extra') or [] if x['path'].split('/', 1)[0] in roots and not any('아카이브' in s for s in x['path'].split('/')[:-1])
+              and str(x.get('modified') or '')[:10] > since]
+    picked = {x['path']: x for x in (rep.get('added') or []) + recent}
+    for x in picked.values():
+        print(f"  + 근거 아닌 문서: {x['path']} ({str(x.get('modified') or '')[:10]})")
         dest = root / x['path']
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(get(base + '/api/sync/file?' + urlencode({'path': x['path']}), key, timeout=120))

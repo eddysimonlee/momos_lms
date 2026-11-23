@@ -193,7 +193,8 @@ class Handler(BaseHTTPRequestHandler):
         report = drive_sync.read_state(store).get('report') or {}
         ident, want = query.get('doc', [''])[0], drive_sync.nfc(query.get('path', [''])[0])
         hit = next((d for d in report.get('docs') or [] if d.get('fileId') and ((ident and d['id'] == ident) or (want and d.get('path') == want))), None) \
-            or next((x for x in report.get('extra') or [] if want and x.get('fileId') and x['path'] == want), None)
+            or next((x for d in report.get('docs') or [] for x in d.get('parts') or [] if want and x.get('fileId') and x['path'] == want), None) \
+            or next((x for x in (report.get('extra') or []) + (report.get('added') or []) if want and x.get('fileId') and x['path'] == want), None)
         if not hit or not report.get('sharedriveId'):
             return self.send(404, {'error': '그 문서를 마지막 동기화 결과에서 찾지 못했어요. LMS관리자 › 수정 요청에서 [동기화]를 다시 눌러 주세요.'})
         try:

@@ -772,7 +772,7 @@ def docs_tree(token, drive, folder, depth=8, cap=3000, folders=None):
                 if folders is not None: folders.append([prefix + name, f['fileId']])
                 if level < depth: walk(f['fileId'], prefix + name + '/', level + 1)
             elif len(out) < cap:
-                out.append(dict(path=prefix + name, fileId=f['fileId'], size=f.get('fileSize'), modified=f.get('modifiedTime'), type=f.get('fileType')))
+                out.append(dict(path=prefix + name, fileId=f['fileId'], size=f.get('fileSize'), modified=f.get('modifiedTime'), created=f.get('createdTime'), type=f.get('fileType')))
     walk(folder, '', 0)
     return sorted(out, key=lambda x: x['path'])
 

@@ -591,13 +591,14 @@
     try { const d = await driveApi(body); if (d.newKey) driveNewKey = d.newKey; delete d.newKey; driveData = d; if (done) toast(done);
       if (wasRunning && !d.running) {  // 11/16 동기화 끝: 성공이면 새로 생긴 티켓 수, 실패면 이유
         cloud = await api('GET', null, cloud.target); const run = d.lastRun || {};
-        toast(run.ok ? `동기화 완료되었습니다. 문서변경으로 인해 수정 필요한 항목은 ${((run.tickets || {}).created || []).length}개 입니다` : `동기화하지 못했어요. ${run.error || ''}`.trim()); } }
+        const kinds = Object.entries((run.tickets || {}).kinds || {}).map(([k, n]) => `${k} ${n}`).join(' · ');
+        toast(run.ok ? `동기화 완료되었습니다. 문서변경으로 인해 수정 필요한 항목은 ${((run.tickets || {}).created || []).length}개 입니다${kinds ? ` (${kinds})` : ''}` : `동기화하지 못했어요. ${run.error || ''}`.trim()); } }
     catch (e) { toast(e.message); if (!driveData) driveData = {error: e.message}; }
     finally { driveLoading = false; if (view === 'admin' && driveTab()) render(); }
     clearTimeout(drivePoll);
     if (driveData && driveData.running) drivePoll = setTimeout(() => driveLoad(), 3000);
   }
-  const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '이름 바뀐 새 판': 'b', '새 문서': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
+  const DRV_ST = {'바뀜': 'r', '새 판': 'b', '이동': 'b', '이름 바뀐 새 판': 'b', '나뉨': 'r', '새 문서': 'b', '없음': 'r', '확인 실패': 'r', '내용 같음': 'n'};
   const driveWhen = iso => iso ? fmtAt(iso) : '';
   // 줄 단위 비교(같은 줄이 길게 이어지면 접는다). 표 행은 '열 | 열' 한 줄
   function driveDiff(asis, tobe) {
@@ -627,15 +628,17 @@
     const lesson = r => `<button type="button" class="v1-link" data-drive-step="${esc(r.id)}">${r.no}. ${esc(r.title)}</button>${r.part === 'kp' ? ` <small>교육 내용 ${r.index + 1}</small>` : ''}`;
     const sec = c => `<div class="v1-drv-sec"><h4>${esc(c.no || '')} ${esc(c.title || '')}${c.part ? ` <small>· ${esc(c.part)}</small>` : ''}</h4>` +
       `<p class="v1-drv-who">${(c.lessons || []).length ? '영향받는 교육 ' + c.lessons.map(lesson).join(', ') : '교육에 직접 연결되지 않은 인용'}</p>` +
-      (c.missing ? `<p class="v1-note warn">새 원본에서 이 절(또는 인용한 행)을 찾지 못했어요. 절 번호·표 행이 바뀌었는지 확인이 필요해요.</p>` : '') + driveDiff(c.asis, c.tobe) + '</div>';
-    const names = (label, list) => list && list.length ? `<p class="v1-drv-who"><b>${label}</b> ${list.map(([no, title]) => esc(`${no} ${title}`.trim())).join(', ')}</p>` : '';
+      (c.missing ? `<p class="v1-note warn">새 원본에서 이 절(또는 인용한 행)을 찾지 못했어요. 절 번호·표 행이 바뀌었는지 확인이 필요해요.</p>` : '') +
+      (c.variants ? c.variants.map(v => `<p class="v1-drv-who"><b>${esc(v.path.split('/').pop())}</b>${v.missing ? ' — 이 파일에는 이 절이 없어요' : ''}</p>${v.missing ? '' : driveDiff(c.asis, v.tobe)}`).join('') : driveDiff(c.asis, c.tobe)) + '</div>';
+    const names = (label, list) => list && list.length ? `<p class="v1-drv-who"><b>${label}</b> ${list.map(([no, title, path]) => esc(`${no} ${title}`.trim() + (path ? ` (${path.split('/').pop()})` : ''))).join(', ')}</p>` : '';
     return (x.error ? `<p class="v1-note warn">${esc(x.error)}</p>` : '') +
       `<dl class="v1-snap-meta"><dt>원본 상태</dt><dd><span class="v1-lst ${DRV_ST[x.status] || 'n'}">${esc(x.status)}</span>${x.checkedAt ? ` <small class="v1-muted">확인 ${esc(driveWhen(x.checkedAt))}</small>` : ''}</dd>${x.status === '새 문서' ? '' : `<dt>기준 파일</dt><dd>${esc(x.folder)}/${esc(x.file)}</dd>`}${moved || x.status === '새 문서' ? `<dt>지금 드라이브</dt><dd>${esc(x.path)}</dd>` : ''}${x.modified ? `<dt>드라이브 수정</dt><dd>${esc(driveWhen(x.modified))}</dd>` : ''}</dl>` +
       (x.status === '없음' ? '<p class="v1-muted">드라이브에서 이 문서를 찾지 못했어요(삭제·이름 변경·이동). 내용이 비슷한 새 파일도 없었어요. 기준 폴더와 파일 이름을 확인해 주세요.</p>' : '') +
+      (x.parts ? `<p class="v1-note warn">이 문서가 ${x.parts.length}개 파일로 나뉜 것으로 보여요(내용으로 짝지음). 교육이 인용한 절마다 파일별로 어떻게 바뀌었는지 아래에 있어요.</p><ul class="v1-drv-extra">${x.parts.map(p => `<li>${esc(p.path)} <small class="v1-muted">기준 절 ${p.baseSections}개 중 같은 절 ${p.sameSections}개</small></li>`).join('')}</ul>` : '') +
       (x.match ? `<p class="v1-note warn">파일 이름이 바뀌어 내용으로 짝지었어요 — 기준 문서 절 ${x.match.baseSections}개 중 같은 절 ${x.match.sameSections}개·같은 제목 ${x.match.sameTitles}개. 같은 문서가 맞는지 확인해 주세요.</p>` : '') +
       (x.status === '새 문서' ? '<p class="v1-muted">근거 문서가 아닌 새 문서가 드라이브에 생겼어요. 교육에 써야 하면 근거 문서로 등록하고 교육 내용을 정해야 해요("드라이브 sync 맞춰줘"). 교육과 관계없으면 반려해 주세요.</p>' : '') +
       (x.status === '내용 같음' ? '<p class="v1-muted">파일은 바뀌었지만 절 내용은 같아요(서식·메타데이터 변경 등). 교육은 그대로 두고 기준만 갱신하면 돼요.</p>' : '') +
-      (['새 판', '이동', '이름 바뀐 새 판'].includes(x.status) && !['cited', 'other', 'added', 'removed'].some(k => (x[k] || []).length) ? '<p class="v1-muted">절 내용은 기준과 같아요. 교육은 그대로 두고 기준(파일 위치·이름)만 갱신하면 돼요.</p>' : '') +
+      (['새 판', '이동', '이름 바뀐 새 판', '나뉨'].includes(x.status) && !['cited', 'other', 'added', 'removed'].some(k => (x[k] || []).length) ? '<p class="v1-muted">절 내용은 기준과 같아요. 교육은 그대로 두고 기준(파일 위치·이름)만 갱신하면 돼요.</p>' : '') +
       (x.cited || []).map(sec).join('') + names('인용한 부분 밖에서 바뀐 절', x.other) + names('새 절', x.added) + names('없어진 절', x.removed);
   }
   // 수정 요청 탭 목록 위 한 줄: 드라이브 원본 동기화(마지막 동기화 · [동기화]). 바뀐 문서는 아래 목록의 '원본 문서 변경 확인' 티켓
