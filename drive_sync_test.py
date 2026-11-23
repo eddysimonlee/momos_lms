@@ -257,6 +257,20 @@ class StoreTests(unittest.TestCase):
         self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])  # 배포된 기준 sha1·경로 = 티켓의 원본 → 반영됨
         self.assertEqual([t['status'] for t in self.tickets()], ['반영됨', '진행중'])
 
+    def test_deploy_closes_split_ticket_when_every_part_is_baseline(self):
+        # 11/23 REQ-25: '나뉨' 티켓은 나뉜 파일 하나하나(경로·sha1)가 배포된 근거 문서에 다 들어 있어야 닫는다
+        base = json.loads((Path(__file__).parent / 'source_sections.json').read_text(encoding='utf-8'))['documents']
+        man = [m for m in json.loads((Path(__file__).parent / 'source_manifest.json').read_text(encoding='utf-8'))['documents'] if m['id'] in base][:2]
+        parts = [dict(path=f"{m['folder']}/{m['file']}", sha1=base[m['id']]['sha1']) for m in man]
+        onboarding.sync_drive_tickets(self.store, dict(at='x', docs=[dict(id=man[0]['id'], title='T', folder='F', file='f.docx', status='나뉨', sha1='joined', path=parts[0]['path'],
+                                                                          parts=parts + [dict(path='F/아직 등록 안 됨.docx', sha1='s3')])]), '동기화')
+        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), [])  # 나뉜 파일 하나가 아직 근거 문서가 아니면 그대로
+        with self.store.connect() as db:
+            root = lms_store.Rooms.read(db, onboarding.ROOT)
+            root['contentRequests'][0]['drive']['parts'] = parts
+            lms_store.Rooms.write(db, onboarding.ROOT, root)
+        self.assertEqual(onboarding.close_synced_drive_tickets(self.store), ['REQ-1'])
+
     def test_failed_run_is_recorded(self):
         with mock.patch.object(works_auth, 'docs_folder', return_value=(None, None, [])):
             with self.assertRaises(RuntimeError):

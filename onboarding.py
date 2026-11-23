@@ -114,9 +114,12 @@ def close_synced_drive_tickets(store):
                     r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='이 문서가 LMS 근거 문서로 등록되어 자동으로 반영됨 처리')]
                     done.append(r.get('no'))
                 continue
-            if not d.get('sha1'): continue
-            if (base.get(d.get('docId')) or {}).get('sha1') != d['sha1']: continue
-            if d.get('path') and paths.get(d.get('docId')) != d['path']: continue
+            if d.get('parts'):  # 11/23 '나뉨': 나뉜 파일 하나하나가 같은 경로·같은 sha1 로 근거 문서에 들어 있어야 반영된 것
+                by_path = {p: i for i, p in paths.items()}
+                if not all((base.get(by_path.get(p.get('path'))) or {}).get('sha1') == p.get('sha1') for p in d['parts']): continue
+            elif not d.get('sha1'): continue
+            elif (base.get(d.get('docId')) or {}).get('sha1') != d['sha1']: continue
+            elif d.get('path') and paths.get(d.get('docId')) != d['path']: continue
             r['status'] = '반영됨'
             r['history'] = (r.get('history') or []) + [dict(at=stamp(), by='배포 자동 처리', status='반영됨', note='배포된 LMS 기준이 이 티켓의 드라이브 원본과 같아 자동으로 반영됨 처리')]
             done.append(r.get('no'))

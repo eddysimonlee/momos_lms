@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-12",
+  "updated": "2026-11-23",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -108,8 +108,8 @@
       "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "OP1_출근_및_수질_에스프레소_세팅_261112_SOP.docx",
       "revised": "2026-11-12",
-      "sha1": "ca6055e740edc93a77dfdac4bfa247f5a14e383d",
-      "basis": "채수민 제공 ST_매장사업부 신규 원본 2026-11-12 · 83번 반영안 승인",
+      "sha1": "07e74cf91259acc8d953a73d4d02a5b9f4e1b29f",
+      "basis": "채수민 제공 ST_매장사업부 신규 원본 2026-11-12 · 83번 반영안 승인 · 2026-11-23 드라이브 원본으로 지문 맞춤(내용 같음)",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
     },
     {
@@ -143,9 +143,9 @@
       "id": "본점-OP3-오전-식사-전-소모품-비품-보충-기준",
       "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_OP3_오전_식사_전_소모품_비품_보충_기준_GUI_261102.docx",
-      "revised": "2026-10-26",
-      "sha1": "337af4eeeb2a10d5e35e0e1f60b9cc74b11a3796",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "revised": "2026-11-18",
+      "sha1": "a7f27a4b8fdf42151d688360c6686e8ed3319556",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-21",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
     },
     {
@@ -164,6 +164,15 @@
       "revised": "2026-10-12",
       "sha1": "2081254650f3237094be14d9778900e1380831a9",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
+    },
+    {
+      "id": "본점-CL4-마감-업무-절차",
+      "folder": "ST-002_온천본점/업무문서/근무조별 운영",
+      "file": "본점_CL4_마감_업무_절차_SOP_261118.docx",
+      "revised": "2026-11-18",
+      "sha1": "5f6d35d11bf0cd4916f1d584d24bcf93d796520f",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-27 새 문서",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
     },
     {
@@ -295,10 +304,10 @@
     {
       "id": "그라인더-날-분해-및-청소",
       "folder": "매장사업부 공통/장비 기기 관리",
-      "file": "그라인더_날_분해_및_청소_SOP_261020.docx",
-      "revised": "2026-10-18",
-      "sha1": "0e2fdb1e14000ba6fc9aea0be7f0a794fa2ebb00",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "file": "EK43_그라인더_날_분해_및_청소_261118_SOP .docx",
+      "revised": "2026-11-18",
+      "sha1": "69b42e3e9df02e994d1d229261ac63ddcdd86968",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-25 3개로 나뉨 — 이 id 는 EK43(공통) 문서로 잇는다",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NTc3NTI3Mzk5M3xEfDA"
     },
     {
@@ -308,6 +317,33 @@
       "revised": null,
       "sha1": "966d87ebef1588011857688eefff72731263fff2",
       "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+    },
+    {
+      "id": "본점-RoburS-그라인더-날-분해-및-청소",
+      "folder": "ST-002_온천본점/업무문서/장비·기기 관리",
+      "file": "본점_RoburS_그라인더_날_분해_및_청소_261118_SOP .docx",
+      "revised": "2026-11-18",
+      "sha1": "dd5b7bd5f8a4147742d0ed5c5438f6e173441386",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-25 그라인더 SOP 에서 나뉨",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+    },
+    {
+      "id": "본점-MajorVP-그라인더-날-분해-및-청소",
+      "folder": "ST-002_온천본점/업무문서/장비·기기 관리",
+      "file": "본점_MajorVP_그라인더_날_분해_및_청소_261118_SOP .docx",
+      "revised": "2026-11-18",
+      "sha1": "37c748a73c242725396d1cfbdf2d9a979f8acdf2",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-25 그라인더 SOP 에서 나뉨",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
+    },
+    {
+      "id": "마노-자동-탬핑기-데일리-청소-절차",
+      "folder": "ST-002_온천본점/업무문서/장비·기기 관리",
+      "file": "마노_자동_탬핑기_데일리_청소_절차_261118_SOP.docx",
+      "revised": "2026-11-18",
+      "sha1": "f819c0c3c859297e4f84e7ee6d649cbe9d776eda",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-28 새 문서",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc2MDMxNjg5NDIxNnxEfDA"
     },
     {
@@ -368,9 +404,9 @@
       "id": "재료-제조-소분-라벨-부착-보관",
       "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
       "file": "재료_제조_소분_라벨_부착_보관_261112_SOP.docx",
-      "revised": "2026-11-12",
-      "sha1": "212869e6905129579f06ba1dc7bff4f3baf8cb56",
-      "basis": "채수민 첨부 동일 파일명 원본 교체 2026-11-12 · 제조 도구 안내 사진 갱신",
+      "revised": "2026-11-23",
+      "sha1": "565c80e2b9e670770e3739fada0b03bf6c1cc79a",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-26",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE5MzQ4MHxEfDA"
     },
     {
@@ -432,8 +468,8 @@
       "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "픽업_빵포장_GUI_261029.docx",
       "revised": "2026-10-16",
-      "sha1": "6231c9f7262201d02796a018b6bfe3498d84668f",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
+      "sha1": "d7836f58f34c4d380ad77d1544945b99ce707d62",
+      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-23 내용 같음",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTI0Nzc1MnxEfDA"
     }
   ]
