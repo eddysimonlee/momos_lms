@@ -71,7 +71,7 @@ class WeeklyHygieneTests(unittest.TestCase):
     def test_weekdays_are_separate_and_each_body_contains_only_its_task_row(self):
         content = json.loads(Path(__file__).with_name('v1_content.json').read_text(encoding='utf-8'))
         steps = [s for u in content['units'] for s in u['steps']]
-        self.assertEqual(len(steps), 92)
+        self.assertEqual(len(steps), 94)  # 11/23 CL4 마감·마노 탬핑기(+2)
         ids = ['floor-weekly'] + ['floor-weekly-' + day for day in ('tue', 'wed', 'thu', 'fri', 'sat', 'sun')]
         self.assertEqual([s['id'] for s in steps[29:36]], ids)
         for step, n, ref, day in zip(steps[29:36], (6, 8, 7, 7, 6, 4, 5), range(2, 9), '월화수목금토일'):
