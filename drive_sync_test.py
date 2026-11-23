@@ -71,7 +71,8 @@ class CompareTests(unittest.TestCase):
         self.assertEqual(docs['c-doc']['status'], '없음')
         self.assertEqual([x['path'] for x in rep['extra']], ['F/새_문서.docx'])  # 임시 파일(~$)·docx 아닌 파일 제외
         self.assertEqual(rep['lessons'], [dict(no=1, id='s1', title='교육1')])
-        self.assertEqual(rep['counts'], {'새 판': 1, '이동': 1, '없음': 1})
+        self.assertEqual(rep['counts'], {'새 판': 1, '이동': 1, '없음': 1, '새 문서': 1})  # 11/23 기준일(11/13) 뒤에 생긴 짝 없는 문서 = 새 문서
+        self.assertEqual([x['path'] for x in rep['added']], ['F/새_문서.docx'])
 
     def test_move_ignores_other_store_and_archive_copies(self):
         # 11/20 다른 지점 폴더·아카이브의 같은 이름 사본은 '이동'으로 짝짓지 않는다 → 없음
@@ -85,33 +86,50 @@ class CompareTests(unittest.TestCase):
         rep = drive_sync.compare(b, tree, lambda f, force: ({'fa': 's0'}.get(f['fileId'], 'b0'), None))
         self.assertEqual([(d['status'], d.get('path')) for d in rep['docs'] if d['id'] == 'b-doc'], [('이동', 'F/새폴더/B_261001.docx')])
 
-    def test_renamed_doc_matched_by_content_and_new_docs(self):
-        # 11/20 이름까지 바뀐 새 판: 위치·이름으로 못 찾으면 후보 폴더 안 문서의 절을 읽어 내용으로 짝짓는다. 새로 생긴 문서는 '새 문서'
+    def test_renamed_split_and_new_docs(self):
+        # 11/23 위치·이름으로 못 찾은 근거 문서는 후보 폴더 안 짝 없는 문서의 절을 읽어 내용으로 짝짓는다:
+        # 하나면 '이름 바뀐 새 판', 여럿이면 '나뉨'(인용 절마다 파일별 TO-BE). 기준일 뒤에 생긴 짝 없는 문서 = 새 문서
         b = base()
         b['manifest'] = b['manifest'][:1]
         b['sections'] = {'a-doc': dict(sha1='s0', sections=[['1', '개요', 'h1'], ['2', '절차', 'h2'], ['3', '기타', 'h3']])}
-        tree = [dict(path='F/본점_EK43_A_문서_261118_SOP.docx', fileId='renamed', size=1, modified='m'),
-                dict(path='F/무관한_문서.docx', fileId='other', size=1, modified='m'),
-                dict(path='F/아카이브/A_문서_261020_SOP.docx', fileId='arch', size=1, modified='m'),
-                dict(path='Z/A_문서_261020_SOP.docx', fileId='store', size=1, modified='m')]
+        old = '2026-11-01T00:00:00Z'
+        tree = [dict(path='F/본점_EK43_A_문서_261118_SOP.docx', fileId='renamed', size=1, modified='2026-11-18T00:00:00Z'),
+                dict(path='F/무관한_문서.docx', fileId='other', size=1, modified=old),
+                dict(path='F/아카이브/A_문서_261020_SOP.docx', fileId='arch', size=1, modified=old),
+                dict(path='Z/A_문서_261020_SOP.docx', fileId='store', size=1, modified=old)]
         secs = {'renamed': [['1', '개요', 'h1'], ['2', '절차', 'h2x'], ['4', '새 절', 'h4']], 'other': [['1', '전혀 다른', 'zz']]}
         asked = []
         sections_of = lambda f: asked.append(f['fileId']) or secs[f['fileId']]
         with mock.patch.object(drive_sync, 'parse_docx', return_value=NEW_A):
-            rep = drive_sync.compare(b, tree, lambda f, force: ('s9', b'x'), sections_of, seen={'other'})
+            rep = drive_sync.compare(b, tree, lambda f, force: ('s9', b'x'), sections_of)
         a = rep['docs'][0]
         self.assertEqual((a['status'], a['path'], a['match']['sameSections'], a['match']['sameTitles']), ('이름 바뀐 새 판', 'F/본점_EK43_A_문서_261118_SOP.docx', 1, 2))
         self.assertEqual(len(a['cited']), 1)  # 짝지은 뒤에는 바뀐 절 AS-IS/TO-BE 를 그대로 보여 준다
         self.assertEqual(sorted(asked), ['other', 'renamed'])  # 아카이브·다른 지점 사본은 읽지도 않는다
-        self.assertEqual(rep['added'], [])  # 짝지어진 새 파일은 새 문서가 아니고, 'other' 는 지난번에도 있었다
-        tree.append(dict(path='F/새로운_안내_GUI_261119.docx', fileId='brand-new', size=1, modified='m2'))
-        secs['brand-new'] = [['1', '안내', 'n1']]
-        with mock.patch.object(drive_sync, 'parse_docx', return_value=NEW_A):
-            rep = drive_sync.compare(b, tree, lambda f, force: ('s9', b'x'), sections_of, seen={'other', 'renamed'})
+        self.assertEqual(rep['added'], [])  # 짝지어진 파일은 새 문서가 아니고, 'other' 는 기준일 전 문서
+        # 나뉨: 같은 문서가 두 파일로(공통에 하나, 본점에 하나) — 둘 다 짝, 인용 절은 파일별 TO-BE
+        tree += [dict(path='F/본점/본점_Robur_A_문서_261118_SOP.docx', fileId='part2', size=1, modified='2026-11-18T00:00:00Z'),
+                 dict(path='F/새로운_안내_GUI_261119.docx', fileId='brand-new', size=1, created='2026-11-19T00:00:00Z', modified='2026-11-19T00:00:00Z')]
+        secs.update({'part2': [['1', '개요', 'h1'], ['2', '절차', 'h2'], ['5', '로버 전용', 'h5']], 'brand-new': [['1', '안내', 'n1']]})
+        part2 = dict(sections=[dict(no='1', title='개요', paragraphs=['p1'], tables=[], hash='h1'),
+                               dict(no='2', title='절차', paragraphs=[], tables=[dict(header=['항목', '방법'], rows=[['닦기', '물로']])], hash='h2'),
+                               dict(no='5', title='로버 전용', paragraphs=[], tables=[], hash='h5')])
+        with mock.patch.object(drive_sync, 'parse_docx', side_effect=lambda raw, path: part2 if 'Robur' in path else NEW_A):
+            rep = drive_sync.compare(b, tree, lambda f, force: (f['fileId'], b'x'), sections_of)
+        a = rep['docs'][0]
+        self.assertEqual((a['status'], [p['path'] for p in a['parts']]), ('나뉨', ['F/본점_EK43_A_문서_261118_SOP.docx', 'F/본점/본점_Robur_A_문서_261118_SOP.docx']))
+        c = next(c for c in a['cited'] if c['key'] == 'a-doc|2#r1')
+        self.assertEqual([(v['path'].rsplit('/', 1)[0] if 'Robur' in v['path'] else v['path'].split('_A_')[0], '세제로' in v['tobe'], '물로' in v['tobe']) for v in c['variants']], [('F/본점_EK43', True, False), ('F/본점', False, True)])
         self.assertEqual([x['path'] for x in rep['added']], ['F/새로운_안내_GUI_261119.docx'])
-        self.assertEqual(rep['counts'].get('새 문서'), 1)
-        rep0 = drive_sync.compare(b, tree, lambda f, force: ('s0', None), None, None)  # 처음 동기화(seen 없음)는 새 문서로 보지 않는다
-        self.assertEqual((rep0['added'], rep0['docs'][0]['status']), ([], '없음'))
+        self.assertEqual(rep['counts'], {'나뉨': 1, '새 문서': 1})
+
+    def test_similarity_ignores_template_sections(self):
+        # 여러 문서에 똑같이 나오는 서식 절(목적·적용 범위)은 짝짓기 점수에 넣지 않는다 — 서식만 같은 남의 문서와 짝짓지 않게
+        sections = {k: dict(sections=[['1', '목적', 'g1'], ['2', '적용 범위', 'g2'], ['3', k, k]]) for k in ('d1', 'd2', 'd3')}
+        generic = drive_sync.generic_marks(sections)
+        score, same, titles = drive_sync.similarity(sections['d1']['sections'], [['1', '목적', 'g1'], ['2', '적용 범위', 'g2'], ['3', '남의 절', 'x']], generic, 'A_문서.docx', 'B_딴문서.docx')
+        self.assertEqual((same, titles), (0, 0))
+        self.assertLess(score, drive_sync.MATCH_MIN)
 
     def test_unchanged_doc_is_not_parsed(self):
         tree = [dict(path=A_PATH, fileId='fa', size=10, modified='m')]
@@ -184,12 +202,12 @@ class StoreTests(unittest.TestCase):
                                    lessons=[dict(no=3, id='s1', title='교육1', part='kp', index=0, text='t')])], other=[], added=[['4', '새 절']], removed=[])
         rep = lambda *docs: dict(at='2026-11-16T00:00:00+00:00', docs=list(docs))
         out = onboarding.sync_drive_tickets(self.store, rep(changed, dict(id='b-doc', status='그대로'), dict(id='c-doc', status='확인 실패')), '아침 자동 확인')
-        self.assertEqual(out, dict(created=['REQ-1'], replaced=[], closed=[]))
+        self.assertEqual((out['created'], out['replaced'], out['closed'], out['kinds']), (['REQ-1'], [], [], {'바뀜': 1}))
         t = self.tickets()[0]
         self.assertEqual((t['type'], t['status'], t['target']['kind'], t['target']['title'], t['drive']['version']), ('원본 문서 변경 확인', '진행중', 'doc', 'F › G › A 문서', 'v1'))
         self.assertIn('영향받는 교육: 3. 교육1', t['tobe'])
         self.assertIn('새 절: 4 새 절', t['tobe'])
-        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(changed), 'x'), dict(created=[], replaced=[], closed=[]))  # 같은 판은 그대로
+        self.assertEqual(onboarding.sync_drive_tickets(self.store, rep(changed), 'x'), dict(created=[], replaced=[], closed=[]))  # 같은 판은 그대로(kinds 도 없음)
         out = onboarding.sync_drive_tickets(self.store, rep(dict(changed, sha1='v2')), '이재현')  # 또 바뀌면 새 티켓, 이전 티켓은 반려(이어짐)
         self.assertEqual((out['created'], out['replaced']), (['REQ-2'], ['REQ-1']))
         old, new = self.tickets()
