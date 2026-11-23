@@ -746,7 +746,7 @@
         `<td><span class="v1-lkind">${esc(b.kind || '')}</span> <b>${esc(e.title)}</b><small>${esc(b.origin || '')}${b.at ? ' · 드라이브 ' + esc(b.at) + ' 기준' : ''}</small></td>` +
         `<td>${logChips(c)}${ticketsOfLog(e).length ? `<span class="v1-lchip">티켓 ${ticketsOfLog(e).map(esc).join(' · ')}</span>` : ''}</td><td class="v1-nowrap">${esc(e.approvedBy || '')}</td><td class="v1-chev">›</td></tr>`; }).join('');
     return `<section class="v1-card"><h2>반영 기록</h2><p class="v1-muted">업무문서(폴더·파일)를 받아 교육 내용에 반영한 기록이에요. 행을 누르면 무엇이 어떻게 바뀌었는지 볼 수 있어요.</p>` +
-      `<div class="v1-table"><table class="v1-ltable v1-llist"><thead><tr><th>반영일</th><th>받은 문서</th><th>바뀐 내용</th><th>승인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${lp.nav}</section>`;
+      `<div class="v1-table"><table class="v1-ltable v1-llist v1-slog"><thead><tr><th>반영일</th><th>받은 문서</th><th>바뀐 내용</th><th>승인</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${lp.nav}</section>`;
   }
   function logView(id) {
     const e = (cloud.sourceLog || []).find(x => x.id === id);
