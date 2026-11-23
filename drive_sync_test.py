@@ -131,6 +131,21 @@ class CompareTests(unittest.TestCase):
         self.assertEqual((same, titles), (0, 0))
         self.assertLess(score, drive_sync.MATCH_MIN)
 
+    def test_newest_created_file_in_folder_is_current_edition(self):
+        # 11/23 옛 파일을 남겨 둔 채 같은 문서의 새 파일을 만들면(날짜를 잘못 적어도) 드라이브에서 가장 늦게 생성된 파일을 지금 판으로 본다
+        b = base()
+        b['manifest'] = b['manifest'][:1]
+        tree = [dict(path=A_PATH, fileId='old', size=1, created='2026-10-20T00:00:00Z', modified='2026-10-20T00:00:00Z'),
+                dict(path='F/A_문서_261001_SOP.docx', fileId='new', size=1, created='2026-11-18T00:00:00Z', modified='2026-11-18T00:00:00Z')]  # 날짜를 잘못 적음
+        with mock.patch.object(drive_sync, 'parse_docx', return_value=NEW_A):
+            rep = drive_sync.compare(b, tree, lambda f, force: ({'old': 's0'}.get(f['fileId'], 's1'), b'x'))
+        a = rep['docs'][0]
+        self.assertEqual((a['status'], a['path']), ('새 판', 'F/A_문서_261001_SOP.docx'))
+        self.assertEqual(rep['added'], [])  # 옛 파일도 새 파일도 '새 문서'가 아니다
+        tree[1]['created'] = '2026-10-01T00:00:00Z'  # 새로 만든 게 아니면 기준 파일 그대로
+        rep = drive_sync.compare(b, tree, lambda f, force: ({'old': 's0'}.get(f['fileId'], 's1'), b'x'))
+        self.assertEqual((rep['docs'][0]['status'], rep['docs'][0]['path']), ('그대로', A_PATH))
+
     def test_unchanged_doc_is_not_parsed(self):
         tree = [dict(path=A_PATH, fileId='fa', size=10, modified='m')]
         with mock.patch.object(drive_sync, 'parse_docx') as parse:

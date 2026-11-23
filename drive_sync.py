@@ -234,21 +234,25 @@ def compare(base, tree, fetch, sections_of=None, seen=None):
     # — 다른 지점 폴더·아카이브에 있는 같은 이름 사본을 잘못 짝짓지 않게(11/20 REQ-22)
     roots = {nfc(m['folder']).split('/', 1)[0] for m in manifest}
     movable = [x for x in files if nfc(x['path']).split('/', 1)[0] in roots and not any('아카이브' in seg for seg in nfc(x['path']).split('/')[:-1])]
-    newest = lambda xs: max(xs, key=lambda x: x.get('modified') or '')
-    # 1) 위치·이름으로: 그대로 → 같은 폴더에서 날짜만 다른 파일(새 판) → 후보 폴더의 같은 이름(이동)
+    # 1) 위치·이름으로. 같은 폴더에 같은 문서(파일 이름에서 날짜·SOP 꼬리를 뺀 이름이 같음)가 여럿이면 드라이브에서 가장 늦게 '생성된' 파일이
+    #    그 문서의 지금 판이다(11/23 — 옛 파일을 남겨 둔 채 새 파일을 만들거나 파일 이름 날짜를 잘못 적어도). 그게 기준 파일이면 그대로, 아니면 새 판.
+    #    같은 폴더에 없으면 후보 폴더의 같은 이름(이동)
+    born = lambda x: (str(x.get('created') or x.get('modified') or ''), nfc(x['path']))
     found, used = {}, set()
     for m in manifest:
-        f = by_path.get(nfc(f"{m['folder']}/{m['file']}"))
-        if f:
-            found[m['id']] = ([f], None, None); used.add(nfc(f['path']))
+        folder, st, rel = nfc(m['folder']), stem(m['file']), nfc(f"{m['folder']}/{m['file']}")
+        same = [x for x in files if nfc(x['path']).rsplit('/', 1)[0] == folder and (nfc(x['path']) == rel or stem(x['path']) == st) and nfc(x['path']) not in used]
+        if same:
+            f = max(same, key=born)
+            found[m['id']] = ([f], None if nfc(f['path']) == rel else '새 판', None)
+            used.update(nfc(x['path']) for x in same)  # 같은 문서의 옛 판 파일은 새 문서로도 보지 않는다
     for m in manifest:
         if m['id'] in found:
             continue
-        folder, st = nfc(m['folder']), stem(m['file'])
-        same = [x for x in files if nfc(x['path']).rsplit('/', 1)[0] == folder and stem(x['path']) == st and nfc(x['path']) not in used]
-        hits = same or [x for x in movable if nfc(x['path']) not in used and (nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file']) or stem(x['path']) == st)]
+        st = stem(m['file'])
+        hits = [x for x in movable if nfc(x['path']) not in used and (nfc(x['path']).rsplit('/', 1)[-1] == nfc(m['file']) or stem(x['path']) == st)]
         if hits:
-            f = newest(hits); found[m['id']] = ([f], '새 판' if same else '이동', None); used.add(nfc(f['path']))
+            f = max(hits, key=born); found[m['id']] = ([f], '이동', None); used.add(nfc(f['path']))
     # 2) 그래도 없으면 내용으로: 짝 없는 후보 문서의 절을 읽어 점수를 매긴다. 하나가 넘으면 이름 바뀐 새 판, 여럿이 넘으면 나뉨(11/23)
     if sections_of:
         scored = {}
