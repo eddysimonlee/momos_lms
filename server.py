@@ -60,6 +60,23 @@ def safe_path(root, value):
 
 
 
+# 11/25 요청별 측정: 걸린 시간·DB 조회 수·DB 연결을 기다린 시간(요청 스레드마다). 로그에는 경로·상태·숫자만 남긴다
+_REQ = threading.local()
+
+
+class _Counted:
+    """DB 연결을 감싸 execute 횟수만 센다(나머지는 그대로 넘긴다)."""
+    def __init__(self, db):
+        self._db = db
+
+    def execute(self, *args, **kw):
+        _REQ.queries = getattr(_REQ, 'queries', 0) + 1
+        return self._db.execute(*args, **kw)
+
+    def __getattr__(self, name):
+        return getattr(self._db, name)
+
+
 class Store:
     """Local SQLite or cloud PostgreSQL rows plus uploaded file objects."""
 
@@ -79,15 +96,18 @@ class Store:
 
     @contextmanager
     def connect(self):
+        started = time.monotonic()
         if self.database is not None:
             with self.database.connect() as db:
-                yield db
+                _REQ.wait = getattr(_REQ, 'wait', 0.0) + time.monotonic() - started
+                yield _Counted(db)
             return
         db = sqlite3.connect(self.db, timeout=15)
         db.row_factory = sqlite3.Row
+        _REQ.wait = getattr(_REQ, 'wait', 0.0) + time.monotonic() - started
         try:
             with db:
-                yield db
+                yield _Counted(db)
         finally:
             db.close()
 
@@ -642,14 +662,29 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             self.send(500, {'error': '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.'})
 
+    def send_response(self, code, message=None):
+        self._status = code
+        super().send_response(code, message)
+
+    def timed(self, method):
+        """11/25: /api/ 요청마다 한 줄 — `api GET /api/onboarding 200 812ms db=93 wait=3ms` (질의 문자열·값은 남기지 않는다)."""
+        _REQ.queries, _REQ.wait, self._status, started = 0, 0.0, 0, time.monotonic()
+        try:
+            self.route(method)
+        finally:
+            path = urlsplit(self.path).path
+            if path.startswith('/api/') and path != '/api/health':
+                peek = '?peek' if 'peek=' in urlsplit(self.path).query else ''
+                print(f'api {method} {path}{peek} {self._status} {round((time.monotonic() - started) * 1000)}ms db={_REQ.queries} wait={round(_REQ.wait * 1000)}ms', flush=True)
+
     def do_GET(self):
-        self.route('GET')
+        self.timed('GET')
 
     def do_POST(self):
-        self.route('POST')
+        self.timed('POST')
 
     def do_PUT(self):
-        self.route('PUT')
+        self.timed('PUT')
 
 
 class LocalHTTPServer(ThreadingHTTPServer):
