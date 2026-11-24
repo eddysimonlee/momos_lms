@@ -11,6 +11,35 @@
   ],
   "entries": [
     {
+      "id": "2026-11-24-alpha-ci-python-dependencies",
+      "at": "2026-11-24 14:09",
+      "approvedBy": "채수민",
+      "tickets": [],
+      "title": "알파 작업 — PR #1 Python 테스트 의존성 누락 수정",
+      "basis": {
+        "kind": "알파 작업",
+        "origin": "채수민: PR #1 GitHub Actions Python tests의 cryptography·docx ModuleNotFoundError 수정 및 커밋 요청",
+        "range": "requirements.txt 및 .github/workflows/lms-tests.yml; PR #1 소스 alpha 00e635c 기준"
+      },
+      "basisCount": 0,
+      "work": "Docker가 apt로 설치하는 두 의존성이 requirements.txt에는 빠져 있어 CI의 pip 설치 환경에서 누락됨. 기존 버전 고정 방식에 맞춰 python-docx 1.2.0·cryptography 50.0.2를 추가하고 pip check 및 필수 모듈 import 확인 단계를 넣음.",
+      "docs": [],
+      "removed": [],
+      "lessons": [],
+      "rules": [
+        "AS-IS: CI는 requirements.txt의 5개 직접 의존성만 설치하여 cryptography·docx가 없음. TO-BE: python-docx==1.2.0, cryptography==50.0.2를 함께 설치.",
+        "AS-IS: 설치 직후 의존성·필수 import 점검 없음. TO-BE: python -m pip check 및 import docx, cryptography.fernet를 통과한 뒤 기존 전체 테스트 실행.",
+        "교육 콘텐츠·학습 기록·로그인·권한·서비스 코드·Dockerfile·배포 설정 변경 없음. 기존 테스트 생략·완화·skip 처리 없음."
+      ],
+      "checks": [
+        "기존 site-packages와 PYTHONPATH를 공유하지 않는 새 Python 3.12.14 venv에서 cryptography·docx가 없는 상태를 확인. 수정한 requirements.txt만 설치하고 pip check 및 두 모듈 import 성공.",
+        "동일한 새 venv에서 워크플로우의 Python 구문 검사 및 python -B -m unittest discover -p *_test.py 전체 130개 통과. JavaScript 구문 검사 및 전체 76개 테스트 통과(Windows python3 실행 이름만 venv Python으로 연결).",
+        "공식 PyPI에서 Python 3.12 Linux용 cryptography·python-docx 및 cffi·lxml 등 하위 의존성 wheel 다운로드 성공. 실제 ubuntu-latest/GitHub Actions 실행은 push 후 재확인 필요.",
+        "GitHub 연결이 없어 Actions 로그는 직접 조회하지 못함. 사용자 제공 오류와 실제 워크플로우·요구사항 파일 및 PR head ref로 원인과 alpha 소스 확인."
+      ],
+      "skipped": []
+    },
+    {
       "id": "2026-11-24-alpha-grinder-remove-first",
       "at": "2026-11-24 13:28",
       "approvedBy": "채수민",
