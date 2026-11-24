@@ -49,6 +49,16 @@
     return data;
   }
 
+  // 11/25 저장 재시도: 서버가 잠깐 응답하지 못한 경우(응답 없음·JSON 아님·5xx)만 같은 요청(같은 requestId)을 2번 더 보낸다.
+  // 같은 requestId 는 서버가 한 번만 저장하므로, 먼저 보낸 것이 실제로 저장됐어도 두 번 저장되지 않는다.
+  const transient = e => !e.status || e.status >= 500;
+  async function send(value, target) {
+    for (let i = 0; ; i++) {
+      try { return await api('POST', value, target); }
+      catch (e) { if (i >= 2 || !transient(e)) throw e; await new Promise(r => setTimeout(r, i ? 4000 : 1500)); }
+    }
+  }
+
   async function load(target) {
     cloud = await api('GET', null, target);
     render();
@@ -78,7 +88,7 @@
     selfPending++;
     selfQueue = selfQueue.then(async () => {
       try {
-        const fresh = await api('POST', {action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
+        const fresh = await send({action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
           requestId: uid(), data: {step: step.id, index: k, on}});
         if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
       } catch (e) {
@@ -95,7 +105,7 @@
     if (busy) return false;
     busy = true; render();
     try {
-      cloud = await api('POST', {action, target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
+      cloud = await send({action, target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
         requestId: uid(), data});
       return true;
     } catch (e) {
@@ -1474,7 +1484,8 @@
     } catch {}
   }
 
-  // 같은 자리에서 함께 보는 현장: 5초마다 지금 보는 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
+  // 같은 자리에서 함께 보는 현장: 20초마다 '바뀐 게 있는지'(마지막 저장 표시)만 물어보고, 바뀌었을 때만 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
+  // 11/25: 5초마다 전체를 받던 것이 DB 연결을 다 써 버려 저장·첫 화면이 실패했다(18:49 장애) → 20초 + 가벼운 확인.
   // 화면이 보일 때만, 저장 중이 아닐 때만, 글을 입력하는 중(메모·재교육 사유)이 아닐 때만.
   setInterval(async () => {
     if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch') return;
@@ -1482,11 +1493,14 @@
     if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.tagName === 'INPUT' && ['text', 'search', 'email'].includes(a.type))) return;
     if (pop) return;  // 완료 팝업을 보는 중
     try {
+      const peek = await fetch('/api/onboarding?peek=1', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.ok ? r.json() : null).catch(() => null);
+      if (peek && cloud.changeStamp && peek.changeStamp === cloud.changeStamp) return;  // 아무것도 저장되지 않았다
       const fresh = await api('GET', null, cloud.target);
       if (busy || fresh.target !== cloud.target) return;
       if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision || JSON.stringify(fresh.notifications) !== JSON.stringify(cloud.notifications)) { cloud = fresh; render(); }
+      else cloud.changeStamp = fresh.changeStamp;
     } catch {}
-  }, 5000);
+  }, 20000);
 
   // --- start: sign in (automatically on a local trial), load the slice and the record, pick a sensible first target
   devAutoLogin().then(() => ERPAuth.ensureSession()).then(async () => {
@@ -1504,5 +1518,14 @@
     view = 'home';
     if (!cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일(admin 도 교육을 듣는다)
     render();
-  }).catch(e => { $('app').innerHTML = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(e.message)}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button></div>`; });
+  }).catch(e => { bootFailed(e.message); });
+  // 11/25 첫 화면이 실패하거나(서버가 잠깐 응답하지 못함) 20초 넘게 아무것도 그려지지 않으면, 흰 화면 대신 안내와 '다시 시도'를 보인다.
+  // 로그인 전(로그인 화면이 아직 없을 때)이면 오류를 로그인 칸에 보여야 한다 — 교육 화면 칸은 로그인 전에는 숨겨져 있다.
+  function bootFailed(message) {
+    const html = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(message || '서버가 잠시 응답하지 않아요.')}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button> <a class="v1-btn" href="/auth/works/login">NAVER WORKS로 다시 로그인</a></div>`;
+    const gate = document.getElementById('authGate');
+    if (document.body.classList.contains('auth-pending') && gate) { gate.hidden = false; gate.innerHTML = html; }
+    else $('app').innerHTML = html;
+  }
+  setTimeout(() => { const gate = document.getElementById('authGate'); if (!content && document.body.classList.contains('auth-pending') && gate && !gate.innerHTML.trim()) bootFailed('화면을 여는 데 시간이 오래 걸리고 있어요.'); }, 20000);
 })();

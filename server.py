@@ -564,6 +564,8 @@ class Handler(BaseHTTPRequestHandler):
                 import onboarding
                 education = onboarding.Service(store)
                 if method == 'GET':
+                    if query.get('peek'):  # 11/25 20초마다 오는 가벼운 확인(DB 조회 1번, 조직도 갱신 없음)
+                        return self.send(200, education.peek(user))
                     import works_auth
                     works_auth.refresh_org(store, user['id'])  # 첫 화면 조직도(10분마다, 실패해도 화면은 열린다)
                     return self.send(200,education.get(user,query.get('target',[None])[0]))

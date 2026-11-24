@@ -141,7 +141,7 @@ class ApplyAndClose(unittest.TestCase):
                     def execute(self, sql, args=()):
                         class R:
                             def fetchone(_): return (outer.body,) if outer.body else None
-                        if sql.startswith('INSERT'): outer.body = args[1]
+                        if sql.startswith('INSERT') and args[0] != onboarding.projects.CHANGE_KEY: outer.body = args[1]  # 11/25 마지막 저장 표시는 건너뜀
                         return R()
                 return contextlib.nullcontext(Db())
         st = Store()
