@@ -1,8 +1,8 @@
 """부하 테스트(11/25): 내 PC 에서 LMS 를 띄우고, 가상 사용자 N명이 실제 교육 화면처럼 요청을 보낸다.
 
-    python3 load_test.py                       # 200명(교육자 40·교육생 160), 3분, DB 왕복 20ms, DB 연결 8개
-    python3 load_test.py --users 50 --minutes 1
-    python3 load_test.py --legacy-poll         # 11/24 이전 화면(5초마다 전체 기록)으로 비교
+    python3 loadtest.py                       # 200명(교육자 40·교육생 160), 3분, DB 왕복 20ms, DB 연결 8개
+    python3 loadtest.py --users 50 --minutes 1
+    python3 loadtest.py --legacy-poll         # 11/24 이전 화면(5초마다 전체 기록)으로 비교
 
 실서비스·알파에는 요청을 보내지 않는다. 임시 폴더에 체험 DB(SQLite)를 새로 만들고, 끝나면 지운다.
 Supabase 를 흉내 내려고 서버 쪽 DB 조회마다 --db-latency-ms 만큼 쉬고, DB 연결은 --pool 개만 동시에 쓰게 한다
