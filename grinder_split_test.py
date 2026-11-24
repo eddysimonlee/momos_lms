@@ -15,6 +15,34 @@ DOCS = ('그라인더-날-분해-및-청소', '본점-RoburS-그라인더-날-�
 
 
 class GrinderSplitTests(unittest.TestCase):
+    def test_first_topic_removal_keeps_remaining_check_evidence_and_completion(self):
+        for ident in IDS:
+            for status in ('ready', 'practice', 'review', 'done'):
+                with self.subTest(ident=ident, status=status):
+                    learner = ob.blank('2026-11-01')
+                    ob.fit(learner)
+                    r = learner['records'][ident]
+                    r['kpMoves'] = [ob.KP_MOVES[IDS[0]][0]] if ident == IDS[0] else []
+                    r.update(status=status, teacher=[True] * 4 if status == 'done' else [True, False, True, False],
+                             self=[False, True, False, True], done='2026-11-20' if status == 'done' else None,
+                             completedBy='retired', completedByName='이전 확인자',
+                             request='2026-11-19' if status == 'review' else None, memo='keep', history=[{'event': 'old'}])
+                    for key in ('selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                        r[key] = [f'{key}-{i}' for i in range(4)]
+                    before = copy.deepcopy(r)
+                    other = copy.deepcopy({k: v for k, v in learner['records'].items() if k != ident})
+                    ob.fit(learner)
+                    for key in ('teacher', 'self', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                        self.assertEqual(r[key], before[key][1:])
+                    for key in ('status', 'done', 'completedBy', 'completedByName', 'request', 'memo'):
+                        self.assertEqual(r[key], before[key])
+                    archived = r['history'][-1]
+                    for key, value in before.items():
+                        if key != 'history': self.assertEqual(archived[key], value)
+                    self.assertEqual({k: v for k, v in learner['records'].items() if k != ident}, other)
+                    once = copy.deepcopy(learner)
+                    self.assertEqual(ob.fit(learner), once)
+
     def test_existing_combined_records_are_archived_once_even_with_older_array_lengths(self):
         marker = ob.KP_MOVES[IDS[0]][0]
         for status in ('ready', 'practice', 'review', 'done'):
@@ -39,15 +67,15 @@ class GrinderSplitTests(unittest.TestCase):
                     self.assertEqual(old['history'][:-1], before['history'])
                     self.assertEqual(archived['lessonTitle'], '그라인더 날 분해·청소')
                     self.assertEqual(archived['splitMigration'], marker)
-                    for key in ('teacher', 'self'): self.assertEqual(old[key], [False] * 4)
+                    for key in ('teacher', 'self'): self.assertEqual(old[key], [False] * 3)
                     for key in ('selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
-                        self.assertEqual(old[key], [None] * 4)
+                        self.assertEqual(old[key], [None] * 3)
                     self.assertEqual(old['status'], 'practice' if status in ('done', 'review') else status)
                     if status in ('done', 'review'):
                         self.assertIsNone(old['done'])
                         self.assertNotIn('completedBy', old)
                     for ident in IDS[1:]:
-                        self.assertEqual(learner['records'][ident]['teacher'], [False] * 4)
+                        self.assertEqual(learner['records'][ident]['teacher'], [False] * 3)
                     self.assertEqual(learner['records']['stock-ecount'], untouched)
                     once = copy.deepcopy(learner)
                     self.assertEqual(ob.fit(learner), once)
@@ -56,7 +84,7 @@ class GrinderSplitTests(unittest.TestCase):
         learner = ob.blank('2026-11-24')
         ob.fit(learner)  # 이 작업과 무관한 기존 문항 이관을 먼저 마친다.
         for ident in IDS:
-            learner['records'][ident].update(status='done', teacher=[True] * 4, done='2026-11-24')
+            learner['records'][ident].update(status='done', teacher=[True] * 3, done='2026-11-24')
         before = copy.deepcopy(learner)
         self.assertEqual(ob.fit(learner), before)
         learner['records'].pop(IDS[0])
@@ -70,13 +98,13 @@ class GrinderSplitTests(unittest.TestCase):
         self.assertEqual(len(steps), 96)
         self.assertEqual([s['id'] for s in steps[92:]], [*IDS, 'stock-ecount'])
         for step, doc, last in zip(steps[92:95], DOCS, ('6.7', '6.4', '6.3')):
-            self.assertEqual(len(step['keyPoints']), 4)
+            self.assertEqual(len(step['keyPoints']), 3)
             self.assertEqual(step['shift'], ['CL'])
             self.assertEqual(step['position'], ['에스프레소'])
             self.assertEqual({c.split('|')[0] for c in step['sources']}, {doc})
             self.assertEqual({content['photos'][p]['cite'].split('|')[0] for p in step['photos']}, {doc})
             self.assertEqual(len(step['photos']), 2)
-            body = content['sections'][step['keyPoints'][2]['cites'][0]]
+            body = content['sections'][step['keyPoints'][1]['cites'][0]]
             text = '\n'.join(body['paragraphs'])
             self.assertIn(last, text)
             self.assertNotIn('완료 확인 및 이상 대응', text)
