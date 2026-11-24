@@ -34,6 +34,18 @@ CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관�
 # 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
 # {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
+    'grinder-blade': ('kp-2026-11-24-grinder-models', 4, [None] * 4, {
+        'checkBasis': CHECK_BASIS,
+        'previousTitle': '그라인더 날 분해·청소',
+        'previousChecks': [
+            '대상과 원본: EK43는 매장사업부 공통 SOP, Robur S·Major VP는 본점 SOP를 따른다. 해당 기종의 분해·조립 교육을 받은 담당자가 확인 관리자 승인 아래 한다.',
+            '준비: 현재 분쇄 설정을 기록하고 전원 플러그를 뽑아 회전이 멈춘 것을 확인 → 호퍼·잔여 원두 제거 → 공구·브러시·진공청소기·부품 트레이 준비. 나사·부품은 위치별로 두고, 날 절삭면을 맨손으로 만지지 않는다.',
+            '분쇄실에 물이나 임의의 세척제·윤활제를 쓰지 않는다. 나사 여러 개 체결부는 조금씩 번갈아 조인다. Major VP 중앙의 큰 볼트는 풀지 않고, Robur S 하부 날 중앙 너트(1개)는 교육받은 담당자만 다룬다.',
+            '완료 후 분리했던 부품이 모두 제자리인지, 분쇄실·토출구에 공구·천·이물이 없는지 확인한다. 이상 저항·유격·소음이 있으면 가동하지 말고 보고한다. 체결 토크·시험 가동 기준 등 기종별 현장 승인 항목은 시행 전 확인이 필요하다.',
+        ],
+        'addedSteps': {'grinder-blade-robur-s': 4, 'grinder-blade-major-vp': 4},
+        'markNew': True, 'archiveAnyLength': True,
+    }),  # 통합 교육 이력은 보존하고 기종별 완료는 재확인한다(새 교육도 4칸이므로 신규 기록을 구별).
     'floor-weekly': ('kp-2026-11-13-weekly-days', 9, [None] * 6, {
         'checkBasis': CHECK_BASIS,
         'previousTitle': '요일별 주간 위생 업무',
@@ -350,6 +362,9 @@ def fit(learner):
             n = len(s['checks'])
             records[ident] = dict(status='ready', self=[False]*n, teacher=[False]*n, selfAt=[None]*n, teacherAt=[None]*n, start=None,
                                   done=None, request=None, attempt=1, memo='', feedback='', history=[], lessonVersion=COURSE['version'], checkBasis=CHECK_BASIS)
+            move = KP_MOVES.get(ident)
+            if move and len(move) > 3 and move[3].get('markNew'):
+                records[ident]['kpMoves'] = [move[0]]
         if ident not in plans:
             source_plan = plans.get(s.get('planFrom'))
             plans[ident] = copy.deepcopy(source_plan) if source_plan else dict(start=plus(join, s['plan'][0]-1), end=plus(join, s['plan'][1]-1), edited=False)
@@ -360,7 +375,7 @@ def fit(learner):
         move = KP_MOVES.get(ident)
         if move and len(move) > 3 and move[0] not in (r.get('kpMoves') or []):
             # 분리 전 기록은 기준 변환보다 먼저 보관한다. 새 문항에는 완료 체크를 승계하지 않는다.
-            if len(r.get('teacher') or []) == move[1]:
+            if len(r.get('teacher') or []) == move[1] or move[3].get('archiveAnyLength'):
                 previous = copy.deepcopy(r)
                 previous.pop('history', None)
                 previous.update(checkTexts=list(move[3]['previousChecks']), splitMigration=move[0], splitAt=stamp())
@@ -368,7 +383,7 @@ def fit(learner):
                     previous['lessonTitle'] = move[3]['previousTitle']
                 r['history'] = (r.get('history') or []) + [previous]
                 for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
-                    if key in r and len(r[key]) == move[1]:
+                    if key in r and (len(r[key]) == move[1] or move[3].get('archiveAnyLength')):
                         empty = False if key in ('self', 'teacher') else None
                         r[key] = [empty if i is None else r[key][i] for i in move[2]]
                 r['checkBasis'] = move[3]['checkBasis']
@@ -409,6 +424,9 @@ def blank(join):
                               selfAt=[None]*count, teacherAt=[None]*count, start=None,
                               done=None, request=None, attempt=1, memo='', feedback='',
                               history=[], lessonVersion=COURSE['version'], checkBasis=CHECK_BASIS)
+        move = KP_MOVES.get(ident)
+        if move and len(move) > 3 and move[3].get('markNew'):
+            records[ident]['kpMoves'] = [move[0]]
         plans[ident] = dict(start=plus(join,s['plan'][0]-1), end=plus(join,s['plan'][1]-1),edited=False)
     for ident, t in TESTS.items():
         d = plus(month(join,t['month']),-t['buffer'])

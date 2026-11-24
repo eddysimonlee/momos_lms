@@ -279,7 +279,7 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),57)  # curriculum.json: 6단계 57단원(2.10 OP2 / 2.11 OP3 분리, 2.12 MD / 2.13 CL 출근)
-            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),94)  # 11/13 주간위생을 요일별 7개로 분리(+6), 11/23 CL4 마감·마노 탬핑기(+2)
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),96)  # 11/24 그라인더 기종별 교육 분리(+2)
             # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
             fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
             for s in steps:
@@ -787,7 +787,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),124)  # 기존 82 + 6단계 교육과정 새 세션 34 + 11/13 주간위생 화~일 6개 + 11/23 CL4 마감·마노 탬핑기 2개
+        self.assertEqual(len(ob.STEPS),126)  # 기존 124 + 11/24 그라인더 기종별 교육 2개
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

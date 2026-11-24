@@ -91,7 +91,7 @@ MOCK = r'''
       }
       const r = room.records?.[id];
       if (!r || (r.kpMoves || []).includes(marker)) continue;
-      if ((r.teacher || []).length === oldCount) {
+      if ((r.teacher || []).length === oldCount || split?.archiveAnyLength) {
         if (split) {
           const previous = JSON.parse(JSON.stringify(r)); delete previous.history;
           Object.assign(previous, {checkTexts: [...split.previousChecks], splitMigration: marker, splitAt: new Date().toISOString()});
@@ -99,7 +99,7 @@ MOCK = r'''
           r.history = [...(r.history || []), previous];
         }
         for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
-          if (!Array.isArray(r[key]) || r[key].length !== oldCount) continue;
+          if (!Array.isArray(r[key]) || (r[key].length !== oldCount && !split?.archiveAnyLength)) continue;
           const empty = key === 'teacher' ? !split && r.status === 'done' : key === 'self' ? false : null;
           r[key] = order.map(i => i === null ? empty : r[key][i]);
         }
@@ -147,6 +147,9 @@ MOCK = r'''
     const records = {};
     for (const [id, s] of Object.entries(STEPS)) records[id] = {status: 'ready', self: N(s).map(() => false), teacher: N(s).map(() => false),
       selfAt: N(s), teacherAt: N(s), teacherBy: N(s), teacherName: N(s), start: null, done: null, request: null, attempt: 1, memo: '', feedback: '', history: []};
+    for (const [id, move] of Object.entries(typeof KP_MOVES === 'undefined' ? {} : KP_MOVES)) {
+      if (move[3]?.markNew && records[id]) records[id].kpMoves = [move[0]];
+    }
     return {revision: 0, join, startDate: join, records};
   }
   function fresh() {
