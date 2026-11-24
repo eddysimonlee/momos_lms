@@ -436,6 +436,21 @@ def read_hired(db, user_id):
     return read_profile(db, user_id)['hiredDate']
 
 
+def read_profiles(db, user_ids):
+    """11/25 여러 사람의 입사일·직책·부서를 조회 한 번에 → {user_id: dict(hiredDate, position, org, saved)}.
+    saved = profile_saved 와 같은 뜻(부서까지 읽는 로그인 이후 저장한 적이 있는가)."""
+    import lms_store as projects
+    ids = list(dict.fromkeys(user_ids))
+    rows = projects.Rooms.read_many(db, [hired_key(u) for u in ids])
+    out = {}
+    for u in ids:
+        row = rows.get(hired_key(u))
+        ok = bool(row) and row.get('kind') == 'hired' and row.get('user') == u
+        out[u] = dict(hiredDate=valid_date(row.get('hiredDate')) if ok else None, position=(row.get('position') or None) if ok else None,
+                      org=(row.get('org') or None) if ok else None, saved=ok and 'org' in row)
+    return out
+
+
 # --- 주소록(구성원 목록): LMS관리자 화면에서 관리자로 추가할 구성원을 검색할 때 쓴다 ---
 # 로그인할 때 받은 그 사람의 WORKS 토큰(scope user.read directory.read)으로 GET /users 를 부른다.
 # 토큰은 이 서버 프로세스 메모리에만 두고(재시작하면 사라짐 → 다시 로그인), 화면·DB·로그로 보내지 않는다.

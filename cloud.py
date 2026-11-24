@@ -134,7 +134,9 @@ class Database:
         self.dsn, self.sslmode, self.expected_role = dsn,sslmode,expected_role
         from psycopg_pool import ConnectionPool
         # Reuse a bounded set of TLS connections; transaction-local settings stay below.
-        self.pool = ConnectionPool(dsn, min_size=0, max_size=8, max_idle=60,
+        # 11/25 연결 수: Render 환경변수 LMS_DB_POOL(기본 8, 4~40). Supabase 연결 한도(Project Settings › Database) 안에서만 올린다
+        size = min(40, max(4, int(os.environ.get('LMS_DB_POOL') or 8)))
+        self.pool = ConnectionPool(dsn, min_size=0, max_size=size, max_idle=60,
             max_lifetime=1800, timeout=15, max_waiting=32, open=True,
             kwargs=dict(sslmode=sslmode, connect_timeout=10, row_factory=row_factory,
                         prepare_threshold=None, application_name='momos-lms'))
@@ -287,6 +289,12 @@ def run():
         if closed: print(f"문구 수정 {len(closed)}건을 반영됨으로 닫았습니다: {', '.join(closed)}", flush=True)
     except Exception as e:  # 티켓 정리가 실패해도 서비스는 뜬다
         print('문구 수정 자동 처리 실패:', type(e).__name__, flush=True)
+    try:  # 11/25 변경 표시가 없는 문서(이전에 저장된 것)에 표시를 만든다 — 화면 주기 확인·기록 캐시가 쓴다
+        import lms_store
+        made = lms_store.ensure_stamps(store)
+        if made: print(f'변경 표시 {made}개를 만들었습니다.', flush=True)
+    except Exception as e:
+        print('변경 표시 준비 실패:', type(e).__name__, flush=True)
     try:  # 11/16 배포 뒤: 배포된 기준이 드라이브 원본과 같아진 '원본 문서 변경 확인' 티켓을 '반영됨'으로
         closed = onboarding.close_synced_drive_tickets(store)
         if closed: print(f"원본 변경 티켓 {len(closed)}건을 반영됨으로 닫았습니다: {', '.join(closed)}", flush=True)

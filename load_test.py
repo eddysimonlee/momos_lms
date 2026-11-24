@@ -152,7 +152,7 @@ def user_loop(email, trainer, args, port, stats, stop, learners_steps):
             target = random.choice(others)
             st, c2 = cl.call('onboarding ?target (교육생 열기)', 'GET', '/api/onboarding?target=' + target)
             if st == 200 and c2: ctx = c2
-    stamp = ctx.get('changeStamp')
+    stamps, last_full = ctx.get('stamps'), time.monotonic()
     poll = 5 if args.legacy_poll else args.poll
     next_poll = time.monotonic() + poll * random.uniform(0.5, 1)
     next_mark = time.monotonic() + random.expovariate(1 / args.mark_every) if target else float('inf')
@@ -165,7 +165,7 @@ def user_loop(email, trainer, args, port, stats, stop, learners_steps):
             body = dict(action='step.mark', target=target, revision=ctx['learner']['revision'], rootRevision=ctx['rootRevision'],
                         requestId=str(uuid.uuid4()), data=dict(step=sid, index=0, on=on))
             st, fresh = cl.call('step.mark (체크 저장)', 'POST', '/api/onboarding', body)
-            if st == 200 and fresh: ctx, stamp = fresh, fresh.get('changeStamp')
+            if st == 200 and fresh: ctx, stamps = fresh, fresh.get('stamps')
             next_mark = now + random.expovariate(1 / args.mark_every)
         elif now >= next_poll:
             q = ('?target=' + target) if target else ''
@@ -173,10 +173,17 @@ def user_loop(email, trainer, args, port, stats, stop, learners_steps):
                 st, fresh = cl.call('onboarding (주기 전체)', 'GET', '/api/onboarding' + q)
                 if st == 200 and fresh: ctx = fresh
             else:
-                st, p = cl.call('peek (주기 확인)', 'GET', '/api/onboarding?peek=1')
-                if st == 200 and p and p.get('changeStamp') != stamp:
+                k = ctx.get('learnerKey') if ctx else None
+                st, p = cl.call('peek (주기 확인)', 'GET', '/api/onboarding?peek=1' + (f'&k={k}' if k is not None else ''))
+                now_s = (p or {}).get('stamps') if st == 200 else None
+                if now_s and stamps:  # v1.js 와 같은 규칙: 보고 있는 기록·전체 설정이 바뀌면 바로, 다른 사람만 바뀌었으면 1분에 한 번
+                    need = now_s['root'] != stamps['root'] or now_s['learner'] != stamps['learner'] or (now_s['all'] != stamps['all'] and now - last_full >= 60)
+                else:
+                    need = True
+                if need:
+                    last_full = now
                     st, fresh = cl.call('onboarding (바뀌어서 전체)', 'GET', '/api/onboarding' + q)
-                    if st == 200 and fresh: ctx, stamp = fresh, fresh.get('changeStamp')
+                    if st == 200 and fresh: ctx, stamps = fresh, fresh.get('stamps')
             next_poll = now + poll
         stop.wait(0.2)
 

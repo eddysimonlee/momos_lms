@@ -48,7 +48,7 @@ class ItemTests(unittest.TestCase):
         return self.service.context(u,value['target'],value)
     def snapshot(self):
         with self.store.connect() as db:
-            return [(r['id'],r['body']) for r in db.execute('SELECT * FROM metadata WHERE id NOT IN (?,?) ORDER BY id',(items.ROOT,projects.CHANGE_KEY))]  # 11/25 마지막 저장 표시는 저장할 때마다 바뀐다
+            return [(r['id'],r['body']) for r in db.execute('SELECT * FROM metadata WHERE id!=? AND NOT (id>=? AND id<?) ORDER BY id',(items.ROOT,projects.STAMP_BASE,projects.STAMP_BASE+projects.STAMP_SPAN))]  # 11/25 변경 표시는 저장할 때마다 바뀐다
     def test_all_scopes_comment_block_resolve_preserve_operational_state(self):
         before=self.snapshot()
         for target in self.targets:

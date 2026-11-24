@@ -587,16 +587,34 @@ class EducationTests(unittest.TestCase):
         self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])
         self.assertTrue(self.service.get(b)['learner']['records'][ident]['teacher'][0])  # 한 번만 비운다
 
-    def test_peek_change_stamp_moves_only_when_something_is_saved(self):
-        # 11/25 18:49 장애: 화면이 5초마다 전체 기록을 받아 DB 연결을 다 썼다 → 20초마다 가벼운 확인(peek)만, 바뀌었을 때만 전체
-        first=self.service.peek(self.learner)['changeStamp']
-        self.assertTrue(first)
-        self.assertEqual(self.service.peek(self.learner)['changeStamp'],first)  # 읽기만 하면 그대로
-        self.assertEqual(self.service.get(self.learner)['changeStamp'],first)  # 전체 기록에도 같은 표시
-        ctx=self.act(self.learner,'profile.set',dict(branch='oncheon',role='learner'))
-        now=self.service.peek(self.learner)['changeStamp']
-        self.assertNotEqual(now,first)  # 저장하면 바뀐다
-        self.assertEqual(ctx['changeStamp'],now)  # 저장 응답의 표시 = 지금 표시(다음 확인에서 다시 받지 않는다)
+    def test_peek_stamps_move_only_for_what_was_saved(self):
+        # 11/25 18:49 장애: 화면이 5초마다 전체 기록을 받아 DB 연결을 다 썼다 → 20초마다 변경 표시(peek)만, 바뀐 것만 다시
+        c=self.service.get(self.trainer,self.learner['id']);key=c['learnerKey']
+        first=self.service.peek(self.trainer,key)['stamps']
+        self.assertEqual(first,c['stamps'])  # 전체 기록의 표시 = peek 표시
+        self.assertEqual(self.service.peek(self.trainer,key)['stamps'],first)  # 읽기만 하면 그대로
+        ident=next(iter(ob.STEPS));rev=c['rootRevision']
+        after=self.act(self.trainer,'step.mark',dict(step=ident,index=0,on=True),self.learner['id'])
+        now=self.service.peek(self.trainer,key)['stamps']
+        self.assertNotEqual(now['learner'],first['learner']);self.assertNotEqual(now['all'],first['all'])
+        self.assertEqual(now['root'],first['root'])  # 체크는 교육생 기록만 바꾼다(전체 설정은 그대로)
+        self.assertEqual(after['rootRevision'],rev)
+        self.assertEqual(after['stamps'],now)  # 저장 응답의 표시 = 지금 표시(다음 확인에서 다시 받지 않는다)
+
+    def test_same_request_saved_once_and_root_untouched_by_checks(self):
+        # 11/25 교육생 잠금: 체크 저장은 root 를 쓰지 않고, 같은 요청(같은 requestId)은 교육생 기록에 남겨 한 번만 저장
+        ident=next(iter(ob.STEPS));p=self.payload(self.trainer,'step.mark',dict(step=ident,index=0,on=True),self.learner['id'])
+        with self.store.connect() as db:root_before=projects.Rooms.read(db,ob.ROOT)
+        a=self.service.update(self.trainer,p);b=self.service.update(self.trainer,p)
+        self.assertEqual(a['learner']['revision'],b['learner']['revision'])
+        with self.store.connect() as db:self.assertEqual(projects.Rooms.read(db,ob.ROOT),root_before)
+        with self.assertRaises(ValueError):self.service.update(self.trainer,dict(p,data=dict(step=ident,index=0,on=False)))  # 같은 id 에 다른 내용
+
+    def test_first_screen_reads_a_fixed_number_of_rows(self):
+        # 11/25 200명 대응: 첫 화면 조회 수가 교육생 수에 따라 늘지 않는다(예전: 교육생 한 명당 3~4번)
+        for i in range(30):self.enrol(self.add(f'교육생{i}'))
+        server._REQ.queries=0;self.service.get(self.admin);n=server._REQ.queries
+        self.assertLess(n,25,n)
 
     def test_marking_scenarios(self):
         # LMS 의 핵심: 구성원이 다른 사람의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다

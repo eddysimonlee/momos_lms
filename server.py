@@ -584,8 +584,9 @@ class Handler(BaseHTTPRequestHandler):
                 import onboarding
                 education = onboarding.Service(store)
                 if method == 'GET':
-                    if query.get('peek'):  # 11/25 20초마다 오는 가벼운 확인(DB 조회 1번, 조직도 갱신 없음)
-                        return self.send(200, education.peek(user))
+                    if query.get('peek'):  # 11/25 20초마다 오는 가벼운 확인(작은 행 조회 2번, 조직도 갱신 없음). k = 보고 있는 교육생 기록 번호
+                        k = query.get('k', [''])[0]
+                        return self.send(200, education.peek(user, int(k) if re.fullmatch(r'-?\d{1,12}', k) else None))
                     import works_auth
                     works_auth.refresh_org(store, user['id'])  # 첫 화면 조직도(10분마다, 실패해도 화면은 열린다)
                     return self.send(200,education.get(user,query.get('target',[None])[0]))
@@ -639,7 +640,7 @@ class Handler(BaseHTTPRequestHandler):
                         return self.send(200, {'status': 'ok', 'mode': 'cloud', 'storage': 'supabase', 'application': 'momos-lms'})
                     return self.send(200, {'status': 'ok', 'mode': 'local', 'storage': 'sqlite', 'application': 'momos-lms', 'pid': os.getpid()})
                 if filename in STATIC:
-                    return self.file(safe_path(APP, filename), cacheable=filename in {'styles.css', 'auth.js', 'workspace_items.js'})
+                    return self.file(safe_path(APP, filename), cacheable=filename in {'styles.css', 'auth.js', 'workspace_items.js', 'v1_content.json'})  # 11/25 교육 내용(약 0.7MB)은 바뀌지 않았으면 304
             self.send(404, {'error': 'Not found'})
         except access.LoginRequired:
             self.send(401, {'error': '로그인이 필요하거나 계정 승인·로그인 정보를 확인해야 합니다.'})
@@ -815,6 +816,7 @@ def main():
         if dev_seed.seed(store):
             print('LMS_TRIAL=1: 체험 계정을 만들었습니다 (staff / learner / newbie @local.test).', flush=True)
     server = make_server(store, args.port, host=args.host, public_url=args.public_url.rstrip('/'), trial=trial)
+    lms_store.ensure_stamps(store)  # 11/25 변경 표시가 없는 예전 문서에 표시를 만든다
     if works_auth.enabled():  # WORKS 로그인: 체험 계정은 만들지 않고, 남아 있으면 지운다(계정 테이블은 make_server 가 준비)
         n = works_auth.purge_trial_accounts(store)
         if n: print(f'WORKS 로그인: 체험 계정 {n}개와 그 기록을 지웠습니다.', flush=True)
