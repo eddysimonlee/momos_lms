@@ -6,6 +6,7 @@ validator. Room directories and ERP membership are intentionally absent.
 """
 import json
 import struct
+import uuid
 import zlib
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +14,7 @@ from pathlib import Path
 MAX_IMAGE = 8 * 1024 * 1024
 MAX_RECORD = 4 * 1024 * 1024
 MAX_PIXELS = 40_000_000
+CHANGE_KEY = 30_000_000_004  # 11/25 마지막 저장 표시(Rooms.write 가 갱신)
 
 
 class Conflict(ValueError):
@@ -43,6 +45,14 @@ class Rooms:
         if len(body.encode()) > MAX_RECORD:
             raise ValueError('교육 기록이 저장 한도에 도달했습니다. 기존 기록은 보존됩니다. 운영자에게 문의해 주세요.')
         db.execute('INSERT OR REPLACE INTO metadata VALUES(?,?)', (key, body))
+        if key != CHANGE_KEY:  # 11/25 화면 새로고침용 변경 표시: 무엇이든 저장되면 바뀐다(같은 거래 안)
+            db.execute('INSERT OR REPLACE INTO metadata VALUES(?,?)', (CHANGE_KEY, json.dumps(dict(at=stamp(), id=uuid.uuid4().hex))))
+
+    @staticmethod
+    def change_stamp(db):
+        """11/25: 마지막 저장의 표시(작은 한 줄). 화면은 이것만 20초마다 물어보고, 바뀌었을 때만 전체를 다시 받는다."""
+        row = db.execute('SELECT body FROM metadata WHERE id=?', (CHANGE_KEY,)).fetchone()
+        return json.loads(row[0]).get('id', '') if row else ''
 
 
 def image_info(raw, name):

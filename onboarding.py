@@ -539,6 +539,12 @@ class Service:
             root['audit'].append(dict(at=stamp(), actor=None, action='나의 멘티·전체 멘티 초기화(교육 체크·완료 기록 삭제)', learners=len(root['learners'])))
             projects.Rooms.write(db, ROOT, root)
 
+    def peek(self, user):
+        """11/25 화면의 주기 확인: 마지막 저장 표시만(조회 1번). 전체 기록(get)은 표시가 바뀌었을 때만 받는다."""
+        with self.store.connect() as db:
+            self.identity(db, user)
+            return dict(changeStamp=projects.Rooms.change_stamp(db))
+
     def get(self, user, target=None):
         self.reset_mentees_once()
         with self.store.connect() as db:
@@ -610,7 +616,7 @@ class Service:
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
                     myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), **(dict(ticketSeen=(root.get('ticketSeen') or {}).get(user['id']) or {}, ticketSeenSince=TICKET_SEEN_SINCE) if self.lms_staff(root,user) else {}), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
-                    enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],learner=learner,
+                    enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],changeStamp=projects.Rooms.change_stamp(db),learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
                     notifications=self.notices(db,root,user,users),

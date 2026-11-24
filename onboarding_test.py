@@ -587,6 +587,17 @@ class EducationTests(unittest.TestCase):
         self.act(a,'step.mark',dict(step=ident,index=0,on=True),b['id'])
         self.assertTrue(self.service.get(b)['learner']['records'][ident]['teacher'][0])  # 한 번만 비운다
 
+    def test_peek_change_stamp_moves_only_when_something_is_saved(self):
+        # 11/25 18:49 장애: 화면이 5초마다 전체 기록을 받아 DB 연결을 다 썼다 → 20초마다 가벼운 확인(peek)만, 바뀌었을 때만 전체
+        first=self.service.peek(self.learner)['changeStamp']
+        self.assertTrue(first)
+        self.assertEqual(self.service.peek(self.learner)['changeStamp'],first)  # 읽기만 하면 그대로
+        self.assertEqual(self.service.get(self.learner)['changeStamp'],first)  # 전체 기록에도 같은 표시
+        ctx=self.act(self.learner,'profile.set',dict(branch='oncheon',role='learner'))
+        now=self.service.peek(self.learner)['changeStamp']
+        self.assertNotEqual(now,first)  # 저장하면 바뀐다
+        self.assertEqual(ctx['changeStamp'],now)  # 저장 응답의 표시 = 지금 표시(다음 확인에서 다시 받지 않는다)
+
     def test_marking_scenarios(self):
         # LMS 의 핵심: 구성원이 다른 사람의 교육 내용을 체크한다. 여러 상황에서 막히지 않고, 막혀야 할 때만 막힌다
         a,b,mentee=self.other,self.content,self.trainer
