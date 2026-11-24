@@ -1487,24 +1487,33 @@
   // 같은 자리에서 함께 보는 현장: 20초마다 '바뀐 게 있는지'(마지막 저장 표시)만 물어보고, 바뀌었을 때만 기록을 다시 불러와 상대방의 체크·승인을 보여준다.
   // 11/25: 5초마다 전체를 받던 것이 DB 연결을 다 써 버려 저장·첫 화면이 실패했다(18:49 장애) → 20초 + 가벼운 확인.
   // 화면이 보일 때만, 저장 중이 아닐 때만, 글을 입력하는 중(메모·재교육 사유)이 아닐 때만.
+  let lastFull = Date.now();
   setInterval(async () => {
     if (!cloud || !content || busy || selfPending || document.visibilityState !== 'visible' || view === 'branch') return;
     const a = document.activeElement;
     if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.tagName === 'INPUT' && ['text', 'search', 'email'].includes(a.type))) return;
     if (pop) return;  // 완료 팝업을 보는 중
     try {
-      const peek = await fetch('/api/onboarding?peek=1', {credentials: 'same-origin', cache: 'no-store'}).then(r => r.ok ? r.json() : null).catch(() => null);
-      if (peek && cloud.changeStamp && peek.changeStamp === cloud.changeStamp) return;  // 아무것도 저장되지 않았다
+      // 11/25 변경 표시 3개(root=교육 배정·알림 등 전체 설정, learner=지금 보는 교육생, all=누구든 마지막 저장).
+      // root·learner 가 바뀌면 바로, 다른 사람 기록만 바뀌었으면(첫 화면 진행 현황) 1분에 한 번만 전체를 다시 받는다.
+      const peek = await fetch('/api/onboarding?peek=1' + (cloud.learnerKey != null ? '&k=' + encodeURIComponent(cloud.learnerKey) : ''), {credentials: 'same-origin', cache: 'no-store'}).then(r => r.ok ? r.json() : null).catch(() => null);
+      const was = cloud.stamps, now = peek && peek.stamps;
+      if (now && was) {
+        const mine = now.root !== was.root || now.learner !== was.learner;
+        const others = now.all !== was.all && Date.now() - lastFull >= 60000;
+        if (!mine && !others) return;
+      }
+      lastFull = Date.now();
       const fresh = await api('GET', null, cloud.target);
       if (busy || fresh.target !== cloud.target) return;
-      if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision || JSON.stringify(fresh.notifications) !== JSON.stringify(cloud.notifications)) { cloud = fresh; render(); }
-      else cloud.changeStamp = fresh.changeStamp;
+      if (fresh.learner.revision !== cloud.learner.revision || fresh.rootRevision !== cloud.rootRevision || JSON.stringify(fresh.notifications) !== JSON.stringify(cloud.notifications) || JSON.stringify(fresh.educationSummary) !== JSON.stringify(cloud.educationSummary)) { cloud = fresh; render(); }
+      else cloud.stamps = fresh.stamps;
     } catch {}
   }, 20000);
 
   // --- start: sign in (automatically on a local trial), load the slice and the record, pick a sensible first target
   devAutoLogin().then(() => ERPAuth.ensureSession()).then(async () => {
-    const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-store'});
+    const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-cache'});  // 11/25 바뀌었는지만 확인(같으면 304, 다시 받지 않음)
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
     cloud = await api('GET');

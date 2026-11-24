@@ -14,6 +14,7 @@ import calendar
 import copy
 import os
 import hashlib
+import threading
 import json
 import secrets
 import uuid
@@ -460,6 +461,25 @@ def fit(learner):
     return learner
 
 
+# 11/25 200명 대응: 화면용 교육 기록 캐시 {문서 번호: (변경 표시, fit 한 기록)}. 변경 표시가 같으면 다시 읽지 않는다.
+# 화면(context·notices)에서 읽기만 할 때만 쓴다 — 저장(update)은 언제나 DB 에서 새로 읽어 고친다. 돌려준 기록을 고치지 않는다.
+_FITTED = {}
+_FITTED_LOCK = threading.Lock()
+
+
+def fitted_many(db, keys):
+    keys = list(dict.fromkeys(keys))
+    if not keys: return {}
+    stamps = projects.Rooms.stamps(db, keys)
+    with _FITTED_LOCK:
+        need = [k for k in keys if stamps.get(k) is None or k not in _FITTED or _FITTED[k][0] != stamps[k]]
+    bodies = projects.Rooms.read_many(db, need) if need else {}
+    with _FITTED_LOCK:
+        for k in need:
+            _FITTED[k] = (stamps.get(k), fit(bodies.get(k)))
+        return {k: _FITTED[k][1] for k in keys}
+
+
 def blank(join):
     records = {}
     plans = {}
@@ -589,7 +609,8 @@ class Service:
         """11/02 초기화(한 번만): 모든 교육생의 체크·완료·이력을 비우고 '나의 멘티'를 비운다. 새로 만든 저장소는 처음부터 표시가 있어 건너뛴다."""
         with self.store.connect() as db:
             root = projects.Rooms.read(db, ROOT)
-            if root is None or root.get('menteeReset') == MENTEE_RESET: return
+            if root is None: return
+            if root.get('menteeReset') == MENTEE_RESET: return
             db.execute('BEGIN IMMEDIATE')
             root = self.root(db)
             if root.get('menteeReset') == MENTEE_RESET: return
@@ -602,14 +623,26 @@ class Service:
             root['audit'].append(dict(at=stamp(), actor=None, action='나의 멘티·전체 멘티 초기화(교육 체크·완료 기록 삭제)', learners=len(root['learners'])))
             projects.Rooms.write(db, ROOT, root)
 
-    def peek(self, user):
-        """11/25 화면의 주기 확인: 마지막 저장 표시만(조회 1번). 전체 기록(get)은 표시가 바뀌었을 때만 받는다."""
+    def stamps_of(self, db, key):
+        """11/25 변경 표시 3개: root(교육 배정·티켓·알림 등 전체 설정), learner(지금 보는 교육생 기록), all(누구든 마지막 저장)."""
+        got = projects.Rooms.stamps(db, [ROOT] + ([key] if key is not None else []))
+        return dict(root=got.get(ROOT), learner=got.get(key) if key is not None else None, all=projects.Rooms.change_stamp(db))
+
+    def peek(self, user, key=None):
+        """11/25 화면의 주기 확인(20초): 변경 표시만(작은 행 조회 2번). 전체 기록(get)은 표시가 바뀌었을 때만 받는다.
+        key = 화면이 보고 있는 교육생 기록 번호(learnerKey). 표시는 바뀐 시각의 무작위 값일 뿐이라 내용은 드러나지 않는다."""
         with self.store.connect() as db:
             self.identity(db, user)
-            return dict(changeStamp=projects.Rooms.change_stamp(db))
+            return dict(stamps=self.stamps_of(db, key))
 
     def get(self, user, target=None):
-        self.reset_mentees_once()
+        # 11/25 root 를 한 번만 읽는다(예전: 초기화 확인용으로 한 번 더). 초기화가 필요한 예전 저장소일 때만 초기화 뒤 다시 읽는다
+        for _ in range(2):
+            with self.store.connect() as db:
+                root = self.root(db)
+                if root.get('menteeReset') == MENTEE_RESET:
+                    return self.context(db,root,self.identity(db,user),target or user['id'])
+            self.reset_mentees_once()
         with self.store.connect() as db:
             return self.context(db,self.root(db),self.identity(db,user),target or user['id'])
 
@@ -620,7 +653,12 @@ class Service:
             raise PermissionError('모모스 구성원만 다른 사람의 교육을 볼 수 있어요.')
         users = {r['id']:dict(r) for r in db.execute("SELECT id,name,company,role FROM access_users WHERE status='active'").fetchall()}
         entry = root['learners'].get(target)
-        learner = fit(projects.Rooms.read(db,entry['key'])) if entry else blank(today())
+        # 11/25 200명 대응: 볼 수 있는 교육생의 기록·프로필을 한 번에 읽는다(예전: 한 명씩 3~4번 → 교육생 50명에 172번)
+        visible = [i for i,x in root['learners'].items() if i in users and self.may_view(root,user,i)]
+        docs = fitted_many(db, [root['learners'][i]['key'] for i in set(visible) | ({target} if entry else set())])
+        import works_auth
+        profiles = works_auth.read_profiles(db, visible + [user['id']])
+        learner = docs[entry['key']] if entry else blank(today())
         learner = copy.deepcopy(learner)
         learner['startDate']=entry.get('startDate',entry['join']) if entry else None
         for exam in [learner['exam'], *learner['examArchive']]:
@@ -633,7 +671,7 @@ class Service:
         tickets = [copy.deepcopy(t) for t in root['tickets'] if self.ticket_visible(t,user,permissions)]
         roster = [dict(id=i,name=users[i]['name'],join=x['join'],startDate=x.get('startDate',x['join']),trainer=users.get(x['trainer'],{}).get('name','미배정'),
                        assessor=users.get(x['assessor'],{}).get('name','미배정'))
-                  for i,x in root['learners'].items() if i in users and self.may_view(root,user,i)]
+                  for i,x in ((i,root['learners'][i]) for i in visible)]
         if not any(x['id']==user['id'] for x in roster):
             roster.insert(0,dict(id=user['id'],name=user['name'],join=None,startDate=None,trainer='미배정',assessor='미배정'))
         workspace_roles=dict(admin=self.admin(user),staff=self.lms_staff(root,user),learner=user['id'] in root['learners'],
@@ -641,20 +679,19 @@ class Service:
                              assessor=any(x['assessor']==user['id'] for x in root['learners'].values()),
                              technical=user['id'] in root['technical'],content=user['id'] in root['content'])
         review_access=any(workspace_roles[k] for k in ('admin','trainer','assessor','technical','content'))
-        import works_auth
         def dates(uid):  # 시작일 = WORKS 입사일(없으면 None → 화면에 N/A), 목표일 = 6개월 뒤
-            h = works_auth.read_hired(db, uid); return dict(hiredDate=h, targetDate=target_date(h))
+            h = (profiles.get(uid) or {}).get('hiredDate'); return dict(hiredDate=h, targetDate=target_date(h))
         summaries=[]
         # 11/02 첫 화면: 부서별 구성원 표(교육을 시작한 모든 사람, admin 포함). 부서·직책은 로그인할 때 WORKS 에서 읽어 둔 값
         for r in roster:
             item=root['learners'].get(r['id'])
             if not item: continue
-            l=fit(projects.Rooms.read(db,item['key']));records=l['records']
+            l=docs[item['key']];records=l['records']  # 읽기만(캐시된 기록 — 고치지 않는다)
             done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
             # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
             states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
-            prof=works_auth.read_profile(db,r['id'])
+            prof=profiles.get(r['id']) or {}
             summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),total=len(STEPS),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
@@ -670,7 +707,7 @@ class Service:
                 if lid: seen.add(lid)
                 members.append(dict(id=lid,name=m['name'],position=m['position'],org=m['org']))
             members+=[dict(id=x['id'],name=x['name'],position=x.get('position'),org=by_name.get(x.get('org'))) for x in summaries if x['id'] not in seen]  # 주소록에 없는 LMS 계정
-            mine=next((m['org'] for m in org['members'] if m['email']==str(user.get('email') or '').lower()),None) or by_name.get(works_auth.read_profile(db,user['id']).get('org'))
+            mine=next((m['org'] for m in org['members'] if m['email']==str(user.get('email') or '').lower()),None) or by_name.get((profiles.get(user['id']) or {}).get('org'))
             org_chart=dict(units=org['units'],members=members,mine=mine,positions=POSITION_ORDER+[p for p in org.get('positions') or [] if p not in POSITION_ORDER])
         reviews=self.system_reviews(root) if review_access else []
         # Static teaching caveats only; processing comments, attachments and history stay restricted.
@@ -678,11 +715,11 @@ class Service:
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
                     profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
-                    myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not works_auth.profile_saved(db,user['id'])), lmsAdmin=self.lms_staff(root,user), **(dict(ticketSeen=(root.get('ticketSeen') or {}).get(user['id']) or {}, ticketSeenSince=TICKET_SEEN_SINCE) if self.lms_staff(root,user) else {}), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
-                    enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],changeStamp=projects.Rooms.change_stamp(db),learner=learner,
+                    myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not (profiles.get(user['id']) or {}).get('saved')), lmsAdmin=self.lms_staff(root,user), **(dict(ticketSeen=(root.get('ticketSeen') or {}).get(user['id']) or {}, ticketSeenSince=TICKET_SEEN_SINCE) if self.lms_staff(root,user) else {}), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
+                    enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],stamps=self.stamps_of(db, entry['key'] if entry else None),learnerKey=entry['key'] if entry else None,learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
-                    notifications=self.notices(db,root,user,users),
+                    notifications=self.notices(db,root,user,users,docs),
                     myFeedback=self.my_feedback(root,user),
                     assignments=self.assignments(learner, bool(entry)),
                     names={t['person']:t['author'] for t in tickets},
@@ -831,100 +868,109 @@ class Service:
         for field in ('step','item','test','question','ticket','learner','trainer','assessor','type','category','ref','operation','result'):
             if field in data:projects.text(data[field],200)
         digest = hashlib.sha256(json.dumps(v,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        root_action = action.startswith(('config.','ticket.','notification.','system.','profile.','lms.','feedback.','content.'))
         with self.store.connect() as db:
-            db.execute('BEGIN IMMEDIATE')
+            # 11/25 200명 대응: 전체 설정(root)을 바꾸는 저장만 전체 잠금. 교육생 기록만 바꾸는 저장(체크 등)은 그 교육생 잠금만 잡아
+            # 서로 다른 교육생의 저장이 동시에 진행된다(root 는 읽기만, 판본·요청 기록도 교육생 기록에 남긴다).
+            if root_action: db.execute('BEGIN IMMEDIATE')
             user = self.identity(db,user)
             root = self.root(db)
             if not self.admitted(root,user) or not self.may_view(root,user,target):
                 raise PermissionError('모모스 구성원만 다른 사람의 교육을 체크할 수 있어요.')
-            old = next((r for r in root['requests'] if r['user']==user['id'] and r['id']==rid),None)
-            if old:
-                if old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
-                return self.context(db,root,user,target)
-            root_action = action.startswith(('config.','ticket.','notification.','system.','profile.','lms.','feedback.','content.'))
-            if type(v.get('rootRevision' if root_action else 'revision')) is not int:
-                raise ValueError('서버 판본을 확인하세요.')
-            # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
-            # 저장은 한 건씩 차례로 처리되고(BEGIN IMMEDIATE / advisory lock), 상태 규칙은 education() 이 최신 기록으로 다시 확인한다.
-            latest_ok = action in LATEST_OK
-            if root_action and not action.startswith('notification.') and not latest_ok and v['rootRevision']!=root['revision']:
-                raise projects.Conflict('교육 배정·문의 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
-            p = self.roles(root,user,target)
-            if action == 'notification.read':
-                if set(data)!={'ids'} or not isinstance(data['ids'],list) or len(data['ids'])>200 or any(not isinstance(i,str) for i in data['ids']):
-                    raise ValueError('읽을 알림 목록을 확인하세요.')
-                visible={n['id'] for n in self.notices(db,root,user)}
-                if any(i not in visible for i in data['ids']):
-                    raise PermissionError('본인에게 보이는 알림만 읽음 처리할 수 있습니다.')
-                readers=root.setdefault('noticeReads',{})
-                readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))
-            elif action=='notification.ticket':  # 11/16 수정 요청 티켓을 열어 봄 → 그 사람 목록에서 빨간 점을 끈다(원본 변경 티켓은 다시 바뀌면 다시 켜짐)
-                if self.lms_level(root,user)!='admin': raise PermissionError('수정 요청은 LMS관리자 admin 만 볼 수 있어요.')
-                if set(data)!={'id'} or not isinstance(data['id'],str): raise ValueError('수정 요청을 확인해 주세요.')
-                r=next((x for x in root.get('contentRequests') or [] if x.get('id')==data['id']),None)
-                if not r: raise ValueError('수정 요청을 찾지 못했어요.')
-                live={x.get('id') for x in root.get('contentRequests') or []}
-                seen={k:v for k,v in ((root.setdefault('ticketSeen',{})).get(user['id']) or {}).items() if k in live}
-                seen[r['id']]=ticket_version(r); root['ticketSeen'][user['id']]=seen
-            elif action=='config.selfEnrol':
-                self.self_enrol(db,root,user,data)
-            elif action=='profile.set':
-                self.set_profile(root,user,target,data)
-            elif action=='lms.admin':
-                self.set_lms_admin(root,user,data)
-                if data.get('level') is None:  # 11/16 해제되면 저장된 드라이브 열쇠도 바로 지운다
-                    import works_auth; works_auth.forget_refresh(db, data.get('email'))
-            elif action=='feedback.send':
-                self.send_feedback(db,root,user,target,data)
-            elif action=='feedback.comment':
-                self.feedback_comment(root,user,data)
-            elif action=='feedback.answer':
-                self.feedback_answer(root,user,data)
-            elif action=='feedback.link':
-                self.feedback_link(root,user,data)
-            elif action=='content.request':
-                self.content_request(root,user,data)
-            elif action=='content.status':
-                self.content_status(root,user,data)
-            elif action=='content.log':
-                self.content_log(root,user,data)
-            elif action=='content.reply':
-                self.content_reply(root,user,data)
-            elif action=='content.delete':
-                self.content_delete(root,user,data)
-            elif action.startswith('config.'):
-                if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
-                self.configure(db,root,user,action,data)
-            elif action=='system.review':
-                self.review_system(db,root,user,data)
-            elif action.startswith('ticket.'):
-                self.ticket(root,user,p,action,data)
-            else:
+            entry = learner = None
+            if not root_action:
                 entry = root['learners'].get(target)
                 if not entry: raise ValueError('관리자가 교육생·입사일·교육자를 먼저 배정해야 합니다.')
+                projects.lock_learner(db, entry['key'])
                 learner = fit(projects.Rooms.read(db,entry['key']))
-                if not latest_ok and v['revision']!=learner['revision']:
-                    raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
-                self.education(db,root,user,p,learner,action,data)
-                learner['revision']+=1
-                label=ACTION_NAMES[action]
-                if action in ('step.self','step.teacher','step.mark'):
-                    label+=' · '+('체크' if data['on'] else '체크 해제')+' · '+STEPS[data['step']]['checks'][data['index']]
-                elif action=='step.retry':label+=' · '+data['reason']
-                learner['events'].append(dict(person='A',date=today(),at=stamp(),id=data.get('step',data.get('item')),
-                                             actor=user['name'],actorId=user['id'],text=label,action=action,attempt=learner['records'].get(data.get('step'),{}).get('attempt'),
-                                             detail={k:copy.deepcopy(data[k]) for k in ('step','item','index','on','date','test','question','result','reason') if k in data},
-                                             lessonVersion=COURSE['version'],sourceVersion=COURSE['sourceVersion']))
-                projects.Rooms.write(db,entry['key'],learner)
-            if not action.startswith('notification.'):root['revision']+=1
-            if root_action and action!='notification.ticket':
-                root['audit'].append(dict(at=stamp(),date=today(),actor=user['id'],name=user['name'],target=target,action=action,requestId=rid))
-            root['requests'].append(dict(user=user['id'],id=rid,digest=digest))
-            root['requests']=root['requests'][-2000:]
-            projects.Rooms.write(db,ROOT,root)
-            return self.context(db,root,user,target)
+            logs = root['requests'] if root_action else (learner.get('requests') or []) + root['requests']  # 11/24 이전 요청은 root 에 남아 있다
+            old = next((r for r in logs if r['user']==user['id'] and r['id']==rid),None)
+            if old and old['digest']!=digest: raise ValueError('같은 요청 식별자에 다른 내용을 저장할 수 없습니다.')
+            if not old:
+                if type(v.get('rootRevision' if root_action else 'revision')) is not int:
+                    raise ValueError('서버 판본을 확인하세요.')
+                # 같은 자리에서 교육생·관리자가 함께 쓰는 현장: 체크·요청·승인·메모·역할 선택은 '최신 기록에 내 변경만 얹는다'.
+                # 저장은 한 건씩 차례로 처리되고(BEGIN IMMEDIATE / advisory lock), 상태 규칙은 education() 이 최신 기록으로 다시 확인한다.
+                latest_ok = action in LATEST_OK
+                if root_action and not action.startswith('notification.') and not latest_ok and v['rootRevision']!=root['revision']:
+                    raise projects.Conflict('교육 배정·문의 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
+                p = self.roles(root,user,target)
+                if action == 'notification.read':
+                    if set(data)!={'ids'} or not isinstance(data['ids'],list) or len(data['ids'])>200 or any(not isinstance(i,str) for i in data['ids']):
+                        raise ValueError('읽을 알림 목록을 확인하세요.')
+                    visible={n['id'] for n in self.notices(db,root,user)}
+                    if any(i not in visible for i in data['ids']):
+                        raise PermissionError('본인에게 보이는 알림만 읽음 처리할 수 있습니다.')
+                    readers=root.setdefault('noticeReads',{})
+                    readers[user['id']]=list(dict.fromkeys(readers.get(user['id'],[])+data['ids']))
+                elif action=='notification.ticket':  # 11/16 수정 요청 티켓을 열어 봄 → 그 사람 목록에서 빨간 점을 끈다(원본 변경 티켓은 다시 바뀌면 다시 켜짐)
+                    if self.lms_level(root,user)!='admin': raise PermissionError('수정 요청은 LMS관리자 admin 만 볼 수 있어요.')
+                    if set(data)!={'id'} or not isinstance(data['id'],str): raise ValueError('수정 요청을 확인해 주세요.')
+                    r=next((x for x in root.get('contentRequests') or [] if x.get('id')==data['id']),None)
+                    if not r: raise ValueError('수정 요청을 찾지 못했어요.')
+                    live={x.get('id') for x in root.get('contentRequests') or []}
+                    seen={k:v for k,v in ((root.setdefault('ticketSeen',{})).get(user['id']) or {}).items() if k in live}
+                    seen[r['id']]=ticket_version(r); root['ticketSeen'][user['id']]=seen
+                elif action=='config.selfEnrol':
+                    self.self_enrol(db,root,user,data)
+                elif action=='profile.set':
+                    self.set_profile(root,user,target,data)
+                elif action=='lms.admin':
+                    self.set_lms_admin(root,user,data)
+                    if data.get('level') is None:  # 11/16 해제되면 저장된 드라이브 열쇠도 바로 지운다
+                        import works_auth; works_auth.forget_refresh(db, data.get('email'))
+                elif action=='feedback.send':
+                    self.send_feedback(db,root,user,target,data)
+                elif action=='feedback.comment':
+                    self.feedback_comment(root,user,data)
+                elif action=='feedback.answer':
+                    self.feedback_answer(root,user,data)
+                elif action=='feedback.link':
+                    self.feedback_link(root,user,data)
+                elif action=='content.request':
+                    self.content_request(root,user,data)
+                elif action=='content.status':
+                    self.content_status(root,user,data)
+                elif action=='content.log':
+                    self.content_log(root,user,data)
+                elif action=='content.reply':
+                    self.content_reply(root,user,data)
+                elif action=='content.delete':
+                    self.content_delete(root,user,data)
+                elif action.startswith('config.'):
+                    if not p['admin']: raise PermissionError('교육 배정은 모모스 관리자만 변경합니다.')
+                    self.configure(db,root,user,action,data)
+                elif action=='system.review':
+                    self.review_system(db,root,user,data)
+                elif action.startswith('ticket.'):
+                    self.ticket(root,user,p,action,data)
+                else:  # 교육생 기록만 바꾸는 저장(위에서 그 교육생 잠금을 잡고 읽은 learner)
+                    if not latest_ok and v['revision']!=learner['revision']:
+                        raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
+                    self.education(db,root,user,p,learner,action,data)
+                    learner['revision']+=1
+                    label=ACTION_NAMES[action]
+                    if action in ('step.self','step.teacher','step.mark'):
+                        label+=' · '+('체크' if data['on'] else '체크 해제')+' · '+STEPS[data['step']]['checks'][data['index']]
+                    elif action=='step.retry':label+=' · '+data['reason']
+                    learner['events'].append(dict(person='A',date=today(),at=stamp(),id=data.get('step',data.get('item')),
+                                                 actor=user['name'],actorId=user['id'],text=label,action=action,attempt=learner['records'].get(data.get('step'),{}).get('attempt'),
+                                                 detail={k:copy.deepcopy(data[k]) for k in ('step','item','index','on','date','test','question','result','reason') if k in data},
+                                                 lessonVersion=COURSE['version'],sourceVersion=COURSE['sourceVersion']))
+                    learner['requests']=((learner.get('requests') or [])+[dict(user=user['id'],id=rid,digest=digest)])[-200:]  # 같은 요청 두 번 저장 막기
+                    projects.Rooms.write(db,entry['key'],learner)
+                if root_action:
+                    if not action.startswith('notification.'):root['revision']+=1
+                    if action!='notification.ticket':
+                        root['audit'].append(dict(at=stamp(),date=today(),actor=user['id'],name=user['name'],target=target,action=action,requestId=rid))
+                    root['requests'].append(dict(user=user['id'],id=rid,digest=digest))
+                    root['requests']=root['requests'][-2000:]
+                    projects.Rooms.write(db,ROOT,root)
+        # 11/25 응답(화면 전체)은 저장을 끝내고 잠금을 푼 뒤에 만든다(예전: 잠금을 잡은 채로 만들어 저장 하나가 1~2초씩 잠금을 붙잡았다)
+        with self.store.connect() as db:
+            return self.context(db,self.root(db),self.identity(db,user),target)
 
-    def notices(self,db,root,user,users=None):
+    def notices(self,db,root,user,users=None,docs=None):
         """Recipient-specific feed derived from saved education records; GET is read-only."""
         if users is None:
             users={r['id']:dict(r) for r in db.execute("SELECT id,name FROM access_users WHERE status='active'").fetchall()}
@@ -938,7 +984,7 @@ class Service:
             own=target==user['id'];trainer=entry['trainer']==user['id'] and not own
             assessor=entry['assessor']==user['id'] and not own
             if not (own or trainer or assessor):continue
-            l=fit(projects.Rooms.read(db,entry['key']))
+            l=docs[entry['key']] if docs is not None and entry['key'] in docs else fit(projects.Rooms.read(db,entry['key']))  # 읽기만
             name=users[target]['name']
             assigned=next((e for e in reversed(l['events']) if e.get('text')=='교육 배정·담당·입사일 확인'),None)
             if assigned:
