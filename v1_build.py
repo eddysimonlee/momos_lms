@@ -171,7 +171,7 @@ def main():
             photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
                                caption=caption, cite=section_key(doc, no), n=ph['n'], hideCaption=ph.get('showCaption') is False,  # 그림 안에 제목이 있으면 설명을 숨긴다(대체 글로만)
                                row=dict(header=row['header'], cells=row['cells']) if data_row else None,
-                               wide=bool(items[ph['n'] - 1].get('w') and items[ph['n'] - 1]['w'] > 1.2 * items[ph['n'] - 1]['h']))  # 글씨 있는 가로 그림은 한 줄 전체
+                               wide=ph.get('wide', bool(item.get('w') and item['w'] > 1.2 * item['h'])))  # 기본은 가로 그림 전체 폭. 절차 사진은 wide:false로 기존 반응형 그리드 사용
             keys.append(pid)
         return keys
     course_steps = {s['id']: (u, s) for u in course['units'] for s in u['steps']}
