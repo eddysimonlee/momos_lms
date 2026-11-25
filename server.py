@@ -87,6 +87,17 @@ class _Counted:
         return getattr(self._db, name)
 
 
+_ETAGS = {}  # 11/26 (경로, 수정 시각, 크기) → ETag. 큰 파일(글꼴 2MB)을 요청마다 다시 해시하지 않는다
+
+
+def _etag(path, data):
+    st = path.stat()
+    key = (str(path), st.st_mtime_ns, st.st_size)
+    if key not in _ETAGS:
+        _ETAGS[key] = '"' + hashlib.sha256(data).hexdigest() + '"'
+    return _ETAGS[key]
+
+
 class Store:
     """Local SQLite or cloud PostgreSQL rows plus uploaded file objects."""
 
@@ -191,6 +202,23 @@ class Handler(BaseHTTPRequestHandler):
         referer = self.headers.get('Referer', '')
         return bool(referer) and (referer == public or referer.startswith(public.rstrip('/') + '/'))
 
+    def send_bytes(self, body, etag, content_type='application/json; charset=utf-8'):
+        """11/26 미리 만들어 둔 응답(교육 내용). 화면이 가진 것과 같으면(If-None-Match) 304 로 본문 없이."""
+        tags = [t.strip().removeprefix('W/') for t in self.headers.get('If-None-Match', '').split(',')]
+        unchanged = etag in tags
+        self.send_response(304 if unchanged else 200)
+        self.send_header('Content-Type', content_type)
+        if not unchanged:
+            self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'private, no-cache')
+        self.send_header('ETag', etag)
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Referrer-Policy', 'same-origin')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.end_headers()
+        if not unchanged:
+            self.wfile.write(body)
+
     def send(self, code, obj, cookie=None):
         body = json.dumps(obj, ensure_ascii=False, allow_nan=False).encode()
         self.send_response(code)
@@ -263,12 +291,12 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError('JSON object required')
         return result
 
-    def file(self, path, name=None, preview=False, cacheable=False):
+    def file(self, path, name=None, preview=False, cacheable=False, long=False):
         data = path.read_bytes()
         preview_type={'.pdf':'application/pdf','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg'}.get(Path(name or '').suffix.lower()) if preview else None
         if preview and (not preview_type or not (data.startswith(b'%PDF-') if preview_type=='application/pdf' else data.startswith(b'\x89PNG\r\n\x1a\n') if preview_type=='image/png' else data.startswith(b'\xff\xd8\xff'))):
             raise ValueError('이 형식은 화면 미리보기를 지원하지 않습니다. 원본 내려받기로 확인해 주세요.')
-        etag = '"' + hashlib.sha256(data).hexdigest() + '"' if cacheable else None
+        etag = _etag(path, data) if cacheable or long else None
         tags = [tag.strip().removeprefix('W/') for tag in self.headers.get('If-None-Match', '').split(',')]
         unchanged = etag is not None and (etag in tags or '*' in tags)
         self.send_response(304 if unchanged else 200)
@@ -277,7 +305,8 @@ class Handler(BaseHTTPRequestHandler):
         if not unchanged:
             self.send_header('Content-Length', str(len(data)))
         self.send_header('X-Content-Type-Options', 'nosniff')
-        self.send_header('Cache-Control', 'private, no-cache' if cacheable else 'no-store')
+        # 11/26 첫 접속 속도: 화면 파일은 바뀌었는지만 확인(같으면 304), 글꼴(2MB)은 30일 동안 다시 받지 않는다
+        self.send_header('Cache-Control', 'public, max-age=2592000' if long else 'private, no-cache' if cacheable else 'no-store')
         if etag:
             self.send_header('ETag', etag)
         self.send_header('X-Frame-Options', 'SAMEORIGIN' if preview else 'DENY')
@@ -423,7 +452,7 @@ class Handler(BaseHTTPRequestHandler):
             if path in ('/v1', '/v1.js', '/v1/graph') and method == 'GET':
                 # First-release learner screen: the page carries the login gate itself, the script waits for it.
                 # /v1/graph: 교육항목 ↔ 원본 문서 연결도. 빈 껍데기이고, 데이터는 로그인 후 /v1_content.json 에서 계산한다.
-                return self.file(APP / {'/v1': 'v1.html', '/v1.js': 'v1.js', '/v1/graph': 'v1_graph.html'}[path])
+                return self.file(APP / {'/v1': 'v1.html', '/v1.js': 'v1.js', '/v1/graph': 'v1_graph.html'}[path], cacheable=True)  # 11/26 같으면 304
             if path == '/api/v1/pdf-link' and method == 'GET':
                 # 항목 PDF 의 5분짜리 주소. 앱 내 브라우저의 다운로드·외부 Chrome 은 로그인 쿠키를 넘기지 않아 주소에 토큰을 싣는다.
                 step = query.get('step', [''])[0]
@@ -480,7 +509,7 @@ class Handler(BaseHTTPRequestHandler):
             if path == '/v1_content.json' and method == 'GET':
                 if not user:
                     raise access.LoginRequired()
-                return self.send(200, v1_content())
+                return self.send_bytes(*v1_content_bytes())  # 11/26 한 번 만들어 둔 것을 보내고, 같으면 304
             if path in ('/onboarding','/onboarding.js','/onboarding/wiki') and method == 'GET':
                 if not user:
                     if path == '/onboarding':
@@ -652,7 +681,8 @@ class Handler(BaseHTTPRequestHandler):
                         return self.send(200, {'status': 'ok', 'mode': 'cloud', 'storage': 'supabase', 'application': 'momos-lms'})
                     return self.send(200, {'status': 'ok', 'mode': 'local', 'storage': 'sqlite', 'application': 'momos-lms', 'pid': os.getpid()})
                 if filename in STATIC:
-                    return self.file(safe_path(APP, filename), cacheable=filename in {'styles.css', 'auth.js', 'workspace_items.js', 'v1_content.json'})  # 11/25 교육 내용(약 0.7MB)은 바뀌지 않았으면 304
+                    # 11/25 교육 내용(약 0.7MB)·11/26 화면 파일은 바뀌지 않았으면 304, 글꼴은 30일 캐시
+                    return self.file(safe_path(APP, filename), cacheable=True, long=filename.endswith('.woff2'))
             self.send(404, {'error': 'Not found'})
         except access.LoginRequired:
             self.send(401, {'error': '로그인이 필요하거나 계정 승인·로그인 정보를 확인해야 합니다.'})
@@ -776,6 +806,20 @@ def v1_content():
                     step['checks'] = [c['text'] for c in l['checks']]
                     step['checkCites'] = [[key(x) for x in c.get('cites', [])] for c in l['checks']]
     return content
+
+
+_CONTENT = {}  # 11/26 (v1_content.json·v1_lessons.json 수정 시각) → (본문, ETag). 요청마다 0.7MB 를 다시 읽고 합치지 않는다
+_CONTENT_LOCK = threading.Lock()
+
+
+def v1_content_bytes():
+    files = [APP / 'v1_content.json', APP / 'v1_lessons.json']
+    key = tuple((f.stat().st_mtime_ns, f.stat().st_size) if f.exists() else None for f in files)
+    with _CONTENT_LOCK:
+        if key not in _CONTENT:
+            body = json.dumps(v1_content(), ensure_ascii=False, allow_nan=False).encode()
+            _CONTENT.clear(); _CONTENT[key] = (body, '"' + hashlib.sha256(body).hexdigest() + '"')
+        return _CONTENT[key]
 
 
 PDF_LINK_SECONDS = 300
