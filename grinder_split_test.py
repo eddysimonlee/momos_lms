@@ -95,9 +95,9 @@ class GrinderSplitTests(unittest.TestCase):
     def test_each_model_has_only_its_own_source_photos_and_complete_procedure(self):
         content = json.loads((ROOT / 'v1_content.json').read_text(encoding='utf-8'))
         steps = [s for u in content['units'] for s in u['steps']]
-        self.assertEqual(len(steps), 96)
-        self.assertEqual([s['id'] for s in steps[92:]], [*IDS, 'stock-ecount'])
-        for step, doc, last, count in zip(steps[92:95], DOCS, ('6.7', '6.4', '6.3'), (18, 11, 6)):
+        self.assertEqual(len(steps), 97)  # REQ-33 블랙이글 데일리 청소 추가
+        self.assertEqual([s['id'] for s in steps[93:]], [*IDS, 'stock-ecount'])
+        for step, doc, last, count in zip(steps[93:96], DOCS, ('6.7', '6.4', '6.3'), (18, 11, 6)):
             self.assertEqual(len(step['keyPoints']), 3)
             self.assertEqual(step['shift'], ['CL'])
             self.assertEqual(step['position'], ['에스프레소'])
