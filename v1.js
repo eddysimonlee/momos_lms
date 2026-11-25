@@ -1176,6 +1176,17 @@
       stepActions(s);
   }
 
+  // >>> photo-alignment-caption
+  function photoCaptionHTML(photo, lessonId) {
+    if (photo.hideCaption) return '';
+    const row = photo.row, column = row?.header?.indexOf('정렬 기준') ?? -1;
+    const criteria = lessonId === 'floor-round' && column >= 0 ? row.cells?.[column] : null;
+    const detail = typeof criteria === 'string' && criteria
+      ? `<br><strong>정렬 기준</strong><br>${esc(criteria).replace(/\r\n?|\n/g, '<br>')}` : '';
+    return `<figcaption>${esc(photo.caption)}${detail}</figcaption>`;
+  }
+  // <<< photo-alignment-caption
+
   // >>> tool-guide
   function toolGuideHTML(s) {
     const guide = s.toolGuide, photo = guide && content.photos[guide.photo];
@@ -1210,7 +1221,7 @@
     const shots = s.photos.map(p => content.photos[p]).filter(Boolean);
     const photos = (shots.length > 1 ? '<div class="v1-photos">' : '') + shots.map((p, n) =>
       // 사진도 원본 docx 의 절에서만 가져온다. 아래 토글 = 그 사진이 들어 있는 절(펼치면 사진 칸이 한 줄 전체로 넓어진다).
-      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy">${p.hideCaption ? '' : `<figcaption>${esc(p.caption)}</figcaption>`}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
+      `<figure class="v1-photo${p.wide ? ' v1-photo-wide' : ''}"><img src="${p.src}" alt="${esc(p.caption)}" loading="lazy">${photoCaptionHTML(p, s.id)}</figure>`).join('') + (shots.length > 1 ? '</div>' : '');
     // 교육 내용: 요약 카드 전체가 토글(근거 본문 펼치기). 체크 상자는 카드 오른쪽 위 — 상자만 눌러야 체크된다.
     // 교육 내용 카드(번호는 왼쪽 그대로): 위 = 교육 체크 줄, 가운데 = 글, 아래 = 본문 펼치기.
     // 관리자: 체크 상자 + (체크하면) 체크한 관리자·일시. 교육생: 체크된 항목에만 체크한 관리자·일시
