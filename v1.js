@@ -1527,10 +1527,11 @@
 
   // --- start: sign in (automatically on a local trial), load the slice and the record, pick a sensible first target
   devAutoLogin().then(() => ERPAuth.ensureSession()).then(async () => {
-    const response = await fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-cache'});  // 11/25 바뀌었는지만 확인(같으면 304, 다시 받지 않음)
+    // 11/26 교육 내용(같으면 304)과 내 기록을 동시에 받는다(예전: 하나 받고 나서 다음 — 왕복 한 번 더)
+    const [response, first] = await Promise.all([fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-cache'}), api('GET')]);
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
     content = await response.json();
-    cloud = await api('GET');
+    cloud = first;
     // WORKS 부서·직책을 아직 못 읽은 사람(이 버전 이전에 로그인한 채로 들어온 경우): WORKS 로그인을 한 번 자동으로 거친다(같은 탭에서 한 번만)
     if (cloud.profileMissing) {
       let tried = true; try { tried = sessionStorage.getItem('v1.relogin') === '1'; if (!tried) sessionStorage.setItem('v1.relogin', '1'); } catch {}

@@ -199,8 +199,8 @@ class EducationTests(unittest.TestCase):
     def test_http_page_api_csrf_and_private_files(self):
         httpd=server.make_server(self.store,0);thread=threading.Thread(target=httpd.serve_forever,daemon=True);thread.start()
         session,token=self.auth.new_session(self.learner)
-        def req(method,path,value=None,cookie=True,csrf=True):
-            headers={'Origin':f'http://127.0.0.1:{httpd.server_port}'}
+        def req(method,path,value=None,cookie=True,csrf=True,extra=None):
+            headers={'Origin':f'http://127.0.0.1:{httpd.server_port}',**(extra or {})}
             if cookie:headers['Cookie']='erp_session='+token
             if csrf:headers['X-CSRF-Token']=session['csrfToken']
             if value is not None:headers['Content-Type']='application/json'
@@ -280,6 +280,10 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(json.loads(req('GET','/api/auth/status',cookie=False)[2])['works'])
             code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
+            # 11/26 첫 접속 속도: 교육 내용·화면 파일은 같으면 304(본문 없음), 글꼴은 30일 캐시
+            self.assertEqual(h['Cache-Control'],'private, no-cache');self.assertEqual(req('GET','/v1_content.json',extra={'If-None-Match':h['ETag']})[0],304)
+            c2,h2,_=req('GET','/v1.js',cookie=False);self.assertEqual(req('GET','/v1.js',cookie=False,extra={'If-None-Match':h2['ETag']})[0],304)
+            self.assertEqual(req('GET','/assets/PretendardVariable.woff2',cookie=False)[1]['Cache-Control'],'public, max-age=2592000')
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),57)  # curriculum.json: 6단계 57단원(2.10 OP2 / 2.11 OP3 분리, 2.12 MD / 2.13 CL 출근)
             steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),97)  # REQ-33 블랙이글 데일리 청소 추가
             # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
