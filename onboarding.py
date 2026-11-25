@@ -480,6 +480,20 @@ def fitted_many(db, keys):
         return {k: _FITTED[k][1] for k in keys}
 
 
+def view_learner(doc, entry):
+    """화면에 보내는 교육생 기록: 복사본 + 시작일, 배정된(아직 안 푼) 문제의 정답은 뺀다. 캐시된 기록을 고치지 않는다."""
+    learner = copy.deepcopy(doc)
+    learner.pop('requests', None)  # 같은 요청 막기 기록(서버만 쓴다)
+    learner['startDate'] = entry.get('startDate', entry['join']) if entry else None
+    for exam in [learner['exam'], *learner['examArchive']]:
+        if exam and exam['status'] == 'assigned':
+            for q in exam['questions']:
+                q.pop('answer', None); q.pop('explain', None)
+                if q.get('pairs'):
+                    for p in q['pairs']: p.pop('right', None)
+    return learner
+
+
 def blank(join):
     records = {}
     plans = {}
@@ -659,14 +673,7 @@ class Service:
         import works_auth
         profiles = works_auth.read_profiles(db, visible + [user['id']])
         learner = docs[entry['key']] if entry else blank(today())
-        learner = copy.deepcopy(learner)
-        learner['startDate']=entry.get('startDate',entry['join']) if entry else None
-        for exam in [learner['exam'], *learner['examArchive']]:
-            if exam and exam['status']=='assigned':
-                for q in exam['questions']:
-                    q.pop('answer',None);q.pop('explain',None)
-                    if q.get('pairs'):
-                        for p in q['pairs']:p.pop('right',None)
+        learner = view_learner(learner, entry)
         permissions = self.roles(root,user,target)
         tickets = [copy.deepcopy(t) for t in root['tickets'] if self.ticket_visible(t,user,permissions)]
         roster = [dict(id=i,name=users[i]['name'],join=x['join'],startDate=x.get('startDate',x['join']),trainer=users.get(x['trainer'],{}).get('name','미배정'),
@@ -856,7 +863,7 @@ class Service:
         if not isinstance(v,dict) or len(json.dumps(v).encode()) > 120000:
             raise ValueError('교육 요청 크기를 확인하세요.')
         self.reset_mentees_once()
-        if set(v)-{'action','target','revision','rootRevision','requestId','data'}:
+        if set(v)-{'action','target','revision','rootRevision','requestId','data','reply'}:
             raise ValueError('허용되지 않은 교육 요청입니다.')
         action = projects.text(v.get('action'),60,True)
         target = projects.text(v.get('target'),64,True)
@@ -966,6 +973,14 @@ class Service:
                     root['requests'].append(dict(user=user['id'],id=rid,digest=digest))
                     root['requests']=root['requests'][-2000:]
                     projects.Rooms.write(db,ROOT,root)
+        # 11/26 가벼운 응답(reply='light', 화면의 체크 저장): 화면 전체 대신 그 교육생 기록과 변경 표시만.
+        # 첫 화면 진행 현황·알림은 화면의 주기 확인·화면 이동 때 따라온다. 'all' 표시는 일부러 빼서 다음 확인 때 다시 받게 한다
+        if v.get('reply') == 'light' and not root_action:
+            with self.store.connect() as db:
+                doc = projects.Rooms.read(db, entry['key'])
+                got = projects.Rooms.stamps(db, [ROOT, entry['key']])
+            return dict(light=True, target=target, learnerKey=entry['key'], rootRevision=root['revision'],
+                        learner=view_learner(fit(doc), entry), stamps=dict(root=got.get(ROOT), learner=got.get(entry['key'])))
         # 11/25 응답(화면 전체)은 저장을 끝내고 잠금을 푼 뒤에 만든다(예전: 잠금을 잡은 채로 만들어 저장 하나가 1~2초씩 잠금을 붙잡았다)
         with self.store.connect() as db:
             return self.context(db,self.root(db),self.identity(db,user),target)

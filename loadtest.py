@@ -44,7 +44,8 @@ def serve(data, port, latency_ms, pool):
     class Slow:
         def __init__(self, db): self._db = db
         def execute(self, *a, **k):
-            time.sleep(latency_ms / 1000)  # Supabase 왕복 흉내
+            time.sleep(latency_ms / 1000)  # Supabase 왕복 흉내 — 서버 로그의 DB 시간(dbms)에 넣는다
+            server._REQ.dbtime = getattr(server._REQ, 'dbtime', 0.0) + latency_ms / 1000
             return self._db.execute(*a, **k)
         def __getattr__(self, n): return getattr(self._db, n)
 
@@ -163,9 +164,9 @@ def user_loop(email, trainer, args, port, stats, stop, learners_steps):
             sid = random.choice(step_ids)
             on = random.random() < 0.6
             body = dict(action='step.mark', target=target, revision=ctx['learner']['revision'], rootRevision=ctx['rootRevision'],
-                        requestId=str(uuid.uuid4()), data=dict(step=sid, index=0, on=on))
+                        requestId=str(uuid.uuid4()), data=dict(step=sid, index=0, on=on), reply='light')
             st, fresh = cl.call('step.mark (체크 저장)', 'POST', '/api/onboarding', body)
-            if st == 200 and fresh: ctx, stamps = fresh, fresh.get('stamps')
+            if st == 200 and fresh: ctx = dict(ctx, learner=fresh['learner'], rootRevision=fresh['rootRevision']) if fresh.get('light') else fresh  # v1.js 처럼 기록만 바꿔 끼운다
             next_mark = now + random.expovariate(1 / args.mark_every)
         elif now >= next_poll:
             q = ('?target=' + target) if target else ''
@@ -242,15 +243,16 @@ def main():
             xs = stats.times[k]; f = stats.fails[k]
             why = ', '.join(f"{ {-1: '응답 없음', -2: 'JSON 아님'}.get(s, s)}×{n}" for s, n in f.items())
             print(f'{k:34} {len(xs):6} {sum(f.values()):5} {statistics.median(xs):7.0f} {pct(xs, .95):7.0f} {max(xs):7.0f}  {why}')
-        agg = defaultdict(lambda: [0, 0, 0, 0])
+        agg = defaultdict(lambda: [0, 0, 0, 0, 0, 0])
         for line in lines:
-            m = re.match(r'api (\w+) (\S+) (\d+) (\d+)ms db=(\d+) wait=(\d+)ms', line)
+            m = re.match(r'api (\w+) (\S+) (\d+) (\d+)ms db=(\d+) dbms=(\d+)ms cpu=(\d+)ms wait=(\d+)ms', line)
             if m:
-                g = agg[f'{m[1]} {m[2]}']; g[0] += 1; g[1] += int(m[4]); g[2] += int(m[5]); g[3] += int(m[6])
+                g = agg[f'{m[1]} {m[2]}']; g[0] += 1
+                for i, j in enumerate((4, 5, 6, 7, 8), 1): g[i] += int(m[j])
         print('\n서버 쪽 평균 (요청 1건당)')
-        print(f"{'요청':34} {'건수':>6} {'시간ms':>8} {'DB조회':>7} {'연결대기ms':>10}")
-        for k, (n, ms, q, w) in sorted(agg.items()):
-            print(f'{k:34} {n:6} {ms / n:8.0f} {q / n:7.1f} {w / n:10.0f}')
+        print(f"{'요청':34} {'건수':>6} {'시간ms':>8} {'DB조회':>7} {'DB시간ms':>9} {'계산ms':>7} {'연결대기ms':>10}")
+        for k, (n, ms, q, dbms, cpu, w) in sorted(agg.items()):
+            print(f'{k:34} {n:6} {ms / n:8.0f} {q / n:7.1f} {dbms / n:9.0f} {cpu / n:7.0f} {w / n:10.0f}')
 
 
 if __name__ == '__main__':
