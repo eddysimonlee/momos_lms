@@ -104,6 +104,59 @@ test('preview splits weekly hygiene without copying old checks or overwriting ne
   }
 });
 
+test('preview preserves combined grinder evidence and never resets new same-length completions', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const context = vm.createContext({KP_MOVES: moves});
+  vm.runInContext(helper + ';globalThis.fit = fitMovedChecks;', context);
+  const old = {status: 'done', teacher: [true, true, true, true], teacherBy: ['retired', 'retired', 'retired', 'retired'],
+    teacherWhen: ['t1', 't2', 't3', 't4'], completedBy: 'retired', completedByName: '이전 확인자', done: '2026-11-20', history: []};
+  const before = structuredClone(old), existing = {status: 'done', teacher: [true, true, true, true], history: []};
+  const room = {records: {'grinder-blade': old, 'grinder-blade-robur-s': existing}};
+  context.fit(room);
+  const archive = JSON.parse(JSON.stringify(old.history.at(-1)));
+  for (const [key, value] of Object.entries(before)) if (key !== 'history') assert.deepEqual(archive[key], value);
+  assert.equal(archive.lessonTitle, '그라인더 날 분해·청소');
+  assert.deepEqual(Array.from(old.teacher), [false, false, false]);
+  assert.equal(old.status, 'practice');
+  assert.equal(room.records['grinder-blade-robur-s'], existing);
+  assert.deepEqual(Array.from(room.records['grinder-blade-major-vp'].teacher), [false, false, false]);
+  Object.assign(old, {status: 'done', teacher: [true, true, true], done: '2026-11-24'});
+  const once = JSON.stringify(room);
+  assert.equal(context.fit(room), false);
+  assert.equal(JSON.stringify(room), once);
+  const blank = preview.split('  function blank(join) {')[1].split('  function fresh()')[0];
+  vm.runInContext('const STEPS={"grinder-blade":{keyPoints:[1,2,3]}}; const N=s=>s.keyPoints.map(()=>null); function blank(join){' + blank + ';globalThis.blank=blank;', context);
+  const fresh = context.blank('2026-11-24');
+  fresh.records['grinder-blade'].status = 'done';
+  context.fit(fresh);
+  assert.equal(fresh.records['grinder-blade'].status, 'done');
+  assert.equal(fresh.records['grinder-blade'].history.length, 0);
+});
+
+test('preview removes only first model topic and preserves the other checkers and completion', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const context = vm.createContext({KP_MOVES: moves});
+  vm.runInContext(helper + ';globalThis.fit=fitMovedChecks;', context);
+  for (const id of ['grinder-blade', 'grinder-blade-robur-s', 'grinder-blade-major-vp']) {
+    const r = {status:'done', teacher:[true,true,true,true], self:[false,true,false,true],
+      teacherName:['a','b','c','d'], teacherWhen:['t0','t1','t2','t3'], completedBy:'retired',
+      done:'2026-11-20', history:[], kpMoves:id==='grinder-blade'?[moves[id][0]]:[]};
+    const before=structuredClone(r), room={records:{[id]:r}};
+    context.fit(room);
+    assert.deepEqual(Array.from(r.teacher),before.teacher.slice(1));
+    assert.deepEqual(Array.from(r.teacherName),before.teacherName.slice(1));
+    assert.deepEqual(Array.from(r.teacherWhen),before.teacherWhen.slice(1));
+    assert.equal(r.status,'done'); assert.equal(r.done,before.done); assert.equal(r.completedBy,'retired');
+    const archive=JSON.parse(JSON.stringify(r.history.at(-1)));
+    for (const [key,value] of Object.entries(before)) if(key!=='history') assert.deepEqual(archive[key],value);
+    const once=JSON.stringify(room); context.fit(room); assert.equal(JSON.stringify(room),once);
+  }
+});
+
 test('tool guide renders numbered tools as an image caption, including no-tools and escaped content', () => {
   const helper = source.split('// >>> tool-guide')[1].split('// <<< tool-guide')[0];
   const context = vm.createContext({content: {photos: {guide: {src: 'v1_photos/fixture.jpg', caption: '제조 도구 안내'}}}});

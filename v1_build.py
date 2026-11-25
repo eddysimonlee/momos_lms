@@ -14,6 +14,7 @@ Output: v1_content.json — 화면이 그대로 읽는 파일. 인용된 절만 
     python3 v1_build.py
 """
 import base64
+import hashlib
 import json
 import os
 import re
@@ -68,8 +69,27 @@ def table_part(sec, part):
 
 
 def find_section(doc, ref):
-    """ref = 절 번호, 번호 없는 절의 제목, 또는 'A › B'(A 뒤에 나오는 첫 B). 한 곳으로만 풀려야 한다."""
+    """절 번호·제목·'A › B'. '6.*'는 6절과 다음 동급 절 전까지의 하위·계속 부분 전체."""
     secs = doc['sections']
+    if ref.endswith('.*'):
+        base = ref[:-2]
+        starts = [i for i, s in enumerate(secs) if s['no'] == base]
+        if len(starts) != 1:
+            raise KeyError(f'{doc["id"]}: "{base}" 가 {len(starts)}곳')
+        start = starts[0]
+        parent, selected = secs[start], [secs[start]]
+        for sec in secs[start + 1:]:
+            if sec['level'] <= parent['level']:
+                break
+            selected.append(sec)
+        paragraphs = list(parent['paragraphs'])
+        for sec in selected[1:]:
+            paragraphs += [f'{sec["no"]} {sec["title"]}'.strip(), *sec['paragraphs']]
+        return dict(parent, paragraphs=paragraphs,
+                    tables=[t for sec in selected for t in sec['tables']],
+                    photos=[p for sec in selected for p in sec.get('photos', [])],
+                    images=sum(sec['images'] for sec in selected), chars=sum(sec['chars'] for sec in selected),
+                    hash=hashlib.sha1('|'.join(sec['hash'] for sec in selected).encode()).hexdigest()[:12])
     match = lambda s, r: (r and s['no'] == r) or (not s['no'] and s['title'] == r)
     if SEP in ref:
         a, b = ref.split(SEP, 1)
