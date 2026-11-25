@@ -89,8 +89,10 @@
     selfQueue = selfQueue.then(async () => {
       try {
         const fresh = await send({action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
-          requestId: uid(), data: {step: step.id, index: k, on}});
-        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = fresh; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
+          requestId: uid(), data: {step: step.id, index: k, on}, reply: 'light'});
+        // 11/26 가벼운 응답: 그 교육생 기록·변경 표시만 온다 → 지금 화면 데이터에 기록만 바꿔 끼운다('all' 표시는 그대로 두어 다음 확인 때 진행 현황을 다시 받는다)
+        const merged = fresh.light ? Object.assign({}, cloud, {learner: fresh.learner, rootRevision: fresh.rootRevision, learnerKey: fresh.learnerKey, stamps: Object.assign({}, cloud.stamps, fresh.stamps)}) : fresh;
+        if (fresh.target === cloud.target) { const mine = record(step.id); cloud = merged; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
       } catch (e) {
         toast(e.message || '체크를 저장하지 못했어요. 다시 눌러 주세요.');
         // 화면에서 먼저 바꾼 값을 되돌린 뒤 서버 기록으로 다시 맞춘다(권한이 없어져 기록을 못 읽어도 화면이 저장된 것처럼 남지 않게)

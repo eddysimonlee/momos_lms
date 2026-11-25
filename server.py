@@ -62,6 +62,7 @@ def safe_path(root, value):
 
 # 11/25 요청별 측정: 걸린 시간·DB 조회 수·DB 연결을 기다린 시간(요청 스레드마다). 로그에는 경로·상태·숫자만 남긴다
 _REQ = threading.local()
+LOG_SQL = os.environ.get('LMS_LOG_SQL') == '1'
 
 
 class _Counted:
@@ -71,7 +72,16 @@ class _Counted:
 
     def execute(self, *args, **kw):
         _REQ.queries = getattr(_REQ, 'queries', 0) + 1
-        return self._db.execute(*args, **kw)
+        started = time.monotonic()
+        try:
+            return self._db.execute(*args, **kw)
+        finally:
+            _REQ.dbtime = getattr(_REQ, 'dbtime', 0.0) + time.monotonic() - started  # 11/26 DB 에서 보낸 시간(나머지 = 서버 계산)
+            if LOG_SQL and args:  # LMS_LOG_SQL=1 일 때만: 문장 모양(앞 48자)만 센다 — 값은 남기지 않는다
+                shapes = getattr(_REQ, 'shapes', None)
+                if shapes is not None:
+                    key = ' '.join(str(args[0]).split())[:48]
+                    shapes[key] = shapes.get(key, 0) + 1
 
     def __getattr__(self, name):
         return getattr(self._db, name)
@@ -669,14 +679,18 @@ class Handler(BaseHTTPRequestHandler):
 
     def timed(self, method):
         """11/25: /api/ 요청마다 한 줄 — `api GET /api/onboarding 200 812ms db=93 wait=3ms` (질의 문자열·값은 남기지 않는다)."""
-        _REQ.queries, _REQ.wait, self._status, started = 0, 0.0, 0, time.monotonic()
+        _REQ.queries, _REQ.wait, _REQ.dbtime, _REQ.shapes, self._status, started = 0, 0.0, 0.0, {}, 0, time.monotonic()
         try:
             self.route(method)
         finally:
             path = urlsplit(self.path).path
             if path.startswith('/api/') and path != '/api/health':
                 peek = '?peek' if 'peek=' in urlsplit(self.path).query else ''
-                print(f'api {method} {path}{peek} {self._status} {round((time.monotonic() - started) * 1000)}ms db={_REQ.queries} wait={round(_REQ.wait * 1000)}ms', flush=True)
+                total, dbms = (time.monotonic() - started) * 1000, _REQ.dbtime * 1000
+                # 11/26: dbms = DB 조회 시간, cpu = 나머지(서버 계산·응답 만들기). wait = DB 연결을 기다린 시간
+                print(f'api {method} {path}{peek} {self._status} {round(total)}ms db={_REQ.queries} dbms={round(dbms)}ms cpu={round(max(0, total - dbms - _REQ.wait * 1000))}ms wait={round(_REQ.wait * 1000)}ms', flush=True)
+                if LOG_SQL and _REQ.shapes:
+                    print('sql ' + ' | '.join(f'{n}× {k}' for k, n in sorted(_REQ.shapes.items(), key=lambda x: -x[1])), flush=True)
 
     def do_GET(self):
         self.timed('GET')

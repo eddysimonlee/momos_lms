@@ -610,6 +610,18 @@ class EducationTests(unittest.TestCase):
         with self.store.connect() as db:self.assertEqual(projects.Rooms.read(db,ob.ROOT),root_before)
         with self.assertRaises(ValueError):self.service.update(self.trainer,dict(p,data=dict(step=ident,index=0,on=False)))  # 같은 id 에 다른 내용
 
+    def test_light_reply_for_checks(self):
+        # 11/26 체크 저장의 가벼운 응답: 그 교육생 기록·변경 표시만(화면 전체를 만들지 않는다), 같은 요청 다시 보내도 같은 결과
+        ident=next(iter(ob.STEPS));p=dict(self.payload(self.trainer,'step.mark',dict(step=ident,index=0,on=True),self.learner['id']),reply='light')
+        server._REQ.queries=0;r=self.service.update(self.trainer,p);n=server._REQ.queries
+        self.assertTrue(r['light']);self.assertTrue(r['learner']['records'][ident]['teacher'][0]);self.assertNotIn('requests',r['learner'])
+        self.assertNotIn('educationSummary',r);self.assertEqual(set(r['stamps']),{'root','learner'})
+        self.assertEqual(r['stamps']['learner'],self.service.peek(self.trainer,r['learnerKey'])['stamps']['learner'])
+        self.assertLess(n,15,n)
+        self.assertEqual(self.service.update(self.trainer,p)['learner']['revision'],r['learner']['revision'])
+        full=self.service.update(self.trainer,self.payload(self.trainer,'step.mark',dict(step=ident,index=0,on=False),self.learner['id']))
+        self.assertIn('educationSummary',full)  # reply 가 없으면 예전처럼 화면 전체
+
     def test_first_screen_reads_a_fixed_number_of_rows(self):
         # 11/25 200명 대응: 첫 화면 조회 수가 교육생 수에 따라 늘지 않는다(예전: 교육생 한 명당 3~4번)
         for i in range(30):self.enrol(self.add(f'교육생{i}'))
