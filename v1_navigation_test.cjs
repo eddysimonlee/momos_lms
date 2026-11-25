@@ -8,6 +8,44 @@ const assert = require('node:assert/strict');
 const {execFileSync} = require('node:child_process');
 const source = readFileSync(join(__dirname, 'v1.js'), 'utf8');
 
+function alignmentCaptionHarness() {
+  const helper = source.split('// >>> photo-alignment-caption')[1].split('// <<< photo-alignment-caption')[0];
+  const escapeLine = source.split('\n').find(line => line.trimStart().startsWith('const esc ='));
+  const context = vm.createContext({});
+  vm.runInContext(escapeLine + '\n' + helper + ';globalThis.caption=photoCaptionHTML;', context);
+  return context.caption;
+}
+
+test('rounding photos show each original alignment row beneath its corresponding photo only', () => {
+  const caption = alignmentCaptionHarness();
+  const content = JSON.parse(readFileSync(join(__dirname, 'v1_content.json'), 'utf8'));
+  const steps = content.units.flatMap(u => u.steps), step = steps.find(s => s.id === 'floor-round');
+  assert.equal(steps[11].id, step.id);
+  const rows = content.sections['라운딩-점검-기준|6'].tables[0].rows;
+  const before = JSON.stringify(content);
+  const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  step.photos.slice(0, 5).forEach((pid, i) => {
+    const p = content.photos[pid], html = caption(p, step.id);
+    assert.equal(p.row.cells[0], rows[i][0]);
+    assert.equal(html, `<figcaption>${escape(p.caption)}<br><strong>정렬 기준</strong><br>${escape(rows[i][1])}</figcaption>`);
+  });
+  for (const s of steps) for (const pid of s.photos) {
+    const p = content.photos[pid];
+    if (s.id === step.id && step.photos.slice(0, 5).includes(pid)) continue;
+    assert.equal(caption(p, s.id), p.hideCaption ? '' : `<figcaption>${escape(p.caption)}</figcaption>`);
+  }
+  assert.equal(JSON.stringify(content), before);
+});
+
+test('alignment captions preserve original line breaks and escape text without affecting other lessons', () => {
+  const caption = alignmentCaptionHarness();
+  const p = {caption:'구역 <a>', row:{header:['정렬 기준','구역'], cells:['첫째\n둘째 <script>\r\n셋째 & 마지막','구역']}};
+  assert.equal(caption(p,'floor-round'), '<figcaption>구역 &lt;a&gt;<br><strong>정렬 기준</strong><br>첫째<br>둘째 &lt;script&gt;<br>셋째 &amp; 마지막</figcaption>');
+  assert.equal(caption(p,'other-step'), '<figcaption>구역 &lt;a&gt;</figcaption>');
+  assert.equal(caption({...p,hideCaption:true},'floor-round'), '');
+  assert.equal(caption({caption:'기존 사진'},'floor-round'), '<figcaption>기존 사진</figcaption>');
+});
+
 test('preview uses server check moves and preserves inserted-topic records once', () => {
   const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
   const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
