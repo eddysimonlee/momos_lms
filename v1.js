@@ -1182,7 +1182,7 @@
     const row = photo.row, column = row?.header?.indexOf('정렬 기준') ?? -1;
     const criteria = lessonId === 'floor-round' && column >= 0 ? row.cells?.[column] : null;
     const detail = typeof criteria === 'string' && criteria
-      ? `<br><strong>정렬 기준</strong><br>${esc(criteria).replace(/\r\n?|\n/g, '<br>')}` : '';
+      ? ` · ${esc(criteria).replace(/\r\n?|\n/g, '<br>')}` : '';
     return `<figcaption>${esc(photo.caption)}${detail}</figcaption>`;
   }
   // <<< photo-alignment-caption
