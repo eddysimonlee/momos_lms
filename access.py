@@ -134,11 +134,12 @@ class Access:
         if not re.fullmatch(r'[a-f0-9]{64}', token):
             return None
         with self.store.connect() as db:
-            row = db.execute('''SELECT u.*,s.csrf FROM access_sessions s
+            row = db.execute('''SELECT u.*,s.csrf,s.expires_at FROM access_sessions s
                 JOIN access_users u ON s.user_id=u.id WHERE s.token_hash=?
                 AND s.expires_at>? AND u.status='active' ''',
                 (hashlib.sha256(token.encode()).hexdigest(), time.time())).fetchone()
-        return {'user': public_user(row), 'csrfToken': row['csrf']} if row else None
+        # 11/26 createdAt = 세션을 만든 시각(WORKS 로그인으로 확인한 시각). 다시 열 때 WORKS 확인을 건너뛸지 정하는 데 쓴다
+        return {'user': public_user(row), 'csrfToken': row['csrf'], 'createdAt': float(row['expires_at']) - SESSION_SECONDS} if row else None
 
     def new_session(self, user):
         token, csrf = secrets.token_hex(32), secrets.token_hex(32)

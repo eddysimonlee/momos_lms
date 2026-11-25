@@ -327,7 +327,9 @@ class Handler(BaseHTTPRequestHandler):
                     auth.logout(self.headers.get('Cookie'))
                     session = user = None
             if path == '/api/auth/status' and method == 'GET':
-                return self.send(200, {'setupRequired': auth.setup_required(), 'setupAllowed': len(os.environ.get('ERP_BOOTSTRAP_TOKEN', '')) >= 32, 'user': user, 'csrfToken': session['csrfToken'] if session else None,'runtime':'cloud' if store.database else 'local', 'companies': auth.companies(), 'works': __import__('works_auth').enabled()})
+                return self.send(200, {'setupRequired': auth.setup_required(), 'setupAllowed': len(os.environ.get('ERP_BOOTSTRAP_TOKEN', '')) >= 32, 'user': user, 'csrfToken': session['csrfToken'] if session else None,'runtime':'cloud' if store.database else 'local', 'companies': auth.companies(), 'works': __import__('works_auth').enabled(),
+                                       # 11/26 WORKS 로 확인한 지 LMS_WORKS_RECHECK_HOURS(기본 8)시간이 안 됐으면 다시 열 때 WORKS 를 거치지 않는다
+                                       'worksFresh': bool(session and time.time() - session.get('createdAt', 0) < float(os.environ.get('LMS_WORKS_RECHECK_HOURS') or 8) * 3600)})
             if path == '/api/auth/forgot-password' and method == 'POST':
                 auth.rate('forgot:' + self.client_address[0], limit=4)
                 account = auth.request_reset(self.body().get('email'))
