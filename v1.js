@@ -385,6 +385,7 @@
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
     $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view === 'opinions' ? '의견 리스트' : view.startsWith('log:') ? '반영 기록' : view.startsWith('req:') ? '수정 요청' : view.startsWith('fb:') ? '의견' : '모모스 온보딩';
+    document.body.classList.remove('v1-booting');  // 11/26 머리줄 제목을 정한 뒤에 보인다(그 전엔 '모모스 온보딩'이 잠깐 보였다)
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
     $('v1Stage').textContent = stg ? `${stg.order}. ${stg.title}` : '';
@@ -1546,6 +1547,7 @@
   // 11/25 첫 화면이 실패하거나(서버가 잠깐 응답하지 못함) 20초 넘게 아무것도 그려지지 않으면, 흰 화면 대신 안내와 '다시 시도'를 보인다.
   // 로그인 전(로그인 화면이 아직 없을 때)이면 오류를 로그인 칸에 보여야 한다 — 교육 화면 칸은 로그인 전에는 숨겨져 있다.
   function bootFailed(message) {
+    document.body.classList.remove('v1-booting');
     const html = `<div class="v1-card"><h2>불러오지 못했어요</h2><p class="v1-muted">${esc(message || '서버가 잠시 응답하지 않아요.')}</p><button class="v1-btn" onclick="location.reload()">다시 시도</button> <a class="v1-btn" href="/auth/works/login">NAVER WORKS로 다시 로그인</a></div>`;
     const gate = document.getElementById('authGate');
     if (document.body.classList.contains('auth-pending') && gate) { gate.hidden = false; gate.innerHTML = html; }

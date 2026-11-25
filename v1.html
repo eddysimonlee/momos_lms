@@ -25,6 +25,10 @@ button:disabled{cursor:default}
 a{color:var(--text-primary)}
 img{max-width:100%}
 .auth-pending #appShell{display:none}
+/* 11/26 첫 화면을 그리기 전에는 머리줄('모모스 온보딩')을 보이지 않고 가운데 작은 로딩 표시만 */
+.v1-booting #appShell{visibility:hidden}
+.v1-booting:not(.auth-pending)::after{content:'';position:fixed;top:50%;left:50%;width:var(--spacing-24);height:var(--spacing-24);margin:calc(var(--spacing-12) * -1) 0 0 calc(var(--spacing-12) * -1);border:var(--v1-hairline) solid var(--border-default);border-top-color:var(--text-muted);border-radius:var(--radius-full);animation:v1-boot-spin .8s linear infinite} /* wds-allow: 로딩 회전 시간 토큰 없음 */
+@keyframes v1-boot-spin{to{transform:rotate(360deg)}}
 #appShell{min-height:100svh;background:var(--surface-default);color:var(--text-default);font:var(--body-lg);font-family:var(--font-family),-apple-system,BlinkMacSystemFont,sans-serif}
 #appShell *{box-sizing:border-box;font-family:inherit}
 /* top bar = gnb type default */
@@ -658,7 +662,7 @@ details[open]>summary .v1-chev{transform:rotate(180deg)}
 .v1-drv-key{display:block;margin:var(--spacing-8) 0;padding:var(--spacing-8);border-radius:var(--radius-sm);background:var(--surface-default);font:var(--label-sm);overflow-wrap:anywhere;user-select:all}
 </style>
 </head>
-<body class="auth-pending">
+<body class="auth-pending v1-booting">
 <section id="authGate" class="auth-gate" aria-label="로그인"></section>
 <div id="appShell" inert aria-hidden="true">
   <header class="v1-top">

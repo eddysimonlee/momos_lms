@@ -49,7 +49,7 @@ def main():
     mock = MOCK.replace('/*CONTENT*/', 'const CONTENT=' + data + ';const SOURCE_LOG=' + log + ';const KP_MOVES=' + moves + ';')
     page = page.replace('<script src="/auth.js"></script>', '<script>' + mock + '</script>')
     page = page.replace('<script src="/v1.js"></script>', '<script>' + (APP / 'v1.js').read_text(encoding='utf-8').replace('</script', '<\\/script') + '</script>')
-    page = page.replace('<body class="auth-pending">', '<body class="auth-pending">' + BANNER, 1)
+    page = page.replace('<body class="auth-pending v1-booting">', '<body class="auth-pending v1-booting">' + BANNER, 1)
     page = page.replace('</head>', '<style>' + BANNER_CSS + '</style></head>', 1)
     (APP / 'v1_preview.html').write_text(page, encoding='utf-8')
     # 11/03 연결도(/v1/graph) 미리보기: 같은 가짜 서버를 넣고 '체험 담당자(admin)'로 연다. 수정 요청은 v1_preview 와 같은 기록(localStorage)에 쌓인다
