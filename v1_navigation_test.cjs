@@ -16,7 +16,7 @@ function alignmentCaptionHarness() {
   return context.caption;
 }
 
-test('rounding photos show each original alignment row beneath its corresponding photo only', () => {
+test('rounding photos show their area and original alignment criteria inline without a heading', () => {
   const caption = alignmentCaptionHarness();
   const content = JSON.parse(readFileSync(join(__dirname, 'v1_content.json'), 'utf8'));
   const steps = content.units.flatMap(u => u.steps), step = steps.find(s => s.id === 'floor-round');
@@ -27,7 +27,7 @@ test('rounding photos show each original alignment row beneath its corresponding
   step.photos.slice(0, 5).forEach((pid, i) => {
     const p = content.photos[pid], html = caption(p, step.id);
     assert.equal(p.row.cells[0], rows[i][0]);
-    assert.equal(html, `<figcaption>${escape(p.caption)}<br><strong>정렬 기준</strong><br>${escape(rows[i][1])}</figcaption>`);
+    assert.equal(html, `<figcaption>${escape(p.caption)} · ${escape(rows[i][1])}</figcaption>`);
   });
   for (const s of steps) for (const pid of s.photos) {
     const p = content.photos[pid];
@@ -40,7 +40,7 @@ test('rounding photos show each original alignment row beneath its corresponding
 test('alignment captions preserve original line breaks and escape text without affecting other lessons', () => {
   const caption = alignmentCaptionHarness();
   const p = {caption:'구역 <a>', row:{header:['정렬 기준','구역'], cells:['첫째\n둘째 <script>\r\n셋째 & 마지막','구역']}};
-  assert.equal(caption(p,'floor-round'), '<figcaption>구역 &lt;a&gt;<br><strong>정렬 기준</strong><br>첫째<br>둘째 &lt;script&gt;<br>셋째 &amp; 마지막</figcaption>');
+  assert.equal(caption(p,'floor-round'), '<figcaption>구역 &lt;a&gt; · 첫째<br>둘째 &lt;script&gt;<br>셋째 &amp; 마지막</figcaption>');
   assert.equal(caption(p,'other-step'), '<figcaption>구역 &lt;a&gt;</figcaption>');
   assert.equal(caption({...p,hideCaption:true},'floor-round'), '');
   assert.equal(caption({caption:'기존 사진'},'floor-round'), '<figcaption>기존 사진</figcaption>');
