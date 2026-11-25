@@ -2,7 +2,7 @@
   "format": "momos-lms-source-manifest",
   "note": "지금 교육 내용이 근거로 쓰는 문서(폴더·파일·개정일·파일 지문). 반영할 때마다 바뀐 문서만 갱신한다. (11/04: 기준 폴더 = ST_매장사업부, folder 는 그 아래 경로)",
   "origin": "공용 드라이브 › SOP › ST_매장사업부",
-  "updated": "2026-11-23",
+  "updated": "2026-11-25",
   "documents": [
     {
       "id": "고객-응대-기준",
@@ -135,9 +135,10 @@
       "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "본점_MD_근무_및_영업_중_교대_절차_SOP_261020 (1).docx",
       "revised": "2026-10-30",
-      "sha1": "6fb28752aaa812131133250c1e18f6fa930c79bb",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
+      "sha1": "528ee2135a045d5da3f426bbb70beb880620fcdb",
+      "basis": "드라이브 sync 2026-11-25 · 실서비스 2026-11-25T02:27:18+00:00 동기화 · REQ-29 · 채수민 승인, alpha 선반영",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA",
+      "updated": "2026-11-25"
     },
     {
       "id": "본점-OP3-오전-식사-전-소모품-비품-보충-기준",
@@ -198,9 +199,10 @@
       "folder": "ST-002_온천본점/업무문서/근무조별 운영",
       "file": "오픈조_근무_절차_SOP_261020.docx",
       "revised": "2026-10-20",
-      "sha1": "743c5e682e42442177a4ba23472adc003c04996e",
-      "basis": "업무문서 스냅샷 2026-11-02 16:30",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA"
+      "sha1": "093f9876a020f1ed84b3e85bc908b67ea897ff4e",
+      "basis": "드라이브 sync 2026-11-25 · 실서비스 2026-11-25T02:27:18+00:00 동기화 · REQ-30 · 채수민 승인, alpha 선반영",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE0ODkzNnxEfDA",
+      "updated": "2026-11-25"
     },
     {
       "id": "잔-접시-파손-기록-절차",
@@ -395,10 +397,11 @@
       "id": "음료-레시피-제공-기준",
       "folder": "ST-002_온천본점/업무문서/제품 제조·품질 관리",
       "file": "음료_레시피_제공_기준_GUI_261106.docx",
-      "revised": "2026-11-06",
-      "sha1": "c5b8c19d4507a626910fc33a44c41c5ba4e84b5b",
-      "basis": "수정 요청 REQ-16 첨부 파일 2026-11-09",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE5MzQ4MHxEfDA"
+      "revised": "2026-10-30",
+      "sha1": "986623fd33242775fb1ca1db5db9ae0b167e0d7b",
+      "basis": "드라이브 sync 2026-11-25 · 실서비스 2026-11-25T02:27:18+00:00 동기화 · REQ-31 · 채수민 승인, alpha 선반영",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTE5MzQ4MHxEfDA",
+      "updated": "2026-11-25"
     },
     {
       "id": "재료-제조-소분-라벨-부착-보관",
@@ -468,9 +471,10 @@
       "folder": "ST-002_온천본점/업무문서/포지션별 업무",
       "file": "픽업_빵포장_GUI_261029.docx",
       "revised": "2026-10-16",
-      "sha1": "d7836f58f34c4d380ad77d1544945b99ce707d62",
-      "basis": "드라이브 sync 2026-11-23 (11/23 12:24 동기화) · REQ-23 내용 같음",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTI0Nzc1MnxEfDA"
+      "sha1": "5eb0eb287f549a8ab03b133350d9e76d4346ffb1",
+      "basis": "드라이브 sync 2026-11-25 · 실서비스 2026-11-25T02:27:18+00:00 동기화 · REQ-32 · 채수민 승인, alpha 선반영",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc0MTk4OTI0Nzc1MnxEfDA",
+      "updated": "2026-11-25"
     }
   ]
 }
