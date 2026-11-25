@@ -1,4 +1,6 @@
 """Independent employee fixtures only; no production accounts, polls or network."""
+import time
+import os
 import copy
 import http.client
 import json
@@ -621,6 +623,36 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(self.service.update(self.trainer,p)['learner']['revision'],r['learner']['revision'])
         full=self.service.update(self.trainer,self.payload(self.trainer,'step.mark',dict(step=ident,index=0,on=False),self.learner['id']))
         self.assertIn('educationSummary',full)  # reply 가 없으면 예전처럼 화면 전체
+
+    def test_works_login_fetches_profile_in_background_after_first_time(self):
+        # 11/26 첫 접속 속도: 처음 로그인만 구성원 정보를 기다렸다 받고, 그다음부터는 화면을 먼저 열고 뒤에서 받는다(사진은 언제나 뒤에서)
+        import threading as th, works_auth as wa
+        gate,calls=th.Event(),[]
+        def profile(token,sub):
+            calls.append('profile')
+            if len(calls)>1:gate.wait(5)
+            return dict(hired='2024-03-02',position='사원',org='온천 본점')
+        class H:
+            def __init__(s):s.headers={'Cookie':wa.STATE_COOKIE+'=st.nn.'};s.server=type('S',(),dict(store=self.store,access=self.auth))()
+        env=dict(WORKS_CLIENT_ID='cid',WORKS_CLIENT_SECRET='sec',WORKS_DOMAIN='momos.co.kr')
+        with patch.dict(os.environ,env),patch.object(wa,'_post_form',return_value=dict(access_token='at',id_token='x')),\
+             patch.object(wa,'id_token_claims',return_value=dict(sub='w-1',email='kim@momos.co.kr',name='김모모')),\
+             patch.object(wa,'fetch_profile',side_effect=profile),patch.object(wa,'fetch_photo',return_value=None),\
+             patch.object(wa,'_redirect_url',return_value='https://x/cb'),patch.object(wa,'_page',return_value='page'),\
+             patch.object(wa,'_secure',return_value=''),patch.object(wa,'remember_token'),patch.object(wa,'keep_refresh'):
+            self.assertEqual(wa.callback(H(),{'code':['c'],'state':['st']}),'page')
+            with self.store.connect() as db:
+                row=db.execute("SELECT id FROM access_users WHERE email='kim@momos.co.kr'").fetchone();uid=row['id']
+                self.assertTrue(wa.profile_saved(db,uid))  # 처음: 화면을 열기 전에 저장돼 있다
+            t0=time.monotonic();self.assertEqual(wa.callback(H(),{'code':['c'],'state':['st']}),'page')
+            self.assertLess(time.monotonic()-t0,2)  # 두 번째: 구성원 정보를 기다리지 않는다(뒤에서 받는 중)
+            gate.set()
+            for _ in range(50):
+                if len(calls)>=2:break
+                time.sleep(0.05)
+            self.assertEqual(calls,['profile','profile'])
+        s,_=self.auth.new_session(self.learner);sess=self.auth.session('erp_session='+_)
+        self.assertLess(abs(sess['createdAt']-time.time()),5)  # WORKS 로 확인한 시각 = 세션을 만든 시각(다시 열 때 8시간 안이면 WORKS 생략)
 
     def test_first_screen_reads_a_fixed_number_of_rows(self):
         # 11/25 200명 대응: 첫 화면 조회 수가 교육생 수에 따라 늘지 않는다(예전: 교육생 한 명당 3~4번)

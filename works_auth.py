@@ -18,6 +18,7 @@ import hashlib
 import json
 import os
 import secrets
+import threading
 import time
 from http.cookies import SimpleCookie
 from html import escape
@@ -173,14 +174,24 @@ def callback(handler, query):
         user = find_or_create(handler.server.store, email, name, info['sub'])
     except PermissionError as e:
         return _fail(handler, str(e), 403)
-    try:  # 프로필 사진: 로그인할 때마다 WORKS 사진을 받아 둔다(없거나 실패해도 로그인은 계속)
-        save_avatar(handler.server.store, user['id'], fetch_photo(token['access_token'], info['sub']))
-    except Exception as e:
-        _log_failure('photo', e)
-    try:  # 입사일·직책(WORKS 구성원 정보): 시작일·목표일 표시와 '전체 멘티' 조건 판정용. 읽지 못하면 저장해 둔 값을 그대로 둔다
-        save_hired(handler.server.store, user['id'], **fetch_profile(token['access_token'], info['sub']))
-    except Exception as e:
-        _log_failure('hired', e)
+    # 11/26 첫 접속 속도: 프로필 사진·입사일·직책·부서(WORKS 를 2번 더 부른다)는 화면을 먼저 연 뒤 뒤에서 받는다.
+    # 단 구성원 정보를 한 번도 저장한 적이 없는 사람(첫 로그인)은 첫 화면의 부서·입사일에 필요하므로 기다렸다 받는다
+    store, access_token, sub = handler.server.store, token['access_token'], info['sub']
+    def save_profile():
+        try:  # 입사일·직책(WORKS 구성원 정보): 시작일·목표일 표시와 '전체 멘티' 조건 판정용. 읽지 못하면 저장해 둔 값을 그대로 둔다
+            save_hired(store, user['id'], **fetch_profile(access_token, sub))
+        except Exception as e:
+            _log_failure('hired', e)
+    def save_photo():
+        try:  # 프로필 사진: 로그인할 때마다 WORKS 사진을 받아 둔다(없거나 실패해도 로그인은 계속)
+            save_avatar(store, user['id'], fetch_photo(access_token, sub))
+        except Exception as e:
+            _log_failure('photo', e)
+    with store.connect() as db:
+        known = profile_saved(db, user['id'])
+    if not known:
+        save_profile()
+    threading.Thread(target=lambda: (save_photo(), known and save_profile()), daemon=True).start()
     remember_token(user['id'], token)  # LMS관리자 화면의 구성원 검색(주소록)에 쓴다. 서버 메모리에만, 화면·DB·로그로는 보내지 않는다
     try:  # 11/16 LMS관리자면 재발급 열쇠를 암호화해 저장(아침 원본 변경 확인용). 실패해도 로그인은 계속
         keep_refresh(handler.server.store, user, token)

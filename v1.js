@@ -1480,6 +1480,7 @@
         }
         try { sessionStorage.removeItem('v1.loggedOut'); } catch {}
         let checked = true; try { checked = sessionStorage.getItem('v1.worksVisit') === '1'; } catch {}  // 저장소를 못 쓰면 다시 묻지 않는다(무한 이동 방지)
+        if (status.worksFresh) checked = true;  // 11/26 WORKS 로 확인한 지 8시간이 안 됐으면 다시 열 때 WORKS 를 거치지 않는다(첫 접속 1~2초 단축)
         if (!status.user || !checked) {
           try { sessionStorage.setItem('v1.worksVisit', '1'); } catch {}
           location.replace('/auth/works/login');
