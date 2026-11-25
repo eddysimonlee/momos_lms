@@ -97,19 +97,38 @@ class GrinderSplitTests(unittest.TestCase):
         steps = [s for u in content['units'] for s in u['steps']]
         self.assertEqual(len(steps), 96)
         self.assertEqual([s['id'] for s in steps[92:]], [*IDS, 'stock-ecount'])
-        for step, doc, last in zip(steps[92:95], DOCS, ('6.7', '6.4', '6.3')):
+        for step, doc, last, count in zip(steps[92:95], DOCS, ('6.7', '6.4', '6.3'), (18, 11, 6)):
             self.assertEqual(len(step['keyPoints']), 3)
             self.assertEqual(step['shift'], ['CL'])
             self.assertEqual(step['position'], ['에스프레소'])
             self.assertEqual({c.split('|')[0] for c in step['sources']}, {doc})
             self.assertEqual({content['photos'][p]['cite'].split('|')[0] for p in step['photos']}, {doc})
-            self.assertEqual(len(step['photos']), 2)
+            self.assertEqual(len(step['photos']), count)
             body = content['sections'][step['keyPoints'][1]['cites'][0]]
             text = '\n'.join(body['paragraphs'])
             self.assertIn(last, text)
             self.assertNotIn('완료 확인 및 이상 대응', text)
             if doc == DOCS[0]: self.assertIn('⑱ 고정 나사 단계적 체결', text)
             if doc == DOCS[1]: self.assertIn('⑪ 하부 날 중앙 너트 체결', text)
+
+    def test_model_photos_cover_every_procedure_image_with_original_captions_in_order(self):
+        content = json.loads((ROOT / 'v1_content.json').read_text(encoding='utf-8'))
+        for ident, doc, count in zip(IDS, DOCS, (18, 11, 6)):
+            with self.subTest(model=ident):
+                step = next(s for u in content['units'] for s in u['steps'] if s['id'] == ident)
+                procedure = content['sections'][doc + '|6.*']
+                self.assertEqual(len(step['photos']), procedure['images'])
+                self.assertEqual(len(set(step['photos'])), count)
+                for n, pid in enumerate(step['photos'], 1):
+                    photo = content['photos'][pid]
+                    self.assertEqual(photo['n'], n)
+                    self.assertEqual(photo['cite'], doc + '|6.*')
+                    self.assertFalse(photo['wide'])
+                    title, description = photo['caption'].split('\n', 1)
+                    self.assertTrue(title.startswith(chr(0x245f + n)))
+                    self.assertIn(title, procedure['paragraphs'])
+                    self.assertIn(description, procedure['paragraphs'])
+                    self.assertTrue((ROOT / photo['src']).is_file())
 
     def test_subtree_keeps_repeated_continuations_and_tables_but_stops_before_next_peer(self):
         def sec(no, level, text):
