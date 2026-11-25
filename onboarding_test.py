@@ -279,7 +279,7 @@ class EducationTests(unittest.TestCase):
             code,h,b=req('GET','/auth/works/callback?code=x&state=y',cookie=False);self.assertEqual(code,503);self.assertNotIn('erp_session=',h.get('Set-Cookie',''))  # 세션은 만들지 않는다
             code,h,b=req('GET','/v1_content.json');self.assertEqual(code,200)
             slice_=json.loads(b);self.assertEqual(len(slice_['units']),57)  # curriculum.json: 6단계 57단원(2.10 OP2 / 2.11 OP3 분리, 2.12 MD / 2.13 CL 출근)
-            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),96)  # 11/24 그라인더 기종별 교육 분리(+2)
+            steps=[s for u in slice_['units'] for s in u['steps']];self.assertEqual(len(steps),97)  # REQ-33 블랙이글 데일리 청소 추가
             # 홈 필터(근무조·포지션): 분류표의 값만 쓰고, 공통 교육은 비어 있다
             fl=slice_['filters'];self.assertEqual(fl['shift'],['OP','MD','CL']);self.assertEqual(len(fl['position']),10)
             for s in steps:
@@ -816,7 +816,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),126)  # 기존 124 + 11/24 그라인더 기종별 교육 2개
+        self.assertEqual(len(ob.STEPS),127)  # 기존 126 + REQ-33 블랙이글 데일리 청소 1개
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 
@@ -890,6 +890,35 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(r['history'][-2]['status'],'applied')
         self.assertIn(review,[n['id'] for n in self.service.get(self.learner)['lessonReviewNotes']])
         self.assertEqual(self.erp_snapshot(),review_before)
+
+
+class NewDailyCleaningTests(unittest.TestCase):
+    def test_new_cleaning_starts_unchecked_without_changing_existing_completion_evidence(self):
+        ident = 'black-eagle-daily'
+        learner = ob.blank('2026-11-01')
+        ob.fit(learner)  # 기존 기록 이관은 먼저 마친 상태로 검증한다.
+        learner['records'].pop(ident)
+        learner['planDates'].pop(ident)
+        for record in learner['records'].values():
+            record.update(status='done', teacher=[True] * len(record['teacher']), done='2026-11-24',
+                          completedBy='former-trainer', completedByName='이전 교육자',
+                          history=[{'event': '기존 완료 이력'}])
+            record['teacherBy'] = ['former-trainer'] * len(record['teacher'])
+            record['teacherAt'] = ['2026-11-24T09:00:00+09:00'] * len(record['teacher'])
+        previous_records = copy.deepcopy(learner['records'])
+        previous_plans = copy.deepcopy(learner['planDates'])
+        ob.fit(learner)
+        self.assertEqual({k: v for k, v in learner['records'].items() if k != ident}, previous_records)
+        self.assertEqual({k: v for k, v in learner['planDates'].items() if k != ident}, previous_plans)
+        new = learner['records'][ident]
+        self.assertEqual(new['status'], 'ready')
+        self.assertEqual(new['teacher'], [False] * 8)
+        self.assertEqual(new['self'], [False] * 8)
+        self.assertEqual(new['teacherAt'], [None] * 8)
+        self.assertIsNone(new['done'])
+        self.assertEqual(new['history'], [])
+        once = copy.deepcopy(learner)
+        self.assertEqual(ob.fit(learner), once)
 
 
 if __name__=='__main__':unittest.main(verbosity=2)
