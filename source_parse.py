@@ -206,6 +206,16 @@ def parse(path):
         ones = [i for i in range(toc_at + 1, first_sentence) if NUMBERED.match(paras[i]) and NUMBERED.match(paras[i]).group(1) == '1']
         if ones:
             body_start = ones[-1]
+        # 목차 사이에 사진 자리표시자·설명 문장이 끼어 있어도 본문으로 오인하지 않는다.
+        # 같은 '1. …' 제목이 일반 문단 목차 뒤에 정식 제목 스타일로 반복되면 그곳이 본문이다.
+        for i in range(toc_at + 1, len(paras)):
+            match = NUMBERED.match(paras[i])
+            style = document.paragraphs[i].style.name
+            if (match and match.group(1) == '1'
+                    and (style in HEADING_STYLES or style.startswith('GUI 소제목'))
+                    and paras[i] in paras[toc_at + 1:i]):
+                body_start = i
+                break
     toc_titles = set(paras[toc_at + 1:body_start]) if toc_at >= 0 else set()
     toc_parent = ''
     phase = 'front'

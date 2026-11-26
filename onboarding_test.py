@@ -18,6 +18,40 @@ import lms_store as projects
 
 
 class EducationTests(unittest.TestCase):
+    def test_branch_transfer_preserves_common_credit_and_local_history(self):
+        common='welcome-culture'
+        local='welcome-prep'
+        marine='marine-fixture-local'
+        new_step=copy.deepcopy(ob.STEPS[local])
+        new_step.update(id=marine,title='마린 전용 검증 교육')
+        scopes={'oncheon':tuple(ob.STEPS),'marine':(common,marine)}
+        with patch.dict(ob.STEPS,{marine:new_step}), patch.dict(ob.BRANCHES,{'marine':'마린시티점'}), patch.object(ob,'_branch_step_ids',scopes):
+            for ident in (common,local):
+                for i in range(len(ob.STEPS[ident]['checks'])):
+                    self.act(self.trainer,'step.mark',dict(step=ident,index=i,on=True),self.learner['id'])
+                self.act(self.trainer,'step.close',dict(step=ident),self.learner['id'])
+            before=copy.deepcopy(self.service.get(self.learner)['learner']['records'])
+            c=self.act(self.learner,'profile.set',dict(branch='marine',role='learner'))
+            self.assertEqual(c['targetBranch'],'marine')
+            for ident in (common,local):
+                self.assertEqual(c['learner']['records'][ident],before[ident])
+            self.assertEqual(c['learner']['records'][marine]['status'],'ready')
+            self.assertFalse(any(c['learner']['records'][marine]['teacher']))
+            summary=next(r for r in c['educationSummary'] if r['id']==self.learner['id'])
+            self.assertEqual((summary['total'],summary['done']),(2,1))
+            with self.assertRaises(PermissionError):
+                self.act(self.trainer,'step.mark',dict(step=local,index=0,on=False),self.learner['id'])
+            with self.assertRaises(PermissionError):
+                self.act(self.learner,'step.mark',dict(step=marine,index=0,on=True))
+            self.act(self.trainer,'step.mark',dict(step=marine,index=0,on=True),self.learner['id'])
+            c=ob.Service(self.store).get(self.learner)
+            self.assertTrue(c['learner']['records'][marine]['teacher'][0])
+            self.assertEqual(c['learner']['records'][common],before[common])
+            c=self.act(self.learner,'profile.set',dict(branch='oncheon',role='learner'))
+            self.assertEqual(c['targetBranch'],'oncheon')
+            self.assertEqual(c['learner']['records'][local],before[local])
+            self.assertTrue(c['learner']['records'][marine]['teacher'][0])
+
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
         self.store=server.Store(self.root/'data',self.root)
@@ -631,7 +665,10 @@ class EducationTests(unittest.TestCase):
     def test_works_login_fetches_profile_in_background_after_first_time(self):
         # 11/26 첫 접속 속도: 처음 로그인만 구성원 정보를 기다렸다 받고, 그다음부터는 화면을 먼저 열고 뒤에서 받는다(사진은 언제나 뒤에서)
         import threading as th, works_auth as wa
-        gate,calls=th.Event(),[]
+        gate,calls,workers=th.Event(),[],[]
+        thread_type=th.Thread
+        def background(*args,**kwargs):
+            worker=thread_type(*args,**kwargs);workers.append(worker);return worker
         def profile(token,sub):
             calls.append('profile')
             if len(calls)>1:gate.wait(5)
@@ -639,7 +676,7 @@ class EducationTests(unittest.TestCase):
         class H:
             def __init__(s):s.headers={'Cookie':wa.STATE_COOKIE+'=st.nn.'};s.server=type('S',(),dict(store=self.store,access=self.auth))()
         env=dict(WORKS_CLIENT_ID='cid',WORKS_CLIENT_SECRET='sec',WORKS_DOMAIN='momos.co.kr')
-        with patch.dict(os.environ,env),patch.object(wa,'_post_form',return_value=dict(access_token='at',id_token='x')),\
+        with patch.dict(os.environ,env),patch.object(th,'Thread',side_effect=background),patch.object(wa,'_post_form',return_value=dict(access_token='at',id_token='x')),\
              patch.object(wa,'id_token_claims',return_value=dict(sub='w-1',email='kim@momos.co.kr',name='김모모')),\
              patch.object(wa,'fetch_profile',side_effect=profile),patch.object(wa,'fetch_photo',return_value=None),\
              patch.object(wa,'_redirect_url',return_value='https://x/cb'),patch.object(wa,'_page',return_value='page'),\
@@ -655,6 +692,10 @@ class EducationTests(unittest.TestCase):
                 if len(calls)>=2:break
                 time.sleep(0.05)
             self.assertEqual(calls,['profile','profile'])
+            # 호출 시작과 DB 저장 완료는 다르다. Windows에서 임시 DB를 지우기 전에 작업을 끝낸다.
+            for worker in workers:
+                worker.join(5)
+                self.assertFalse(worker.is_alive())
         s,_=self.auth.new_session(self.learner);sess=self.auth.session('erp_session='+_)
         self.assertLess(abs(sess['createdAt']-time.time()),5)  # WORKS 로 확인한 시각 = 세션을 만든 시각(다시 열 때 8시간 안이면 WORKS 생략)
 
@@ -864,7 +905,7 @@ class EducationTests(unittest.TestCase):
 
     def test_calendar_end_of_month_and_course_preservation(self):
         self.assertEqual(ob.month('2026-08-31',6),'2027-02-28')
-        self.assertEqual(len(ob.STEPS),127)  # 기존 126 + REQ-33 블랙이글 데일리 청소 1개
+        self.assertEqual(len(ob.branch_steps('oncheon')),127)  # 본점의 기존 기록 범위는 마린 교육 추가와 독립적이다.
         before=self.erp_snapshot();self.service.get(self.learner)
         self.assertEqual(self.erp_snapshot(),before)
 

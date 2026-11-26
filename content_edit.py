@@ -65,7 +65,8 @@ def load(app):
     paths = (app / 'v1_content.json', app / 'v1_lessons.json')
     stamp = tuple(p.stat().st_mtime_ns if p.exists() else 0 for p in paths)
     if _CACHE.get('stamp') != stamp:
-        content = json.loads(paths[0].read_text(encoding='utf-8')) if paths[0].exists() else {}
+        from v1_build import merged_content
+        content = merged_content(json.loads(paths[0].read_text(encoding='utf-8'))) if paths[0].exists() else {}
         lessons = json.loads(paths[1].read_text(encoding='utf-8')).get('lessons', {}) if paths[1].exists() else {}
         sections = content.get('sections', {})
         _CACHE.update(stamp=stamp, sections=sections, lessons=lessons, documents=content.get('documents', {}))

@@ -18,7 +18,7 @@
   let returnView = 'home';  // 항목 화면의 꺽쇠가 돌아갈 화면
   let homeScroll = null;  // 홈을 떠날 때의 {단계 탭, 스크롤 위치}. 항목에 들어갔다 뒤로 오면 그 자리로 돌아간다.
   let lastStep = null;    // 마지막으로 본 항목(저장된 위치가 없을 때 목록에서 그 항목을 보여 준다)  // 마지막으로 그린 화면(같은 화면 다시 그리기와 이동을 구분)
-  let content = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
+  let content = null, contentRoot = null, cloud = null, view = 'branch', busy = false, toastTimer = null, stageSel = null;
   const feedbackDrafts = new Map();
   let noticeBusy = false;
 
@@ -158,7 +158,7 @@
   const unitOf = id => content.units.find(u => u.steps.some(s => s.id === id));
   const stages = () => { const out = []; for (const u of content.units) { let g = out.find(x => x.order === u.stage.order); if (!g) out.push(g = Object.assign({units: []}, u.stage)); g.units.push(u); } return out; };
   const stepIndex = id => steps().findIndex(s => s.id === id);
-  const canWrite = () => cloud.enrolled && cloud.scheduled;
+  const canWrite = () => cloud.enrolled && cloud.scheduled && (content.branch || 'oncheon') === selectedBranch();
   // Two roles on screen: 교육생 (own record) and 담당자 (store staff: any admin confirms; no assignment in 1차).
   // The record still stores who confirmed each check, so trainers can be split out later.
   // 화면의 역할은 첫 진입에서 고른 것(계정에 저장)을 따른다. 고르기 전(예전 계정)에는 서버 권한으로 판단.
@@ -168,8 +168,10 @@
   // 10/30: 관리자(admin·멘토)는 교육을 듣지 않는다. 관리자의 '교육 과정' = 기록 없이 둘러보기(상태·체크 없음)
   // 11/02: 멘토·멘티 관계 없음. 다른 사람 교육(체크 가능) / 내 교육(보기만)
   const mentee = () => cloud.target !== cloud.user.id;
-  const mayConfirm = () => Boolean(cloud.permissions.trainer);
-  const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join);
+  const mayConfirm = () => Boolean(cloud.permissions.trainer) && (content.branch || 'oncheon') === selectedBranch();
+  const selectedBranch = () => cloud.targetBranch || profile()?.branch || 'oncheon';
+  const inBranch = r => (r.branch || 'oncheon') === selectedBranch();
+  const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join && inBranch(r));
 
   // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 86개 목록을 좁혀 볼 뿐 기록은 하나다.
   // 고른 값은 이 기기에만 기억한다(localStorage). 교육 화면에는 아무것도 더하지 않는다.
@@ -187,7 +189,9 @@
     return lost ? c.units.concat([{id: NOORG, name: '부서 미확인', parent: null, order: 1e9}]) : c.units; };
   const orgOf = id => unitsOf().find(u => u.id === id);
   const membersOf = id => { const ids = new Set(chart().units.map(u => u.id));
-    return chart().members.filter(m => id === NOORG ? !m.org || !ids.has(m.org) : m.org === id); };
+    const learners = new Set((cloud.educationSummary || []).filter(inBranch).map(x => x.id));
+    const enrolled = new Set((cloud.educationSummary || []).map(x => x.id));
+    return chart().members.filter(m => (!m.id || !enrolled.has(m.id) || learners.has(m.id)) && (id === NOORG ? !m.org || !ids.has(m.org) : m.org === id)); };
   const orgPath = id => { const out = []; let u = orgOf(id); while (u && out.length < 20) { out.unshift(u); u = u.parent && orgOf(u.parent); } return out; };
   const childrenOf = id => unitsOf().filter(u => (u.parent || null) === id || (id === null && u.parent && !orgOf(u.parent))).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, 'ko'));
   function drawOrgSheet() {
@@ -369,6 +373,13 @@
   // --- rendering
   function render() {
     if (!cloud || !content) return;
+    if (contentRoot) {
+      content = contentRoot.branches?.[selectedBranch()] || contentRoot;
+      // 이전 지점에서 보낸 의견의 교육 링크도 열되 체크는 현재 지점에서만 허용한다.
+      const id = view.startsWith('step:') ? view.slice(5) : null;
+      if (id && !content.units.some(u => u.steps.some(s => s.id === id)))
+        content = [contentRoot, ...Object.values(contentRoot.branches || {})].find(c => c.units.some(u => u.steps.some(s => s.id === id))) || content;
+    }
     if (rqe && view !== 'step:' + rqe.step) {  // 수정 요청 중에 다른 화면으로: 고친 게 있으면 묻는다
       if (rqeDirty() && !confirm('고치던 수정 요청을 버릴까요?')) view = 'step:' + rqe.step; else rqe = null;
     }
@@ -441,13 +452,13 @@
     shownView = view;
   }
 
-  // 첫 화면: 교육을 진행할 지점 선택. 지금은 온천 본점만 교육과정이 있고, 나머지는 준비 중(선택 불가).
+  // 첫 화면: 빌드된 교육과정이 있는 지점만 선택할 수 있다.
   const BRANCHES = [{id: 'oncheon', name: '온천 본점', ready: true}, {id: 'yeongdo', name: '영도점'}, {id: 'marine', name: '마린시티점'}, {id: 'domoheon', name: '도모헌점'}];
   const STORE_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M3 9l1.6-4.3A1 1 0 0 1 5.5 4h13a1 1 0 0 1 .9.7L21 9a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 12 11a2.5 2.5 0 0 1-4.5-.5A2.5 2.5 0 0 1 3 9ZM10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';  // wds-allow: 상점 아이콘(mono/24 store 자산 반입 전 임시 인라인 SVG)
   function branchView() {
     const cur = profile() && profile().branch;
     return `<section class="v1-branch"><h2>교육을 진행할 지점을 선택해 주세요.</h2><p class="v1-muted">선택한 지점의 교육 과정으로 이동합니다.</p>` +
-      `<div class="v1-branches">${BRANCHES.map(b => b.ready
+      `<div class="v1-branches">${BRANCHES.map(b => b.ready || contentRoot?.branches?.[b.id]
         ? `<button type="button" class="v1-branch-card${b.id === cur ? ' on' : ''}" data-branch="${b.id}" aria-pressed="${b.id === cur}"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span>${b.id === cur ? '<span class="v1-branch-soon">현재</span>' : ''}</button>`
         : `<button type="button" class="v1-branch-card" disabled aria-disabled="true" title="교육 과정 준비 중"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span><span class="v1-branch-soon">준비 중</span></button>`).join('')}</div></section>`;
   }
@@ -458,9 +469,14 @@
     if (cloud.target !== cloud.user.id) cloud = await api('GET');
     if (!(await act('profile.set', {branch, role}))) return;
     pickBranch = null;
-    if (role === 'learner' && !cloud.enrolled) await act('config.selfEnrol', {});
+    if (!cloud.enrolled) await act('config.selfEnrol', {});  // 관리자도 기존처럼 자기 교육 기록을 시작한다.
     if (cloud.target !== cloud.user.id) cloud = await api('GET');
-    view = 'home'; stageSel = null; render();
+    if (chart()) {
+      const name = BRANCHES.find(x => x.id === branch).name.replace(/\s/g, '');
+      const org = unitsOf().find(x => x.id === branch || x.name.replace(/\s/g, '') === name || (branch === 'marine' && x.name === '마린점'));
+      orgSel = org ? org.id : chart().mine;
+    }
+    view = 'home'; stageSel = null; homeScroll = null; lastStep = null; filt = null; render();
     toast(`${BRANCHES.find(x => x.id === branch).name}(으)로 들어왔어요.`);
   }
 
@@ -503,7 +519,7 @@
   }
   // 첫 화면(모든 직원): 맨 위 '내 교육' 줄 + 부서별 구성원 표(교육을 시작한 모든 사람). 누르면 그 사람의 교육
   function homeHtml() {
-    const sums = cloud.educationSummary || [], me = cloud.user.id;
+    const sums = (cloud.educationSummary || []).filter(inBranch), me = cloud.user.id;
     const by = (a, b) => a.name.localeCompare(b.name, 'ko');
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
       const meta = [label ? '' : x.position, `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
@@ -543,7 +559,7 @@
 
   // 교육 현황 탭: 처음엔 나의 교육생이 있으면 '나의 교육생', 없으면 '부서'. 고른 탭은 화면을 오가도 유지(새로고침하면 다시 처음 규칙)
   let homeTab = null;
-  const traineesOf = () => (cloud.educationSummary || []).filter(x => x.trainedByMe && x.id !== cloud.user.id);
+  const traineesOf = () => (cloud.educationSummary || []).filter(x => inBranch(x) && x.trainedByMe && x.id !== cloud.user.id);
   const homeTabNow = () => homeTab || (traineesOf().length ? 'mine' : 'org');
 
   function enrolNotice() {
@@ -1362,7 +1378,7 @@
       ? `<ul class="p-checks">${checkItems(s).map(k => `<li><span class="p-box"></span><span>${esc(k.text).replace(/\n/g, '<br>')}${(k.cites || []).length ? `<span class="p-src">출처: ${[...new Set(k.cites)].map(c => esc(srcLabel(c))).join(' · ')}</span>` : ''}</span></li>`).join('')}</ul>`
       : s.copy.map(p => `<p>${esc(p)}</p>`).join('')) +
       (s.refDocs || []).map(d => `<p class="p-src">원고 문서: ${esc(d.title)} (${esc(d.ref)})</p>`).join('');
-    return `<header class="p-head"><div class="p-brand">모모스 온보딩 · 온천 본점</div>` +
+    return `<header class="p-head"><div class="p-brand">모모스 온보딩 · ${esc(content.branchName || '온천 본점')}</div>` +
       `<div class="p-meta">${stg ? `<span class="p-tag">${stg.order}. ${esc(stg.title)}</span>` : ''}${esc(u.no || '')} ${esc(u.title)}</div>` +
       `<h1>${esc(s.title)}</h1></header>` +
       `<h2>교육 목적</h2>${purpose}` +
@@ -1531,17 +1547,15 @@
     // 11/26 교육 내용(같으면 304)과 내 기록을 동시에 받는다(예전: 하나 받고 나서 다음 — 왕복 한 번 더)
     const [response, first] = await Promise.all([fetch('/v1_content.json', {credentials: 'same-origin', cache: 'no-cache'}), api('GET')]);
     if (!response.ok) throw new Error('교육 내용을 불러오지 못했습니다.');
-    content = await response.json();
+    contentRoot = content = await response.json();
     cloud = first;
     // WORKS 부서·직책을 아직 못 읽은 사람(이 버전 이전에 로그인한 채로 들어온 경우): WORKS 로그인을 한 번 자동으로 거친다(같은 탭에서 한 번만)
     if (cloud.profileMissing) {
       let tried = true; try { tried = sessionStorage.getItem('v1.relogin') === '1'; if (!tried) sessionStorage.setItem('v1.relogin', '1'); } catch {}
       if (!tried) { location.replace('/auth/works/login'); return; }
     }
-    // 11/02: 지점 선택은 숨김(모든 조직이 같은 교육 자료) → 처음 들어오면 온천 본점으로 저장하고 바로 교육 현황
-    if (!profile()) await act('profile.set', {branch: BRANCHES[0].id, role: isStaff() ? 'staff' : 'learner'});
-    view = 'home';
-    if (!cloud.enrolled) await act('config.selfEnrol', {});  // 처음 들어온 날이 교육 시작일(admin 도 교육을 듣는다)
+    // 지점을 직접 고른 뒤 교육 현황으로 간다. 기존 프로필·학습 기록은 선택만으로 초기화하지 않는다.
+    view = 'branch';
     render();
   }).catch(e => { bootFailed(e.message); });
   // 11/25 첫 화면이 실패하거나(서버가 잠깐 응답하지 못함) 20초 넘게 아무것도 그려지지 않으면, 흰 화면 대신 안내와 '다시 시도'를 보인다.

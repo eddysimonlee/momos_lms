@@ -129,18 +129,24 @@ if _LESSONS.exists():
     _CURRICULUM = Path(__file__).with_name('curriculum.json')
     if _CURRICULUM.exists():
         _all = json.loads(_LESSONS.read_text(encoding='utf-8')).get('lessons', {})
-        for _st in json.loads(_CURRICULUM.read_text(encoding='utf-8')).get('stages', []):
-            for _u in _st['units']:
-                for _s in _u['sessions']:
-                    _l = _all.get(_s['id'], {})
-                    if _s['id'] not in STEPS and _check_texts(_l):
-                        STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
-                                               checks=_check_texts(_l),
-                                               unit='curriculum-' + _u['no'], plan=_u.get('plan') or STEPS.get(_l.get('planFrom'), {}).get('plan') or [1, 180])
-                        if _l.get('planFrom'):
-                            STEPS[_s['id']]['planFrom'] = _l['planFrom']
-                    elif _s['id'] in STEPS and _u.get('plan'):
-                        STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
+        _course_config = json.loads(_CURRICULUM.read_text(encoding='utf-8'))
+        _branch_courses = {'oncheon': _course_config, **(_course_config.get('branches') or {})}
+        _branch_step_ids = {}
+        for _branch_id, _branch_course in _branch_courses.items():
+            for _st in _branch_course.get('stages', []):
+                for _u in _st['units']:
+                    for _s in _u['sessions']:
+                        _l = _all.get(_s['id'], {})
+                        if _s['id'] not in STEPS and _check_texts(_l):
+                            STEPS[_s['id']] = dict(id=_s['id'], title=_s.get('title') or _l.get('title', ''), copy=[], photos=[], note='', ref='', refs=[],
+                                                   checks=_check_texts(_l),
+                                                   unit='curriculum-' + _u['no'], plan=_u.get('plan') or STEPS.get(_l.get('planFrom'), {}).get('plan') or [1, 180])
+                            if _l.get('planFrom'):
+                                STEPS[_s['id']]['planFrom'] = _l['planFrom']
+                        elif _s['id'] in STEPS and _u.get('plan'):
+                            STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
+            _branch_step_ids[_branch_id] = tuple(STEPS) if _branch_id == 'oncheon' else tuple(x['id'] for st in _branch_course.get('stages', []) for u in st['units'] for x in u['sessions'] if x['id'] in STEPS)
+
 TESTS = {t['id']: t for t in COURSE['tests']}
 
 
@@ -337,7 +343,15 @@ CATEGORIES = {'technical': ['체크·저장 오류','화면·사용성','가입�
 # 판본 검사 없이 최신 기록에 얹는 작업(동시에 눌러도 서로의 변경이 사라지지 않는다)
 LATEST_OK = {'feedback.answer','content.log','content.reply','feedback.comment','feedback.link','content.request','content.status','content.delete','step.mark','step.close','step.reopen','feedback.send','lms.admin','step.start','step.self','step.request','step.complete','step.retry','step.memo','profile.set','config.selfEnrol'}
 # v1 첫 진입의 지점(교육 과정이 있는 곳만 고를 수 있다)
-BRANCHES = {'oncheon': '온천 본점'}
+BRANCHES = {'oncheon': '온천 본점', **{k: v['name'] for k, v in globals().get('_branch_courses', {}).items() if k != 'oncheon'}}
+
+def branch_steps(branch='oncheon'):
+    return globals().get('_branch_step_ids', {}).get(branch, tuple(STEPS))
+
+def learner_branch(root, ident):
+    selected = ((root.get('profiles') or {}).get(ident) or {}).get('branch')
+    return selected if selected in BRANCHES else 'oncheon'
+
 
 class InquiryHTML(HTMLParser):
     """Only formatting and this author's validated education image references."""
@@ -667,6 +681,7 @@ class Service:
             raise PermissionError('모모스 구성원만 다른 사람의 교육을 볼 수 있어요.')
         users = {r['id']:dict(r) for r in db.execute("SELECT id,name,company,role FROM access_users WHERE status='active'").fetchall()}
         entry = root['learners'].get(target)
+        target_branch = learner_branch(root, target)
         # 11/25 200명 대응: 볼 수 있는 교육생의 기록·프로필을 한 번에 읽는다(예전: 한 명씩 3~4번 → 교육생 50명에 172번)
         visible = [i for i,x in root['learners'].items() if i in users and self.may_view(root,user,i)]
         docs = fitted_many(db, [root['learners'][i]['key'] for i in set(visible) | ({target} if entry else set())])
@@ -676,11 +691,11 @@ class Service:
         learner = view_learner(learner, entry)
         permissions = self.roles(root,user,target)
         tickets = [copy.deepcopy(t) for t in root['tickets'] if self.ticket_visible(t,user,permissions)]
-        roster = [dict(id=i,name=users[i]['name'],join=x['join'],startDate=x.get('startDate',x['join']),trainer=users.get(x['trainer'],{}).get('name','미배정'),
+        roster = [dict(id=i,name=users[i]['name'],branch=learner_branch(root,i),join=x['join'],startDate=x.get('startDate',x['join']),trainer=users.get(x['trainer'],{}).get('name','미배정'),
                        assessor=users.get(x['assessor'],{}).get('name','미배정'))
                   for i,x in ((i,root['learners'][i]) for i in visible)]
         if not any(x['id']==user['id'] for x in roster):
-            roster.insert(0,dict(id=user['id'],name=user['name'],join=None,startDate=None,trainer='미배정',assessor='미배정'))
+            roster.insert(0,dict(id=user['id'],name=user['name'],branch=learner_branch(root,user['id']),join=None,startDate=None,trainer='미배정',assessor='미배정'))
         workspace_roles=dict(admin=self.admin(user),staff=self.lms_staff(root,user),learner=user['id'] in root['learners'],
                              trainer=any(x['trainer']==user['id'] for x in root['learners'].values()),
                              assessor=any(x['assessor']==user['id'] for x in root['learners'].values()),
@@ -694,13 +709,14 @@ class Service:
             item=root['learners'].get(r['id'])
             if not item: continue
             l=docs[item['key']];records=l['records']  # 읽기만(캐시된 기록 — 고치지 않는다)
-            done=sum(records[i]['status']=='done' for i in STEPS);waiting=[i for i in STEPS if records[i]['status']=='review']
+            scope = branch_steps(learner_branch(root, r['id']))
+            done=sum(records[i]['status']=='done' for i in scope);waiting=[i for i in scope if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
             # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
-            states={i:records[i]['status'] for i in STEPS if i in records and records[i]['status']!='ready'}
+            states={i:records[i]['status'] for i in scope if i in records and records[i]['status']!='ready'}
             prof=profiles.get(r['id']) or {}
-            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),total=len(STEPS),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
-                                  overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in STEPS) if started and started<=today() else 0,
+            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),total=len(scope),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
+                                  overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in scope) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
         # 11/02 조직도(주소록): WORKS 부서·구성원 저장본에 LMS 교육 기록을 잇는다. 교육을 시작하지 않은 사람은 id 없음(화면에 '미접속')
         org_chart=None; org=works_auth.read_org(db)
@@ -721,14 +737,14 @@ class Service:
         lesson_notes=[{k:copy.deepcopy(r[k]) for k in ('id','title','category','step','relatedSteps','needed','evidence','sourceFile','sourceVersion','checkedAt') if k in r} for r in SYSTEM_REVIEWS if root.get('systemReviews',{}).get(r['id'],{}).get('status')!='applied']
         return dict(workspaceRoles=workspace_roles,educationSummary=summaries,systemReviews=reviews,reviewAccess=review_access,lessonReviewNotes=lesson_notes,
                     user=user,target=target,name=users.get(target,{}).get('name','교육생'),
-                    profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])),
+                    profile=copy.deepcopy(root.get('profiles',{}).get(user['id'])), targetBranch=target_branch,
                     myDates=dates(user['id']), orgChart=org_chart, profileMissing=bool(works_auth.enabled() and not (profiles.get(user['id']) or {}).get('saved')), lmsAdmin=self.lms_staff(root,user), **(dict(ticketSeen=(root.get('ticketSeen') or {}).get(user['id']) or {}, ticketSeenSince=TICKET_SEEN_SINCE) if self.lms_staff(root,user) else {}), lmsLevel=self.lms_level(root,user), **(self.lms_admin_view(db,root) if self.lms_staff(root,user) else {}),
                     enrolled=bool(entry),scheduled=bool(learner['startDate']),today=today(),rootRevision=root['revision'],stamps=self.stamps_of(db, entry['key'] if entry else None),learnerKey=entry['key'] if entry else None,learner=learner,
                     permissions=permissions,roster=roster,tickets=tickets,
                     assets={i:copy.deepcopy(a) for i,a in root.get('assets',{}).items() if a['owner']==user['id'] or any(i in t.get('attachments',[]) or any(i in m.get('attachments',[]) for m in t['messages']) for t in tickets) or any(i in r.get('attachments',[]) for r in reviews)},
                     notifications=self.notices(db,root,user,users,docs),
                     myFeedback=self.my_feedback(root,user),
-                    assignments=self.assignments(learner, bool(entry)),
+                    assignments=self.assignments(learner, bool(entry), target_branch),
                     names={t['person']:t['author'] for t in tickets},
                     configuration=dict(learners=root['learners'],technical=root['technical'],content=root['content'],
                                        accessOverrides=copy.deepcopy(root.get('accessOverrides',{})),
@@ -841,11 +857,12 @@ class Service:
         images={i for i in ids if assets[i]['mime'].startswith('image/')}
         return ids,images
 
-    def assignments(self, learner, enrolled):
+    def assignments(self, learner, enrolled, branch='oncheon'):
         # Existing curriculum records are the assignments; a read never starts or completes practice.
         base=learner.get('startDate')
+        scope = branch_steps(branch)
         available=[];waiting=[];upcoming=[];completed=[]
-        for ident in STEPS:
+        for ident in scope:
             r=learner['records'][ident];p=learner['planDates'][ident]
             if r['status']=='done':completed.append(ident)
             elif r['status']=='review':waiting.append(ident)
@@ -853,11 +870,11 @@ class Service:
             else:upcoming.append(ident)
         current=next((i for i in available if learner['records'][i]['status']=='practice'),None)
         current=current or next(iter(available),None)
-        following=next(iter(sorted(upcoming,key=lambda i:(learner['planDates'][i]['start'],list(STEPS).index(i)))),None) if enrolled and base else None
+        following=next(iter(sorted(upcoming,key=lambda i:(learner['planDates'][i]['start'],list(scope).index(i)))),None) if enrolled and base else None
         return dict(available=available,waiting=waiting,upcoming=upcoming,completed=completed,
                     next=current or following,nextAvailable=bool(current),
                     status='unassigned' if not enrolled else 'unscheduled' if not base else 'scheduled' if base>today() and not any(r['start'] for r in learner['records'].values()) else 'active',
-                    total=len(STEPS))
+                    total=len(scope))
 
     def update(self, user, v):
         if not isinstance(v,dict) or len(json.dumps(v).encode()) > 120000:
@@ -954,7 +971,9 @@ class Service:
                 else:  # 교육생 기록만 바꾸는 저장(위에서 그 교육생 잠금을 잡고 읽은 learner)
                     if not latest_ok and v['revision']!=learner['revision']:
                         raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
-                    self.education(db,root,user,p,learner,action,data)
+                    if data.get('step') and data['step'] not in branch_steps(learner_branch(root, target)):
+                        raise PermissionError('선택한 교육생 지점의 교육만 변경할 수 있습니다.')
+                    self.education(db,root,user,p,learner,action,data,learner_branch(root,target))
                     learner['revision']+=1
                     label=ACTION_NAMES[action]
                     if action in ('step.self','step.teacher','step.mark'):
@@ -1398,7 +1417,7 @@ class Service:
                                     previous=previous,next=copy.deepcopy(l['planDates'])))
         l['startDate']=start
 
-    def education(self,db,root,user,p,l,action,d):
+    def education(self,db,root,user,p,l,action,d,branch='oncheon'):
         fields={'step.mark':{'step','index','on'},'step.close':{'step'},'step.reopen':{'step'},'step.start':{'step'},'step.self':{'step','index','on'},'step.request':{'step'},
                 'step.teacher':{'step','index','on'},'step.complete':{'step'},'step.retry':{'step','reason'},
                 'step.memo':{'step','memo'},'schedule.reason':{'item','reason'},'plan.save':{'plans'},'plan.test':{'test','date'},
@@ -1492,7 +1511,8 @@ class Service:
                 actor=user['name'],actorId=user['id'],plan=copy.deepcopy(plan),start=started,end=finished,
                 startDays=start_days,endDays=end_days,attempt=attempt))
         elif action=='plan.save':
-            if not isinstance(d['plans'],dict) or set(d['plans'])!=set(STEPS):raise ValueError('전체 실습 계획을 확인하세요.')
+            scope = set(branch_steps(branch))
+            if not isinstance(d['plans'],dict) or set(d['plans']) != scope:raise ValueError('해당 지점의 전체 실습 계획을 확인하세요.')
             previous=copy.deepcopy(l['planDates'])
             for k,v in d['plans'].items():
                 if not isinstance(v,dict) or set(v)!={'start','end'}:raise ValueError('예정일 항목을 확인하세요.')

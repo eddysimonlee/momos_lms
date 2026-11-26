@@ -485,8 +485,11 @@ class Handler(BaseHTTPRequestHandler):
                     raise access.LoginRequired()
                 import v1_pdf
                 try:
-                    data, name = v1_pdf.build(v1_content(), step)
-                except KeyError:
+                    from v1_build import branch_contents
+                    course = next(c for _, c in branch_contents(v1_content())
+                                  if any(s['id'] == step for u in c['units'] for s in u['steps']))
+                    data, name = v1_pdf.build(course, step)
+                except (KeyError, StopIteration):
                     raise FileNotFoundError()
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/pdf')
@@ -793,18 +796,20 @@ def v1_content():
     lessons_path = APP / 'v1_lessons.json'
     if lessons_path.exists():
         lessons = json.loads(lessons_path.read_text(encoding='utf-8')).get('lessons', {})
-        for unit in content.get('units', []):
-            for step in unit['steps']:
-                l = lessons.get(step['id'])
-                if not l or step.get('lessonStatus') == 'planned':  # 준비 중(추가·교체) 세션에는 이전 교육안을 덮지 않는다
-                    continue
-                if l.get('title') and not step.get('curriculumTitle'): step['title'] = l['title']
-                if 'purpose' in l: step['purpose'] = l['purpose']
-                if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=[key(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
-                if 'sources' in l: step['sources'] = [key(c) for c in l['sources']]
-                if l.get('checks'):
-                    step['checks'] = [c['text'] for c in l['checks']]
-                    step['checkCites'] = [[key(x) for x in c.get('cites', [])] for c in l['checks']]
+        from v1_build import branch_contents
+        for _, local in branch_contents(content):
+            for unit in local.get('units', []):
+                for step in unit['steps']:
+                    l = lessons.get(step['id'])
+                    if not l or step.get('lessonStatus') == 'planned':  # 준비 중(추가·교체) 세션에는 이전 교육안을 덮지 않는다
+                        continue
+                    if l.get('title') and not step.get('curriculumTitle'): step['title'] = l['title']
+                    if 'purpose' in l: step['purpose'] = l['purpose']
+                    if 'keyPoints' in l: step['keyPoints'] = [dict(text=k['text'], cites=[key(c) for c in k.get('cites', [])]) for k in l['keyPoints']]
+                    if 'sources' in l: step['sources'] = [key(c) for c in l['sources']]
+                    if l.get('checks'):
+                        step['checks'] = [c['text'] for c in l['checks']]
+                        step['checkCites'] = [[key(x) for x in c.get('cites', [])] for c in l['checks']]
     return content
 
 

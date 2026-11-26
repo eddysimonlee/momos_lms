@@ -1520,5 +1520,726 @@
       ],
       "note": "단계 수료와 해당 업무 담당 지정은 별도로 관리합니다."
     }
-  ]
+  ],
+  "branches": {
+    "marine": {
+      "name": "마린시티점",
+      "version": "2026-10-22",
+      "stages": [
+        {
+          "no": 1,
+          "title": "입사·현장 적응",
+          "summary": "매장에 적응하고 기본 규칙과 업무 흐름을 이해합니다.",
+          "units": [
+            {
+              "no": "M1.1",
+              "title": "입사·현장 적응",
+              "sessions": [
+                {
+                  "kind": "기존",
+                  "id": "welcome-culture",
+                  "from": [
+                    4
+                  ]
+                },
+                {
+                  "kind": "기존",
+                  "id": "safety-greet",
+                  "from": [
+                    9
+                  ]
+                },
+                {
+                  "kind": "기존",
+                  "id": "welcome-manual",
+                  "from": [
+                    3
+                  ]
+                },
+                {
+                  "id": "marine-orientation",
+                  "kind": "추가",
+                  "title": "입사 후 오리엔테이션과 업무 자료 확인",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-space",
+                  "kind": "추가",
+                  "title": "매장 공간·직원 공간·창고 위치 확인",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-hygiene",
+                  "kind": "추가",
+                  "title": "출근 준비와 복장·개인 위생",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-firstday",
+                  "kind": "추가",
+                  "title": "첫날 OJT 확인",
+                  "shift": [],
+                  "position": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "title": "홀 케어 & 백존 준비",
+          "summary": "홀·백존을 정돈하고 재료와 베이커리를 준비합니다.",
+          "units": [
+            {
+              "no": "M2.1",
+              "title": "홀 케어 & 백존 준비",
+              "sessions": [
+                {
+                  "kind": "추가",
+                  "id": "ice-machine",
+                  "title": "제빙기 주간 청소",
+                  "topics": [
+                    "청소 준비·장비 확인",
+                    "세척·건조·재조립",
+                    "청소 후 상태 확인"
+                  ],
+                  "sources": "제빙기 주간 청소 SOP",
+                  "note": "지정 담당자 추가 과정에서 이동",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "kind": "추가",
+                  "id": "water-filter",
+                  "title": "정수기 관리·필터 교체",
+                  "topics": [
+                    "정수기 일상 관리",
+                    "필터 교체 절차",
+                    "교체 후 상태 확인"
+                  ],
+                  "sources": "정수기 관리 및 필터 교체 절차 SOP",
+                  "note": "지정 담당자 추가 과정에서 이동"
+                },
+                {
+                  "id": "marine-hall-round",
+                  "kind": "추가",
+                  "title": "홀케어 고객 안내·테이블 정리·이상 전달",
+                  "shift": [],
+                  "position": [
+                    "라운딩"
+                  ]
+                },
+                {
+                  "id": "marine-hall-back",
+                  "kind": "추가",
+                  "title": "반납 식기 세척·정리와 비품·얼음 보충",
+                  "shift": [],
+                  "position": [
+                    "정리"
+                  ]
+                },
+                {
+                  "id": "marine-round-check",
+                  "kind": "추가",
+                  "title": "라운딩·서비스테이블·화장실 점검",
+                  "shift": [],
+                  "position": [
+                    "라운딩"
+                  ]
+                },
+                {
+                  "id": "marine-furniture",
+                  "kind": "추가",
+                  "title": "라운지·바·야외 가구 관리",
+                  "shift": [],
+                  "position": [
+                    "라운딩"
+                  ]
+                },
+                {
+                  "id": "marine-cleaning",
+                  "kind": "추가",
+                  "title": "출입문·유리창·바닥·가구 청소",
+                  "shift": [],
+                  "position": [
+                    "라운딩",
+                    "정리"
+                  ]
+                },
+                {
+                  "id": "marine-facilities",
+                  "kind": "추가",
+                  "title": "조명·자동문·폴딩도어·차수막 조작",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-water",
+                  "kind": "추가",
+                  "title": "급수 시스템 운영·백업 전환·이상 보고",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-sound",
+                  "kind": "추가",
+                  "title": "음향 장비 전원·설정·동기화 복구",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-facility-report",
+                  "kind": "추가",
+                  "title": "시설·기물 이상과 QA 보고·인계",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-open-overview",
+                  "kind": "추가",
+                  "title": "오픈 담당 역할과 공통 준비",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op1",
+                  "kind": "추가",
+                  "title": "OP1 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op2",
+                  "kind": "추가",
+                  "title": "OP2 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op3",
+                  "kind": "추가",
+                  "title": "OP3 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op4",
+                  "kind": "추가",
+                  "title": "OP4 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op5",
+                  "kind": "추가",
+                  "title": "OP5 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op6",
+                  "kind": "추가",
+                  "title": "OP6 출근·오픈 업무",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-open-rain",
+                  "kind": "추가",
+                  "title": "우천 대응과 오픈조 퇴근 전 인계",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-op2-restock",
+                  "kind": "추가",
+                  "title": "OP2 원두·재료·리테일 상품 보충",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-md-shift",
+                  "kind": "추가",
+                  "title": "MD 출근·포지션 교대·식후 라운딩",
+                  "shift": [
+                    "MD"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-close-shift",
+                  "kind": "추가",
+                  "title": "CL 출근·영업 중 업무와 마감",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-ordering",
+                  "kind": "추가",
+                  "title": "비품·재료 안전재고 확인과 발주 요청",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-materials-common",
+                  "kind": "추가",
+                  "title": "제조 준비·라벨·선입선출·보관",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-1",
+                  "kind": "추가",
+                  "title": "밀크티 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-2",
+                  "kind": "추가",
+                  "title": "피스타치오 크림 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-3",
+                  "kind": "추가",
+                  "title": "바닐라 연유 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-4",
+                  "kind": "추가",
+                  "title": "모정우유 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-5",
+                  "kind": "추가",
+                  "title": "말차 베이스 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-6",
+                  "kind": "추가",
+                  "title": "얼그레이티 냉침·거르기 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-7",
+                  "kind": "추가",
+                  "title": "주스 소분 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-material-8",
+                  "kind": "추가",
+                  "title": "설탕시럽 소분 제조·소분",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-materials-other",
+                  "kind": "추가",
+                  "title": "기타 시럽·베이스·부재료 제조",
+                  "shift": [],
+                  "position": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "title": "POS 주문 & 픽업 서비스",
+          "summary": "메뉴와 제공 조건을 확인하고 주문부터 픽업까지 연결합니다.",
+          "units": [
+            {
+              "no": "M3.1",
+              "title": "POS 주문 & 픽업 서비스",
+              "sessions": [
+                {
+                  "kind": "기존",
+                  "id": "customer-complaint",
+                  "from": [
+                    54
+                  ]
+                },
+                {
+                  "kind": "기존",
+                  "id": "orders-payment",
+                  "from": [
+                    38
+                  ],
+                  "position": [
+                    "POS",
+                    "리테일"
+                  ]
+                },
+                {
+                  "kind": "기존",
+                  "id": "orders-courier",
+                  "from": [
+                    40
+                  ],
+                  "position": [
+                    "POS",
+                    "리테일"
+                  ]
+                },
+                {
+                  "kind": "기존",
+                  "id": "orders-cake",
+                  "from": [
+                    41
+                  ],
+                  "position": [
+                    "POS",
+                    "그리터",
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "marine-pos",
+                  "kind": "추가",
+                  "title": "포스 주문·결제·베이커리 업무 전달",
+                  "shift": [],
+                  "position": [
+                    "POS"
+                  ]
+                },
+                {
+                  "id": "marine-bread",
+                  "kind": "추가",
+                  "title": "빵포장 위생·주문 유형·베이커리 준비",
+                  "shift": [],
+                  "position": [
+                    "빵포장"
+                  ]
+                },
+                {
+                  "id": "marine-pickup",
+                  "kind": "추가",
+                  "title": "픽업 비품·트레이 세팅·최종 확인",
+                  "shift": [],
+                  "position": [
+                    "픽업"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "title": "그리터 & 메이킹(스팀)",
+          "summary": "고객 흐름을 안내하고 음료를 기준에 맞게 완성합니다.",
+          "units": [
+            {
+              "no": "M4.1",
+              "title": "그리터 & 메이킹(스팀)",
+              "sessions": [
+                {
+                  "kind": "추가",
+                  "id": "making-test",
+                  "title": "메이킹 실습·평가",
+                  "topics": [
+                    "평가 안내·연습 일정 조율",
+                    "연습 일지",
+                    "실기 확인"
+                  ],
+                  "sources": "평가 신청·결과 확인 SOP",
+                  "position": [
+                    "메이킹"
+                  ]
+                },
+                {
+                  "kind": "추가",
+                  "id": "latte-art",
+                  "title": "라떼아트",
+                  "topics": [
+                    "안정화·낙차",
+                    "면하트",
+                    "밀어넣기",
+                    "핸들링",
+                    "결하트 연습"
+                  ],
+                  "sources": "포지션 학습·실습·고객 경험 GUI",
+                  "position": [
+                    "메이킹"
+                  ]
+                },
+                {
+                  "id": "marine-making",
+                  "kind": "추가",
+                  "title": "제조 순서·픽업 지원·KDS·스테이션 관리",
+                  "shift": [],
+                  "position": [
+                    "메이킹"
+                  ]
+                },
+                {
+                  "id": "marine-coffee-recipes",
+                  "kind": "추가",
+                  "title": "커피 음료 계량·제조·제공",
+                  "shift": [],
+                  "position": [
+                    "메이킹"
+                  ]
+                },
+                {
+                  "id": "marine-signature-recipes",
+                  "kind": "추가",
+                  "title": "시그니처 음료 계량·제조·제공",
+                  "shift": [],
+                  "position": [
+                    "메이킹"
+                  ]
+                },
+                {
+                  "id": "marine-noncoffee-recipes",
+                  "kind": "추가",
+                  "title": "논커피 음료 계량·제조·제공",
+                  "shift": [],
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "title": "브루잉 & 리테일",
+          "summary": "리테일 안내·운영을 익힌 뒤 브루잉 이론과 실습으로 이어갑니다.",
+          "units": [
+            {
+              "no": "M5.1",
+              "title": "브루잉 & 리테일",
+              "sessions": [
+                {
+                  "kind": "추가",
+                  "id": "refractometer",
+                  "title": "굴절계 측정·영점 교정·세척·보관",
+                  "sources": "VST 커피 굴절계 관리 SOP",
+                  "note": "6단계에서도 재참조",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "브루잉",
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "kind": "추가",
+                  "id": "brewing-test",
+                  "title": "브루잉 실습·평가",
+                  "topics": [
+                    "연습 일정·일지",
+                    "이론·실습 준비",
+                    "평가 진행"
+                  ],
+                  "sources": "평가 신청·결과 확인 SOP",
+                  "position": [
+                    "브루잉"
+                  ]
+                },
+                {
+                  "id": "marine-retail",
+                  "kind": "추가",
+                  "title": "리테일 진열·재고 보충·인계",
+                  "shift": [],
+                  "position": [
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "marine-brewing",
+                  "kind": "추가",
+                  "title": "메인·보조 브루어 역할과 레시피 확인",
+                  "shift": [],
+                  "position": [
+                    "브루잉"
+                  ]
+                },
+                {
+                  "id": "marine-brewing-recipes",
+                  "kind": "추가",
+                  "title": "브루잉 계량·제공 기준",
+                  "shift": [],
+                  "position": [
+                    "브루잉"
+                  ]
+                },
+                {
+                  "id": "marine-tasting",
+                  "kind": "추가",
+                  "title": "시음 커피 요청·확인·보관·제공",
+                  "shift": [],
+                  "position": [
+                    "리테일",
+                    "브루잉"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "title": "에스프레소",
+          "summary": "추출 상태를 판단·조정하고 일관된 품질을 유지합니다.",
+          "units": [
+            {
+              "no": "M6.1",
+              "title": "에스프레소",
+              "sessions": [
+                {
+                  "kind": "추가",
+                  "id": "esp-theory",
+                  "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
+                  "sources": "포지션 학습·실습·고객 경험 GUI 및 별도 참조 교재",
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "kind": "추가",
+                  "id": "esp-test",
+                  "title": "에스프레소 실습·평가",
+                  "topics": [
+                    "연습 일정·일지",
+                    "이론·실습 준비",
+                    "평가 진행"
+                  ],
+                  "sources": "평가 신청·결과 확인 SOP",
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "kind": "추가",
+                  "id": "grinder-blade",
+                  "title": "Mahlkönig EK43 날 분해·청소",
+                  "topics": [
+                    "작업 대상·권한",
+                    "준비·안전",
+                    "날 분해·청소·재조립",
+                    "완료 확인·이상 대응"
+                  ],
+                  "sources": "그라인더-날-분해-및-청소",
+                  "note": "2026-11-24 기존 그라인더 교육을 기종별로 분리",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "marine-espresso",
+                  "kind": "추가",
+                  "title": "에스프레소 추출·기물·협업·교대",
+                  "shift": [],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "marine-md-ecount",
+                  "kind": "추가",
+                  "title": "MD3 전산 처리·돈마감",
+                  "shift": [
+                    "MD"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-ecount",
+                  "kind": "추가",
+                  "title": "구매입력·창고이동·자가사용·재고 확인",
+                  "shift": [
+                    "MD"
+                  ],
+                  "position": []
+                },
+                {
+                  "id": "marine-phone",
+                  "kind": "추가",
+                  "title": "바리스타 전화기 통화 불량 조치",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-tamper",
+                  "kind": "추가",
+                  "title": "마노 자동 탬핑기 데일리 청소",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "marine-linea",
+                  "kind": "추가",
+                  "title": "리네아 PB 데일리 청소",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "marine-grinder-kold-s",
+                  "kind": "추가",
+                  "title": "Mazzer Kold S 날 분해·청소",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "extra": []
+    }
+  }
 }

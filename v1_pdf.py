@@ -76,7 +76,7 @@ def build(content, step_id, photos_dir=APP / 'v1_photos', now=None):
     pdf.add_page()
 
     # 머리글
-    pdf.text_block('모모스 온보딩 · 온천 본점', 9, color=SUB, after=0.5)
+    pdf.text_block('모모스 온보딩 · ' + content.get('branchName', '온천 본점'), 9, color=SUB, after=0.5)
     meta = f"{unit.get('no', '')} {unit['title']}".strip()
     if stage:
         tag = f"{stage['order']}. {stage['title']}"
