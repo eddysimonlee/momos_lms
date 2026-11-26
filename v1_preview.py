@@ -78,6 +78,7 @@ MOCK = r'''
   const plus = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
   const COURSES = {oncheon: CONTENT, ...(CONTENT.branches || {})};
   const STEPS = {}; for (const c of Object.values(COURSES)) for (const u of c.units) for (const s of u.steps) STEPS[s.id] = s;
+  for (const c of Object.values(COURSES)) Object.assign(STEPS, c.retiredSteps || {});
   const branchOf = id => COURSES[(state.profiles?.[id] || {}).branch] ? state.profiles[id].branch : 'oncheon';
   const courseIds = id => COURSES[branchOf(id)].units.flatMap(u => u.steps.map(s => s.id));
   // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
@@ -122,10 +123,19 @@ MOCK = r'''
           }
           if (split) {
             r.checkBasis = split.checkBasis;
+            for (const [position, [source, index]] of Object.entries(split.mergeChecks || {})) {
+              const prior = room.records[source]; if (!prior || prior.checkBasis !== split.checkBasis) continue;
+              for (const key of ['self','teacher','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen']) {
+                if (!Array.isArray(prior[key]) || index >= prior[key].length) continue;
+                if (!r[key]) r[key] = Array(order.length).fill(['self','teacher'].includes(key) ? false : null);
+                r[key][Number(position)] = prior[key][index];
+              }
+            }
             if (['done', 'review'].includes(r.status) && !split.preserveCompletion) {
               Object.assign(r, {status: 'practice', done: null, request: null});
               for (const key of ['completedBy', 'completedByName', 'trainedBy']) delete r[key];
             }
+            if (split.mergeChecks && r.status === 'ready' && r.teacher?.some(Boolean)) r.status = 'practice';
           }
         }
         r.kpMoves = [...(r.kpMoves || []), marker];

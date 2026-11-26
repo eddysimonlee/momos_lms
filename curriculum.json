@@ -1747,42 +1747,6 @@
                   "position": []
                 },
                 {
-                  "id": "marine-op3",
-                  "kind": "추가",
-                  "title": "OP3 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op4",
-                  "kind": "추가",
-                  "title": "OP4 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op5",
-                  "kind": "추가",
-                  "title": "OP5 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op6",
-                  "kind": "추가",
-                  "title": "OP6 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
                   "id": "marine-open-rain",
                   "kind": "추가",
                   "title": "우천 대응과 오픈조 퇴근 전 인계",
@@ -2260,7 +2224,33 @@
           ]
         }
       ],
-      "extra": []
+      "extra": [],
+      "retiredSessions": [
+        {
+          "id": "marine-op3",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 2
+        },
+        {
+          "id": "marine-op4",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 3
+        },
+        {
+          "id": "marine-op5",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 4
+        },
+        {
+          "id": "marine-op6",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 5
+        }
+      ]
     }
   }
 }

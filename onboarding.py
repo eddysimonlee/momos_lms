@@ -35,6 +35,19 @@ CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관�
 # 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
 # {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
+    'marine-open-overview': ('kp-2026-11-26-marine-open-roles', 2, [None] * 8 + [1], {
+        'checkBasis': CHECK_BASIS, 'markNew': True,
+        'previousChecks': ['담당별 업무를 구분하고 공통 준비를 마친다.', '오픈 준비 중 안전 및 확인 사항을 지킨다.'],
+        'mergeChecks': {'2': ['marine-op3', 0], '3': ['marine-op4', 0], '4': ['marine-op5', 0], '5': ['marine-op6', 0]},
+    }),
+    'marine-op1': ('kp-2026-11-26-marine-op1-stages', 1, [None] * 3, {
+        'checkBasis': CHECK_BASIS, 'markNew': True,
+        'previousChecks': ['OP1 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.'],
+    }),
+    'marine-op2': ('kp-2026-11-26-marine-op2-stages', 1, [None] * 3, {
+        'checkBasis': CHECK_BASIS, 'markNew': True,
+        'previousChecks': ['OP2 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.'],
+    }),
     'marine-facilities': ('kp-2026-11-26-marine-facilities-sessions', 4, [0], {
         'checkBasis': CHECK_BASIS, 'preserveCompletion': True, 'markNew': True,
         'previousTitle': '조명·자동문·폴딩도어·차수막 조작',
@@ -164,6 +177,12 @@ if _LESSONS.exists():
                         elif _s['id'] in STEPS and _u.get('plan'):
                             STEPS[_s['id']]['plan'] = list(_u['plan'])  # 교육과정이 단원 일정을 정했으면 그 단원의 항목도 같은 일정
             _branch_step_ids[_branch_id] = tuple(STEPS) if _branch_id == 'oncheon' else tuple(x['id'] for st in _branch_course.get('stages', []) for u in st['units'] for x in u['sessions'] if x['id'] in STEPS)
+        # 목록에서 합친 교육도 기존 기록·알림의 ID와 제목을 계속 읽을 수 있게 보존한다.
+        for _branch_course in _branch_courses.values():
+            for _retired in _branch_course.get('retiredSessions', []):
+                _l = _all[_retired['id']]
+                STEPS.setdefault(_retired['id'], dict(id=_retired['id'], title=_l['title'], checks=_check_texts(_l),
+                    unit='curriculum-' + _retired['unit'], plan=[1, 180], archived=True))
 
 TESTS = {t['id']: t for t in COURSE['tests']}
 
@@ -480,10 +499,20 @@ def fit(learner):
                             empty = False if key in ('self', 'teacher') else None
                             r[key] = [empty if i is None else r[key][i] for i in move[2]]
                     r['checkBasis'] = move[3]['checkBasis']
+                    for position, (source, index) in (move[3].get('mergeChecks') or {}).items():
+                        prior = records.get(source)
+                        if source not in existing_records or not prior or prior.get('checkBasis') != CHECK_BASIS:
+                            continue
+                        for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                            if key in prior and index < len(prior[key]):
+                                empty = False if key in ('self', 'teacher') else None
+                                r.setdefault(key, [empty] * len(move[2]))[int(position)] = copy.deepcopy(prior[key][index])
                     if r.get('status') in ('done', 'review') and not move[3].get('preserveCompletion'):
                         r.update(status='practice', done=None, request=None)
                         for key in ('completedBy', 'completedByName', 'trainedBy'):
                             r.pop(key, None)
+                    if move[3].get('mergeChecks') and r.get('status') == 'ready' and any(r.get('teacher') or []):
+                        r['status'] = 'practice'
                 r['kpMoves'] = (r.get('kpMoves') or []) + [move[0]]
             if r.get('checkBasis') != CHECK_BASIS:
                 # 체크 주체가 바뀔 때(수행 확인 → 교육 내용 → 관리자 체크) 이전 체크는 비운다. 완료된 항목은 완료로 둔다(모두 체크).
