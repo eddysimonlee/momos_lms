@@ -396,6 +396,9 @@
     $('v1Back').setAttribute('aria-label', backTo === 'branch' ? '지점 선택으로' : backTo === 'home' && (view === 'person' || view === 'all') ? '교육 현황으로' : '이전 화면으로');
     $('v1Ham').hidden = Boolean(backTo) || branch || !profile();
     $('v1Title').textContent = step ? step.title : view === 'home' ? '교육 현황' : view === 'person' || view === 'all' ? (cloud.target === cloud.user.id ? '내 교육' : cloud.name + '님') : view === 'stage' ? '교육 단계' : view === 'admin' ? 'LMS관리자' : view === 'opinions' ? '의견 리스트' : view.startsWith('log:') ? '반영 기록' : view.startsWith('req:') ? '수정 요청' : view.startsWith('fb:') ? '의견' : '모모스 온보딩';
+    const sw = profile() && profile().branch && !step && ['home', 'person', 'all', 'stage'].includes(view) && cloud.target === cloud.user.id;
+    $('v1BranchSw').hidden = !sw;
+    if (sw) { const nm = (BRANCHES.find(b => b.id === profile().branch) || {}).name || ''; $('v1BranchSwName').textContent = nm; $('v1BranchSw').setAttribute('aria-label', `지점 바꾸기 — 현재 ${nm}`); }
     document.body.classList.remove('v1-booting');  // 11/26 머리줄 제목을 정한 뒤에 보인다(그 전엔 '모모스 온보딩'이 잠깐 보였다)
     const stg = step && unitOf(step.id).stage;  // 항목 화면: 제목 위에 '1. 입사·현장 적응'
     $('v1Stage').hidden = !stg;
@@ -455,9 +458,12 @@
   // 첫 화면: 빌드된 교육과정이 있는 지점만 선택할 수 있다.
   const BRANCHES = [{id: 'oncheon', name: '온천 본점', ready: true}, {id: 'yeongdo', name: '영도점'}, {id: 'marine', name: '마린시티점'}, {id: 'domoheon', name: '도모헌점'}];
   const STORE_ICON = '<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M4 9.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9.5M3 9l1.6-4.3A1 1 0 0 1 5.5 4h13a1 1 0 0 1 .9.7L21 9a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 12 11a2.5 2.5 0 0 1-4.5-.5A2.5 2.5 0 0 1 3 9ZM10 20v-5h4v5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg>';  // wds-allow: 상점 아이콘(mono/24 store 자산 반입 전 임시 인라인 SVG)
-  function branchView() {
+  // 11/26 지점 선택은 팝업(B안): 처음(저장된 지점 없음)은 닫을 수 없고, 이후엔 제목 옆 '지점 ▾'으로 연다. 배경 화면은 비워 둔다.
+  function branchView() { return '<section class="v1-branch" aria-hidden="true"></section>'; }
+  let branchPick = null;  // 지점 팝업 {closable}
+  function branchCards() {
     const cur = profile() && profile().branch;
-    return `<section class="v1-branch"><h2>교육을 진행할 지점을 선택해 주세요.</h2><p class="v1-muted">선택한 지점의 교육 과정으로 이동합니다.</p>` +
+    return `<section class="v1-branch">${branchPick && branchPick.closable ? '<button type="button" class="v1-icon-btn v1-pop-x" data-pop-close aria-label="닫기"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>' : ''}<h2 id="v1PopTitle">교육을 진행할 지점을 선택해 주세요.</h2><p class="v1-muted">선택한 지점의 교육 과정으로 이동합니다.</p>` +
       `<div class="v1-branches">${BRANCHES.map(b => b.ready || contentRoot?.branches?.[b.id]
         ? `<button type="button" class="v1-branch-card${b.id === cur ? ' on' : ''}" data-branch="${b.id}" aria-pressed="${b.id === cur}"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span>${b.id === cur ? '<span class="v1-branch-soon">현재</span>' : ''}</button>`
         : `<button type="button" class="v1-branch-card" disabled aria-disabled="true" title="교육 과정 준비 중"><span class="v1-branch-icon">${STORE_ICON}</span><span class="v1-branch-name">${esc(b.name)}</span><span class="v1-branch-soon">준비 중</span></button>`).join('')}</div></section>`;
@@ -1181,7 +1187,7 @@
     if (to === 'home') { view = 'home'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'admin') { view = 'admin'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
     if (to === 'opinions') { view = 'opinions'; render(); window.scrollTo({top: 0, behavior: 'instant'}); return; }
-    if (to === 'branch') { pickBranch = null; view = 'branch'; render(); return; }
+    if (to === 'branch') { pickBranch = null; openBranchPick(Boolean(profile() && profile().branch)); return; }
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('v1Nav').hidden) { closeNav(); $('v1Ham').focus(); } });
 
@@ -1354,6 +1360,25 @@
     pop = {kind: 'reopen', step}; drawPop(); popEl().hidden = false; document.body.style.overflow = 'hidden';
     popEl().querySelector('[data-pop-close]').focus();
   }
+  function openBranchPick(closable) {
+    pop = null; branchPick = {closable};
+    const panel = popEl().querySelector('.v1-pop-panel');
+    panel.classList.add('v1-pop-branch'); panel.innerHTML = branchCards();
+    popEl().hidden = false; document.body.style.overflow = 'hidden';
+    const on = panel.querySelector('.v1-branch-card.on') || panel.querySelector('[data-branch]'); if (on) on.focus();
+  }
+  function closeBranchPick() {
+    branchPick = null; popEl().hidden = true; popEl().querySelector('.v1-pop-panel').classList.remove('v1-pop-branch'); document.body.style.overflow = '';
+    $('v1BranchSw').focus({preventScroll: true});
+  }
+  $('v1BranchSw').onclick = () => openBranchPick(true);
+  popEl().addEventListener('click', e => {
+    if (!branchPick) return;
+    const b = e.target.closest('[data-branch]');
+    if (b) { pickBranch = b.dataset.branch; closeBranchPick(); chooseRole(isStaff() ? 'staff' : 'learner').catch(err => toast(err.message)); return; }
+    if (e.target.closest('[data-pop-close]') && branchPick.closable) closeBranchPick();
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && branchPick && branchPick.closable) closeBranchPick(); });
   popEl().addEventListener('click', async e => {
     const t = e.target.closest('[data-pop-reopen],[data-pop-close]');
     if (!t || !pop) return;
@@ -1555,8 +1580,10 @@
       if (!tried) { location.replace('/auth/works/login'); return; }
     }
     // 지점을 직접 고른 뒤 교육 현황으로 간다. 기존 프로필·학습 기록은 선택만으로 초기화하지 않는다.
-    view = 'branch';
+    const saved = profile() && profile().branch;
+    view = saved ? 'home' : 'branch';
     render();
+    openBranchPick(Boolean(saved));
   }).catch(e => { bootFailed(e.message); });
   // 11/25 첫 화면이 실패하거나(서버가 잠깐 응답하지 못함) 20초 넘게 아무것도 그려지지 않으면, 흰 화면 대신 안내와 '다시 시도'를 보인다.
   // 로그인 전(로그인 화면이 아직 없을 때)이면 오류를 로그인 칸에 보여야 한다 — 교육 화면 칸은 로그인 전에는 숨겨져 있다.
