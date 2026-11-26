@@ -11715,6 +11715,6118 @@
           "wide": false
         }
       ]
+    },
+    "marine-orientation": {
+      "title": "입사 후 오리엔테이션과 업무 자료 확인",
+      "purpose": "마린시티점의 교육 일정과 초대 채널·업무 자료를 확인하고 교육 담당자와 입사 후 교육을 준비할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "근무 일정과 공용 업무 자료를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "교육 담당자와 첫날 오리엔테이션 및 다음 날 오픈 근무 일정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.3"
+            ],
+            [
+              "marine-doc-intro",
+              "5.3.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.3.2"
+            ]
+          ]
+        },
+        {
+          "text": "업무 채팅방과 자료에 초대받아 접근 여부를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.4"
+            ],
+            [
+              "marine-doc-intro",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.4.2"
+            ]
+          ]
+        },
+        {
+          "text": "업무 포지션과 입사 후 교육·평가 과정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.5"
+            ],
+            [
+              "marine-doc-intro",
+              "5.6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "근무 일정과 공용 업무 자료를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "교육 담당자와 첫날 오리엔테이션 및 다음 날 오픈 근무 일정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.3"
+            ],
+            [
+              "marine-doc-intro",
+              "5.3.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.3.2"
+            ]
+          ]
+        },
+        {
+          "text": "업무 채팅방과 자료에 초대받아 접근 여부를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.4"
+            ],
+            [
+              "marine-doc-intro",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-intro",
+              "5.4.2"
+            ]
+          ]
+        },
+        {
+          "text": "업무 포지션과 입사 후 교육·평가 과정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-intro",
+              "5.5"
+            ],
+            [
+              "marine-doc-intro",
+              "5.6"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-space": {
+      "title": "매장 공간·직원 공간·창고 위치 확인",
+      "purpose": "라운지와 직원 공간, 창고별 보관 품목 및 주요 시설 위치를 확인해 필요한 공간과 물품을 찾을 수 있다.",
+      "keyPoints": [
+        {
+          "text": "교육 담당자와 매장 구역과 직원 공간의 위치·이용 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "3"
+            ],
+            [
+              "marine-doc-space",
+              "3.1"
+            ],
+            [
+              "marine-doc-space",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "창고 위치와 보관 품목을 구분하고 필요한 비품을 찾는다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "4.3"
+            ],
+            [
+              "marine-doc-space",
+              "4.1"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.1"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.2"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.3"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.4"
+            ]
+          ]
+        },
+        {
+          "text": "주요 시설과 스위치 위치를 확인하고 조작 절차가 필요한 원본을 찾는다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "5.2"
+            ],
+            [
+              "marine-doc-space",
+              "5.3"
+            ],
+            [
+              "marine-doc-space",
+              "5.4"
+            ],
+            [
+              "marine-doc-space",
+              "5"
+            ],
+            [
+              "marine-doc-space",
+              "5.1"
+            ],
+            [
+              "marine-doc-space",
+              "관수 시설 위치 및 관리 주체 안내"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "교육 담당자와 매장 구역과 직원 공간의 위치·이용 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "3"
+            ],
+            [
+              "marine-doc-space",
+              "3.1"
+            ],
+            [
+              "marine-doc-space",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "창고 위치와 보관 품목을 구분하고 필요한 비품을 찾는다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "4.3"
+            ],
+            [
+              "marine-doc-space",
+              "4.1"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.1"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.2"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.3"
+            ],
+            [
+              "marine-doc-space",
+              "4.2.4"
+            ]
+          ]
+        },
+        {
+          "text": "주요 시설과 스위치 위치를 확인하고 조작 절차가 필요한 원본을 찾는다.",
+          "cites": [
+            [
+              "marine-doc-space",
+              "5.2"
+            ],
+            [
+              "marine-doc-space",
+              "5.3"
+            ],
+            [
+              "marine-doc-space",
+              "5.4"
+            ],
+            [
+              "marine-doc-space",
+              "5"
+            ],
+            [
+              "marine-doc-space",
+              "5.1"
+            ],
+            [
+              "marine-doc-space",
+              "관수 시설 위치 및 관리 주체 안내"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-space",
+            "3.1"
+          ],
+          "n": 1,
+          "caption": "3.1 구역별 주요 위치",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-space",
+            "3.2"
+          ],
+          "n": 1,
+          "caption": "사진 · 포세이돈 직원 휴게공간 내 옷방",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-hygiene": {
+      "title": "출근 준비와 복장·개인 위생",
+      "purpose": "정해진 장소에서 근무를 준비하고 복장·개인 위생 및 사용 공간 정돈 기준을 지킬 수 있다.",
+      "keyPoints": [
+        {
+          "text": "출근 준비 장소와 복장 기준을 확인해 매장 투입 전 준비를 마친다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "3.1"
+            ],
+            [
+              "marine-doc-hygiene",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "용모·손 씻기·식품과 위생용품 취급 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "4.1"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.2"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.3"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.4"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.5"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.6"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "사용한 직원 공간과 개인 물품을 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "출근 준비 장소와 복장 기준을 확인해 매장 투입 전 준비를 마친다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "3.1"
+            ],
+            [
+              "marine-doc-hygiene",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "용모·손 씻기·식품과 위생용품 취급 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "4.1"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.2"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.3"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.4"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.5"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.6"
+            ],
+            [
+              "marine-doc-hygiene",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "사용한 직원 공간과 개인 물품을 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-hygiene",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-hygiene",
+            "3.2"
+          ],
+          "n": 1,
+          "caption": "3.2 복장 기준",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-hygiene",
+            "4.3"
+          ],
+          "n": 1,
+          "caption": "예시 1. 잔을 잡는 올바른 위치",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-hygiene",
+            "4.3"
+          ],
+          "n": 2,
+          "caption": "예시 2. 사용 전 잔 상태 확인 및 고객 불편 비교",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-firstday": {
+      "title": "첫날 OJT 확인",
+      "purpose": "교육자와 입사 절차·준비·공간 안내·업무 자료 및 교육 일정의 첫날 확인 사항을 점검할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "근로계약서 작성 완료 (인사팀)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r2"
+            ]
+          ]
+        },
+        {
+          "text": "법정 의무교육 이수",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r3"
+            ]
+          ]
+        },
+        {
+          "text": "보건증 제출 또는 발급 영수증 접수",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r4"
+            ]
+          ]
+        },
+        {
+          "text": "네이버웍스 계정 생성·로그인 확인",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r5"
+            ]
+          ]
+        },
+        {
+          "text": "앞치마(네이비/카키)·명찰 지급",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r7"
+            ]
+          ]
+        },
+        {
+          "text": "출근 준비·개인 소지품 및 의류 보관(포세이돈 102동 1005호 내 옷방·개인 보관함), 라운지 1 앞치마 보관방 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r8"
+            ]
+          ]
+        },
+        {
+          "text": "복장·위생 기준 안내 (근무 준비 및 위생·정돈 기준)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r9"
+            ]
+          ]
+        },
+        {
+          "text": "매장 공간 안내 — 라운지 1·2·3, 바·백바, 직원 휴게공간 및 옷방",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r11"
+            ]
+          ]
+        },
+        {
+          "text": "창고 위치 안내 — 포세이돈 101동 지하 1층 비품방, 매장 창고 1·2(화장실 방향 복도), 리테일 수납장, 포세이돈 지하 1층 상품 초과분 보관공간, 못난이 창고(소식지·난로 연료 보관)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r12"
+            ]
+          ]
+        },
+        {
+          "text": "구급상자 위치(백바 수납장) 및 비상 연락 체계 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r13"
+            ]
+          ]
+        },
+        {
+          "text": "바 구성·포지션(업무축) 소개",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r15"
+            ]
+          ]
+        },
+        {
+          "text": "음료·베이커리 시식 및 설명",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r16"
+            ]
+          ]
+        },
+        {
+          "text": "판매용 상품 정보 제공",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r17"
+            ]
+          ]
+        },
+        {
+          "text": "채팅방 초대 및 접근 확인\n1. [바리스타팀] 마린시티점\n2. 마린 발주방\n3. 배송 스케줄 방\n4. 매장사업무\n5. [모모스] 마린팀\n6. [모모스]전체\n7. [지원] QC 기획 R&D",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r19"
+            ]
+          ]
+        },
+        {
+          "text": "업무 자료 초대 (기존 6개 목록의 마린시티점 적용 여부 확인)\n1. [바리스타팀] 통합 스케줄\n2. [바리스타팀] 마린시티 차트\n3. [확인 필요: Daily Chart 사용 여부]\n4. Momos Delivery [확인 필요: 마린 사용 여부]\n5. [바리스타팀] 매출관리\n6. [확인 필요: 마린시티점 업무별 루틴]",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r20"
+            ]
+          ]
+        },
+        {
+          "text": "통합 스케줄 확인 방법·2일 차 출근 시각 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r21"
+            ]
+          ]
+        },
+        {
+          "text": "입사 후 교육·평가 과정(LV 체계) 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r22"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "근로계약서 작성 완료 (인사팀)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r2"
+            ]
+          ]
+        },
+        {
+          "text": "법정 의무교육 이수",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r3"
+            ]
+          ]
+        },
+        {
+          "text": "보건증 제출 또는 발급 영수증 접수",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r4"
+            ]
+          ]
+        },
+        {
+          "text": "네이버웍스 계정 생성·로그인 확인",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r5"
+            ]
+          ]
+        },
+        {
+          "text": "앞치마(네이비/카키)·명찰 지급",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r7"
+            ]
+          ]
+        },
+        {
+          "text": "출근 준비·개인 소지품 및 의류 보관(포세이돈 102동 1005호 내 옷방·개인 보관함), 라운지 1 앞치마 보관방 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r8"
+            ]
+          ]
+        },
+        {
+          "text": "복장·위생 기준 안내 (근무 준비 및 위생·정돈 기준)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r9"
+            ]
+          ]
+        },
+        {
+          "text": "매장 공간 안내 — 라운지 1·2·3, 바·백바, 직원 휴게공간 및 옷방",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r11"
+            ]
+          ]
+        },
+        {
+          "text": "창고 위치 안내 — 포세이돈 101동 지하 1층 비품방, 매장 창고 1·2(화장실 방향 복도), 리테일 수납장, 포세이돈 지하 1층 상품 초과분 보관공간, 못난이 창고(소식지·난로 연료 보관)",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r12"
+            ]
+          ]
+        },
+        {
+          "text": "구급상자 위치(백바 수납장) 및 비상 연락 체계 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r13"
+            ]
+          ]
+        },
+        {
+          "text": "바 구성·포지션(업무축) 소개",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r15"
+            ]
+          ]
+        },
+        {
+          "text": "음료·베이커리 시식 및 설명",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r16"
+            ]
+          ]
+        },
+        {
+          "text": "판매용 상품 정보 제공",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r17"
+            ]
+          ]
+        },
+        {
+          "text": "채팅방 초대 및 접근 확인\n1. [바리스타팀] 마린시티점\n2. 마린 발주방\n3. 배송 스케줄 방\n4. 매장사업무\n5. [모모스] 마린팀\n6. [모모스]전체\n7. [지원] QC 기획 R&D",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r19"
+            ]
+          ]
+        },
+        {
+          "text": "업무 자료 초대 (기존 6개 목록의 마린시티점 적용 여부 확인)\n1. [바리스타팀] 통합 스케줄\n2. [바리스타팀] 마린시티 차트\n3. [확인 필요: Daily Chart 사용 여부]\n4. Momos Delivery [확인 필요: 마린 사용 여부]\n5. [바리스타팀] 매출관리\n6. [확인 필요: 마린시티점 업무별 루틴]",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r20"
+            ]
+          ]
+        },
+        {
+          "text": "통합 스케줄 확인 방법·2일 차 출근 시각 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r21"
+            ]
+          ]
+        },
+        {
+          "text": "입사 후 교육·평가 과정(LV 체계) 안내",
+          "cites": [
+            [
+              "marine-doc-ojt",
+              "점검 항목",
+              "r22"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-hall-round": {
+      "title": "홀케어 고객 안내·테이블 정리·이상 전달",
+      "purpose": "고객 공간을 순회하며 필요한 도움을 안내하고 테이블·비품·시설 상태를 확인해 정리하거나 전달할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "매장을 순회하며 고객 이용 상태를 확인하고 필요한 안내를 한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다."
+            ]
+          ]
+        },
+        {
+          "text": "고객 이용 상태에 맞춰 테이블을 정리하고 반납물을 회수한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "비품 부족과 시설 이상을 확인해 담당자에게 전달한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "6.3"
+            ],
+            [
+              "marine-doc-hall",
+              "6.4"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "매장을 순회하며 고객 이용 상태를 확인하고 필요한 안내를 한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다."
+            ]
+          ]
+        },
+        {
+          "text": "고객 이용 상태에 맞춰 테이블을 정리하고 반납물을 회수한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "비품 부족과 시설 이상을 확인해 담당자에게 전달한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "6.3"
+            ],
+            [
+              "marine-doc-hall",
+              "6.4"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-hall",
+            "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다."
+          ],
+          "n": 1,
+          "caption": "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다.",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-hall",
+            "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다."
+          ],
+          "n": 2,
+          "caption": "홀케어는 고정된 구역을 나누지 않고 매장 전체를 순회합니다. 온도·폴딩도어·쓰레기 및 좌석 상태를 확인하고, 웨이팅·스마트오더 이용을 안내합니다.",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-hall",
+            "6.2"
+          ],
+          "n": 1,
+          "caption": "테이블 청소 시 크린콜 사용 기준",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-hall-back": {
+      "title": "반납 식기 세척·정리와 비품·얼음 보충",
+      "purpose": "반납 식기를 분류·세척해 원위치하고 부족한 비품과 얼음을 보충하며 안전하게 이동할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "반납 트레이를 받고 식기와 쓰레기를 구분한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.1"
+            ],
+            [
+              "marine-doc-hall",
+              "바 내부 반납 수납장 층별 용도"
+            ]
+          ]
+        },
+        {
+          "text": "설거지와 물기 제거를 수행하고 린넨을 용도에 맞게 관리한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.2"
+            ],
+            [
+              "marine-doc-hall",
+              "린넨 관리"
+            ]
+          ]
+        },
+        {
+          "text": "트레이를 닦고 기물을 정해진 위치에 정리한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.3"
+            ]
+          ]
+        },
+        {
+          "text": "부족한 일회용품·향미카드·얼음을 확인해 보충을 요청하거나 수행한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.4"
+            ],
+            [
+              "marine-doc-hall",
+              "잔량 확인 및 요청"
+            ]
+          ]
+        },
+        {
+          "text": "이동 안전 기준을 지키고 동료와 필요한 업무를 요청·확인한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "반납 트레이를 받고 식기와 쓰레기를 구분한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.1"
+            ],
+            [
+              "marine-doc-hall",
+              "바 내부 반납 수납장 층별 용도"
+            ]
+          ]
+        },
+        {
+          "text": "설거지와 물기 제거를 수행하고 린넨을 용도에 맞게 관리한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.2"
+            ],
+            [
+              "marine-doc-hall",
+              "린넨 관리"
+            ]
+          ]
+        },
+        {
+          "text": "트레이를 닦고 기물을 정해진 위치에 정리한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.3"
+            ]
+          ]
+        },
+        {
+          "text": "부족한 일회용품·향미카드·얼음을 확인해 보충을 요청하거나 수행한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.4"
+            ],
+            [
+              "marine-doc-hall",
+              "잔량 확인 및 요청"
+            ]
+          ]
+        },
+        {
+          "text": "이동 안전 기준을 지키고 동료와 필요한 업무를 요청·확인한다.",
+          "cites": [
+            [
+              "marine-doc-hall",
+              "7.6"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-round-check": {
+      "title": "라운딩·서비스테이블·화장실 점검",
+      "purpose": "라운딩 기준에 따라 고객 공간과 비품·가구·환경 상태를 점검하고 정돈할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "라운딩 도구와 공통 점검 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "4"
+            ],
+            [
+              "marine-doc-round",
+              "4.1"
+            ]
+          ]
+        },
+        {
+          "text": "화장실·서비스테이블의 비품과 추가 확보 위치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "5.1"
+            ],
+            [
+              "marine-doc-round",
+              "5.2"
+            ],
+            [
+              "marine-doc-round",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "라운지별 테이블과 의자를 정렬 기준에 맞춰 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "6"
+            ]
+          ]
+        },
+        {
+          "text": "온습도·출입문·블라인드 및 야외 시설 상태를 점검한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "7.1"
+            ],
+            [
+              "marine-doc-round",
+              "7.2"
+            ],
+            [
+              "marine-doc-round",
+              "7.3"
+            ]
+          ]
+        },
+        {
+          "text": "담요와 화병을 원본 기준에 따라 정돈·관리한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "라운딩 도구와 공통 점검 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "4"
+            ],
+            [
+              "marine-doc-round",
+              "4.1"
+            ]
+          ]
+        },
+        {
+          "text": "화장실·서비스테이블의 비품과 추가 확보 위치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "5.1"
+            ],
+            [
+              "marine-doc-round",
+              "5.2"
+            ],
+            [
+              "marine-doc-round",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "라운지별 테이블과 의자를 정렬 기준에 맞춰 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "6"
+            ]
+          ]
+        },
+        {
+          "text": "온습도·출입문·블라인드 및 야외 시설 상태를 점검한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "7.1"
+            ],
+            [
+              "marine-doc-round",
+              "7.2"
+            ],
+            [
+              "marine-doc-round",
+              "7.3"
+            ]
+          ]
+        },
+        {
+          "text": "담요와 화병을 원본 기준에 따라 정돈·관리한다.",
+          "cites": [
+            [
+              "marine-doc-round",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-round",
+            "4.1"
+          ],
+          "n": 1,
+          "caption": "라운딩 시 사용하는 도구",
+          "wide": false,
+          "captionCols": [
+            "용도",
+            "보관 장소"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "5.2"
+          ],
+          "n": 1,
+          "caption": "서비스테이블 비품 보관 위치",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "5.2"
+          ],
+          "n": 2,
+          "caption": "서비스테이블 비품 보관 위치",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "6"
+          ],
+          "n": 1,
+          "caption": "라운지별 테이블과 의자 정렬",
+          "wide": false,
+          "captionCols": [
+            "정렬 기준"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "6"
+          ],
+          "n": 2,
+          "caption": "라운지별 테이블과 의자 정렬",
+          "wide": false,
+          "captionCols": [
+            "정렬 기준"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "6"
+          ],
+          "n": 3,
+          "caption": "라운지별 테이블과 의자 정렬",
+          "wide": false,
+          "captionCols": [
+            "정렬 기준"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "6"
+          ],
+          "n": 4,
+          "caption": "라운지별 테이블과 의자 정렬",
+          "wide": false,
+          "captionCols": [
+            "정렬 기준"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "6"
+          ],
+          "n": 5,
+          "caption": "라운지별 테이블과 의자 정렬",
+          "wide": false,
+          "captionCols": [
+            "정렬 기준"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "7.3"
+          ],
+          "n": 1,
+          "caption": "7.3 야외 시설 점검 기준",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-round",
+            "8"
+          ],
+          "n": 1,
+          "caption": "담요 정리 및 화병 관리",
+          "wide": false,
+          "captionCols": [
+            "위치·기준"
+          ]
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-furniture": {
+      "title": "라운지·바·야외 가구 관리",
+      "purpose": "구역별 가구의 소재와 관리 기준을 확인하고 배치·정렬 및 이상 대응을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "라운지별 가구의 관리 기준을 확인하고 상태를 점검한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.1"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.2"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.3"
+            ]
+          ]
+        },
+        {
+          "text": "바·백바와 정원·야외 가구를 기준에 맞게 관리한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.4"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.5"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.6"
+            ]
+          ]
+        },
+        {
+          "text": "가구 배치와 정렬 기준을 대조하고 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "가구 이상을 발견하면 원본의 대응 기준에 따라 전달한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "라운지별 가구의 관리 기준을 확인하고 상태를 점검한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.1"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.2"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.3"
+            ]
+          ]
+        },
+        {
+          "text": "바·백바와 정원·야외 가구를 기준에 맞게 관리한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.4"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.5"
+            ],
+            [
+              "marine-doc-furniture",
+              "4.6"
+            ]
+          ]
+        },
+        {
+          "text": "가구 배치와 정렬 기준을 대조하고 정돈한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "가구 이상을 발견하면 원본의 대응 기준에 따라 전달한다.",
+          "cites": [
+            [
+              "marine-doc-furniture",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 1,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 2,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 3,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 4,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 5,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.1"
+          ],
+          "n": 6,
+          "caption": "라운지 1",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.2"
+          ],
+          "n": 1,
+          "caption": "라운지 2",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.2"
+          ],
+          "n": 2,
+          "caption": "라운지 2",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 1,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 2,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 3,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 4,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 5,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 6,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.3"
+          ],
+          "n": 7,
+          "caption": "라운지 3",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.4"
+          ],
+          "n": 1,
+          "caption": "바",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.6"
+          ],
+          "n": 1,
+          "caption": "정원·야외",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.6"
+          ],
+          "n": 2,
+          "caption": "정원·야외",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 1,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 2,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 3,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 4,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 5,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 6,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 7,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 8,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 9,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 10,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 11,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-furniture",
+            "4.7"
+          ],
+          "n": 12,
+          "caption": "가구 배치 및 정렬 기준",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-cleaning": {
+      "title": "출입문·유리창·바닥·가구 청소",
+      "purpose": "청소 도구와 작업 안전을 확인하고 구역별 청소 절차에 따라 매장을 정돈할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "청소 준비와 도구 관리 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.1"
+            ]
+          ]
+        },
+        {
+          "text": "출입문과 외부 유리창을 정해진 절차로 청소한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.2"
+            ]
+          ]
+        },
+        {
+          "text": "바닥과 테이블·의자를 기준에 맞게 청소한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.3"
+            ],
+            [
+              "marine-doc-cleaning",
+              "4.4"
+            ]
+          ]
+        },
+        {
+          "text": "청소 중 안전과 이상 대응 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "청소 준비와 도구 관리 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.1"
+            ]
+          ]
+        },
+        {
+          "text": "출입문과 외부 유리창을 정해진 절차로 청소한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.2"
+            ]
+          ]
+        },
+        {
+          "text": "바닥과 테이블·의자를 기준에 맞게 청소한다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "4.3"
+            ],
+            [
+              "marine-doc-cleaning",
+              "4.4"
+            ]
+          ]
+        },
+        {
+          "text": "청소 중 안전과 이상 대응 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-cleaning",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-facilities": {
+      "title": "조명·자동문·폴딩도어·차수막 조작",
+      "purpose": "시설별 조작 순서와 확인 사항에 따라 조명·출입문·폴딩도어·차수막을 관리할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "정원과 실내 조명 위치를 확인하고 전원을 조작한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        },
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "정원과 실내 조명 위치를 확인하고 전원을 조작한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        },
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.1"
+          ],
+          "n": 1,
+          "caption": "수목등 그룹 조작 화면 (비·흐린 날 ON)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.2"
+          ],
+          "n": 1,
+          "caption": "사진 1. 구역별 조명 배치도",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.2"
+          ],
+          "n": 2,
+          "caption": "사진 2. 퇴근 시 OFF로 전환하는 스위치 (3번·9번·10번 빨간 테두리 표시)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.2"
+          ],
+          "n": 3,
+          "caption": "사진 3. 실내 조명 스위치 및 장면 조작 버튼 (오른쪽 상단 「3 night」 표시)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.2"
+          ],
+          "n": 4,
+          "caption": "사진 4. 매장 오픈 시 「고정(평소)」 장면 선택",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 1,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 2,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 3,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 4,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 1,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 2,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 3,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 4,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 5,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-water": {
+      "title": "급수 시스템 운영·백업 전환·이상 보고",
+      "purpose": "급수 계통의 정상 상태와 전환 기준을 확인하고 이상 발생 시 정해진 조치·보고 절차를 따를 수 있다.",
+      "keyPoints": [
+        {
+          "text": "급수 계통과 정상 운영 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "RO 고장 시 백업 전환 절차와 전환 후 확인 기준을 따른다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.2"
+            ],
+            [
+              "marine-doc-water",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "RO 정상 복귀 시 밸브 전환 절차를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "압력 스위치와 모터의 이상을 확인하고 보고 기준에 따라 대응한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "6"
+            ],
+            [
+              "marine-doc-water",
+              "6.1"
+            ],
+            [
+              "marine-doc-water",
+              "6.2"
+            ],
+            [
+              "marine-doc-water",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "급수 계통과 정상 운영 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "RO 고장 시 백업 전환 절차와 전환 후 확인 기준을 따른다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.2"
+            ],
+            [
+              "marine-doc-water",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "RO 정상 복귀 시 밸브 전환 절차를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "압력 스위치와 모터의 이상을 확인하고 보고 기준에 따라 대응한다.",
+          "cites": [
+            [
+              "marine-doc-water",
+              "6"
+            ],
+            [
+              "marine-doc-water",
+              "6.1"
+            ],
+            [
+              "marine-doc-water",
+              "6.2"
+            ],
+            [
+              "marine-doc-water",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-water",
+            "5.1"
+          ],
+          "n": 1,
+          "caption": "마린시티점 급수는 ONE WAY 방식으로 구성되어 있으며, RO 기능 고장에 대비한 별도의 카본 백업 라인이 있습니다. 제빙기와 백바 싱크대는 바 급수 라인과 구분됩니다.",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "5.2"
+          ],
+          "n": 1,
+          "caption": "RO 고장 시 카본 백업 전환",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "5.2"
+          ],
+          "n": 2,
+          "caption": "RO 고장 시 카본 백업 전환",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.1"
+          ],
+          "n": 1,
+          "caption": "RO 압력 스위치 이상",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.1"
+          ],
+          "n": 2,
+          "caption": "RO 압력 스위치 이상",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.1"
+          ],
+          "n": 3,
+          "caption": "RO 압력 스위치 이상",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.1"
+          ],
+          "n": 4,
+          "caption": "RO 압력 스위치 이상",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.1"
+          ],
+          "n": 5,
+          "caption": "RO 압력 스위치 이상",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-water",
+            "6.2"
+          ],
+          "n": 1,
+          "caption": "Q1000·Q300 모터 이상",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-sound": {
+      "title": "음향 장비 전원·설정·동기화 복구",
+      "purpose": "음향 장비와 앱의 역할을 구분하고 전원 조작과 상황별 복구 절차를 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "장비와 HEOS 앱의 역할 및 기본 설정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "5.1"
+            ],
+            [
+              "marine-doc-sound",
+              "5.2"
+            ],
+            [
+              "marine-doc-sound",
+              "5.3"
+            ],
+            [
+              "marine-doc-sound",
+              "5.4"
+            ],
+            [
+              "marine-doc-sound",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "오픈·마감 시 음향 장비의 전원을 정해진 순서로 조작한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "6.2"
+            ],
+            [
+              "marine-doc-sound",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "음악 싱크나 장비 탐색·출력 이상을 상황별 절차에 따라 확인한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "7.1"
+            ],
+            [
+              "marine-doc-sound",
+              "7.2"
+            ],
+            [
+              "marine-doc-sound",
+              "7.3"
+            ],
+            [
+              "marine-doc-sound",
+              "7.4"
+            ],
+            [
+              "marine-doc-sound",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "장비와 HEOS 앱의 역할 및 기본 설정을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "5.1"
+            ],
+            [
+              "marine-doc-sound",
+              "5.2"
+            ],
+            [
+              "marine-doc-sound",
+              "5.3"
+            ],
+            [
+              "marine-doc-sound",
+              "5.4"
+            ],
+            [
+              "marine-doc-sound",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "오픈·마감 시 음향 장비의 전원을 정해진 순서로 조작한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "6.2"
+            ],
+            [
+              "marine-doc-sound",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "음악 싱크나 장비 탐색·출력 이상을 상황별 절차에 따라 확인한다.",
+          "cites": [
+            [
+              "marine-doc-sound",
+              "7.1"
+            ],
+            [
+              "marine-doc-sound",
+              "7.2"
+            ],
+            [
+              "marine-doc-sound",
+              "7.3"
+            ],
+            [
+              "marine-doc-sound",
+              "7.4"
+            ],
+            [
+              "marine-doc-sound",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-sound",
+            "7.1"
+          ],
+          "n": 1,
+          "caption": "상황 A 음악의 싱크가 맞지 않는 경우",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-sound",
+            "7.1"
+          ],
+          "n": 2,
+          "caption": "상황 A 음악의 싱크가 맞지 않는 경우",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-sound",
+            "7.1"
+          ],
+          "n": 3,
+          "caption": "⑤ 매킨토시의 입력 채널이 CD인지 확인하고, 다른 채널이면 CD로 설정한다.",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-sound",
+            "7.4"
+          ],
+          "n": 1,
+          "caption": "상황 D L3 등 벽면 매립형 스피커에서 소리가 나지 않는 경우",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-sound",
+            "7.4"
+          ],
+          "n": 2,
+          "caption": "상황 D L3 등 벽면 매립형 스피커에서 소리가 나지 않는 경우",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-facility-report": {
+      "title": "시설·기물 이상과 QA 보고·인계",
+      "purpose": "시설·기물 이상을 발견하면 안전을 확보하고 담당자 보고·조치·인계를 이어갈 수 있다.",
+      "keyPoints": [
+        {
+          "text": "이상 발견 시 초기 안전을 확보하고 메인바리스타에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.1"
+            ],
+            [
+              "marine-doc-qa",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "유형별 대응과 QA 인계·서면 보고를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.3"
+            ],
+            [
+              "marine-doc-qa",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "긴급 상황의 연락 및 교대 인계·완료 확인 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.5"
+            ],
+            [
+              "marine-doc-qa",
+              "5.6"
+            ],
+            [
+              "marine-doc-qa",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "이상 발견 시 초기 안전을 확보하고 메인바리스타에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.1"
+            ],
+            [
+              "marine-doc-qa",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "유형별 대응과 QA 인계·서면 보고를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.3"
+            ],
+            [
+              "marine-doc-qa",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "긴급 상황의 연락 및 교대 인계·완료 확인 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-qa",
+              "5.5"
+            ],
+            [
+              "marine-doc-qa",
+              "5.6"
+            ],
+            [
+              "marine-doc-qa",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-qa",
+            "5.5"
+          ],
+          "n": 1,
+          "caption": "QA 보고 조직 체계 (실명 없이 직책 기준)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-open-overview": {
+      "title": "오픈 담당 역할과 공통 준비",
+      "purpose": "오픈 담당별 업무 범위와 공통 준비·안전 기준을 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "담당별 업무를 구분하고 공통 준비를 마친다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "오픈 준비 중 안전 및 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "6"
+            ],
+            [
+              "marine-doc-open",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "담당별 업무를 구분하고 공통 준비를 마친다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "오픈 준비 중 안전 및 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "6"
+            ],
+            [
+              "marine-doc-open",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op1": {
+      "title": "OP1 출근·오픈 업무",
+      "purpose": "OP1의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP1 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.3.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.3.2"
+            ],
+            [
+              "marine-doc-open",
+              "5.3.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP1 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.3.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.3.2"
+            ],
+            [
+              "marine-doc-open",
+              "5.3.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op2": {
+      "title": "OP2 출근·오픈 업무",
+      "purpose": "OP2의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP2 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.4.2"
+            ],
+            [
+              "marine-doc-open",
+              "5.4.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP2 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-open",
+              "5.4.2"
+            ],
+            [
+              "marine-doc-open",
+              "5.4.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op3": {
+      "title": "OP3 출근·오픈 업무",
+      "purpose": "OP3의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP3 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP3 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.5"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op4": {
+      "title": "OP4 출근·오픈 업무",
+      "purpose": "OP4의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP4 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP4 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.6"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op5": {
+      "title": "OP5 출근·오픈 업무",
+      "purpose": "OP5의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP5 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP5 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.7"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op6": {
+      "title": "OP6 출근·오픈 업무",
+      "purpose": "OP6의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "OP6 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "OP6 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.8"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-open-rain": {
+      "title": "우천 대응과 오픈조 퇴근 전 인계",
+      "purpose": "우천 시 대응 업무를 확인하고 오픈조 퇴근 전 점검·인계를 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "우천 시 매장 보호와 고객 동선 확보를 위한 대응을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.9"
+            ]
+          ]
+        },
+        {
+          "text": "퇴근 전 남은 업무와 확인 사항을 점검하고 인계한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.10"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "우천 시 매장 보호와 고객 동선 확보를 위한 대응을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.9"
+            ]
+          ]
+        },
+        {
+          "text": "퇴근 전 남은 업무와 확인 사항을 점검하고 인계한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.10"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-open",
+            "5.9"
+          ],
+          "n": 1,
+          "caption": "정문 앞 발매트·우산털이 보관 상태",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-open",
+            "5.9"
+          ],
+          "n": 2,
+          "caption": "정문 앞 우천용품 및 미끄럼 주의 표지",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-open",
+            "5.9"
+          ],
+          "n": 3,
+          "caption": "우천 시 대응 업무",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-open",
+            "5.9"
+          ],
+          "n": 4,
+          "caption": "우천 시 대응 업무",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-op2-restock": {
+      "title": "OP2 원두·재료·리테일 상품 보충",
+      "purpose": "OP2 보충 기준표를 보고 원두·음료 재료·리테일 상품과 포장 자재를 확인·보충할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "원두와 음료 베이스 재료의 보충 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.1"
+            ],
+            [
+              "marine-doc-restock",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "리테일 상품과 포장 자재를 기준표에 맞춰 보충한다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.3"
+            ],
+            [
+              "marine-doc-restock",
+              "3.4"
+            ]
+          ]
+        },
+        {
+          "text": "재고가 부족하면 원본의 요청·공유 절차를 따른다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "원두와 음료 베이스 재료의 보충 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.1"
+            ],
+            [
+              "marine-doc-restock",
+              "3.2"
+            ]
+          ]
+        },
+        {
+          "text": "리테일 상품과 포장 자재를 기준표에 맞춰 보충한다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.3"
+            ],
+            [
+              "marine-doc-restock",
+              "3.4"
+            ]
+          ]
+        },
+        {
+          "text": "재고가 부족하면 원본의 요청·공유 절차를 따른다.",
+          "cites": [
+            [
+              "marine-doc-restock",
+              "3.5"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-md-shift": {
+      "title": "MD 출근·포지션 교대·식후 라운딩",
+      "purpose": "MD 출근 준비와 포지션 인계를 수행하고 영업 중 담당 업무 및 식후 라운딩을 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "출근 준비와 포지션 인계를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.1"
+            ],
+            [
+              "marine-doc-md",
+              "5.2.1"
+            ],
+            [
+              "marine-doc-md",
+              "5.2.2"
+            ]
+          ]
+        },
+        {
+          "text": "MD 담당별 영업 중 업무를 확인하고 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.1"
+            ]
+          ]
+        },
+        {
+          "text": "재고를 확인해 수량을 인계하고 식후 공통 라운딩을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.2"
+            ],
+            [
+              "marine-doc-md",
+              "5.4"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "출근 준비와 포지션 인계를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.1"
+            ],
+            [
+              "marine-doc-md",
+              "5.2.1"
+            ],
+            [
+              "marine-doc-md",
+              "5.2.2"
+            ]
+          ]
+        },
+        {
+          "text": "MD 담당별 영업 중 업무를 확인하고 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.1"
+            ]
+          ]
+        },
+        {
+          "text": "재고를 확인해 수량을 인계하고 식후 공통 라운딩을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.2"
+            ],
+            [
+              "marine-doc-md",
+              "5.4"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-close-shift": {
+      "title": "CL 출근·영업 중 업무와 마감",
+      "purpose": "CL 출근 준비와 영업 중 업무를 수행하고 담당별 마감·퇴실 기준을 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "CL 담당별 출근 업무와 유제품 정리·보충 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "5.1"
+            ],
+            [
+              "marine-doc-close",
+              "5.2"
+            ],
+            [
+              "marine-doc-close",
+              "5.3"
+            ],
+            [
+              "marine-doc-close",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "마감 사전 준비 및 담당별 마감 업무를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.1"
+            ],
+            [
+              "marine-doc-close",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "분리배출과 행사 마감·베이커리 보관 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.3"
+            ],
+            [
+              "marine-doc-close",
+              "6.4"
+            ],
+            [
+              "marine-doc-close",
+              "6.5"
+            ]
+          ]
+        },
+        {
+          "text": "최종 확인과 퇴실 절차 및 주의사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.6"
+            ],
+            [
+              "marine-doc-close",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "CL 담당별 출근 업무와 유제품 정리·보충 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "5.1"
+            ],
+            [
+              "marine-doc-close",
+              "5.2"
+            ],
+            [
+              "marine-doc-close",
+              "5.3"
+            ],
+            [
+              "marine-doc-close",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "마감 사전 준비 및 담당별 마감 업무를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.1"
+            ],
+            [
+              "marine-doc-close",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "분리배출과 행사 마감·베이커리 보관 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.3"
+            ],
+            [
+              "marine-doc-close",
+              "6.4"
+            ],
+            [
+              "marine-doc-close",
+              "6.5"
+            ]
+          ]
+        },
+        {
+          "text": "최종 확인과 퇴실 절차 및 주의사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-close",
+              "6.6"
+            ],
+            [
+              "marine-doc-close",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-ordering": {
+      "title": "비품·재료 안전재고 확인과 발주 요청",
+      "purpose": "품목별 안전재고와 담당자를 확인하고 필요한 비품·재료의 발주를 요청할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "부족 품목과 발주 담당자를 확인해 정해진 채널로 요청한다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "5.1"
+            ],
+            [
+              "marine-doc-order",
+              "5.2"
+            ],
+            [
+              "marine-doc-order",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "관련 시트와 품목별 안전재고·발주 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "6"
+            ],
+            [
+              "marine-doc-order",
+              "7"
+            ],
+            [
+              "marine-doc-order",
+              "7.1"
+            ],
+            [
+              "marine-doc-order",
+              "7.2"
+            ],
+            [
+              "marine-doc-order",
+              "7.3"
+            ],
+            [
+              "marine-doc-order",
+              "7.4"
+            ]
+          ]
+        },
+        {
+          "text": "발주 요청 시 원본의 주의사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "부족 품목과 발주 담당자를 확인해 정해진 채널로 요청한다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "5.1"
+            ],
+            [
+              "marine-doc-order",
+              "5.2"
+            ],
+            [
+              "marine-doc-order",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "관련 시트와 품목별 안전재고·발주 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "6"
+            ],
+            [
+              "marine-doc-order",
+              "7"
+            ],
+            [
+              "marine-doc-order",
+              "7.1"
+            ],
+            [
+              "marine-doc-order",
+              "7.2"
+            ],
+            [
+              "marine-doc-order",
+              "7.3"
+            ],
+            [
+              "marine-doc-order",
+              "7.4"
+            ]
+          ]
+        },
+        {
+          "text": "발주 요청 시 원본의 주의사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-order",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-materials-common": {
+      "title": "제조 준비·라벨·선입선출·보관",
+      "purpose": "재료 제조 전 준비와 공통 원칙을 확인하고 제조량 전달·라벨 부착·보관을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "제조할 품목의 재료와 준비 사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.1.1"
+            ],
+            [
+              "marine-doc-materials",
+              "5.1.2"
+            ],
+            [
+              "marine-doc-materials",
+              "5.1.3"
+            ]
+          ]
+        },
+        {
+          "text": "제조량 전달과 선입선출 등 공통 원칙을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.2"
+            ],
+            [
+              "marine-doc-materials",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "제조한 재료에 라벨을 부착하고 보관 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.4"
+            ],
+            [
+              "marine-doc-materials",
+              "5.5"
+            ],
+            [
+              "marine-doc-materials",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "제조할 품목의 재료와 준비 사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.1.1"
+            ],
+            [
+              "marine-doc-materials",
+              "5.1.2"
+            ],
+            [
+              "marine-doc-materials",
+              "5.1.3"
+            ]
+          ]
+        },
+        {
+          "text": "제조량 전달과 선입선출 등 공통 원칙을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.2"
+            ],
+            [
+              "marine-doc-materials",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "제조한 재료에 라벨을 부착하고 보관 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "5.4"
+            ],
+            [
+              "marine-doc-materials",
+              "5.5"
+            ],
+            [
+              "marine-doc-materials",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "5.4"
+          ],
+          "n": 1,
+          "caption": "라벨 부착",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-materials",
+            "5.4"
+          ],
+          "n": 2,
+          "caption": "라벨 부착",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-1": {
+      "title": "밀크티 제조·소분",
+      "purpose": "밀크티의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "밀크티의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.1"
+            ],
+            [
+              "marine-doc-materials",
+              "6.1 › 제조 순서"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "밀크티의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.1"
+            ],
+            [
+              "marine-doc-materials",
+              "6.1 › 제조 순서"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.1"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-2": {
+      "title": "피스타치오 크림 제조·소분",
+      "purpose": "피스타치오 크림의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "피스타치오 크림의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.2"
+            ],
+            [
+              "marine-doc-materials",
+              "6.2 › ① 재료 계량·투입"
+            ],
+            [
+              "marine-doc-materials",
+              "② 혼합·휘핑"
+            ],
+            [
+              "marine-doc-materials",
+              "6.2 › 완료 기준"
+            ],
+            [
+              "marine-doc-materials",
+              "주의사항"
+            ],
+            [
+              "marine-doc-materials",
+              "제조량 참고"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "피스타치오 크림의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.2"
+            ],
+            [
+              "marine-doc-materials",
+              "6.2 › ① 재료 계량·투입"
+            ],
+            [
+              "marine-doc-materials",
+              "② 혼합·휘핑"
+            ],
+            [
+              "marine-doc-materials",
+              "6.2 › 완료 기준"
+            ],
+            [
+              "marine-doc-materials",
+              "주의사항"
+            ],
+            [
+              "marine-doc-materials",
+              "제조량 참고"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.2"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-3": {
+      "title": "바닐라 연유 제조·소분",
+      "purpose": "바닐라 연유의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "바닐라 연유의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.3"
+            ],
+            [
+              "marine-doc-materials",
+              "① 재료 계량·혼합"
+            ],
+            [
+              "marine-doc-materials",
+              "② 가열·바닐라빈 손질"
+            ],
+            [
+              "marine-doc-materials",
+              "③ 냉각"
+            ],
+            [
+              "marine-doc-materials",
+              "④ 바닐라빈 투입·휘핑"
+            ],
+            [
+              "marine-doc-materials",
+              "⑤ 소분·보관"
+            ],
+            [
+              "marine-doc-materials",
+              "6.3 › 완료 기준"
+            ],
+            [
+              "marine-doc-materials",
+              "추가 소분 조건"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "바닐라 연유의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.3"
+            ],
+            [
+              "marine-doc-materials",
+              "① 재료 계량·혼합"
+            ],
+            [
+              "marine-doc-materials",
+              "② 가열·바닐라빈 손질"
+            ],
+            [
+              "marine-doc-materials",
+              "③ 냉각"
+            ],
+            [
+              "marine-doc-materials",
+              "④ 바닐라빈 투입·휘핑"
+            ],
+            [
+              "marine-doc-materials",
+              "⑤ 소분·보관"
+            ],
+            [
+              "marine-doc-materials",
+              "6.3 › 완료 기준"
+            ],
+            [
+              "marine-doc-materials",
+              "추가 소분 조건"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.3"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.3 › 완료 기준"
+          ],
+          "n": 1,
+          "caption": "완료 기준",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-4": {
+      "title": "모정우유 제조·소분",
+      "purpose": "모정우유의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "모정우유의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.4"
+            ],
+            [
+              "marine-doc-materials",
+              "6.4 › ① 재료 계량·투입"
+            ],
+            [
+              "marine-doc-materials",
+              "② 혼합"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "모정우유의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.4"
+            ],
+            [
+              "marine-doc-materials",
+              "6.4 › ① 재료 계량·투입"
+            ],
+            [
+              "marine-doc-materials",
+              "② 혼합"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.4"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-5": {
+      "title": "말차 베이스 제조·소분",
+      "purpose": "말차 베이스의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "말차 베이스의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.5"
+            ],
+            [
+              "marine-doc-materials",
+              "6.5 › 제조 순서"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "말차 베이스의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.5"
+            ],
+            [
+              "marine-doc-materials",
+              "6.5 › 제조 순서"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.5"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-6": {
+      "title": "얼그레이티 냉침·거르기 제조·소분",
+      "purpose": "얼그레이티 냉침·거르기의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "얼그레이티 냉침·거르기의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.6"
+            ],
+            [
+              "marine-doc-materials",
+              "냉침 순서"
+            ],
+            [
+              "marine-doc-materials",
+              "거르기 순서 바리스타"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "얼그레이티 냉침·거르기의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.6"
+            ],
+            [
+              "marine-doc-materials",
+              "냉침 순서"
+            ],
+            [
+              "marine-doc-materials",
+              "거르기 순서 바리스타"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.6"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-7": {
+      "title": "주스 소분 제조·소분",
+      "purpose": "주스 소분의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "주스 소분의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "주스 소분의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.7"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.7"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-material-8": {
+      "title": "설탕시럽 소분 제조·소분",
+      "purpose": "설탕시럽 소분의 원본 기준을 확인하고 제조·소분 작업을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "설탕시럽 소분의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "설탕시럽 소분의 재료·계량·작업 순서와 완료 기준을 확인해 제조·소분한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.8"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-materials",
+            "6.8"
+          ],
+          "n": 1,
+          "caption": "제조 완료 모습",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-materials-other": {
+      "title": "기타 시럽·베이스·부재료 제조",
+      "purpose": "기타 시럽·베이스·부재료의 원본 제조 기준을 확인하고 작업할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "흑설탕·얼그레이 시럽과 크리멜로 생크림의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.9"
+            ],
+            [
+              "marine-doc-materials",
+              "6.10"
+            ],
+            [
+              "marine-doc-materials",
+              "6.11"
+            ]
+          ]
+        },
+        {
+          "text": "녹차 냉침티와 아이스티 시럽·베이스의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.12"
+            ],
+            [
+              "marine-doc-materials",
+              "6.13"
+            ],
+            [
+              "marine-doc-materials",
+              "6.14"
+            ]
+          ]
+        },
+        {
+          "text": "헤이즐넛 분태와 마롱크림 베이스의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.15"
+            ],
+            [
+              "marine-doc-materials",
+              "6.16"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "흑설탕·얼그레이 시럽과 크리멜로 생크림의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.9"
+            ],
+            [
+              "marine-doc-materials",
+              "6.10"
+            ],
+            [
+              "marine-doc-materials",
+              "6.11"
+            ]
+          ]
+        },
+        {
+          "text": "녹차 냉침티와 아이스티 시럽·베이스의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.12"
+            ],
+            [
+              "marine-doc-materials",
+              "6.13"
+            ],
+            [
+              "marine-doc-materials",
+              "6.14"
+            ]
+          ]
+        },
+        {
+          "text": "헤이즐넛 분태와 마롱크림 베이스의 제조 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-materials",
+              "6.15"
+            ],
+            [
+              "marine-doc-materials",
+              "6.16"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-pos": {
+      "title": "포스 주문·결제·베이커리 업무 전달",
+      "purpose": "주문·결제 상황을 확인해 처리하고 제조팀·베이커리팀에 필요한 내용을 전달할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "공통 운영 기준을 확인하고 주문 내용을 제조팀에 전달한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "5"
+            ],
+            [
+              "marine-doc-pos",
+              "6.1.1"
+            ],
+            [
+              "marine-doc-pos",
+              "사진. 페이히어 포스의 전달사항 키 예시"
+            ]
+          ]
+        },
+        {
+          "text": "상황별 주문·결제 처리 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "6.1.2"
+            ]
+          ]
+        },
+        {
+          "text": "포스 전달사항 기능으로 빵포장·베이커리팀과 업무를 연결한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "베이커리 준비 요청이나 매장 상황은 페이히어 전달사항 키로 입력합니다. 백바 베이커리팀 주방용 프린터 출력물을 통해 해당 내용을 전달하며, 무전기는 사용하지 않습니다."
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "공통 운영 기준을 확인하고 주문 내용을 제조팀에 전달한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "5"
+            ],
+            [
+              "marine-doc-pos",
+              "6.1.1"
+            ],
+            [
+              "marine-doc-pos",
+              "사진. 페이히어 포스의 전달사항 키 예시"
+            ]
+          ]
+        },
+        {
+          "text": "상황별 주문·결제 처리 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "6.1.2"
+            ]
+          ]
+        },
+        {
+          "text": "포스 전달사항 기능으로 빵포장·베이커리팀과 업무를 연결한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "베이커리 준비 요청이나 매장 상황은 페이히어 전달사항 키로 입력합니다. 백바 베이커리팀 주방용 프린터 출력물을 통해 해당 내용을 전달하며, 무전기는 사용하지 않습니다."
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-pos",
+            "사진. 페이히어 포스의 전달사항 키 예시"
+          ],
+          "n": 1,
+          "caption": "사진. 페이히어 포스의 전달사항 키 예시",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-bread": {
+      "title": "빵포장 위생·주문 유형·베이커리 준비",
+      "purpose": "작업 위생과 주문 유형을 확인하고 베이커리를 기준에 맞게 준비·포장·인계할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "빵포장 작업 위생과 주문 유형별 제공 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.1"
+            ],
+            [
+              "marine-doc-pickup",
+              "6.2"
+            ],
+            [
+              "marine-doc-pickup",
+              "용어"
+            ],
+            [
+              "marine-doc-pickup",
+              "음료와 같이 주문"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 단독 주문"
+            ],
+            [
+              "marine-doc-pickup",
+              "주문 경로별 베이커리 제공 위치"
+            ]
+          ]
+        },
+        {
+          "text": "베이커리별 접시와 컷팅·제공 기준에 맞춰 준비한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.3"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+            ],
+            [
+              "marine-doc-pickup",
+              "컷팅 제공 베이커리"
+            ],
+            [
+              "marine-doc-pickup",
+              "올리브오일 제공 참고 이미지"
+            ]
+          ]
+        },
+        {
+          "text": "포장과 주문서 표시 및 인계 절차를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "포장 주문 처리"
+            ],
+            [
+              "marine-doc-pickup",
+              "주문서 정리·표시"
+            ]
+          ]
+        },
+        {
+          "text": "쇼케이스·재고를 관리하고 필요한 업무 지원을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.5"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리팀 업무 요청 (포스키)"
+            ],
+            [
+              "marine-doc-pickup",
+              "6.6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "빵포장 작업 위생과 주문 유형별 제공 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.1"
+            ],
+            [
+              "marine-doc-pickup",
+              "6.2"
+            ],
+            [
+              "marine-doc-pickup",
+              "용어"
+            ],
+            [
+              "marine-doc-pickup",
+              "음료와 같이 주문"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 단독 주문"
+            ],
+            [
+              "marine-doc-pickup",
+              "주문 경로별 베이커리 제공 위치"
+            ]
+          ]
+        },
+        {
+          "text": "베이커리별 접시와 컷팅·제공 기준에 맞춰 준비한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.3"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+            ],
+            [
+              "marine-doc-pickup",
+              "컷팅 제공 베이커리"
+            ],
+            [
+              "marine-doc-pickup",
+              "올리브오일 제공 참고 이미지"
+            ]
+          ]
+        },
+        {
+          "text": "포장과 주문서 표시 및 인계 절차를 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "포장 주문 처리"
+            ],
+            [
+              "marine-doc-pickup",
+              "주문서 정리·표시"
+            ]
+          ]
+        },
+        {
+          "text": "쇼케이스·재고를 관리하고 필요한 업무 지원을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "6.5"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리팀 업무 요청 (포스키)"
+            ],
+            [
+              "marine-doc-pickup",
+              "6.6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 1,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 2,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 3,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 4,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 5,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 6,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 7,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 8,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 9,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)"
+          ],
+          "n": 10,
+          "caption": "베이커리 접시·품목 통합표 (오염·파손 확인 후 사용)",
+          "wide": false,
+          "captionCols": [
+            "해당 베이커리",
+            "제공 기준·대체 접시"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "올리브오일 제공 참고 이미지"
+          ],
+          "n": 1,
+          "caption": "올리브오일 제공 참고 이미지",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "6.5"
+          ],
+          "n": 1,
+          "caption": "그림. 페이히어 「담당자」 포스키 화면",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-pickup": {
+      "title": "픽업 비품·트레이 세팅·최종 확인",
+      "purpose": "비품 위치와 세팅 기준을 확인하고 완성된 메뉴를 검수·설명하며 고객 요청에 대응할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "픽업 비품 위치와 기본 위생 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.1"
+            ],
+            [
+              "marine-doc-pickup",
+              "픽업대 하부 적재 공간"
+            ]
+          ]
+        },
+        {
+          "text": "잔·소서·커트러리·냅킨과 베이커리를 트레이 세팅 기준에 맞춰 배치한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "기본 원칙"
+            ],
+            [
+              "marine-doc-pickup",
+              "소서 매칭표 (잔 받침·소서 오염 확인)"
+            ],
+            [
+              "marine-doc-pickup",
+              "커트러리 종류"
+            ],
+            [
+              "marine-doc-pickup",
+              "냅킨·커트러리 배치"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 제공 방향"
+            ],
+            [
+              "marine-doc-pickup",
+              "향미카드"
+            ],
+            [
+              "marine-doc-pickup",
+              "잔 정렬"
+            ],
+            [
+              "marine-doc-pickup",
+              "빨대 제공 기준 (ICE)"
+            ]
+          ]
+        },
+        {
+          "text": "세팅을 종합 예시와 대조하고 최종 검수·메뉴 설명을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.3"
+            ],
+            [
+              "marine-doc-pickup",
+              "7.4"
+            ],
+            [
+              "marine-doc-pickup",
+              "메뉴 설명 멘트"
+            ]
+          ]
+        },
+        {
+          "text": "고객 요청과 주문 오류 상황에 맞춰 처리·전달한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "픽업 비품 위치와 기본 위생 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.1"
+            ],
+            [
+              "marine-doc-pickup",
+              "픽업대 하부 적재 공간"
+            ]
+          ]
+        },
+        {
+          "text": "잔·소서·커트러리·냅킨과 베이커리를 트레이 세팅 기준에 맞춰 배치한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "기본 원칙"
+            ],
+            [
+              "marine-doc-pickup",
+              "소서 매칭표 (잔 받침·소서 오염 확인)"
+            ],
+            [
+              "marine-doc-pickup",
+              "커트러리 종류"
+            ],
+            [
+              "marine-doc-pickup",
+              "냅킨·커트러리 배치"
+            ],
+            [
+              "marine-doc-pickup",
+              "베이커리 제공 방향"
+            ],
+            [
+              "marine-doc-pickup",
+              "향미카드"
+            ],
+            [
+              "marine-doc-pickup",
+              "잔 정렬"
+            ],
+            [
+              "marine-doc-pickup",
+              "빨대 제공 기준 (ICE)"
+            ]
+          ]
+        },
+        {
+          "text": "세팅을 종합 예시와 대조하고 최종 검수·메뉴 설명을 수행한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.3"
+            ],
+            [
+              "marine-doc-pickup",
+              "7.4"
+            ],
+            [
+              "marine-doc-pickup",
+              "메뉴 설명 멘트"
+            ]
+          ]
+        },
+        {
+          "text": "고객 요청과 주문 오류 상황에 맞춰 처리·전달한다.",
+          "cites": [
+            [
+              "marine-doc-pickup",
+              "7.5"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "소서 매칭표 (잔 받침·소서 오염 확인)"
+          ],
+          "n": 1,
+          "caption": "소서 매칭표 (잔 받침·소서 오염 확인)",
+          "wide": false,
+          "captionCols": [
+            "제공 음료"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "소서 매칭표 (잔 받침·소서 오염 확인)"
+          ],
+          "n": 2,
+          "caption": "소서 매칭표 (잔 받침·소서 오염 확인)",
+          "wide": false,
+          "captionCols": [
+            "제공 음료"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "소서 매칭표 (잔 받침·소서 오염 확인)"
+          ],
+          "n": 3,
+          "caption": "소서 매칭표 (잔 받침·소서 오염 확인)",
+          "wide": false,
+          "captionCols": [
+            "제공 음료"
+          ]
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "커트러리 종류"
+          ],
+          "n": 1,
+          "caption": "커트러리 종류",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "냅킨·커트러리 배치"
+          ],
+          "n": 1,
+          "caption": "냅킨·커트러리 배치",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "7.3"
+          ],
+          "n": 1,
+          "caption": "냅킨·커트러리, 베이커리 제공 방향, 향미카드, 잔 손잡이 및 트레이 정렬 기준을 종합한 예시입니다.",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-pickup",
+            "7.3"
+          ],
+          "n": 2,
+          "caption": "냅킨·커트러리, 베이커리 제공 방향, 향미카드, 잔 손잡이 및 트레이 정렬 기준을 종합한 예시입니다.",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-making": {
+      "title": "제조 순서·픽업 지원·KDS·스테이션 관리",
+      "purpose": "브루잉과 제조 순서를 조율하고 픽업 지원·KDS 처리·스테이션 관리를 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "브루잉과 소통해 제조 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "픽업 요청에 대응하고 트레이 세팅을 지원한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "주문 유형별 KDS 완료 처리 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "행주를 관리하고 부족한 얼음의 보충을 요청한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.4"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "브루잉과 소통해 제조 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "픽업 요청에 대응하고 트레이 세팅을 지원한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "주문 유형별 KDS 완료 처리 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "행주를 관리하고 부족한 얼음의 보충을 요청한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "6.4"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-coffee-recipes": {
+      "title": "커피 음료 계량·제조·제공",
+      "purpose": "커피 음료의 계량·제조·제공 기준을 확인하고 메뉴를 완성할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "커피 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "커피 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "3"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "3"
+          ],
+          "n": 1,
+          "caption": "커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "3"
+          ],
+          "n": 2,
+          "caption": "커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "3"
+          ],
+          "n": 3,
+          "caption": "커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "3"
+          ],
+          "n": 4,
+          "caption": "커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "3"
+          ],
+          "n": 5,
+          "caption": "커피",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-signature-recipes": {
+      "title": "시그니처 음료 계량·제조·제공",
+      "purpose": "시그니처 음료의 계량·제조·제공 기준을 확인하고 메뉴를 완성할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "시그니처 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "4"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "시그니처 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "4"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "4"
+          ],
+          "n": 1,
+          "caption": "시그니처",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "4"
+          ],
+          "n": 2,
+          "caption": "시그니처",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-noncoffee-recipes": {
+      "title": "논커피 음료 계량·제조·제공",
+      "purpose": "논커피 음료의 계량·제조·제공 기준을 확인하고 메뉴를 완성할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "논커피 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "논커피 음료의 메뉴별 기준표와 제조·제공 순서를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "5"
+          ],
+          "n": 1,
+          "caption": "논커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "5"
+          ],
+          "n": 2,
+          "caption": "논커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "5"
+          ],
+          "n": 3,
+          "caption": "논커피",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "5"
+          ],
+          "n": 4,
+          "caption": "논커피",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-retail": {
+      "title": "리테일 진열·재고 보충·인계",
+      "purpose": "리테일 상품의 입고·진열·재고 보충 기준을 확인하고 명세서를 담당자에게 인계할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "상품 진열과 재고 보충 및 인계 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "6.2"
+            ],
+            [
+              "marine-doc-pos",
+              "리테일 담당자는 입고된 발주 상품의 품목과 수량을 명세서와 대조한 뒤 진열 상품과 보관 상품을 구분하여 정리합니다. 확인한 명세서는 MD 전산 담당자에게 전달합니다. 수량이 일치하지 않으면 확인 후 전달합니다."
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "상품 진열과 재고 보충 및 인계 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-pos",
+              "6.2"
+            ],
+            [
+              "marine-doc-pos",
+              "리테일 담당자는 입고된 발주 상품의 품목과 수량을 명세서와 대조한 뒤 진열 상품과 보관 상품을 구분하여 정리합니다. 확인한 명세서는 MD 전산 담당자에게 전달합니다. 수량이 일치하지 않으면 확인 후 전달합니다."
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-brewing": {
+      "title": "메인·보조 브루어 역할과 레시피 확인",
+      "purpose": "메인·보조 브루어의 역할을 구분하고 협업 및 브루잉 레시피 확인을 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "메인 브루어와 보조 브루어의 업무를 구분해 수행한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "7.1"
+            ],
+            [
+              "marine-doc-bar",
+              "7.2"
+            ]
+          ]
+        },
+        {
+          "text": "사용할 브루잉 레시피를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "7.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "메인 브루어와 보조 브루어의 업무를 구분해 수행한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "7.1"
+            ],
+            [
+              "marine-doc-bar",
+              "7.2"
+            ]
+          ]
+        },
+        {
+          "text": "사용할 브루잉 레시피를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "7.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-brewing-recipes": {
+      "title": "브루잉 계량·제공 기준",
+      "purpose": "원본의 브루잉 계량·제공 기준을 확인해 음료를 준비할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "브루잉 계량표와 제공 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "브루잉 계량표와 제공 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-recipes",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-recipes",
+            "6"
+          ],
+          "n": 1,
+          "caption": "브루잉",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-tasting": {
+      "title": "시음 커피 요청·확인·보관·제공",
+      "purpose": "시음 커피의 요청·수령·보관·제공 기준을 확인하고 메뉴에 맞춰 준비할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "필터커피 시음을 요청하고 수령한 커피의 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.1"
+            ],
+            [
+              "marine-doc-tasting",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "시음 커피의 보관·제공 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "인스턴트 커피의 온도별 제조 기준과 주의사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.4"
+            ],
+            [
+              "marine-doc-tasting",
+              "5.5"
+            ],
+            [
+              "marine-doc-tasting",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "필터커피 시음을 요청하고 수령한 커피의 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.1"
+            ],
+            [
+              "marine-doc-tasting",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "시음 커피의 보관·제공 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.3"
+            ]
+          ]
+        },
+        {
+          "text": "인스턴트 커피의 온도별 제조 기준과 주의사항을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tasting",
+              "5.4"
+            ],
+            [
+              "marine-doc-tasting",
+              "5.5"
+            ],
+            [
+              "marine-doc-tasting",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-espresso": {
+      "title": "에스프레소 추출·기물·협업·교대",
+      "purpose": "에스프레소 추출과 기물 관리를 수행하고 제조 협업·운영 지원·교대 업무를 연결할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "에스프레소 추출과 제조 협업 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.1"
+            ]
+          ]
+        },
+        {
+          "text": "원두 수위와 기물 세척 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.2"
+            ]
+          ]
+        },
+        {
+          "text": "운영 상황을 확인하고 필요한 지원을 요청한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.3"
+            ]
+          ]
+        },
+        {
+          "text": "오픈·교대·마감 업무를 담당별 절차와 연결한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.4"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "에스프레소 추출과 제조 협업 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.1"
+            ]
+          ]
+        },
+        {
+          "text": "원두 수위와 기물 세척 기준을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.2"
+            ]
+          ]
+        },
+        {
+          "text": "운영 상황을 확인하고 필요한 지원을 요청한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.3"
+            ]
+          ]
+        },
+        {
+          "text": "오픈·교대·마감 업무를 담당별 절차와 연결한다.",
+          "cites": [
+            [
+              "marine-doc-bar",
+              "8.4"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-md-ecount": {
+      "title": "MD3 전산 처리·돈마감",
+      "purpose": "MD3의 전산 처리와 돈마감 업무 순서 및 확인 사항을 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "MD3의 전산 처리와 돈마감 업무를 원본 기준에 따라 확인한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "MD3의 전산 처리와 돈마감 업무를 원본 기준에 따라 확인한다.",
+          "cites": [
+            [
+              "marine-doc-md",
+              "5.3.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-ecount": {
+      "title": "구매입력·창고이동·자가사용·재고 확인",
+      "purpose": "실물과 전표를 대조하고 구매입력·창고이동·자가사용 및 최종 재고 확인을 구분할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "물류팀 전표와 실물을 대조해 구매입력을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "음료용 전환 원두의 창고이동과 원두·판매 상품의 자가사용 처리를 구분한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.2"
+            ],
+            [
+              "marine-doc-ecount",
+              "5.3"
+            ],
+            [
+              "marine-doc-ecount",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "창고별 재고와 매출 기록 및 전산 처리 완료를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.5"
+            ],
+            [
+              "marine-doc-ecount",
+              "6"
+            ],
+            [
+              "marine-doc-ecount",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "물류팀 전표와 실물을 대조해 구매입력을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "음료용 전환 원두의 창고이동과 원두·판매 상품의 자가사용 처리를 구분한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.2"
+            ],
+            [
+              "marine-doc-ecount",
+              "5.3"
+            ],
+            [
+              "marine-doc-ecount",
+              "5.4"
+            ]
+          ]
+        },
+        {
+          "text": "창고별 재고와 매출 기록 및 전산 처리 완료를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-ecount",
+              "5.5"
+            ],
+            [
+              "marine-doc-ecount",
+              "6"
+            ],
+            [
+              "marine-doc-ecount",
+              "7"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-phone": {
+      "title": "바리스타 전화기 통화 불량 조치",
+      "purpose": "전화기 연결 상태를 확인하고 통화 불량 조치·시험 통화·보고를 수행할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "연결 기준을 확인하고 원본 순서대로 통화 불량을 조치한다.",
+          "cites": [
+            [
+              "marine-doc-phone",
+              "2"
+            ],
+            [
+              "marine-doc-phone",
+              "① 현재 연결된 와이파이 확인"
+            ],
+            [
+              "marine-doc-phone",
+              "② 무선랜 설정 열기"
+            ],
+            [
+              "marine-doc-phone",
+              "③ 무선랜 검색 실행"
+            ],
+            [
+              "marine-doc-phone",
+              "④ momos_barista5G 선택"
+            ],
+            [
+              "marine-doc-phone",
+              "⑤ 연결 누르기"
+            ],
+            [
+              "marine-doc-phone",
+              "⑥ 연결 상태 재확인"
+            ],
+            [
+              "marine-doc-phone",
+              "⑦ 통화 테스트 및 재조치"
+            ]
+          ]
+        },
+        {
+          "text": "통화 상태를 재확인하고 문제가 남으면 보고·인계한다.",
+          "cites": [
+            [
+              "marine-doc-phone",
+              "4"
+            ],
+            [
+              "marine-doc-phone",
+              "5"
+            ],
+            [
+              "marine-doc-phone",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "연결 기준을 확인하고 원본 순서대로 통화 불량을 조치한다.",
+          "cites": [
+            [
+              "marine-doc-phone",
+              "2"
+            ],
+            [
+              "marine-doc-phone",
+              "① 현재 연결된 와이파이 확인"
+            ],
+            [
+              "marine-doc-phone",
+              "② 무선랜 설정 열기"
+            ],
+            [
+              "marine-doc-phone",
+              "③ 무선랜 검색 실행"
+            ],
+            [
+              "marine-doc-phone",
+              "④ momos_barista5G 선택"
+            ],
+            [
+              "marine-doc-phone",
+              "⑤ 연결 누르기"
+            ],
+            [
+              "marine-doc-phone",
+              "⑥ 연결 상태 재확인"
+            ],
+            [
+              "marine-doc-phone",
+              "⑦ 통화 테스트 및 재조치"
+            ]
+          ]
+        },
+        {
+          "text": "통화 상태를 재확인하고 문제가 남으면 보고·인계한다.",
+          "cites": [
+            [
+              "marine-doc-phone",
+              "4"
+            ],
+            [
+              "marine-doc-phone",
+              "5"
+            ],
+            [
+              "marine-doc-phone",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-tamper": {
+      "title": "마노 자동 탬핑기 데일리 청소",
+      "purpose": "마노 자동 탬핑기를 안전하게 청소하고 받침판 재장착·완료 상태를 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "청소 준비와 전원 차단을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "탬퍼와 내부·받침판을 정해진 절차로 청소하고 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "완료 기준을 확인하고 이상이 있으면 보고한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "6"
+            ],
+            [
+              "marine-doc-tamper",
+              "7"
+            ],
+            [
+              "marine-doc-tamper",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "청소 준비와 전원 차단을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "5.1"
+            ]
+          ]
+        },
+        {
+          "text": "탬퍼와 내부·받침판을 정해진 절차로 청소하고 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "5.2"
+            ]
+          ]
+        },
+        {
+          "text": "완료 기준을 확인하고 이상이 있으면 보고한다.",
+          "cites": [
+            [
+              "marine-doc-tamper",
+              "6"
+            ],
+            [
+              "marine-doc-tamper",
+              "7"
+            ],
+            [
+              "marine-doc-tamper",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-linea": {
+      "title": "리네아 PB 데일리 청소",
+      "purpose": "영업 종료 후 리네아 PB의 추출 부품과 물받이판·스팀완드를 청소하고 정상 작동을 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "청소 준비와 그룹헤드 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "2"
+            ],
+            [
+              "marine-doc-linea",
+              "3"
+            ],
+            [
+              "marine-doc-linea",
+              "4.1"
+            ],
+            [
+              "marine-doc-linea",
+              "6"
+            ]
+          ]
+        },
+        {
+          "text": "세제 백플러싱을 수행하고 압력 해소를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.2"
+            ]
+          ]
+        },
+        {
+          "text": "물 백플러싱을 수행하고 세제 잔여물을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.3"
+            ]
+          ]
+        },
+        {
+          "text": "샤워스크린을 분리·세척한 뒤 원위치로 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.4"
+            ]
+          ]
+        },
+        {
+          "text": "포터필터·필터바스켓·샤워스크린을 원본 기준으로 침지 세척하고 헹군다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.5"
+            ]
+          ]
+        },
+        {
+          "text": "물받이판을 탈거·세척하고 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.6"
+            ]
+          ]
+        },
+        {
+          "text": "스팀완드와 스팀 팁을 세척·재장착하고 분사 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "최종 헹굼과 완료 상태를 확인하고 이상 시 사용을 중지·보고한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.8"
+            ],
+            [
+              "marine-doc-linea",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "청소 준비와 그룹헤드 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "2"
+            ],
+            [
+              "marine-doc-linea",
+              "3"
+            ],
+            [
+              "marine-doc-linea",
+              "4.1"
+            ],
+            [
+              "marine-doc-linea",
+              "6"
+            ]
+          ]
+        },
+        {
+          "text": "세제 백플러싱을 수행하고 압력 해소를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.2"
+            ]
+          ]
+        },
+        {
+          "text": "물 백플러싱을 수행하고 세제 잔여물을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.3"
+            ]
+          ]
+        },
+        {
+          "text": "샤워스크린을 분리·세척한 뒤 원위치로 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.4"
+            ]
+          ]
+        },
+        {
+          "text": "포터필터·필터바스켓·샤워스크린을 원본 기준으로 침지 세척하고 헹군다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.5"
+            ]
+          ]
+        },
+        {
+          "text": "물받이판을 탈거·세척하고 재장착한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.6"
+            ]
+          ]
+        },
+        {
+          "text": "스팀완드와 스팀 팁을 세척·재장착하고 분사 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.7"
+            ]
+          ]
+        },
+        {
+          "text": "최종 헹굼과 완료 상태를 확인하고 이상 시 사용을 중지·보고한다.",
+          "cites": [
+            [
+              "marine-doc-linea",
+              "4.8"
+            ],
+            [
+              "marine-doc-linea",
+              "5"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-linea",
+            "4"
+          ],
+          "n": 1,
+          "caption": "백플러싱 및 부품 세척 절차 안내",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
+    },
+    "marine-grinder-kold-s": {
+      "title": "Mazzer Kold S 날 분해·청소",
+      "purpose": "Kold S의 전원 차단과 안전 기준을 지키며 분해·청소·재조립하고 시험 분쇄 및 완료 상태를 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "분쇄 설정과 부품 위치를 기록하고 전원을 분리해 안전하게 작업을 준비한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "5"
+            ]
+          ]
+        },
+        {
+          "text": "상부 어셈블리의 방향과 체결 상태를 확인하며 분리한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "교육받은 작업 범위에 따라 코니컬 버와 분쇄실을 마른 도구로 청소한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "관리자 승인 범위를 확인하고 토출구와 분리 부품을 청소한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "부품을 원래 위치로 재조립하고 관리자 확인 후 시험 분쇄와 완료 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.4"
+            ],
+            [
+              "marine-doc-kold",
+              "7"
+            ],
+            [
+              "marine-doc-kold",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "분쇄 설정과 부품 위치를 기록하고 전원을 분리해 안전하게 작업을 준비한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "5"
+            ]
+          ]
+        },
+        {
+          "text": "상부 어셈블리의 방향과 체결 상태를 확인하며 분리한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.1"
+            ]
+          ]
+        },
+        {
+          "text": "교육받은 작업 범위에 따라 코니컬 버와 분쇄실을 마른 도구로 청소한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.2"
+            ]
+          ]
+        },
+        {
+          "text": "관리자 승인 범위를 확인하고 토출구와 분리 부품을 청소한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.3"
+            ]
+          ]
+        },
+        {
+          "text": "부품을 원래 위치로 재조립하고 관리자 확인 후 시험 분쇄와 완료 상태를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-kold",
+              "6.4"
+            ],
+            [
+              "marine-doc-kold",
+              "7"
+            ],
+            [
+              "marine-doc-kold",
+              "8"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 1,
+          "caption": "01 호퍼 분리",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 2,
+          "caption": "02 상부 고정 구조 확인",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 3,
+          "caption": "03 분리한 나사·부품 보관",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 4,
+          "caption": "04 상부 체결 나사 해제",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 5,
+          "caption": "05 상부 결합부 분리",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.1"
+          ],
+          "n": 6,
+          "caption": "06 조작부 이동 및 내부 개방",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.2"
+          ],
+          "n": 1,
+          "caption": "07 상부 버 주변 잔여 가루 제거",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.2"
+          ],
+          "n": 2,
+          "caption": "08 분쇄실 내부 흡입 청소",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.2"
+          ],
+          "n": 3,
+          "caption": "09 분쇄실 접촉면 닦기",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.2"
+          ],
+          "n": 4,
+          "caption": "10 분리한 버 주변 오염 확인",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 1,
+          "caption": "11 토출구 가드 고정 나사 해제",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 2,
+          "caption": "12 토출구 내부 고정부 확인",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 3,
+          "caption": "13 분리 부품의 체결부 해제",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 4,
+          "caption": "14 소형 부품 닦기",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 5,
+          "caption": "15 분리 부품 오염 제거",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.3"
+          ],
+          "n": 6,
+          "caption": "16 토출구 부품 체결 준비",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.4"
+          ],
+          "n": 1,
+          "caption": "17 분리 부품 나사 체결",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.4"
+          ],
+          "n": 2,
+          "caption": "18 부품 재장착 상태 확인",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.4"
+          ],
+          "n": 3,
+          "caption": "19 상부 결합부 고정",
+          "wide": false,
+          "captionCols": []
+        },
+        {
+          "cite": [
+            "marine-doc-kold",
+            "6.4"
+          ],
+          "n": 4,
+          "caption": "20 상부 고정부 최종 체결",
+          "wide": false,
+          "captionCols": []
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft"
     }
   },
   "curriculum": "2026-10-22",

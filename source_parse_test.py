@@ -8,6 +8,25 @@ import source_parse
 
 
 class SectionNumberTests(unittest.TestCase):
+    def test_toc_placeholders_do_not_start_the_body(self):
+        doc = Document()
+        doc.add_paragraph('목차')
+        doc.add_paragraph('1. 목적')
+        doc.add_paragraph('4.3 보관 기준')
+        doc.add_paragraph('[이미지 확인 필요: 현장 위치 사진]')
+        doc.add_paragraph('5. 시설')
+        doc.add_paragraph('목차 내 보충 안내입니다.')
+        doc.add_paragraph('1. 목적', 'Heading 1')
+        doc.add_paragraph('실제 업무 목적을 확인한다.')
+        doc.add_paragraph('4.3 보관 기준', 'Heading 2')
+        doc.add_paragraph('실제 보관 기준을 확인한다.')
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / '공간_안내_GUI.docx'
+            doc.save(path)
+            sections = source_parse.parse(path)['sections']
+        self.assertEqual([s['no'] for s in sections], ['1', '4.3'])
+        self.assertEqual(sections[1]['paragraphs'], ['실제 보관 기준을 확인한다.'])
+
     def test_numbered_examples_stay_under_their_toc_section(self):
         doc = Document()
         doc.add_paragraph('MOMOS COFFEE')

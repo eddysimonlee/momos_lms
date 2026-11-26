@@ -28,6 +28,22 @@ STAGES = [1, 2]  # 교육과정 journey 순서: 1 입사·현장 적응, 2 기�
 SEP = ' › '
 
 
+def branch_contents(content):
+    """기존 최상위 본점 데이터는 그대로 두고 추가 지점만 별도 데이터로 읽는다."""
+    return [('oncheon', content), *list((content.get('branches') or {}).items())]
+
+
+def merged_content(content):
+    """근거 검색·동기화용 전체 지점 보기. 화면에는 각 지점 데이터를 따로 보낸다."""
+    out = dict(content, units=[], documents={}, sections={}, photos={})
+    for _, course in branch_contents(content):
+        out['units'] += course.get('units') or []
+        for field in ('documents', 'sections', 'photos'):
+            for key, value in (course.get(field) or {}).items():
+                out[field].setdefault(key, value)
+    return out
+
+
 def section_key(doc, ref, part=None):
     """part: 표의 일부만 인용할 때 — 'r1', 'r1-3,5'(행), 'c2'(열), 표가 여럿이면 앞에 't2:'. 행·열 번호는 1부터, 머리행 제외.
     문단 일부는 'p6-10'(6~10번째 문단, 1부터)."""
@@ -130,7 +146,7 @@ def write_source_sections(index, manifest):
     (APP / 'source_sections.json').write_text(head + ',\n'.join(lines) + '\n }\n}\n', encoding='utf-8')
 
 
-def main():
+def main(curriculum_override=None, *, write=True):
     course = json.loads((APP / 'onboarding_course.json').read_text(encoding='utf-8'))
     lessons = json.loads((APP / 'v1_lessons.json').read_text(encoding='utf-8'))['lessons']
     index_path = Path(os.environ.get('LMS_SOURCE_INDEX', APP / 'source_index.json'))
@@ -168,11 +184,16 @@ def main():
                 # 11/05 captionCols: 같은 행의 다른 열도 설명에 붙인다(예: 접시 이름-제공 베이커리). 붙이면 (n/전체) 표시는 뺀다
                 extra = [row['cells'][row['header'].index(h)] for h in ph.get('captionCols') or [] if h in row['header'] and row['cells'][row['header'].index(h)]]
                 caption = f"{name}-{' · '.join(extra)}" if extra else (f"{name} ({ph['n']}/{len(items)})" if len(items) > 1 else name)
-            photos[pid] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
+            item_key = pid
+            if curriculum_override and curriculum_override.get('branch'):
+                # 같은 사진을 서로 다른 절·표 행에서 써도 각 설명과 근거를 유지한다.
+                identity = json.dumps([doc, no, ph['n'], caption, row], ensure_ascii=False, sort_keys=True)
+                item_key += '-' + hashlib.sha1(identity.encode()).hexdigest()[:8]
+            photos[item_key] = dict(src=f'v1_photos/{pid}.jpg',  # 화면 데이터에는 경로만(사진 88장을 JSON 에 넣으면 수 MB)
                                caption=caption, cite=section_key(doc, no), n=ph['n'], hideCaption=ph.get('showCaption') is False,  # 그림 안에 제목이 있으면 설명을 숨긴다(대체 글로만)
                                row=dict(header=row['header'], cells=row['cells']) if data_row else None,
                                wide=ph.get('wide', bool(item.get('w') and item['w'] > 1.2 * item['h'])))  # 기본은 가로 그림 전체 폭. 절차 사진은 wide:false로 기존 반응형 그리드 사용
-            keys.append(pid)
+            keys.append(item_key)
         return keys
     course_steps = {s['id']: (u, s) for u in course['units'] for s in u['steps']}
 
@@ -234,9 +255,9 @@ def main():
 
     units = []
     curriculum_path = APP / 'curriculum.json'
-    if curriculum_path.exists():
+    if curriculum_override is not None or curriculum_path.exists():
         # 모모스 확정 교육과정: 단계 → 단원 → 세션. 기존 항목은 id 로 그대로 잇고, 추가·교체 세션은 '준비 중'으로 싣는다.
-        curriculum = json.loads(curriculum_path.read_text(encoding='utf-8'))
+        curriculum = curriculum_override if curriculum_override is not None else json.loads(curriculum_path.read_text(encoding='utf-8'))
         for st in curriculum['stages']:
             stage = dict(order=st['no'], title=st['title'], summary=st.get('summary', ''), note=st.get('note', ''))
             for u in st['units']:
@@ -298,13 +319,24 @@ def main():
         sections=used_sections,
         photos=dict(sorted(photos.items())),
     )
+    if not write:
+        return out
+    # 지점별 사진 메타데이터도 분리한다. 같은 사진의 마린 캡션이 본점 캡션을 덮지 않는다.
+    branches = {}
+    for ident, spec in ((curriculum or {}).get('branches') or {}).items():
+        local = {**curriculum, **spec, 'branch': ident, 'branches': {}, 'extra': spec.get('extra', [])}
+        branches[ident] = main(local, write=False)
+        branches[ident].update(branch=ident, branchName=spec['name'])
+    if branches:
+        out['branches'] = branches
+    photo_ids = {Path(p['src']).stem for _, c in branch_contents(out) for p in (c.get('photos') or {}).values()}
     # 고른 사진만 v1_photos/ 에 둔다(저장소·이미지에 포함). 더 이상 쓰지 않는 사진 파일은 지운다.
     out_dir = APP / 'v1_photos'
     out_dir.mkdir(exist_ok=True)
     for old in out_dir.glob('*.jpg'):
-        if old.stem not in photos:
+        if old.stem not in photo_ids:
             old.unlink()
-    for pid in photos:
+    for pid in photo_ids:
         dest = out_dir / f'{pid}.jpg'
         if not dest.exists():
             dest.write_bytes((images_dir / f'{pid}.jpg').read_bytes())

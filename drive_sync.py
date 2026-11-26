@@ -55,9 +55,10 @@ def stem(name):
 
 
 def load_base(app=APP):
+    from v1_build import merged_content
     j = lambda n: json.loads((Path(app) / n).read_text(encoding='utf-8'))
     m = j('source_manifest.json')
-    return dict(manifest=m['documents'], manifestUpdated=m.get('updated', ''), sections=j('source_sections.json')['documents'], content=j('v1_content.json'))
+    return dict(manifest=m['documents'], manifestUpdated=m.get('updated', ''), sections=j('source_sections.json')['documents'], content=merged_content(j('v1_content.json')))
 
 
 # --- 비교 -------------------------------------------------------------------------------------------

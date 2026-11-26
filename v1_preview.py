@@ -26,10 +26,12 @@ def main():
     import server
     import onboarding
     content = server.v1_content()
-    for ph in content.get('photos', {}).values():  # 미리보기는 한 파일이므로 사진을 안에 넣는다
-        f = APP / ph['src']
-        if f.exists():
-            ph['src'] = 'data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode()
+    from v1_build import branch_contents
+    for _, local in branch_contents(content):
+        for ph in local.get('photos', {}).values():  # 미리보기는 한 파일이므로 사진을 안에 넣는다
+            f = APP / ph['src']
+            if f.exists():
+                ph['src'] = 'data:image/jpeg;base64,' + base64.b64encode(f.read_bytes()).decode()
     page = (APP / 'v1.html').read_text(encoding='utf-8')
     # 외부 파일을 전부 안에 넣는다
     font = APP / 'assets/PretendardVariable.woff2'  # v1.html 의 @font-face 주소를 data URI 로(ERP styles.css 는 v1 에서 쓰지 않는다)
@@ -74,7 +76,10 @@ MOCK = r'''
 (function(){
   const today = () => new Date().toISOString().slice(0, 10);
   const plus = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
-  const STEPS = {}; for (const u of CONTENT.units) for (const s of u.steps) STEPS[s.id] = s;
+  const COURSES = {oncheon: CONTENT, ...(CONTENT.branches || {})};
+  const STEPS = {}; for (const c of Object.values(COURSES)) for (const u of c.units) for (const s of u.steps) STEPS[s.id] = s;
+  const branchOf = id => COURSES[(state.profiles?.[id] || {}).branch] ? state.profiles[id].branch : 'oncheon';
+  const courseIds = id => COURSES[branchOf(id)].units.flatMap(u => u.steps.map(s => s.id));
   // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
   const N = s => (s.keyPoints && s.keyPoints.length ? s.keyPoints : s.checks).map(() => null);
   // >>> preview-kp-moves
@@ -185,6 +190,11 @@ MOCK = r'''
   let state = load();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
   if (Object.values(state.rooms).map(fitMovedChecks).some(Boolean)) save();
+  // 다른 지점 교육을 추가해도 기존 체크·완료는 그대로 두고 없는 교육만 빈 기록으로 더한다.
+  for (const room of Object.values(state.rooms)) {
+    const empty = blank(room.join || today());
+    for (const [id, record] of Object.entries(empty.records)) if (!room.records[id]) room.records[id] = record;
+  }
   let current = 'u-learner'; try { current = sessionStorage.getItem(KEY + '-who') || current; } catch (e) {}
   const setCurrent = id => { current = id; try { sessionStorage.setItem(KEY + '-who', id); } catch (e) {} };
   const user = () => ACCOUNTS.find(a => a.id === current);
@@ -212,7 +222,7 @@ MOCK = r'''
     const entry = state.learners[target];
     const learner = entry ? state.rooms[target] : blank(today());
     const roster = Object.entries(state.learners).filter(([i]) => i === u.id || roles(u, i).trainer)
-      .map(([i, x]) => ({id: i, name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate}));
+      .map(([i, x]) => ({id: i, branch: branchOf(i), name: ACCOUNTS.find(a => a.id === i)?.name || i, join: x.join, startDate: x.startDate}));
     if (!roster.some(r => r.id === u.id)) roster.unshift({id: u.id, name: u.name, join: null, startDate: null});
     const nameOf = id => ACCOUNTS.find(a => a.id === id)?.name || id;
     const mentorsOf = id => { const out = new Map(), take = x => { (x.teacherBy || []).forEach((w, k) => { if (w && !out.has(w)) out.set(w, (x.teacherName || [])[k] || nameOf(w)); }); if (x.completedBy && !out.has(x.completedBy)) out.set(x.completedBy, x.completedByName || nameOf(x.completedBy)); };
@@ -220,9 +230,9 @@ MOCK = r'''
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
       const ever = Object.values(recs).some(x => (x.teacherBy || []).includes(u.id) || (x.status === 'done' && x.completedBy === u.id));  // 지금 체크·완료한 것만(체크를 풀면 빠진다)
-      return {...r, ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
+      return {...r, branch: branchOf(r.id), ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
     const lms = isLms(u);
-    return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
+    return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, targetBranch: branchOf(target), target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
       ...(lms ? {ticketSeen: (state.ticketSeen || {})[u.id] || {}, ticketSeenSince: '2026-11-16', contentRequests: (state.contentRequests || []).slice().reverse(), sourceLog: SOURCE_LOG, lmsAdmins: Object.entries(levels()).map(([e, l]) => ({email: e, name: (ACCOUNTS.find(x => x.email === e) || DIRECTORY.find(x => x.email === e) || {}).name || '', level: l, seed: SEED.includes(e)})).sort((a, b) => (a.name || '~').localeCompare(b.name || '~', 'ko') || a.email.localeCompare(b.email)), feedback: (state.feedback || []).slice().reverse().map(f => { const m = 'mentee' in f ? f.mentee : f.user; return {...f, answer: f.answered ? '완료' : '답변중', answeredAt: (f.answered || {}).at || '', mentee: m, menteeName: m ? (f.menteeName || nameOf(m)) : '', mentors: m ? mentorsOf(m) : []}; })} : {}),
       myFeedback: (state.feedback || []).filter(f => f.user === u.id).slice().reverse().map(f => ({...Object.fromEntries(['id', 'at', 'user', 'name', 'step', 'text'].filter(k => k in f).map(k => [k, JSON.parse(JSON.stringify(f[k]))])),
@@ -244,6 +254,7 @@ MOCK = r'''
     }
     if (v.action === 'profile.set') {
       if (target !== u.id) throw {status: 403, error: '본인의 지점·역할만 바꿀 수 있습니다.'};
+      if (!COURSES[d.branch]) throw {status: 400, error: '교육 과정이 있는 지점을 선택해 주세요.'};
       if (d.role === 'staff' && !isLms(u)) throw {status: 403, error: '관리자는 LMS관리자로 지정된 구성원만 선택할 수 있습니다.'};
       (state.profiles = state.profiles || {})[u.id] = {branch: d.branch, role: d.role, at: new Date().toISOString()}; state.rootRevision++;
       save(); return context(u, target);
@@ -320,6 +331,7 @@ MOCK = r'''
       state.rootRevision++; save(); return context(u, target);
     }
     const l = state.rooms[target]; if (!l) throw {status: 400, error: '교육 시작일을 먼저 지정하세요.'};
+    if (d.step && !courseIds(target).includes(d.step)) throw {status: 403, error: '선택한 교육생 지점의 교육만 변경할 수 있습니다.'};
     const teacher = ['step.mark', 'step.close', 'step.reopen'].includes(v.action);
     if (teacher && !p.trainer) throw {status: 403, error: '배정된 교육자·평가자만 확인합니다. 자기 승인은 허용하지 않습니다.'};
     if (!teacher) throw {status: 400, error: '지원하지 않는 작업: ' + v.action};
