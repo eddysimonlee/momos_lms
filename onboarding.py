@@ -35,6 +35,15 @@ CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관�
 # 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
 # {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
+    'marine-sound': ('kp-2026-11-26-marine-sound-split', 3, [0] + [None] * 7, {
+        'checkBasis': CHECK_BASIS,
+        'previousTitle': '음향 장비 전원·설정·동기화 복구',
+        'previousChecks': [
+            '장비와 HEOS 앱의 역할 및 기본 설정을 확인한다.',
+            '오픈·마감 시 음향 장비의 전원을 정해진 순서로 조작한다.',
+            '음악 싱크나 장비 탐색·출력 이상을 상황별 절차에 따라 확인한다.',
+        ],
+    }),  # 기존 1번만 승계하고 분리된 업무·상황은 재확인한다. 기존 완료는 이력 보존.
     'grinder-blade': ('kp-2026-11-24-grinder-models', 4, [None] * 3, {
         'checkBasis': CHECK_BASIS,
         'previousTitle': '그라인더 날 분해·청소',
