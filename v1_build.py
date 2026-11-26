@@ -319,6 +319,10 @@ def main(curriculum_override=None, *, write=True):
         sections=used_sections,
         photos=dict(sorted(photos.items())),
     )
+    if (curriculum or {}).get('retiredSessions'):
+        out['redirects'] = {s['id']: dict(step=s['redirect'], keyPoint=s['keyPoint']) for s in curriculum['retiredSessions']}
+        out['retiredSteps'] = {s['id']: dict(id=s['id'], title=lessons[s['id']]['title'],
+            checks=[c['text'] for c in lessons[s['id']]['checks']]) for s in curriculum['retiredSessions']}
     if not write:
         return out
     # 지점별 사진 메타데이터도 분리한다. 같은 사진의 마린 캡션이 본점 캡션을 덮지 않는다.
