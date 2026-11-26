@@ -1673,7 +1673,28 @@
                 {
                   "id": "marine-facilities",
                   "kind": "추가",
-                  "title": "조명·자동문·폴딩도어·차수막 조작",
+                  "title": "정원·실내 조명 조작",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-automatic-door",
+                  "kind": "추가",
+                  "title": "정문 자동문 확인",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-folding-door",
+                  "kind": "추가",
+                  "title": "폴딩도어 열기·닫기",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-flood-barrier",
+                  "kind": "추가",
+                  "title": "차수막 설치·철거",
                   "shift": [],
                   "position": []
                 },
@@ -1720,42 +1741,6 @@
                   "id": "marine-op2",
                   "kind": "추가",
                   "title": "OP2 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op3",
-                  "kind": "추가",
-                  "title": "OP3 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op4",
-                  "kind": "추가",
-                  "title": "OP4 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op5",
-                  "kind": "추가",
-                  "title": "OP5 출근·오픈 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "marine-op6",
-                  "kind": "추가",
-                  "title": "OP6 출근·오픈 업무",
                   "shift": [
                     "OP"
                   ],
@@ -2239,7 +2224,33 @@
           ]
         }
       ],
-      "extra": []
+      "extra": [],
+      "retiredSessions": [
+        {
+          "id": "marine-op3",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 2
+        },
+        {
+          "id": "marine-op4",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 3
+        },
+        {
+          "id": "marine-op5",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 4
+        },
+        {
+          "id": "marine-op6",
+          "unit": "M2.1",
+          "redirect": "marine-open-overview",
+          "keyPoint": 5
+        }
+      ]
     },
     "yeongdo": {
       "name": "영도점",

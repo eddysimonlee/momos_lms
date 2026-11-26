@@ -370,8 +370,17 @@
   });
 
   // --- rendering
+  // >>> merged-lesson-links
+  function stepRedirect(root, id) {
+    return [root, ...Object.values(root?.branches || {})].filter(Boolean).map(c => c.redirects?.[id]).find(Boolean);
+  }
+  // <<< merged-lesson-links
   function render() {
     if (!cloud || !content) return;
+    // 통합한 교육의 기존 의견·알림 링크는 해당 역할 문항으로 이어 준다.
+    const oldId = view.startsWith('step:') ? view.slice(5) : null;
+    const moved = oldId && stepRedirect(contentRoot, oldId);
+    if (moved) view = 'step:' + moved.step;
     if (contentRoot) {
       content = contentRoot.branches?.[selectedBranch()] || contentRoot;
       // 이전 지점에서 보낸 의견의 교육 링크도 열되 체크는 현재 지점에서만 허용한다.
@@ -450,6 +459,11 @@
         const it = lastStep && app.querySelector(`[data-step="${CSS.escape(lastStep)}"]`);
         if (it) it.scrollIntoView({block: 'center', behavior: 'instant'}); else window.scrollTo({top: 0, behavior: 'instant'});
       }
+    }
+    if (moved) {
+      const item = app.querySelector(`[data-kp="${moved.keyPoint}"]`);
+      const detail = item?.querySelector('details'); if (detail) detail.open = true;
+      item?.scrollIntoView({block: 'center', behavior: 'instant'});
     }
     shownView = view;
   }
@@ -1292,7 +1306,7 @@
     const app = $('app');
     // 지점을 고르면 바로 홈(역할은 고르지 않는다: 관리자 = 지정된 LMS관리자)
     app.querySelectorAll('[data-branch]').forEach(b => b.onclick = () => { pickBranch = b.dataset.branch; chooseRole(isStaff() ? 'staff' : 'learner').catch(e => toast(e.message)); });
-    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { if (!view.startsWith('step:')) returnView = view; view = 'step:' + b.dataset.step; if (returnView !== 'stage') stageSel = unitOf(b.dataset.step).stage.order; render(); });
+    app.querySelectorAll('[data-step]').forEach(b => b.onclick = () => { if (!view.startsWith('step:')) returnView = view; view = 'step:' + b.dataset.step; if (returnView !== 'stage') stageSel = unitOf(b.dataset.step)?.stage.order; render(); });
     const addBtn = app.querySelector('[data-admin-add]');
     // 구성원 검색(WORKS 주소록): 이름·이메일·조직으로 찾아 누르면 이메일 칸에 채운다. 이미 관리자인 사람은 뺀다
     const adminQ = app.querySelector('[data-admin-email]'), adminRes = app.querySelector('#v1AdminResults');

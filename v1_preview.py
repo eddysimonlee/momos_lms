@@ -78,6 +78,7 @@ MOCK = r'''
   const plus = (d, n) => { const x = new Date(d + 'T00:00:00Z'); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
   const COURSES = {oncheon: CONTENT, ...(CONTENT.branches || {})};
   const STEPS = {}; for (const c of Object.values(COURSES)) for (const u of c.units) for (const s of u.steps) STEPS[s.id] = s;
+  for (const c of Object.values(COURSES)) Object.assign(STEPS, c.retiredSteps || {});
   const branchOf = id => COURSES[(state.profiles?.[id] || {}).branch] ? state.profiles[id].branch : 'oncheon';
   const courseIds = id => COURSES[branchOf(id)].units.flatMap(u => u.steps.map(s => s.id));
   const ALL_IDS = new Set(Object.values(COURSES).flatMap(c => c.units.flatMap(u => u.steps.map(s => s.id))));
@@ -109,6 +110,17 @@ MOCK = r'''
             Object.assign(previous, {checkTexts: [...split.previousChecks], splitMigration: marker, splitAt: new Date().toISOString()});
             if (split.previousTitle) previous.lessonTitle = split.previousTitle;
             r.history = [...(r.history || []), previous];
+            for (const [target, indices] of Object.entries(split.transferSteps || {})) {
+              if (room.records[target]) continue;
+              const n = indices.length, empty = () => Array(n).fill(null);
+              const dest = {status:'ready',self:Array(n).fill(false),teacher:Array(n).fill(false),selfAt:empty(),teacherAt:empty(),
+                start:null,done:null,request:null,attempt:1,memo:'',feedback:'',history:[JSON.parse(JSON.stringify(previous))],checkBasis:split.checkBasis,kpMoves:[marker]};
+              for (const key of ['self','teacher','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen'])
+                if (Array.isArray(r[key]) && r[key].length === oldCount) dest[key] = indices.map(i => r[key][i]);
+              for (const key of ['status','start','done','request','attempt','lessonVersion','completedBy','completedByName','trainedBy'])
+                if (key in r) dest[key] = JSON.parse(JSON.stringify(r[key]));
+              room.records[target] = dest;
+            }
           }
           for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
             if (!Array.isArray(r[key]) || (r[key].length !== oldCount && !split?.archiveAnyLength)) continue;
@@ -117,10 +129,19 @@ MOCK = r'''
           }
           if (split) {
             r.checkBasis = split.checkBasis;
+            for (const [position, [source, index]] of Object.entries(split.mergeChecks || {})) {
+              const prior = room.records[source]; if (!prior || prior.checkBasis !== split.checkBasis) continue;
+              for (const key of ['self','teacher','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen']) {
+                if (!Array.isArray(prior[key]) || index >= prior[key].length) continue;
+                if (!r[key]) r[key] = Array(order.length).fill(['self','teacher'].includes(key) ? false : null);
+                r[key][Number(position)] = prior[key][index];
+              }
+            }
             if (['done', 'review'].includes(r.status) && !split.preserveCompletion) {
               Object.assign(r, {status: 'practice', done: null, request: null});
               for (const key of ['completedBy', 'completedByName', 'trainedBy']) delete r[key];
             }
+            if (split.mergeChecks && r.status === 'ready' && r.teacher?.some(Boolean)) r.status = 'practice';
           }
         }
         r.kpMoves = [...(r.kpMoves || []), marker];

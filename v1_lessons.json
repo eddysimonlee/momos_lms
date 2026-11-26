@@ -13521,8 +13521,8 @@
       "status": "draft"
     },
     "marine-facilities": {
-      "title": "조명·자동문·폴딩도어·차수막 조작",
-      "purpose": "시설별 조작 순서와 확인 사항에 따라 조명·출입문·폴딩도어·차수막을 관리할 수 있다.",
+      "title": "정원·실내 조명 조작",
+      "purpose": "정원과 실내 조명 위치와 조작 기준을 확인하고 전원을 관리할 수 있다.",
       "keyPoints": [
         {
           "text": "정원과 실내 조명 위치를 확인하고 전원을 조작한다.",
@@ -13534,45 +13534,6 @@
             [
               "marine-doc-facilities",
               "5.2"
-            ]
-          ]
-        },
-        {
-          "text": "정문 자동문의 작동 기준을 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.3"
-            ]
-          ]
-        },
-        {
-          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.4"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.1"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.2"
-            ]
-          ]
-        },
-        {
-          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.5"
-            ],
-            [
-              "marine-doc-facilities",
-              "6"
             ]
           ]
         }
@@ -13588,45 +13549,6 @@
             [
               "marine-doc-facilities",
               "5.2"
-            ]
-          ]
-        },
-        {
-          "text": "정문 자동문의 작동 기준을 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.3"
-            ]
-          ]
-        },
-        {
-          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.4"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.1"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.2"
-            ]
-          ]
-        },
-        {
-          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.5"
-            ],
-            [
-              "marine-doc-facilities",
-              "6"
             ]
           ]
         }
@@ -13675,87 +13597,6 @@
           ],
           "n": 4,
           "caption": "사진 4. 매장 오픈 시 「고정(평소)」 장면 선택",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 1,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 2,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 3,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 4,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 1,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 2,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 3,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 4,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 5,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
           "wide": false
         }
       ],
@@ -13997,12 +13838,17 @@
           ]
         },
         {
-          "text": "오픈·마감 시 음향 장비의 전원을 정해진 순서로 조작한다.",
+          "text": "OP 업무: 음향 장비의 전원을 정해진 순서로 켜고, HEOS 설정을 확인해 음악을 재생한다.",
           "cites": [
             [
               "marine-doc-sound",
               "6.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "CL 업무: 음악 재생을 중지하고 음향 장비의 전원을 정해진 순서로 끈다.",
+          "cites": [
             [
               "marine-doc-sound",
               "6.3"
@@ -14010,24 +13856,44 @@
           ]
         },
         {
-          "text": "음악 싱크나 장비 탐색·출력 이상을 상황별 절차에 따라 확인한다.",
+          "text": "상황 A: 음악의 싱크가 맞지 않으면 그룹·기준 기기와 출력·입력 설정을 확인해 복구한다.",
           "cites": [
             [
               "marine-doc-sound",
               "7.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 B: HEOS 앱에서 데논이 보이지 않으면 전원을 다시 연결하고 감지·그룹 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 C: 하위 그룹이 탐색되지 않으면 데논을 재부팅하고 그룹 탐색과 마란츠 기준 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.3"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 D: 벽면 매립형 스피커에서 소리가 나지 않으면 데논 입력 채널과 스피커 활성 상태·기본 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.4"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "주의사항: 기준 설정과 조작 범위를 지키고, 조치 후 실제 소리·싱크를 확인하며 해결되지 않는 이상은 관리자에게 보고한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "8"
@@ -14062,12 +13928,17 @@
           ]
         },
         {
-          "text": "오픈·마감 시 음향 장비의 전원을 정해진 순서로 조작한다.",
+          "text": "OP 업무: 음향 장비의 전원을 정해진 순서로 켜고, HEOS 설정을 확인해 음악을 재생한다.",
           "cites": [
             [
               "marine-doc-sound",
               "6.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "CL 업무: 음악 재생을 중지하고 음향 장비의 전원을 정해진 순서로 끈다.",
+          "cites": [
             [
               "marine-doc-sound",
               "6.3"
@@ -14075,24 +13946,44 @@
           ]
         },
         {
-          "text": "음악 싱크나 장비 탐색·출력 이상을 상황별 절차에 따라 확인한다.",
+          "text": "상황 A: 음악의 싱크가 맞지 않으면 그룹·기준 기기와 출력·입력 설정을 확인해 복구한다.",
           "cites": [
             [
               "marine-doc-sound",
               "7.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 B: HEOS 앱에서 데논이 보이지 않으면 전원을 다시 연결하고 감지·그룹 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 C: 하위 그룹이 탐색되지 않으면 데논을 재부팅하고 그룹 탐색과 마란츠 기준 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.3"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "상황 D: 벽면 매립형 스피커에서 소리가 나지 않으면 데논 입력 채널과 스피커 활성 상태·기본 설정을 확인한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "7.4"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "주의사항: 기준 설정과 조작 범위를 지키고, 조치 후 실제 소리·싱크를 확인하며 해결되지 않는 이상은 관리자에게 보고한다.",
+          "cites": [
             [
               "marine-doc-sound",
               "8"
@@ -14266,12 +14157,94 @@
       "purpose": "오픈 담당별 업무 범위와 공통 준비·안전 기준을 확인할 수 있다.",
       "keyPoints": [
         {
-          "text": "담당별 업무를 구분하고 공통 준비를 마친다.",
+          "text": "OP1의 오픈 세팅·최종 점검·우천 대응 총괄 역할을 확인한다.",
           "cites": [
             [
               "marine-doc-open",
-              "5.1"
+              "5.1",
+              "r1"
+            ]
+          ]
+        },
+        {
+          "text": "OP2의 매장 점검·비품 보충·퇴근 준비·수요일 발주 역할을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r2"
+            ]
+          ]
+        },
+        {
+          "text": "OP3는 브루잉 포지션을 담당하고 시향돔을 진열한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r3"
             ],
+            [
+              "marine-doc-open",
+              "5.5"
+            ]
+          ]
+        },
+        {
+          "text": "OP4는 픽업 포지션을 담당하고 퇴근 전 유제품 재고를 공유한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r4"
+            ],
+            [
+              "marine-doc-open",
+              "5.6"
+            ]
+          ]
+        },
+        {
+          "text": "OP5는 메이킹 포지션을 담당하고 이상·미완료 사항을 OP1에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r5"
+            ],
+            [
+              "marine-doc-open",
+              "5.7"
+            ]
+          ]
+        },
+        {
+          "text": "OP6는 빵 포지션과 리테일 업무를 담당하고 이상·미완료 사항을 OP1에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r6"
+            ],
+            [
+              "marine-doc-open",
+              "5.8"
+            ]
+          ]
+        },
+        {
+          "text": "OP 파트타이머의 오픈 지원·우천 대응 및 OP1 완료 보고 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r7"
+            ]
+          ]
+        },
+        {
+          "text": "출근 시 당일 업무 정보를 확인하고 담당별 준비 절차를 따른다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.2"
@@ -14294,12 +14267,94 @@
       ],
       "checks": [
         {
-          "text": "담당별 업무를 구분하고 공통 준비를 마친다.",
+          "text": "OP1의 오픈 세팅·최종 점검·우천 대응 총괄 역할을 확인한다.",
           "cites": [
             [
               "marine-doc-open",
-              "5.1"
+              "5.1",
+              "r1"
+            ]
+          ]
+        },
+        {
+          "text": "OP2의 매장 점검·비품 보충·퇴근 준비·수요일 발주 역할을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r2"
+            ]
+          ]
+        },
+        {
+          "text": "OP3는 브루잉 포지션을 담당하고 시향돔을 진열한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r3"
             ],
+            [
+              "marine-doc-open",
+              "5.5"
+            ]
+          ]
+        },
+        {
+          "text": "OP4는 픽업 포지션을 담당하고 퇴근 전 유제품 재고를 공유한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r4"
+            ],
+            [
+              "marine-doc-open",
+              "5.6"
+            ]
+          ]
+        },
+        {
+          "text": "OP5는 메이킹 포지션을 담당하고 이상·미완료 사항을 OP1에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r5"
+            ],
+            [
+              "marine-doc-open",
+              "5.7"
+            ]
+          ]
+        },
+        {
+          "text": "OP6는 빵 포지션과 리테일 업무를 담당하고 이상·미완료 사항을 OP1에게 보고한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r6"
+            ],
+            [
+              "marine-doc-open",
+              "5.8"
+            ]
+          ]
+        },
+        {
+          "text": "OP 파트타이머의 오픈 지원·우천 대응 및 OP1 완료 보고 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-open",
+              "5.1",
+              "r7"
+            ]
+          ]
+        },
+        {
+          "text": "출근 시 당일 업무 정보를 확인하고 담당별 준비 절차를 따른다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.2"
@@ -14329,16 +14384,26 @@
       "purpose": "OP1의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
       "keyPoints": [
         {
-          "text": "OP1 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "text": "출근 직후 브루잉존의 필요한 물품을 준비해 세팅한다.",
           "cites": [
             [
               "marine-doc-open",
               "5.3.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "에스프레소·오늘의 커피를 세팅하고 DCS 기록과 스마트오더 메뉴 점검을 수행한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.3.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "영업 시작 전 매장 상태와 오픈 준비 완료 여부를 최종 점검하고 이상·미완료 사항의 조치를 확인한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.3.3"
@@ -14348,16 +14413,26 @@
       ],
       "checks": [
         {
-          "text": "OP1 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "text": "출근 직후 브루잉존의 필요한 물품을 준비해 세팅한다.",
           "cites": [
             [
               "marine-doc-open",
               "5.3.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "에스프레소·오늘의 커피를 세팅하고 DCS 기록과 스마트오더 메뉴 점검을 수행한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.3.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "영업 시작 전 매장 상태와 오픈 준비 완료 여부를 최종 점검하고 이상·미완료 사항의 조치를 확인한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.3.3"
@@ -14374,16 +14449,26 @@
       "purpose": "OP2의 출근 후 준비와 담당 오픈 업무를 순서에 따라 수행할 수 있다.",
       "keyPoints": [
         {
-          "text": "OP2 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "text": "네이버웍스 오픈 업무 체크리스트에 따라 매장 오픈 세팅과 완료 항목을 확인한다.",
           "cites": [
             [
               "marine-doc-open",
               "5.4.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "오픈 식사 복귀 후 필요한 비품을 확인하고 퇴근 전까지 보충을 완료한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.4.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "수요일 장보기 물품을 확인하고 필요한 물품을 발주한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.4.3"
@@ -14393,16 +14478,26 @@
       ],
       "checks": [
         {
-          "text": "OP2 담당 업무와 확인 사항에 따라 오픈 준비를 수행한다.",
+          "text": "네이버웍스 오픈 업무 체크리스트에 따라 매장 오픈 세팅과 완료 항목을 확인한다.",
           "cites": [
             [
               "marine-doc-open",
               "5.4.1"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "오픈 식사 복귀 후 필요한 비품을 확인하고 퇴근 전까지 보충을 완료한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.4.2"
-            ],
+            ]
+          ]
+        },
+        {
+          "text": "수요일 장보기 물품을 확인하고 필요한 물품을 발주한다.",
+          "cites": [
             [
               "marine-doc-open",
               "5.4.3"
@@ -17827,6 +17922,203 @@
       ],
       "curriculum": "2026-10-22",
       "status": "draft"
+    },
+    "marine-automatic-door": {
+      "title": "정문 자동문 확인",
+      "purpose": "정문 자동문의 확인된 설치 현황과 미확정 조작 항목을 구분하고 임의 조작을 피할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
+    },
+    "marine-folding-door": {
+      "title": "폴딩도어 열기·닫기",
+      "purpose": "폴딩도어를 안전하게 열고 닫으며 정렬과 잠금 상태를 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 1,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 2,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 3,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 4,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
+    },
+    "marine-flood-barrier": {
+      "title": "차수막 설치·철거",
+      "purpose": "점장의 판단에 따라 차수막을 설치·철거하고 보관하며 이상 발생 시 보고할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 1,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 2,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 3,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 4,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 5,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
     },
     "yeongdo-orientation": {
       "title": "입사 후 오리엔테이션과 업무 자료 확인",

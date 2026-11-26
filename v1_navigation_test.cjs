@@ -71,6 +71,74 @@ test('preview uses server check moves and preserves inserted-topic records once'
   context.fit(fresh);
   assert.deepEqual(fresh.records['safety-greet'].teacher, Array(6).fill(false));
 });
+test('merged lesson links target the correct role without restoring retired sessions to the list', () => {
+  const helper=source.split('// >>> merged-lesson-links')[1].split('// <<< merged-lesson-links')[0];
+  const ctx=vm.createContext({});vm.runInContext(helper+';globalThis.redirect=stepRedirect;',ctx);
+  const content=JSON.parse(readFileSync(join(__dirname,'v1_content.json'),'utf8'));
+  const marine=content.branches.marine,steps=marine.units.flatMap(u=>u.steps);
+  for(let n=3;n<=6;n++){
+    const id='marine-op'+n,link=ctx.redirect(content,id);
+    assert.equal(link.step,'marine-open-overview');assert.equal(link.keyPoint,n-1);
+    assert.equal(steps.some(s=>s.id===id),false);
+    assert.match(steps.find(s=>s.id===link.step).keyPoints[link.keyPoint].text,new RegExp('OP'+n));
+    assert.ok(marine.retiredSteps[id]);
+  }
+  assert.equal(ctx.redirect(content,'marine-op1'),undefined);
+  assert.equal(ctx.redirect(content,'unknown'),undefined);
+});
+
+test('preview merges only original OP3 to OP6 checks and does not copy aggregate completion', () => {
+  const preview=readFileSync(join(__dirname,'v1_preview.py'),'utf8');
+  const helper=preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves=JSON.parse(execFileSync('python3',['-c','import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'],{cwd:__dirname,encoding:'utf8'}));
+  const ctx=vm.createContext({KP_MOVES:moves});vm.runInContext(helper+';globalThis.fit=fitMovedChecks;',ctx);
+  const r={status:'done',teacher:[true,true],teacherBy:['old','safety'],done:'2026-11-25',completedBy:'old',history:[]},room={records:{'marine-open-overview':r}};
+  for(let n=3;n<=6;n++)room.records['marine-op'+n]={status:'done',teacher:[true],teacherBy:['checker'+n],checkBasis:moves['marine-open-overview'][3].checkBasis,history:[]};
+  const original=JSON.stringify(room.records['marine-op3']);ctx.fit(room);
+  assert.deepEqual(Array.from(r.teacher),[false,false,true,true,true,true,false,false,true]);
+  assert.deepEqual(Array.from(r.teacherBy),[null,null,'checker3','checker4','checker5','checker6',null,null,'safety']);
+  assert.equal(r.status,'practice');assert.equal(r.done,null);assert.equal(r.history[0].done,'2026-11-25');
+  assert.equal(JSON.stringify(room.records['marine-op3']),original);
+  r.teacher[0]=true;const once=JSON.stringify(room);ctx.fit(room);assert.equal(JSON.stringify(room),once);
+});
+
+test('preview transfers facility checks into separate sessions without overwriting saved targets', () => {
+  const preview=readFileSync(join(__dirname,'v1_preview.py'),'utf8');
+  const helper=preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves=JSON.parse(execFileSync('python3',['-c','import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'],{cwd:__dirname,encoding:'utf8'}));
+  const ctx=vm.createContext({KP_MOVES:moves});vm.runInContext(helper+';globalThis.fit=fitMovedChecks;',ctx);
+  const ids=['marine-facilities','marine-automatic-door','marine-folding-door','marine-flood-barrier'];
+  for(const status of ['ready','practice','review','done']){
+    const r={status,teacher:status==='done'?[true,true,true,true]:[false,true,false,true],teacherBy:['a','b','c','d'],teacherWhen:['t1','t2','t3','t4'],done:status==='done'?'2026-11-25':null,history:[]};
+    const before=structuredClone(r),room={records:{[ids[0]]:r}};ctx.fit(room);
+    ids.forEach((id,i)=>{const out=room.records[id];assert.deepEqual(Array.from(out.teacher),[before.teacher[i]]);assert.deepEqual(Array.from(out.teacherBy),[before.teacherBy[i]]);assert.equal(out.status,status);assert.equal(out.done,before.done);assert.deepEqual(Array.from(out.history[0].teacher),before.teacher);});
+    const once=JSON.stringify(room);ctx.fit(room);assert.equal(JSON.stringify(room),once);
+  }
+  const saved={status:'practice',teacher:[false],memo:'keep'},room={records:{[ids[0]]:{status:'done',teacher:Array(4).fill(true),history:[]},[ids[1]]:saved}};
+  ctx.fit(room);assert.equal(room.records[ids[1]],saved);assert.equal(saved.status,'practice');assert.equal(saved.memo,'keep');
+});
+
+test('preview splits Marine sound tasks without copying completion and preserves the first checker', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const ctx = vm.createContext({KP_MOVES:moves});
+  vm.runInContext(helper + ';globalThis.fit=fitMovedChecks;',ctx);
+  const r={status:'done',teacher:[true,true,true],teacherBy:['a','b','c'],teacherWhen:['t1','t2','t3'],done:'2026-11-25',completedBy:'c',history:[]};
+  const before=structuredClone(r),room={records:{'marine-sound':r}};
+  ctx.fit(room);
+  assert.deepEqual(Array.from(r.teacher),[true,...Array(7).fill(false)]);
+  assert.deepEqual(Array.from(r.teacherBy),['a',...Array(7).fill(null)]);
+  assert.deepEqual(Array.from(r.teacherWhen),['t1',...Array(7).fill(null)]);
+  assert.equal(r.status,'practice');assert.equal(r.done,null);
+  assert.deepEqual(Array.from(r.history[0].teacher),before.teacher);
+  assert.equal(r.history[0].completedBy,'c');
+  r.teacher[3]=true;
+  const once=JSON.stringify(r);ctx.fit(room);assert.equal(JSON.stringify(r),once);
+  const fresh={records:{'marine-sound':{status:'done',teacher:Array(8).fill(true),done:'2026-11-26',history:[]}}};
+  ctx.fit(fresh);assert.equal(fresh.records['marine-sound'].status,'done');assert.deepEqual(fresh.records['marine-sound'].teacher,Array(8).fill(true));
+});
+
 test('preview archives split OP1 checks and completion without copying them into four new topics', () => {
   const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
   const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
