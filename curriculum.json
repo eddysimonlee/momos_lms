@@ -1673,7 +1673,28 @@
                 {
                   "id": "marine-facilities",
                   "kind": "추가",
-                  "title": "조명·자동문·폴딩도어·차수막 조작",
+                  "title": "정원·실내 조명 조작",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-automatic-door",
+                  "kind": "추가",
+                  "title": "정문 자동문 확인",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-folding-door",
+                  "kind": "추가",
+                  "title": "폴딩도어 열기·닫기",
+                  "shift": [],
+                  "position": []
+                },
+                {
+                  "id": "marine-flood-barrier",
+                  "kind": "추가",
+                  "title": "차수막 설치·철거",
                   "shift": [],
                   "position": []
                 },

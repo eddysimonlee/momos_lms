@@ -13521,8 +13521,8 @@
       "status": "draft"
     },
     "marine-facilities": {
-      "title": "조명·자동문·폴딩도어·차수막 조작",
-      "purpose": "시설별 조작 순서와 확인 사항에 따라 조명·출입문·폴딩도어·차수막을 관리할 수 있다.",
+      "title": "정원·실내 조명 조작",
+      "purpose": "정원과 실내 조명 위치와 조작 기준을 확인하고 전원을 관리할 수 있다.",
       "keyPoints": [
         {
           "text": "정원과 실내 조명 위치를 확인하고 전원을 조작한다.",
@@ -13534,45 +13534,6 @@
             [
               "marine-doc-facilities",
               "5.2"
-            ]
-          ]
-        },
-        {
-          "text": "정문 자동문의 작동 기준을 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.3"
-            ]
-          ]
-        },
-        {
-          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.4"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.1"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.2"
-            ]
-          ]
-        },
-        {
-          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.5"
-            ],
-            [
-              "marine-doc-facilities",
-              "6"
             ]
           ]
         }
@@ -13588,45 +13549,6 @@
             [
               "marine-doc-facilities",
               "5.2"
-            ]
-          ]
-        },
-        {
-          "text": "정문 자동문의 작동 기준을 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.3"
-            ]
-          ]
-        },
-        {
-          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.4"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.1"
-            ],
-            [
-              "marine-doc-facilities",
-              "5.4.2"
-            ]
-          ]
-        },
-        {
-          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
-          "cites": [
-            [
-              "marine-doc-facilities",
-              "5.5"
-            ],
-            [
-              "marine-doc-facilities",
-              "6"
             ]
           ]
         }
@@ -13675,87 +13597,6 @@
           ],
           "n": 4,
           "caption": "사진 4. 매장 오픈 시 「고정(평소)」 장면 선택",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 1,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 2,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 3,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.4.2"
-          ],
-          "n": 4,
-          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 1,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 2,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 3,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 4,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
-          "wide": false
-        },
-        {
-          "cite": [
-            "marine-doc-facilities",
-            "5.5"
-          ],
-          "n": 5,
-          "caption": "차수막 설치 사진 (원본 가이드 순서)",
           "wide": false
         }
       ],
@@ -17877,6 +17718,203 @@
       ],
       "curriculum": "2026-10-22",
       "status": "draft"
+    },
+    "marine-automatic-door": {
+      "title": "정문 자동문 확인",
+      "purpose": "정문 자동문의 확인된 설치 현황과 미확정 조작 항목을 구분하고 임의 조작을 피할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "정문 자동문의 작동 기준을 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.3"
+            ]
+          ]
+        }
+      ],
+      "photos": [],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
+    },
+    "marine-folding-door": {
+      "title": "폴딩도어 열기·닫기",
+      "purpose": "폴딩도어를 안전하게 열고 닫으며 정렬과 잠금 상태를 확인할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.4"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.1"
+            ],
+            [
+              "marine-doc-facilities",
+              "5.4.2"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 1,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 2,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 3,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.4.2"
+          ],
+          "n": 4,
+          "caption": "폴딩도어 조작 예시 (왼쪽: 올바른 파지 위치 / 오른쪽: 잠금 레버)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
+    },
+    "marine-flood-barrier": {
+      "title": "차수막 설치·철거",
+      "purpose": "점장의 판단에 따라 차수막을 설치·철거하고 보관하며 이상 발생 시 보고할 수 있다.",
+      "keyPoints": [
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "text": "차수막 설치 절차와 이상 발생 시 조치를 확인한다.",
+          "cites": [
+            [
+              "marine-doc-facilities",
+              "5.5"
+            ],
+            [
+              "marine-doc-facilities",
+              "6"
+            ]
+          ]
+        }
+      ],
+      "photos": [
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 1,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 2,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 3,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 4,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        },
+        {
+          "cite": [
+            "marine-doc-facilities",
+            "5.5"
+          ],
+          "n": 5,
+          "caption": "차수막 설치 사진 (원본 가이드 순서)",
+          "wide": false
+        }
+      ],
+      "curriculum": "2026-10-22",
+      "status": "draft",
+      "planFrom": "marine-facilities"
     }
   },
   "curriculum": "2026-10-22",

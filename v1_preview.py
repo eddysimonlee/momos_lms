@@ -103,6 +103,17 @@ MOCK = r'''
             Object.assign(previous, {checkTexts: [...split.previousChecks], splitMigration: marker, splitAt: new Date().toISOString()});
             if (split.previousTitle) previous.lessonTitle = split.previousTitle;
             r.history = [...(r.history || []), previous];
+            for (const [target, indices] of Object.entries(split.transferSteps || {})) {
+              if (room.records[target]) continue;
+              const n = indices.length, empty = () => Array(n).fill(null);
+              const dest = {status:'ready',self:Array(n).fill(false),teacher:Array(n).fill(false),selfAt:empty(),teacherAt:empty(),
+                start:null,done:null,request:null,attempt:1,memo:'',feedback:'',history:[JSON.parse(JSON.stringify(previous))],checkBasis:split.checkBasis,kpMoves:[marker]};
+              for (const key of ['self','teacher','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen'])
+                if (Array.isArray(r[key]) && r[key].length === oldCount) dest[key] = indices.map(i => r[key][i]);
+              for (const key of ['status','start','done','request','attempt','lessonVersion','completedBy','completedByName','trainedBy'])
+                if (key in r) dest[key] = JSON.parse(JSON.stringify(r[key]));
+              room.records[target] = dest;
+            }
           }
           for (const key of ['self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen']) {
             if (!Array.isArray(r[key]) || (r[key].length !== oldCount && !split?.archiveAnyLength)) continue;

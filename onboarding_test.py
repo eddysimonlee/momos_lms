@@ -523,6 +523,46 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(result['learner']['records'][monday], before[monday])
         self.assertEqual(result['learner']['records']['floor-cleaning'], before['floor-cleaning'])
 
+    def test_facility_sessions_transfer_each_checker_completion_and_schedule_once(self):
+        source='marine-facilities'
+        targets=[source,'marine-automatic-door','marine-folding-door','marine-flood-barrier']
+        arrays=('self','teacher','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen')
+        for status in ('ready','practice','review','done'):
+            with self.subTest(status=status):
+                old=dict(status=status,teacher=[True]*4 if status=='done' else [False,True,False,True],self=[True,False,True,False],
+                    checkBasis=ob.CHECK_BASIS,start='2026-11-24',done='2026-11-25' if status=='done' else None,
+                    request='2026-11-25' if status=='review' else None,attempt=2,memo='기존 통합 메모',history=[dict(event='previous')])
+                if status=='done':old.update(completedBy='old-checker',completedByName='원래 완료자')
+                for key in arrays[2:]:old[key]=[key+str(i) for i in range(4)]
+                before=copy.deepcopy(old)
+                plan=dict(start='2026-12-01',end='2026-12-04',edited=True)
+                learner=dict(join='2026-11-23',records={source:old},planDates={source:plan})
+                ob.fit(learner)
+                for i,target in enumerate(targets):
+                    r=learner['records'][target]
+                    for key in arrays:self.assertEqual(r[key],[before[key][i]])
+                    for key in ('status','start','done','request','attempt'):
+                        self.assertEqual(r[key],before[key])
+                    if status=='done':self.assertEqual(r['completedBy'],before['completedBy'])
+                    archived=r['history'][-1]
+                    for key in ('teacher','teacherBy','teacherWhen','done','memo'):
+                        self.assertEqual(archived[key],before[key])
+                    self.assertEqual(learner['planDates'][target],plan)
+                once=copy.deepcopy(learner)
+                self.assertEqual(ob.fit(json.loads(json.dumps(learner))),once)
+        fresh=ob.blank('2026-11-26')
+        before=copy.deepcopy(fresh)
+        ob.fit(fresh)
+        for target in targets:self.assertEqual(fresh['records'][target],before['records'][target])
+        existing=ob.blank('2026-11-26')['records'][targets[1]]
+        existing.update(status='practice',teacher=[True],memo='새 세션에서 이미 기록함')
+        saved=copy.deepcopy(existing)
+        learner=dict(join='2026-11-26',records={source:dict(status='done',teacher=[True]*4,done='2026-11-25',checkBasis=ob.CHECK_BASIS),targets[1]:existing},planDates={})
+        ob.fit(learner)
+        self.assertEqual(learner['records'][targets[1]],saved)
+        self.assertEqual(existing['status'],'practice')
+        self.assertEqual(existing['memo'],'새 세션에서 이미 기록함')
+
     def test_marine_sound_split_preserves_first_check_and_archives_completion_once(self):
         ident='marine-sound'
         self.assertEqual(len(ob.STEPS[ident]['checks']),8)
