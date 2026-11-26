@@ -71,6 +71,22 @@ test('preview uses server check moves and preserves inserted-topic records once'
   context.fit(fresh);
   assert.deepEqual(fresh.records['safety-greet'].teacher, Array(6).fill(false));
 });
+test('preview transfers facility checks into separate sessions without overwriting saved targets', () => {
+  const preview=readFileSync(join(__dirname,'v1_preview.py'),'utf8');
+  const helper=preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves=JSON.parse(execFileSync('python3',['-c','import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'],{cwd:__dirname,encoding:'utf8'}));
+  const ctx=vm.createContext({KP_MOVES:moves});vm.runInContext(helper+';globalThis.fit=fitMovedChecks;',ctx);
+  const ids=['marine-facilities','marine-automatic-door','marine-folding-door','marine-flood-barrier'];
+  for(const status of ['ready','practice','review','done']){
+    const r={status,teacher:status==='done'?[true,true,true,true]:[false,true,false,true],teacherBy:['a','b','c','d'],teacherWhen:['t1','t2','t3','t4'],done:status==='done'?'2026-11-25':null,history:[]};
+    const before=structuredClone(r),room={records:{[ids[0]]:r}};ctx.fit(room);
+    ids.forEach((id,i)=>{const out=room.records[id];assert.deepEqual(Array.from(out.teacher),[before.teacher[i]]);assert.deepEqual(Array.from(out.teacherBy),[before.teacherBy[i]]);assert.equal(out.status,status);assert.equal(out.done,before.done);assert.deepEqual(Array.from(out.history[0].teacher),before.teacher);});
+    const once=JSON.stringify(room);ctx.fit(room);assert.equal(JSON.stringify(room),once);
+  }
+  const saved={status:'practice',teacher:[false],memo:'keep'},room={records:{[ids[0]]:{status:'done',teacher:Array(4).fill(true),history:[]},[ids[1]]:saved}};
+  ctx.fit(room);assert.equal(room.records[ids[1]],saved);assert.equal(saved.status,'practice');assert.equal(saved.memo,'keep');
+});
+
 test('preview splits Marine sound tasks without copying completion and preserves the first checker', () => {
   const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
   const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];

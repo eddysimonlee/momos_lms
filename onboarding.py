@@ -35,6 +35,15 @@ CHECK_BASIS = 'trainer-2026-10-30'  # 10/30: 체크·완료는 관리자(LMS관�
 # 교육 내용 삭제·삽입·분리 시 체크를 한 번만 옮긴다. None은 새 칸이다.
 # {교육 id: (표시, 예전 항목 수, 새 순서대로 예전 번호[, 이전 기록 보존·재확인 정책])}
 KP_MOVES = {
+    'marine-facilities': ('kp-2026-11-26-marine-facilities-sessions', 4, [0], {
+        'checkBasis': CHECK_BASIS, 'preserveCompletion': True, 'markNew': True,
+        'previousTitle': '조명·자동문·폴딩도어·차수막 조작',
+        'previousChecks': ['정원과 실내 조명 위치를 확인하고 전원을 조작한다.',
+                           '정문 자동문의 작동 기준을 확인한다.',
+                           '폴딩도어 열기·닫기 순서와 확인 사항을 지킨다.',
+                           '차수막 설치 절차와 이상 발생 시 조치를 확인한다.'],
+        'transferSteps': {'marine-automatic-door': [1], 'marine-folding-door': [2], 'marine-flood-barrier': [3]},
+    }),
     'marine-sound': ('kp-2026-11-26-marine-sound-split', 3, [0] + [None] * 7, {
         'checkBasis': CHECK_BASIS,
         'previousTitle': '음향 장비 전원·설정·동기화 복구',
@@ -425,6 +434,7 @@ def fit(learner):
     if not learner:
         return learner
     records = learner.setdefault('records', {})
+    existing_records = set(records)
     plans = learner.setdefault('planDates', {})
     join = learner.get('join') or today()
     for ident, s in STEPS.items():
@@ -452,6 +462,19 @@ def fit(learner):
                     if move[3].get('previousTitle'):
                         previous['lessonTitle'] = move[3]['previousTitle']
                     r['history'] = (r.get('history') or []) + [previous]
+                    # 같은 업무 문항을 별도 세션으로 옮길 때만 기존 확인·완료를 1:1 승계한다.
+                    # 이미 저장된 대상 세션은 덮어쓰지 않는다.
+                    for target, indices in (move[3].get('transferSteps') or {}).items():
+                        if target in existing_records:
+                            continue
+                        dest = records[target]
+                        for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
+                            if key in r and len(r[key]) == move[1]:
+                                dest[key] = [copy.deepcopy(r[key][i]) for i in indices]
+                        for key in ('status', 'start', 'done', 'request', 'attempt', 'lessonVersion', 'completedBy', 'completedByName', 'trainedBy'):
+                            if key in r:
+                                dest[key] = copy.deepcopy(r[key])
+                        dest.update(checkBasis=move[3]['checkBasis'], history=[copy.deepcopy(previous)], kpMoves=[move[0]])
                     for key in ('self', 'teacher', 'selfAt', 'teacherAt', 'selfBy', 'teacherBy', 'teacherName', 'teacherWhen'):
                         if key in r and (len(r[key]) == move[1] or move[3].get('archiveAnyLength')):
                             empty = False if key in ('self', 'teacher') else None
