@@ -352,6 +352,19 @@ def learner_branch(root, ident):
     selected = ((root.get('profiles') or {}).get(ident) or {}).get('branch')
     return selected if selected in BRANCHES else 'oncheon'
 
+def branch_own_steps(branch):
+    """그 지점에만 있는 교육(공통 교육 제외). 이 교육에 기록이 있으면 그 지점 교육생으로 본다."""
+    scope = set(branch_steps(branch))
+    known = globals().get('_branch_step_ids', {})
+    others = set().union(set(), *(set(v) for b, v in known.items() if b != branch and b in BRANCHES))
+    return scope - others
+
+def learner_branches(root, ident, records):
+    """11/26 교육 지점 여러 곳: 고른 지점 + 그 지점 전용 교육에 체크·진행 기록이 있는 지점(담당자가 그 지점 LMS 에서 체크하면 생긴다)."""
+    first = learner_branch(root, ident)
+    active = lambda r: bool(r) and (r.get('status', 'ready') != 'ready' or any(r.get('teacher') or []) or any(r.get('self') or []))
+    return [first] + [b for b in BRANCHES if b != first and any(active(records.get(i)) for i in branch_own_steps(b))]
+
 
 class InquiryHTML(HTMLParser):
     """Only formatting and this author's validated education image references."""
@@ -713,9 +726,10 @@ class Service:
             done=sum(records[i]['status']=='done' for i in scope);waiting=[i for i in scope if records[i]['status']=='review']
             started=item.get('startDate',item['join'])
             # v1 진행 현황: 시작 전이 아닌 항목의 상태만(화면이 86개 교육 기준으로 센다), 내가 체크·완료한 적이 있는지(나의 교육생)
-            states={i:records[i]['status'] for i in scope if i in records and records[i]['status']!='ready'}
+            # 11/26 상태는 모든 지점 교육을 보낸다(화면이 보고 있는 지점 교육 기준으로 센다). branches = 교육 중인 지점
+            states={i:r_['status'] for i,r_ in records.items() if i in STEPS and r_['status']!='ready'}
             prof=profiles.get(r['id']) or {}
-            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),total=len(scope),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
+            summaries.append(dict(**r,**dates(r['id']),org=prof.get('org'),position=prof.get('position'),trainedByMe=r['id']!=user['id'] and user['id'] in checker_ids(l),branches=learner_branches(root,r['id'],records),total=len(scope),done=done,waiting=waiting,states=states,canConfirm=self.roles(root,user,r['id'])['trainer'],canAssess=self.roles(root,user,r['id'])['assessor'],
                                   overdue=sum(records[i]['status']!='done' and l['planDates'][i]['end']<today() for i in scope) if started and started<=today() else 0,
                                   tests={i:dict(date=l['planDates']['test-'+i]['start'],passed=any(a['result']=='pass' for a in l['tests'][i]['attempts'])) for i in TESTS}))
         # 11/02 조직도(주소록): WORKS 부서·구성원 저장본에 LMS 교육 기록을 잇는다. 교육을 시작하지 않은 사람은 id 없음(화면에 '미접속')
@@ -971,8 +985,9 @@ class Service:
                 else:  # 교육생 기록만 바꾸는 저장(위에서 그 교육생 잠금을 잡고 읽은 learner)
                     if not latest_ok and v['revision']!=learner['revision']:
                         raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
-                    if data.get('step') and data['step'] not in branch_steps(learner_branch(root, target)):
-                        raise PermissionError('선택한 교육생 지점의 교육만 변경할 수 있습니다.')
+                    # 11/26 어느 지점 LMS 에서든 그 지점 교육을 체크할 수 있다(지점 이동·겸직). 없는 교육만 막는다
+                    if data.get('step') and data['step'] not in STEPS:
+                        raise PermissionError('없는 교육입니다.')
                     self.education(db,root,user,p,learner,action,data,learner_branch(root,target))
                     learner['revision']+=1
                     label=ACTION_NAMES[action]

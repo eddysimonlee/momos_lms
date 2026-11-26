@@ -169,8 +169,10 @@
   // 11/02: 멘토·멘티 관계 없음. 다른 사람 교육(체크 가능) / 내 교육(보기만)
   const mentee = () => cloud.target !== cloud.user.id;
   const mayConfirm = () => Boolean(cloud.permissions.trainer) && (content.branch || 'oncheon') === selectedBranch();
-  const selectedBranch = () => cloud.targetBranch || profile()?.branch || 'oncheon';
-  const inBranch = r => (r.branch || 'oncheon') === selectedBranch();
+  // 11/26 화면의 지점 = 내가 고른 지점(다른 사람을 열어도 내 지점 교육 기준으로 보고 체크한다)
+  const selectedBranch = () => profile()?.branch || cloud.targetBranch || 'oncheon';
+  const inBranch = r => (r.branches || [r.branch || 'oncheon']).includes(selectedBranch());
+  const branchNames = r => (r.branches || [r.branch || 'oncheon']).map(b => (BRANCHES.find(x => x.id === b) || {}).name).filter(Boolean).join('·');
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join && inBranch(r));
 
   // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 86개 목록을 좁혀 볼 뿐 기록은 하나다.
@@ -188,10 +190,9 @@
     const lost = c.members.some(m => !m.org || !ids.has(m.org));
     return lost ? c.units.concat([{id: NOORG, name: '부서 미확인', parent: null, order: 1e9}]) : c.units; };
   const orgOf = id => unitsOf().find(u => u.id === id);
+  // 11/26 주소록은 모든 구성원을 보여 준다(교육 지점은 이름 옆에 표시)
   const membersOf = id => { const ids = new Set(chart().units.map(u => u.id));
-    const learners = new Set((cloud.educationSummary || []).filter(inBranch).map(x => x.id));
-    const enrolled = new Set((cloud.educationSummary || []).map(x => x.id));
-    return chart().members.filter(m => (!m.id || !enrolled.has(m.id) || learners.has(m.id)) && (id === NOORG ? !m.org || !ids.has(m.org) : m.org === id)); };
+    return chart().members.filter(m => id === NOORG ? !m.org || !ids.has(m.org) : m.org === id); };
   const orgPath = id => { const out = []; let u = orgOf(id); while (u && out.length < 20) { out.unshift(u); u = u.parent && orgOf(u.parent); } return out; };
   const childrenOf = id => unitsOf().filter(u => (u.parent || null) === id || (id === null && u.parent && !orgOf(u.parent))).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, 'ko'));
   function drawOrgSheet() {
@@ -528,7 +529,7 @@
     const sums = (cloud.educationSummary || []).filter(inBranch), me = cloud.user.id;
     const by = (a, b) => a.name.localeCompare(b.name, 'ko');
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
-      const meta = [label ? '' : x.position, `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
+      const meta = [label ? '' : x.position, branchNames(x) ? `교육 지점: ${branchNames(x)}` : '', `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
       return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">${esc(meta)}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
     // 11/02: '내 교육'은 왼쪽 메뉴로 옮겼다
     // 직책순(WORKS 직책 표시 순서, 받지 못하면 직책 이름순, 직책 없음은 맨 뒤) → 같은 직책 안에서는 이름순. 교육 시작·미접속은 섞는다
@@ -550,7 +551,8 @@
       if (!orgSel) return `<div class="v1-orghead"><p class="v1-muted">내 부서를 찾지 못했어요. 주소록에서 부서를 골라 주세요.</p>${orgBtn}</div>`;
       const path = orgPath(orgSel), unit = path[path.length - 1];
       const ppl = membersOf(orgSel).filter(m => m.id !== me);
-      const list = ppl.map(m => ({m, s: m.id && sums.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
+      const all = cloud.educationSummary || [];
+      const list = ppl.map(m => ({m, s: m.id && all.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
       const offRow = m => `<li class="v1-prow-off"><span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').trim().slice(0, 1))}</span></span><span class="v1-pbody"><strong>${esc(m.name)}</strong>${m.position ? ` <small class="v1-pdates">${esc(m.position)}</small>` : ''}</span><span class="v1-off">미접속</span></li>`;
       return `<div class="v1-orghead"><div>${path.length > 1 ? `<small>${path.slice(0, -1).map(u => esc(u.name)).join(' › ')}</small>` : ''}<h2>${esc(unit.name)} <span>· ${ppl.length}명</span></h2></div>${orgBtn}</div>` +
         (ppl.length ? `<ul class="v1-plist">${list.map(({m, s}) => s ? row(Object.assign({}, s, {position: m.position || s.position})) : offRow(m)).join('')}</ul>` : '<p class="v1-muted">이 부서에 직접 속한 구성원이 없어요. 주소록에서 하위 부서를 골라 보세요.</p>');

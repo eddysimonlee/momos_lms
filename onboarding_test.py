@@ -39,8 +39,7 @@ class EducationTests(unittest.TestCase):
             self.assertFalse(any(c['learner']['records'][marine]['teacher']))
             summary=next(r for r in c['educationSummary'] if r['id']==self.learner['id'])
             self.assertEqual((summary['total'],summary['done']),(2,1))
-            with self.assertRaises(PermissionError):
-                self.act(self.trainer,'step.mark',dict(step=local,index=0,on=False),self.learner['id'])
+            self.assertEqual(summary['branches'],['marine','oncheon'])  # 11/26 본점 전용 교육 기록이 있으니 본점 교육생이기도 하다
             with self.assertRaises(PermissionError):
                 self.act(self.learner,'step.mark',dict(step=marine,index=0,on=True))
             self.act(self.trainer,'step.mark',dict(step=marine,index=0,on=True),self.learner['id'])
@@ -51,6 +50,14 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(c['targetBranch'],'oncheon')
             self.assertEqual(c['learner']['records'][local],before[local])
             self.assertTrue(c['learner']['records'][marine]['teacher'][0])
+            # 11/26 교육생이 본점을 골라도 마린 LMS 의 담당자가 마린 교육을 이어서 체크할 수 있다(지점 이동·겸직)
+            n=len(ob.STEPS[marine]['checks'])
+            if n>1: self.act(self.trainer,'step.mark',dict(step=marine,index=1,on=True),self.learner['id'])
+            summary=next(r for r in self.service.get(self.trainer)['educationSummary'] if r['id']==self.learner['id'])
+            self.assertEqual(summary['branches'],['oncheon','marine'])
+            self.assertIn(marine,summary['states'])
+            with self.assertRaises(PermissionError):
+                self.act(self.trainer,'step.mark',dict(step='nowhere-step',index=0,on=True),self.learner['id'])
 
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
