@@ -70,6 +70,7 @@ def main():
     ap.add_argument('--url', default=os.environ.get('LMS_SYNC_URL') or DEFAULT_URL)
     ap.add_argument('--out', default='.drive_sync')
     ap.add_argument('--no-files', action='store_true', help='결과만 받고 docx 는 받지 않는다')
+    ap.add_argument('--folders', default='', help='11/26 지점 LMS 구축: 이 맨 위 폴더(쉼표로 여럿, 예: ST-004_영도점,ST-005_도모헌점) 안의 docx 를 모두 받는다(아카이브 제외)')
     a = ap.parse_args()
     key = os.environ.get('LMS_SYNC_KEY', '').strip()
     if not key.startswith('mlk_'):
@@ -100,13 +101,23 @@ def main():
     roots, since = {m['folder'].split('/', 1)[0] for m in man['documents']}, man.get('updated') or ''
     recent = [x for x in rep.get('extra') or [] if x['path'].split('/', 1)[0] in roots and not any('아카이브' in s for s in x['path'].split('/')[:-1])
               and str(x.get('modified') or '')[:10] > since]
-    picked = {x['path']: x for x in (rep.get('added') or []) + recent}
+    folders = [f.strip().strip('/') for f in a.folders.split(',') if f.strip()]
+    wanted = [x for x in rep.get('extra') or [] if folders and x['path'].split('/', 1)[0] in folders
+              and not any('아카이브' in s for s in x['path'].split('/')[:-1])]
+    if folders and rep.get('extraCount', 0) > len(rep.get('extra') or []):
+        print(f"주의: 동기화 결과의 '근거 아닌 문서' 목록이 잘려 있어요({len(rep['extra'])}/{rep['extraCount']}). 서버를 최신으로 배포한 뒤 [동기화]를 다시 눌러 주세요.")
+    picked = {x['path']: x for x in (rep.get('added') or []) + recent + wanted}
     for x in picked.values():
         print(f"  + 근거 아닌 문서: {x['path']} ({str(x.get('modified') or '')[:10]})")
         dest = root / x['path']
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(get(base + '/api/sync/file?' + urlencode({'path': x['path']}), key, timeout=120))
         n += 1
+    if folders:  # 어떤 파일을 받았는지(지점 교육 근거 후보) 목록을 남긴다 — 수정일 순
+        listing = sorted(({'path': x['path'], 'modified': x.get('modified'), 'fileId': x.get('fileId')} for x in wanted), key=lambda x: x['path'])
+        (out / 'folders.json').write_text(json.dumps(dict(folders=folders, at=rep.get('at'), files=listing), ensure_ascii=False, indent=1), encoding='utf-8')
+        counts = ', '.join(f"{f} {sum(x['path'].startswith(f + '/') for x in listing)}편" for f in folders)
+        print(f"지점 폴더 문서 {len(listing)}편({counts}) → {out / 'folders.json'}")
     print(f'\n원본 docx {n}편 → {root}')
     print('다음: AGENTS.md "드라이브 sync 맞춰줘" — 바뀐 문서는 source_manifest.json(파일·sha1·revised) 갱신 →'
           f' python3 source_parse.py --base {root} --images source_images → v1_lessons.json 교육 문구 AS-IS/TO-BE 제안 → 승인 → v1_build.py·테스트·커밋')
