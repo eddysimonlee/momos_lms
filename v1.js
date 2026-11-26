@@ -89,7 +89,7 @@
     selfQueue = selfQueue.then(async () => {
       try {
         const fresh = await send({action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
-          requestId: uid(), data: {step: step.id, index: k, on}, reply: 'light'});
+          requestId: uid(), data: {step: step.id, index: k, on, branch: selectedBranch()}, reply: 'light'});
         // 11/26 가벼운 응답: 그 교육생 기록·변경 표시만 온다 → 지금 화면 데이터에 기록만 바꿔 끼운다('all' 표시는 그대로 두어 다음 확인 때 진행 현황을 다시 받는다)
         const merged = fresh.light ? Object.assign({}, cloud, {learner: fresh.learner, rootRevision: fresh.rootRevision, learnerKey: fresh.learnerKey, stamps: Object.assign({}, cloud.stamps, fresh.stamps)}) : fresh;
         if (fresh.target === cloud.target) { const mine = record(step.id); cloud = merged; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
@@ -169,7 +169,8 @@
   // 11/02: 멘토·멘티 관계 없음. 다른 사람 교육(체크 가능) / 내 교육(보기만)
   const mentee = () => cloud.target !== cloud.user.id;
   const mayConfirm = () => Boolean(cloud.permissions.trainer) && (content.branch || 'oncheon') === selectedBranch();
-  const selectedBranch = () => cloud.targetBranch || profile()?.branch || 'oncheon';
+  // 11/26 화면의 지점 = 내가 고른 지점(다른 사람을 열어도 내 지점 교육 기준으로 보고 체크한다)
+  const selectedBranch = () => profile()?.branch || cloud.targetBranch || 'oncheon';
   const inBranch = r => (r.branch || 'oncheon') === selectedBranch();
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join && inBranch(r));
 
@@ -188,17 +189,15 @@
     const lost = c.members.some(m => !m.org || !ids.has(m.org));
     return lost ? c.units.concat([{id: NOORG, name: '부서 미확인', parent: null, order: 1e9}]) : c.units; };
   const orgOf = id => unitsOf().find(u => u.id === id);
+  // 11/26 주소록은 모든 구성원을 보여 준다(교육 지점은 이름 옆에 표시)
   const membersOf = id => { const ids = new Set(chart().units.map(u => u.id));
-    const learners = new Set((cloud.educationSummary || []).filter(inBranch).map(x => x.id));
-    const enrolled = new Set((cloud.educationSummary || []).map(x => x.id));
-    return chart().members.filter(m => (!m.id || !enrolled.has(m.id) || learners.has(m.id)) && (id === NOORG ? !m.org || !ids.has(m.org) : m.org === id)); };
+    return chart().members.filter(m => id === NOORG ? !m.org || !ids.has(m.org) : m.org === id); };
   const orgPath = id => { const out = []; let u = orgOf(id); while (u && out.length < 20) { out.unshift(u); u = u.parent && orgOf(u.parent); } return out; };
   const childrenOf = id => unitsOf().filter(u => (u.parent || null) === id || (id === null && u.parent && !orgOf(u.parent))).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, 'ko'));
   function drawOrgSheet() {
     const node = u => { const kids = childrenOf(u.id), open = orgOpen.has(u.id), n = membersOf(u.id).filter(m => m.id !== cloud.user.id).length;  // 첫 화면 표와 같게 나는 빼고 센다
-      const mine = chart().mine === u.id ? ' <span class="v1-mine">내 부서</span>' : '';
       return `<li><div class="v1-onode"><button type="button" class="v1-otog${kids.length ? '' : ' leaf'}" ${kids.length ? `data-org-tog="${esc(u.id)}" aria-expanded="${open}" aria-label="${esc(u.name)} ${open ? '접기' : '펼치기'}"` : 'tabindex="-1" aria-hidden="true"'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
-        `<button type="button" class="v1-opick${orgSel === u.id ? ' on' : ''}" data-org-pick="${esc(u.id)}"${orgSel === u.id ? ' aria-current="true"' : ''}><span>${esc(u.name)}${mine}</span><small>${n}명</small></button></div>` +
+        `<button type="button" class="v1-opick${orgSel === u.id ? ' on' : ''}" data-org-pick="${esc(u.id)}"${orgSel === u.id ? ' aria-current="true"' : ''}><span>${esc(u.name)}</span><small>${n}명</small></button></div>` +
         (kids.length && open ? `<ul>${kids.map(node).join('')}</ul>` : '') + '</li>'; };
     $('v1Sheet').querySelector('.v1-sheet-panel').innerHTML = '<div class="v1-sheet-grab" aria-hidden="true"></div><h2 id="v1SheetTitle">주소록</h2>' +
       '<p class="v1-muted">부서를 누르면 그 부서 구성원의 교육 현황을 볼 수 있어요.</p>' +
@@ -554,7 +553,7 @@
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-home-tab="${k}">${label}</button>`;
     const seg = `<div class="v1-hseg" role="tablist" aria-label="교육 현황 보기">${segBtn('mine', `나의 교육생 <b>${trainees.length}</b>`)}${segBtn('org', '전체 교육생')}</div>`;
     if (tab === 'mine') return seg + (trainees.length
-      ? `<ul class="v1-plist">${trainees.map(x => row(Object.assign({}, x, {position: [x.position, x.org].filter(Boolean).join(' · ')}))).join('')}</ul>`
+      ? `<ul class="v1-plist">${trainees.map(x => row(Object.assign({}, x, {position: ''}))).join('')}</ul>`
       : '<p class="v1-muted v1-hempty">내가 체크한 교육생이 여기에 모여요.<br>전체 교육생 탭에서 구성원을 골라 교육 내용을 체크해 보세요.</p>');
     return seg + orgHtml();
     function orgHtml() {
@@ -564,7 +563,8 @@
       if (!orgSel) return `<div class="v1-orghead"><p class="v1-muted">내 부서를 찾지 못했어요. 주소록에서 부서를 골라 주세요.</p>${orgBtn}</div>`;
       const path = orgPath(orgSel), unit = path[path.length - 1];
       const ppl = membersOf(orgSel).filter(m => m.id !== me);
-      const list = ppl.map(m => ({m, s: m.id && sums.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
+      const all = cloud.educationSummary || [];
+      const list = ppl.map(m => ({m, s: m.id && all.find(x => x.id === m.id)})).sort((a, b) => byPos(a.m, b.m));
       const offRow = m => `<li class="v1-prow-off"><span class="v1-avatar"><span aria-hidden="true">${esc((m.name || '?').trim().slice(0, 1))}</span></span><span class="v1-pbody"><strong>${esc(m.name)}</strong>${m.position ? ` <small class="v1-pdates">${esc(m.position)}</small>` : ''}</span><span class="v1-off">미접속</span></li>`;
       return `<div class="v1-orghead"><div>${path.length > 1 ? `<small>${path.slice(0, -1).map(u => esc(u.name)).join(' › ')}</small>` : ''}<h2>${esc(unit.name)} <span>· ${ppl.length}명</span></h2></div>${orgBtn}</div>` +
         (ppl.length ? `<ul class="v1-plist">${list.map(({m, s}) => s ? row(Object.assign({}, s, {position: m.position || s.position})) : offRow(m)).join('')}</ul>` : '<p class="v1-muted">이 부서에 직접 속한 구성원이 없어요. 주소록에서 하위 부서를 골라 보세요.</p>');
@@ -579,7 +579,8 @@
 
   // 교육 현황 탭: 처음엔 나의 교육생이 있으면 '나의 교육생', 없으면 '부서'. 고른 탭은 화면을 오가도 유지(새로고침하면 다시 처음 규칙)
   let homeTab = null;
-  const traineesOf = () => (cloud.educationSummary || []).filter(x => inBranch(x) && x.trainedByMe && x.id !== cloud.user.id);
+  // 11/26 나의 교육생 = 지금 보고 있는 지점 LMS 에서 내가 체크해 둔(완료한) 교육이 있는 사람(교육생이 고른 지점과 무관)
+  const traineesOf = () => (cloud.educationSummary || []).filter(x => (x.trainedIn || []).includes(selectedBranch()) && x.id !== cloud.user.id);
   const homeTabNow = () => homeTab || (traineesOf().length ? 'mine' : 'org');
 
   function enrolNotice() {
@@ -1356,7 +1357,7 @@
       if (await act('feedback.send', {step: step.id, text})) { const box = $('app').querySelector('[data-feedback]'); if (box) box.value = ''; toast('의견을 보냈습니다.'); }
     };
     const close = app.querySelector('[data-close]');
-    if (close) close.onclick = async () => { await selfQueue; if (await act('step.close', {step: step.id})) toast('완료했습니다.'); };
+    if (close) close.onclick = async () => { await selfQueue; if (await act('step.close', {step: step.id, branch: selectedBranch()})) toast('완료했습니다.'); };
     const reopen = app.querySelector('[data-reopen]');
     if (reopen) reopen.onclick = () => openReopen(step);
   }

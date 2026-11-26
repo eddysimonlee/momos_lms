@@ -40,8 +40,6 @@ class EducationTests(unittest.TestCase):
             summary=next(r for r in c['educationSummary'] if r['id']==self.learner['id'])
             self.assertEqual((summary['total'],summary['done']),(2,1))
             with self.assertRaises(PermissionError):
-                self.act(self.trainer,'step.mark',dict(step=local,index=0,on=False),self.learner['id'])
-            with self.assertRaises(PermissionError):
                 self.act(self.learner,'step.mark',dict(step=marine,index=0,on=True))
             self.act(self.trainer,'step.mark',dict(step=marine,index=0,on=True),self.learner['id'])
             c=ob.Service(self.store).get(self.learner)
@@ -51,6 +49,16 @@ class EducationTests(unittest.TestCase):
             self.assertEqual(c['targetBranch'],'oncheon')
             self.assertEqual(c['learner']['records'][local],before[local])
             self.assertTrue(c['learner']['records'][marine]['teacher'][0])
+            # 11/26 교육생이 본점을 골라도 마린 LMS 의 담당자가 마린 교육을 이어서 체크할 수 있다(지점 이동·겸직)
+            # 나의 교육생(지점별) = 어느 지점 LMS 에서 체크했는지. 다른 직원이 마린 화면에서 체크하면 그 사람의 마린 교육생이 된다
+            self.act(self.other,'step.mark',dict(step=marine,index=0,on=False,branch='marine'),self.learner['id'])
+            self.act(self.other,'step.mark',dict(step=marine,index=0,on=True,branch='marine'),self.learner['id'])
+            mine=lambda u:next(r for r in self.service.get(u)['educationSummary'] if r['id']==self.learner['id'])
+            self.assertEqual(mine(self.other)['trainedIn'],['marine'])
+            self.assertEqual(mine(self.trainer)['trainedIn'],['oncheon'])  # 트레이너의 마린 체크는 다른 직원이 다시 체크해 넘어갔다
+            self.assertIn(marine,mine(self.trainer)['states'])
+            with self.assertRaises(PermissionError):
+                self.act(self.trainer,'step.mark',dict(step='nowhere-step',index=0,on=True),self.learner['id'])
 
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)
