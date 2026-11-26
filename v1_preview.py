@@ -68,7 +68,7 @@ def main():
 
 
 BANNER = '<div class="pv-bar">미리보기 · 로그인 계정(WORKS 대신) <span id="pvWho"></span> · 기록은 이 브라우저에만 남아요 <button id="pvReset" type="button">기록 초기화</button></div>'
-BANNER_CSS = '.pv-bar{background:#FFF4CC;color:#5A4A00;font:500 12px/1.4 -apple-system,sans-serif;padding:6px 12px;text-align:center}.pv-bar button.on{background:#5A4A00;color:#fff;border-color:#5A4A00}.pv-bar button{margin-left:8px;font:inherit;border:1px solid #C9B86A;background:#fff;border-radius:6px;padding:1px 8px;cursor:pointer}'
+BANNER_CSS = '.pv-bar{background:#FFF4CC;color:#5A4A00;font:500 12px/1.4 -apple-system,sans-serif;padding:6px 12px;text-align:center;position:relative;z-index:1000}.pv-bar button.on{background:#5A4A00;color:#fff;border-color:#5A4A00}.pv-bar button{margin-left:8px;font:inherit;border:1px solid #C9B86A;background:#fff;border-radius:6px;padding:1px 8px;cursor:pointer}'
 
 MOCK = r'''
 /*CONTENT*/
