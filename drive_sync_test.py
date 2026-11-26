@@ -297,6 +297,28 @@ class StoreTests(unittest.TestCase):
 BOSS = dict(email='boss@momos.co.kr', name='점장', company='momos')
 
 
+class DrivePullFoldersTests(unittest.TestCase):
+    def test_folders_downloads_branch_docs_without_archive(self):
+        # 11/26 지점 LMS 구축: --folders 로 지점 폴더의 docx 를 모두(아카이브 제외) 받고 목록(folders.json)을 남긴다
+        import drive_pull, sys
+        rep = dict(at='t', baseline={}, counts={}, docs=[], added=[], extraCount=3, extra=[
+            dict(path='ST-004_영도점/근무조별 운영/a.docx', modified='2026-11-01', fileId='1'),
+            dict(path='ST-004_영도점/아카이브/b.docx', modified='2026-11-02', fileId='2'),
+            dict(path='ST-009_다른점/c.docx', modified='2026-11-03', fileId='3')])
+        got = []
+        def fake(url, key, timeout=600):
+            if url.endswith('/api/sync/report'): return json.dumps(rep).encode()
+            got.append(url); return b'docx'
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(drive_pull, 'get', side_effect=fake), \
+             mock.patch.dict(os.environ, {'LMS_SYNC_KEY': 'mlk_test'}), \
+             mock.patch.object(sys, 'argv', ['drive_pull.py', '--out', tmp, '--folders', 'ST-004_영도점']):
+            drive_pull.main()
+            listing = json.loads((Path(tmp) / 'folders.json').read_text(encoding='utf-8'))
+            self.assertEqual([f['path'] for f in listing['files']], ['ST-004_영도점/근무조별 운영/a.docx'])
+            self.assertTrue((Path(tmp) / 'ST_매장사업부' / 'ST-004_영도점/근무조별 운영/a.docx').exists())
+            self.assertEqual(len(got), 1)
+
+
 class RefreshTokenTests(unittest.TestCase):
     def setUp(self):
         from cryptography.fernet import Fernet

@@ -31,7 +31,7 @@ import lms_store as projects
 APP = Path(__file__).parent
 STATE_KEY = 30_000_000_001      # 마지막 확인 결과 · 파일 sha1 캐시 · 아침 확인 켜기/끄기
 LLM_KEYS_KEY = 30_000_000_003   # 사람별 LLM 연결 키(지문만)
-EXTRA_LIMIT = 200
+EXTRA_LIMIT = 3000  # 11/26 지점 LMS 구축: 지점 폴더 문서를 모두 받을 수 있게(예전 200 — 339개 중 일부가 빠졌다)
 _LOCK = threading.Lock()
 _RUNNING = {}
 
