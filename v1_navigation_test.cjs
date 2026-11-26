@@ -71,6 +71,27 @@ test('preview uses server check moves and preserves inserted-topic records once'
   context.fit(fresh);
   assert.deepEqual(fresh.records['safety-greet'].teacher, Array(6).fill(false));
 });
+test('preview splits Marine sound tasks without copying completion and preserves the first checker', () => {
+  const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
+  const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];
+  const moves = JSON.parse(execFileSync('python3', ['-c', 'import json,onboarding;print(json.dumps(onboarding.KP_MOVES))'], {cwd: __dirname, encoding: 'utf8'}));
+  const ctx = vm.createContext({KP_MOVES:moves});
+  vm.runInContext(helper + ';globalThis.fit=fitMovedChecks;',ctx);
+  const r={status:'done',teacher:[true,true,true],teacherBy:['a','b','c'],teacherWhen:['t1','t2','t3'],done:'2026-11-25',completedBy:'c',history:[]};
+  const before=structuredClone(r),room={records:{'marine-sound':r}};
+  ctx.fit(room);
+  assert.deepEqual(Array.from(r.teacher),[true,...Array(7).fill(false)]);
+  assert.deepEqual(Array.from(r.teacherBy),['a',...Array(7).fill(null)]);
+  assert.deepEqual(Array.from(r.teacherWhen),['t1',...Array(7).fill(null)]);
+  assert.equal(r.status,'practice');assert.equal(r.done,null);
+  assert.deepEqual(Array.from(r.history[0].teacher),before.teacher);
+  assert.equal(r.history[0].completedBy,'c');
+  r.teacher[3]=true;
+  const once=JSON.stringify(r);ctx.fit(room);assert.equal(JSON.stringify(r),once);
+  const fresh={records:{'marine-sound':{status:'done',teacher:Array(8).fill(true),done:'2026-11-26',history:[]}}};
+  ctx.fit(fresh);assert.equal(fresh.records['marine-sound'].status,'done');assert.deepEqual(fresh.records['marine-sound'].teacher,Array(8).fill(true));
+});
+
 test('preview archives split OP1 checks and completion without copying them into four new topics', () => {
   const preview = readFileSync(join(__dirname, 'v1_preview.py'), 'utf8');
   const helper = preview.split('// >>> preview-kp-moves')[1].split('// <<< preview-kp-moves')[0];

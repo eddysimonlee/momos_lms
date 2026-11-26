@@ -523,6 +523,41 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(result['learner']['records'][monday], before[monday])
         self.assertEqual(result['learner']['records']['floor-cleaning'], before['floor-cleaning'])
 
+    def test_marine_sound_split_preserves_first_check_and_archives_completion_once(self):
+        ident='marine-sound'
+        self.assertEqual(len(ob.STEPS[ident]['checks']),8)
+        for status in ('ready','practice','review','done'):
+            with self.subTest(status=status):
+                old=dict(status=status,teacher=[status!='ready',True,True],self=[True]*3,
+                         checkBasis=ob.CHECK_BASIS,done='2026-11-25' if status=='done' else None,
+                         request='2026-11-25' if status=='review' else None,
+                         completedBy='previous-checker',completedByName='기존 확인자',
+                         history=[dict(event='keep')],memo='기존 메모')
+                for key in ('selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen'):
+                    old[key]=[key+str(i) for i in range(3)]
+                before=copy.deepcopy(old)
+                learner=dict(join='2026-11-25',records={ident:old},planDates={})
+                r=ob.fit(learner)['records'][ident]
+                for key in ('teacher','self','selfAt','teacherAt','selfBy','teacherBy','teacherName','teacherWhen'):
+                    empty=False if key in ('teacher','self') else None
+                    self.assertEqual(r[key],[before[key][0]]+[empty]*7)
+                archived=r['history'][-1]
+                for key in ('teacher','teacherBy','teacherWhen','done','completedBy','completedByName'):
+                    self.assertEqual(archived[key],before[key])
+                self.assertEqual(archived['checkTexts'],ob.KP_MOVES[ident][3]['previousChecks'])
+                self.assertEqual(r['status'],'practice' if status in ('review','done') else status)
+                if status in ('review','done'):
+                    self.assertIsNone(r['done']);self.assertNotIn('completedBy',r)
+                self.assertEqual(r['memo'],before['memo'])
+                r['teacher'][4]=True
+                once=copy.deepcopy(r)
+                self.assertEqual(ob.fit(learner)['records'][ident],once)
+        fresh=ob.fit(dict(join='2026-11-25',records={},planDates={}))
+        r=fresh['records'][ident]
+        self.assertEqual(r['teacher'],[False]*8)
+        r.update(status='done',teacher=[True]*8,done='2026-11-26')
+        self.assertEqual(ob.fit(fresh)['records'][ident]['status'],'done')
+
     def test_split_op1_keeps_original_record_history_and_requires_new_checks(self):
         ident = 'esp-shift'
         move = ob.KP_MOVES[ident]
