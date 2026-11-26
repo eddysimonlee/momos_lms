@@ -1043,9 +1043,9 @@ class Service:
                 else:  # 교육생 기록만 바꾸는 저장(위에서 그 교육생 잠금을 잡고 읽은 learner)
                     if not latest_ok and v['revision']!=learner['revision']:
                         raise projects.Conflict('다른 기기에서 교육 기록이 바뀌었습니다. 새로 불러온 뒤 다시 저장하세요.')
-                    # 11/26 어느 지점 LMS 에서든 그 지점 교육을 체크할 수 있다(지점 이동·겸직). 없는 교육만 막는다
-                    if data.get('step') and data['step'] not in STEPS:
-                        raise PermissionError('없는 교육입니다.')
+                    # 11/26 어느 지점 LMS 에서든 그 지점 교육을 체크할 수 있다(지점 이동·겸직). 어느 지점 교육과정에도 없는 교육(없어졌거나 합쳐진 세션)만 막는다
+                    if data.get('step') and not any(data['step'] in branch_steps(b) for b in BRANCHES):
+                        raise PermissionError('지금 교육과정에 없는 교육은 변경할 수 없습니다.')
                     data=dict(data);where=data.pop('branch',None)  # 11/26 체크한 화면의 지점(선택). 없으면 교육생이 고른 지점
                     self.education(db,root,user,p,learner,action,data,where if where in BRANCHES else learner_branch(root,target))
                     learner['revision']+=1
