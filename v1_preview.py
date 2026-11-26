@@ -80,12 +80,12 @@ MOCK = r'''
   const STEPS = {}; for (const c of Object.values(COURSES)) for (const u of c.units) for (const s of u.steps) STEPS[s.id] = s;
   const branchOf = id => COURSES[(state.profiles?.[id] || {}).branch] ? state.profiles[id].branch : 'oncheon';
   const courseIds = id => COURSES[branchOf(id)].units.flatMap(u => u.steps.map(s => s.id));
-  // 11/26 교육 지점 여러 곳: 고른 지점 + 그 지점 전용 교육에 기록이 있는 지점(서버 learner_branches 와 같게)
-  const scopeOf = b => new Set(COURSES[b].units.flatMap(u => u.steps.map(s => s.id)));
-  const ALL_IDS = new Set(Object.keys(COURSES).flatMap(b => [...scopeOf(b)]));
-  const ownOf = b => { const own = scopeOf(b); for (const o of Object.keys(COURSES)) if (o !== b) for (const i of scopeOf(o)) own.delete(i); return own; };
-  const activeRec = r => Boolean(r) && (r.status !== 'ready' || (r.teacher || []).some(Boolean) || (r.self || []).some(Boolean));
-  const branchesOf = (id, recs) => { const first = branchOf(id); return [first, ...Object.keys(COURSES).filter(b => b !== first && [...ownOf(b)].some(i => activeRec(recs[i])))]; };
+  const ALL_IDS = new Set(Object.values(COURSES).flatMap(c => c.units.flatMap(u => u.steps.map(s => s.id))));
+  // 11/26 나의 교육생(지점별) = 내가 지금 체크해 둔 교육을 어느 지점 LMS 에서 했는지(서버 trained_in 과 같게)
+  const trainedIn = (id, recs, uid) => { const out = new Set(), fb = branchOf(id);
+    for (const x of Object.values(recs)) { (x.teacherBy || []).forEach((w, k) => { if (w === uid) out.add((x.teacherBranch || [])[k] || fb); });
+      if (x.status === 'done' && x.completedBy === uid) out.add(x.completedBranch || fb); }
+    return [...out].sort(); };
   // 체크 = 교육 내용 항목(없으면 체크 목록) — onboarding.STEPS 와 같은 규칙
   const N = s => (s.keyPoints && s.keyPoints.length ? s.keyPoints : s.checks).map(() => null);
   // >>> preview-kp-moves
@@ -236,7 +236,7 @@ MOCK = r'''
     const educationSummary = roster.filter(r => state.learners[r.id]).map(r => { const recs = state.rooms[r.id].records;
       const states = {}; for (const [k, x] of Object.entries(recs)) if (x.status !== 'ready') states[k] = x.status;
       const ever = Object.values(recs).some(x => (x.teacherBy || []).includes(u.id) || (x.status === 'done' && x.completedBy === u.id));  // 지금 체크·완료한 것만(체크를 풀면 빠진다)
-      return {...r, branch: branchOf(r.id), branches: branchesOf(r.id, recs), ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
+      return {...r, branch: branchOf(r.id), trainedIn: r.id !== u.id ? trainedIn(r.id, recs, u.id) : [], ...dates(r.id), org: ORG[r.id] || null, position: POSITION[r.id] || null, states, trainedByMe: r.id !== u.id && ever}; });
     const lms = isLms(u);
     return {educationSummary, user: {id: u.id, name: u.name, email: u.email}, profile: (state.profiles || {})[u.id] || null, targetBranch: branchOf(target), target, name: ACCOUNTS.find(a => a.id === target)?.name || target, permissions: p,
       workspaceRoles: {admin: false, staff: lms, learner: !!state.learners[u.id]}, roster, myDates: dates(u.id), profileMissing: false, orgChart: {units: UNITS, positions: ['대표이사', '공동대표', '이사', '실장', '팀장', '부팀장', '점장', '부점장', '매니저', '사원'], mine: UNIT_OF[u.id] || null, members: ACCOUNTS.map(a => ({id: state.learners[a.id] ? a.id : null, name: a.name, position: POSITION[a.id] || null, org: UNIT_OF[a.id] || null})).concat(OFFLINE.map(([name, org, position]) => ({id: null, name, org, position})))}, lmsAdmin: lms, lmsLevel: levelOf(u),
@@ -346,14 +346,14 @@ MOCK = r'''
     if (v.action === 'step.mark') {
       if (!['ready', 'practice'].includes(r.status)) throw {status: 400, error: '완료한 교육은 체크를 바꿀 수 없어요. 완료를 취소한 뒤 바꿔 주세요.'};
       for (const k of ['teacherBy', 'teacherName', 'teacherWhen']) if (!r[k]) r[k] = r.teacher.map(() => null);
-      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null;
+      r.teacher[d.index] = !!d.on; r.teacherAt[d.index] = d.on ? t : null; r.teacherWhen[d.index] = d.on ? new Date().toISOString() : null; r.teacherBy[d.index] = d.on ? u.id : null; r.teacherName[d.index] = d.on ? u.name : null; (r.teacherBranch = r.teacherBranch || r.teacher.map(() => null))[d.index] = d.on ? (COURSES[d.branch] ? d.branch : branchOf(target)) : null;
       r.status = r.teacher.some(Boolean) ? 'practice' : 'ready'; r.start = r.start || t;
     } else if (v.action === 'step.close') {
       if (!['ready', 'practice'].includes(r.status) || !r.teacher.every(Boolean)) throw {status: 400, error: '교육 내용을 모두 체크한 뒤 완료할 수 있어요.'};
-      Object.assign(r, {status: 'done', done: t, completedBy: u.id, completedByName: u.name});
+      Object.assign(r, {status: 'done', done: t, completedBy: u.id, completedByName: u.name, completedBranch: COURSES[d.branch] ? d.branch : branchOf(target)});
     } else {
       if (r.status !== 'done') throw {status: 400, error: '완료한 항목만 완료를 취소할 수 있어요.'};
-      r.history = (r.history || []).concat([{...r, history: undefined, reopened: t}]); r.status = 'practice'; r.done = null; delete r.completedBy; delete r.completedByName;
+      r.history = (r.history || []).concat([{...r, history: undefined, reopened: t}]); r.status = 'practice'; r.done = null; delete r.completedBy; delete r.completedByName; delete r.completedBranch;
     }
     l.revision++; save(); return context(u, target);
   }

@@ -89,7 +89,7 @@
     selfQueue = selfQueue.then(async () => {
       try {
         const fresh = await send({action: 'step.mark', target: cloud.target, revision: cloud.learner.revision, rootRevision: cloud.rootRevision,
-          requestId: uid(), data: {step: step.id, index: k, on}, reply: 'light'});
+          requestId: uid(), data: {step: step.id, index: k, on, branch: selectedBranch()}, reply: 'light'});
         // 11/26 가벼운 응답: 그 교육생 기록·변경 표시만 온다 → 지금 화면 데이터에 기록만 바꿔 끼운다('all' 표시는 그대로 두어 다음 확인 때 진행 현황을 다시 받는다)
         const merged = fresh.light ? Object.assign({}, cloud, {learner: fresh.learner, rootRevision: fresh.rootRevision, learnerKey: fresh.learnerKey, stamps: Object.assign({}, cloud.stamps, fresh.stamps)}) : fresh;
         if (fresh.target === cloud.target) { const mine = record(step.id); cloud = merged; Object.assign(record(step.id), {teacher: mine.teacher.slice(), teacherAt: mine.teacherAt.slice(), teacherName: mine.teacherName.slice(), teacherWhen: mine.teacherWhen.slice(), status: mine.status}); }
@@ -171,8 +171,7 @@
   const mayConfirm = () => Boolean(cloud.permissions.trainer) && (content.branch || 'oncheon') === selectedBranch();
   // 11/26 화면의 지점 = 내가 고른 지점(다른 사람을 열어도 내 지점 교육 기준으로 보고 체크한다)
   const selectedBranch = () => profile()?.branch || cloud.targetBranch || 'oncheon';
-  const inBranch = r => (r.branches || [r.branch || 'oncheon']).includes(selectedBranch());
-  const branchNames = r => (r.branches || [r.branch || 'oncheon']).map(b => (BRANCHES.find(x => x.id === b) || {}).name).filter(Boolean).join('·');
+  const inBranch = r => (r.branch || 'oncheon') === selectedBranch();
   const others = () => cloud.roster.filter(r => r.id !== cloud.user.id && r.join && inBranch(r));
 
   // --- 홈 목록 필터(근무조·포지션, 모모스 분류표). 같은 86개 목록을 좁혀 볼 뿐 기록은 하나다.
@@ -197,9 +196,8 @@
   const childrenOf = id => unitsOf().filter(u => (u.parent || null) === id || (id === null && u.parent && !orgOf(u.parent))).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name, 'ko'));
   function drawOrgSheet() {
     const node = u => { const kids = childrenOf(u.id), open = orgOpen.has(u.id), n = membersOf(u.id).filter(m => m.id !== cloud.user.id).length;  // 첫 화면 표와 같게 나는 빼고 센다
-      const mine = chart().mine === u.id ? ' <span class="v1-mine">내 부서</span>' : '';
       return `<li><div class="v1-onode"><button type="button" class="v1-otog${kids.length ? '' : ' leaf'}" ${kids.length ? `data-org-tog="${esc(u.id)}" aria-expanded="${open}" aria-label="${esc(u.name)} ${open ? '접기' : '펼치기'}"` : 'tabindex="-1" aria-hidden="true"'}><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` +
-        `<button type="button" class="v1-opick${orgSel === u.id ? ' on' : ''}" data-org-pick="${esc(u.id)}"${orgSel === u.id ? ' aria-current="true"' : ''}><span>${esc(u.name)}${mine}</span><small>${n}명</small></button></div>` +
+        `<button type="button" class="v1-opick${orgSel === u.id ? ' on' : ''}" data-org-pick="${esc(u.id)}"${orgSel === u.id ? ' aria-current="true"' : ''}><span>${esc(u.name)}</span><small>${n}명</small></button></div>` +
         (kids.length && open ? `<ul>${kids.map(node).join('')}</ul>` : '') + '</li>'; };
     $('v1Sheet').querySelector('.v1-sheet-panel').innerHTML = '<div class="v1-sheet-grab" aria-hidden="true"></div><h2 id="v1SheetTitle">주소록</h2>' +
       '<p class="v1-muted">부서를 누르면 그 부서 구성원의 교육 현황을 볼 수 있어요.</p>' +
@@ -529,7 +527,7 @@
     const sums = (cloud.educationSummary || []).filter(inBranch), me = cloud.user.id;
     const by = (a, b) => a.name.localeCompare(b.name, 'ko');
     const row = (x, label) => { const c = countsOf(s => (x.states || {})[s.id] || 'ready');
-      const meta = [label ? '' : x.position, branchNames(x) ? `교육 지점: ${branchNames(x)}` : '', `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
+      const meta = [label ? '' : x.position, `시작일: ${x.hiredDate || 'N/A'} · 목표일: ${x.targetDate || 'N/A'}`].filter(Boolean).join(' · ');
       return `<li><button type="button" class="v1-prow-btn" data-person="${esc(x.id)}" data-name="${esc(x.name)}">${avatar(x)}<span class="v1-pbody"><span class="v1-pname"><strong>${esc(label || x.name)}</strong><small class="v1-pdates">${esc(meta)}</small></span>${ratioBar(c)}<small>완료 ${c.done} · 진행 중 ${c.prog} · 시작 전 ${c.none}</small></span><span class="v1-chev">›</span></button></li>`; };
     // 11/02: '내 교육'은 왼쪽 메뉴로 옮겼다
     // 직책순(WORKS 직책 표시 순서, 받지 못하면 직책 이름순, 직책 없음은 맨 뒤) → 같은 직책 안에서는 이름순. 교육 시작·미접속은 섞는다
@@ -541,7 +539,7 @@
     const segBtn = (k, label) => `<button type="button" role="tab" class="${tab === k ? 'on' : ''}" aria-selected="${tab === k}" data-home-tab="${k}">${label}</button>`;
     const seg = `<div class="v1-hseg" role="tablist" aria-label="교육 현황 보기">${segBtn('mine', `나의 교육생 <b>${trainees.length}</b>`)}${segBtn('org', '전체 교육생')}</div>`;
     if (tab === 'mine') return seg + (trainees.length
-      ? `<ul class="v1-plist">${trainees.map(x => row(Object.assign({}, x, {position: [x.position, x.org].filter(Boolean).join(' · ')}))).join('')}</ul>`
+      ? `<ul class="v1-plist">${trainees.map(x => row(Object.assign({}, x, {position: ''}))).join('')}</ul>`
       : '<p class="v1-muted v1-hempty">내가 체크한 교육생이 여기에 모여요.<br>전체 교육생 탭에서 구성원을 골라 교육 내용을 체크해 보세요.</p>');
     return seg + orgHtml();
     function orgHtml() {
@@ -567,7 +565,8 @@
 
   // 교육 현황 탭: 처음엔 나의 교육생이 있으면 '나의 교육생', 없으면 '부서'. 고른 탭은 화면을 오가도 유지(새로고침하면 다시 처음 규칙)
   let homeTab = null;
-  const traineesOf = () => (cloud.educationSummary || []).filter(x => inBranch(x) && x.trainedByMe && x.id !== cloud.user.id);
+  // 11/26 나의 교육생 = 지금 보고 있는 지점 LMS 에서 내가 체크해 둔(완료한) 교육이 있는 사람(교육생이 고른 지점과 무관)
+  const traineesOf = () => (cloud.educationSummary || []).filter(x => (x.trainedIn || []).includes(selectedBranch()) && x.id !== cloud.user.id);
   const homeTabNow = () => homeTab || (traineesOf().length ? 'mine' : 'org');
 
   function enrolNotice() {
@@ -1344,7 +1343,7 @@
       if (await act('feedback.send', {step: step.id, text})) { const box = $('app').querySelector('[data-feedback]'); if (box) box.value = ''; toast('의견을 보냈습니다.'); }
     };
     const close = app.querySelector('[data-close]');
-    if (close) close.onclick = async () => { await selfQueue; if (await act('step.close', {step: step.id})) toast('완료했습니다.'); };
+    if (close) close.onclick = async () => { await selfQueue; if (await act('step.close', {step: step.id, branch: selectedBranch()})) toast('완료했습니다.'); };
     const reopen = app.querySelector('[data-reopen]');
     if (reopen) reopen.onclick = () => openReopen(step);
   }
