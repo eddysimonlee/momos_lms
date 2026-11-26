@@ -737,6 +737,474 @@
       "sha1": "e361b9be0242d931218526c71120a9766ca9ae10",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTUwNzMzMjg3M3xEfDA",
       "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-intro",
+      "folder": "ST-004_영도점/입사·근무 준비",
+      "file": "영도점_신입_교육_안내_261123_GUI.docx",
+      "revised": "2026-11-23",
+      "sha1": "feceb13f676578f41af16a44b0ba421c9185648c",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzQxNzczNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-ojt",
+      "folder": "ST-004_영도점/입사·근무 준비",
+      "file": "영도점_첫날_OJT_체크리스트_261123_FRM.docx",
+      "revised": "2026-11-23",
+      "sha1": "16b3642d46bdf438d1275f83ed7731049936ca73",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzQxNzczNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-hygiene",
+      "folder": "ST-004_영도점/입사·근무 준비",
+      "file": "영도점_근무_준비_및_위생_정돈_기준_261123_GUI.docx",
+      "revised": "2026-11-23",
+      "sha1": "2fa847d62f0060bfeccd4f5cf81f961d1cd049e2",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzQxNzczNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-space",
+      "folder": "ST-004_영도점/입사·근무 준비",
+      "file": "영도점_매장_공간_안내_261123_GUI.docx",
+      "revised": "2026-11-23",
+      "sha1": "9ef2b4d0a766d44539e946ab08ee063b602f1f7a",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzQxNzczNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-open",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "영도점_오픈조_근무_절차_261123_SOP_업무별문장정리_필수점검.docx",
+      "revised": "2026-11-23",
+      "sha1": "7c54ff8349e750a99e93a64be1cc0f4f5f7949dd",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-open-leave",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "영도점_오픈조_퇴근_준비_절차_261123_SOP.docx",
+      "revised": "2026-11-23",
+      "sha1": "eec44be9ce7fcceed73729c647b720cfecfc1c63",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-md",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "영도점_MD_근무_및_영업_중_교대_절차_261123_SOP.docx",
+      "revised": "2026-11-23",
+      "sha1": "514d64432e3ccd247ec92996075c024de4588ea8",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-op1",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "OP1_출근_및_수질_에스프레소_세팅_261112_SOP.docx",
+      "revised": "2026-11-12",
+      "sha1": "65fe1258b9ae66602fa350a33663e7315195c39f",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-weekly",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "영도점_주간_위생_업무_261117_SOP.docx",
+      "revised": "2026-11-17",
+      "sha1": "c5797bcbc9db378c3795866f306681519e384947",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-moai",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "CL_모아이_데일리_청소_절차_261118_SOP.docx",
+      "revised": "2026-11-18",
+      "sha1": "07ced741d7bf952340a0dbc208ebc46b7a21a293",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-breakage",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "잔·접시_파손_기록_절차_SOP_261026.docx",
+      "revised": "2026-10-26",
+      "sha1": "4c4b30ef624d2ad29ffe3d52543ba0c0ee94da21",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-greeter",
+      "folder": "ST-004_영도점/포지션별 업무",
+      "file": "영도점_그리터·포스·리테일_GUI_261123_필수점검.docx",
+      "revised": "2026-11-23",
+      "sha1": "6cb988bc85cbe3c77611f5cdc98523f224400a94",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzYzMDcyOHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-bar",
+      "folder": "ST-004_영도점/포지션별 업무",
+      "file": "영도점_메이킹·브루잉·에스프레소_GUI_261123_필수점검.docx",
+      "revised": "2026-11-23",
+      "sha1": "7d595838c5b7aec22edcc79e8642eca41b9c785c",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzYzMDcyOHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-round",
+      "folder": "ST-004_영도점/포지션별 업무",
+      "file": "영도점_라운딩·정리_GUI_261123_필수점검.docx",
+      "revised": "2026-11-23",
+      "sha1": "9ed6d4043fdba6c0ce2b693c12bbaf8109446c46",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzYzMDcyOHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-pickup",
+      "folder": "ST-004_영도점/포지션별 업무",
+      "file": "영도점_픽업_업무_기준_GUI_261123.docx",
+      "revised": "2026-11-23",
+      "sha1": "2e15fd0d2da7de09f710eb664f70694f93174412",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3MzYzMDcyOHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-recipes",
+      "folder": "ST-004_영도점/제품 제조·품질 관리",
+      "file": "영도점_음료_레시피_제공_기준_GUI_261123.docx",
+      "revised": "2026-11-23",
+      "sha1": "0bc3f30b0932102f454037a31d46ab24f858c883",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3NDg0NDY4MXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-materials",
+      "folder": "ST-004_영도점/제품 제조·품질 관리",
+      "file": "영도점_재료_제조_소분_라벨_부착_보관_261117_SOP.docx",
+      "revised": "2026-11-17",
+      "sha1": "c2a9ee5d977ac045a37acfc5a76d4749062af779",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3NDg0NDY4MXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-tasting",
+      "folder": "ST-004_영도점/제품 제조·품질 관리",
+      "file": "영도점_시음_커피_제조_SOP_261117.docx",
+      "revised": "2026-11-17",
+      "sha1": "80dc6e773e7307a80175c82da567865c994707a6",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3NDg0NDY4MXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-e80",
+      "folder": "ST-004_영도점/장비·기기 관리",
+      "file": "E80Supreme_그라인더_날_분해_및_청소_261118_SOP.docx",
+      "revised": "2026-11-18",
+      "sha1": "bc68d1187f5852d045dc7b98c9e6f083e92d7cec",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NDAzMDg3MDUzNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-puqpress",
+      "folder": "ST-004_영도점/장비·기기 관리",
+      "file": "푹프레스_데일리_청소_절차_261118_SOP.docx",
+      "revised": "2026-11-18",
+      "sha1": "8e114dd552f750c7f8dcffdc73fbd9b0af2aff8d",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NDAzMDg3MDUzNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-phone",
+      "folder": "ST-004_영도점/장비·기기 관리",
+      "file": "영도점_바리스타_전화기_통화불량_조치_261117_SOP.docx",
+      "revised": "2026-11-17",
+      "sha1": "693790dd974a76dd1f704a1eb6f048483172e973",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzc4NDAzMDg3MDUzNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-cleaning",
+      "folder": "ST-004_영도점/청소·시설·집기 관리",
+      "file": "영도점_매장_청소_작업_절차_261117_SOP.docx",
+      "revised": "2026-11-17",
+      "sha1": "7ff3ac504092606178d285d257fd4acdab7621bf",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMDQ5MzI5ODk1MnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-qa",
+      "folder": "ST-004_영도점/청소·시설·집기 관리",
+      "file": "영도점_매장_시설_기물_이상_및_QA_보고_절차_261117_SOP.docx",
+      "revised": "2026-11-17",
+      "sha1": "ba551a9f8e5303d910995bb56a95fb3fbd31af5c",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMDQ5MzI5ODk1MnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-order",
+      "folder": "ST-004_영도점/재고·전산 관리",
+      "file": "영도점_비품_재료_발주_요청_및_안전재고_기준_261123_GUI.docx",
+      "revised": "2026-11-23",
+      "sha1": "a0cae4d88bbfb536bbbd9593a892232a5a2143c6",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3NDg3ODQ3M3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-ecount",
+      "folder": "ST-004_영도점/재고·전산 관리",
+      "file": "영도점_이카운트_전산_처리_261123_SOP.docx",
+      "revised": "2026-11-23",
+      "sha1": "f2a55a262cf83e6487727d17c45216a62afb828d",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTg3NDg3ODQ3M3xEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 영도점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-intro",
+      "folder": "ST-005_도모헌점/입사·근무 준비",
+      "file": "도모헌점_신입_교육_안내_GUI_261125 (1).docx",
+      "revised": "2026-11-25",
+      "sha1": "6d3a39c5603f61b085927c2f11496501cb178b15",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDM3ODUwNXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-ojt",
+      "folder": "ST-005_도모헌점/입사·근무 준비",
+      "file": "도모헌점_첫날_OJT_체크리스트_FRM_261125 (1).docx",
+      "revised": "2026-11-25",
+      "sha1": "49e4a93d4bcc4a94a699577c82f97febc1e25734",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDM3ODUwNXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-hygiene",
+      "folder": "ST-005_도모헌점/입사·근무 준비",
+      "file": "도모헌점_근무_준비_및_위생_정돈_기준_GUI_261125.docx",
+      "revised": "2026-11-25",
+      "sha1": "409a6ea0d863b08e715dfb3e0c2ddde6c3d86626",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDM3ODUwNXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-space",
+      "folder": "ST-005_도모헌점/입사·근무 준비",
+      "file": "도모헌점_매장_공간_및_시설_관리_GUI_261125.docx",
+      "revised": "2026-11-25",
+      "sha1": "87623543c8dc621a279f4e5e1dd59144d7963b92",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDM3ODUwNXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-open",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_오픈조_근무_절차_SOP_261119.docx",
+      "revised": "2026-11-19",
+      "sha1": "6e442904a00e05090da77e654e47d3c9c41444f2",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-close",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_마감조_근무_절차_SOP_261119 .docx",
+      "revised": "2026-11-19",
+      "sha1": "65cce8c871c06157dea2968540023c7c98bbe362",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-md",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_MD_근무_및_영업_중_교대_절차_SOP_261119.docx",
+      "revised": "2026-11-19",
+      "sha1": "a75f515b9045113d598899efee67562976f38884",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-roles",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_근무조별_역할과_업무_배정_GUI_261112.docx",
+      "revised": "2026-11-12",
+      "sha1": "4a94c328f59ba4fa7cc9568d2dc1ebcdc81dc395",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-round",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_라운딩_점검_기준_GUI_261120.docx",
+      "revised": "2026-11-20",
+      "sha1": "78bd3ee5887c04cc4ac5e96f8418e52f54fbb5e1",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-open-round",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_오픈_라운딩_체크리스트_FRM_261112.docx",
+      "revised": "2026-11-12",
+      "sha1": "f1f82098f91489e4102f196231377252e670fb89",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-restock",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_원두·재료·리테일·소모품_보충_기준_GUI_261119.docx",
+      "revised": "2026-11-19",
+      "sha1": "1ce138dd84311d71e1cae7873f55ca57480f83c6",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-breakage",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_잔·접시_파손_기록_절차_SOP_261109.docx",
+      "revised": "2026-11-09",
+      "sha1": "84a9fea8b39e6becce42e75104e893e0fbb550e1",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-weekly",
+      "folder": "ST-005_도모헌점/도모헌점_근무조별_운영",
+      "file": "도모헌점_주간_위생_업무_SOP_261109 (1).docx",
+      "revised": "2026-11-09",
+      "sha1": "28e6400d08c1cb179a1eeee96a5915e15b8e553c",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3Mzk2NDA0MHxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-pos",
+      "folder": "ST-005_도모헌점/도모헌점_포지션별_업무",
+      "file": "도모헌점_포스_GUI_261112.docx",
+      "revised": "2026-11-12",
+      "sha1": "551cd20655547b7dde8f1c65a760711d65317537",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDMwNjMxMnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-brewing",
+      "folder": "ST-005_도모헌점/도모헌점_포지션별_업무",
+      "file": "도모헌점_브루잉_GUI_261124.docx",
+      "revised": "2026-11-24",
+      "sha1": "06767164c0f491792e1042cd0a32ad98d1f8b19e",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDMwNjMxMnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-batch",
+      "folder": "ST-005_도모헌점/도모헌점_포지션별_업무",
+      "file": "도모헌점_배치브루_GUI_261124.docx",
+      "revised": "2026-11-24",
+      "sha1": "2ecd69d7e13475f35854c427f41db16db4df3375",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDMwNjMxMnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-pickup",
+      "folder": "ST-005_도모헌점/도모헌점_포지션별_업무",
+      "file": "도모헌점_픽업_GUI_261120.docx",
+      "revised": "2026-11-20",
+      "sha1": "1da4c506e8a27aef6aba9c67a276566bcc5165c7",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDMwNjMxMnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-retail",
+      "folder": "ST-005_도모헌점/도모헌점_포지션별_업무",
+      "file": "도모헌점_라운딩·리테일·세척·보충_GUI_261124.docx",
+      "revised": "2026-11-24",
+      "sha1": "1576175c36b99f5bdaafba015b4fd19ed31c01cb",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDMwNjMxMnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-recipes",
+      "folder": "ST-005_도모헌점/도모헌점_제품제조품질_관리",
+      "file": "도모헌점_음료_레시피_제공_기준_GUI_261124 (1).docx",
+      "revised": "2026-11-24",
+      "sha1": "346d8629dec25e27a1f4b1c64168bd84e536287f",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDIxMDA1NnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-materials",
+      "folder": "ST-005_도모헌점/도모헌점_제품제조품질_관리",
+      "file": "도모헌점_재료_제조_소분_라벨_부착_보관_SOP_261124 (2).docx",
+      "revised": "2026-11-24",
+      "sha1": "652e7ed8fa89e1484d360f84e7b5046f6611f88d",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDIxMDA1NnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-zm",
+      "folder": "ST-005_도모헌점/도모헌점_장비·기기 관리",
+      "file": "ZM_그라인더_버_분해_및_청소_SOP_261119.docx",
+      "revised": "2026-11-19",
+      "sha1": "8d1dbf29e42b21d5d5d881cd5dc87d12ad2f5c60",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDE5NjQ4OXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-phone",
+      "folder": "ST-005_도모헌점/도모헌점_장비·기기 관리",
+      "file": "도모헌점_바리스타_전화기_통화불량_조치_SOP_261111.docx",
+      "revised": "2026-11-11",
+      "sha1": "91c7f7fed9e0dbf7155501eafc1736483c35541b",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDE5NjQ4OXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-cleaning",
+      "folder": "ST-005_도모헌점/도모헌점_청소시설집기_관리",
+      "file": "도모헌점_매장_청소_작업_절차_SOP_261125.docx",
+      "revised": "2026-11-25",
+      "sha1": "f39108b3882ff9d1b591507e02c2a1ba7d3515af",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDI1MTAxNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-qa",
+      "folder": "ST-005_도모헌점/도모헌점_청소시설집기_관리",
+      "file": "도모헌점_매장_시설_기물_이상_및_QA_보고_절차_SOP_261125.docx",
+      "revised": "2026-11-25",
+      "sha1": "f74bca02264e16b42aa64fb69a254457a4e137e0",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDI1MTAxNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-furniture",
+      "folder": "ST-005_도모헌점/도모헌점_청소시설집기_관리",
+      "file": "도모헌점_매장_가구_관리_기준_GUI_261110.docx",
+      "revised": "2026-11-10",
+      "sha1": "37cd9c3a70960995d908ff5ae6d7ff2dd64caa25",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDI1MTAxNnxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-ecount",
+      "folder": "ST-005_도모헌점/재고·전산 관리",
+      "file": "도모헌점_이카운트_전산_처리_SOP_261112.docx",
+      "revised": "2026-11-12",
+      "sha1": "00f9a3695601d6bf85ead3d73bdcd472346cef03",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDQ2MjcyOXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "domoheon-doc-order",
+      "folder": "ST-005_도모헌점/재고·전산 관리",
+      "file": "비품_재료_발주_요청_및_안전재고_기준_GUI_261111.docx",
+      "revised": "2026-11-11",
+      "sha1": "c908aa2732d2bac1fac4f49ce10dfac5aa17f621",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDQ2MjcyOXxEfDA",
+      "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
     }
   ]
 }

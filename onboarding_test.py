@@ -355,10 +355,25 @@ class EducationTests(unittest.TestCase):
                 self.assertEqual(req('GET',removed)[0],404,removed)
         finally:httpd.shutdown();httpd.server_close();thread.join()
 
+    def test_branch_courses_are_separate(self):
+        # 11/26 영도점·도모헌점: 지점마다 교육 범위가 따로 있고, 지점 전용 교육은 다른 지점·본점 범위에 섞이지 않는다
+        self.assertEqual((ob.BRANCHES['yeongdo'],ob.BRANCHES['domoheon'],ob.BRANCHES['marine']),('영도점','도모헌점','마린시티점'))
+        home=set(ob.branch_steps('oncheon'))
+        for b in ('marine','yeongdo','domoheon'):
+            scope=ob.branch_steps(b)
+            self.assertTrue(scope);self.assertEqual(len(scope),len(set(scope)))
+            own={i for i in scope if i.startswith(b+'-')}
+            self.assertTrue(own);self.assertFalse(own&home)
+            for other in set(ob.BRANCHES)-{b,'oncheon'}:
+                self.assertFalse(own&set(ob.branch_steps(other)),(b,other))
+            for i in scope:
+                self.assertTrue(ob.STEPS[i]['checks'],i)
+            self.assertIn('grinder-blade',scope)  # 공통 EK43 날 분해·청소
+
     def test_profile_branch_role_saved_and_staff_can_confirm_but_not_configure(self):
         c=self.service.get(self.other);self.assertIsNone(c['profile'])
         self.assertTrue(self.service.get(self.other,self.learner['id'])['permissions']['trainer'])  # 11/02: 고르기 전에도 모모스 직원은 보고 체크한다
-        for bad in (dict(branch='yeongdo',role='staff'),dict(branch='oncheon',role='admin'),dict(branch='oncheon')):
+        for bad in (dict(branch='nowhere',role='staff'),dict(branch='oncheon',role='admin'),dict(branch='oncheon')):
             with self.assertRaises(ValueError): self.act(self.other,'profile.set',bad)
         with self.assertRaises(PermissionError): self.act(self.other,'profile.set',dict(branch='oncheon',role='staff'))  # 지정되지 않으면 관리자 불가
         self._seed=patch.object(ob,'LMS_ADMIN_SEED',[self.other['email'].lower()]);self._seed.start();self.addCleanup(self._seed.stop)
