@@ -11,6 +11,1265 @@
   ],
   "entries": [
     {
+      "id": "2026-11-27-alpha-marine-restructure",
+      "at": "2026-11-27",
+      "approvedBy": "이재현·채수민",
+      "tickets": [],
+      "title": "알파 작업 — 마린시티점 교육과정 본점 단원 틀로 재구성(95세션: 공통 17 + 지점 78)",
+      "basis": {
+        "kind": "알파 작업",
+        "origin": "채수민 피드백(지점 문항·세션 구분이 본점과 다름) → 이재현 결정: 본점 단원 구성을 틀로, 지점에 없는 업무는 빼고 지점 문서에만 있는 내용은 새 세션. 재구성안 문서 확인 답변 2026-11-27",
+        "copy": ".drive_sync_branches/ST_매장사업부 (2026-11-27 06:56Z 동기화, --folders ST-003·004·005)",
+        "range": "기존 마린시티점 교육 51개는 ID·내용 그대로 본점 단원 자리로 옮김(체크 기록 유지). 새 교육 27개 추가(요일별 주간위생 7개 등, 주간 위생 업무 SOP·오픈조 퇴근 준비 절차 새로 등록). Kold S는 원본 아카이브 이동으로 교육과정·manifest에서 뺌(채수민 답변), Robur S는 본점 교육 공통 사용. 마노 탬핑기는 체크 기록 보호를 위해 기존 마린시티점 교육 유지. 마린시티점 원본 9편 11/27 새 판은 이번에 반영하지 않음(다음 드라이브 sync)."
+      },
+      "work": "마린시티점 세션을 본점 6단계·단원 순서로 다시 배치하고, 지점 교육은 본점 세션 범위에 맞춰 지점 문서 근거로 다시 나눔·작성. 공통 교육은 같은 ID로 공유.",
+      "docs": [],
+      "removed": [],
+      "lessons": [
+        {
+          "no": 1,
+          "id": "marine-hygiene",
+          "branch": "marine",
+          "title": "출근 준비와 복장·개인 위생",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "id": "marine-orientation",
+          "branch": "marine",
+          "title": "입사 후 오리엔테이션과 업무 자료 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "id": "marine-space",
+          "branch": "marine",
+          "title": "매장 공간·직원 공간·창고 위치 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "id": "marine-welcome-tasting",
+          "branch": "marine",
+          "title": "시음·향미카드·판매 상품 익히기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "id": "welcome-culture",
+          "branch": "marine",
+          "title": "모모스가 일하는 방식과 고객 관점",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "id": "safety-greet",
+          "branch": "marine",
+          "title": "safety-greet",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 7,
+          "id": "marine-safety-call",
+          "branch": "marine",
+          "title": "바 이동·트레이 콜·동료 협업",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 8,
+          "id": "marine-safety-report",
+          "branch": "marine",
+          "title": "설비·가구 이상과 고객 안전 보고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 9,
+          "id": "welcome-manual",
+          "branch": "marine",
+          "title": "SOP·GUI·FRM 구분하고 찾기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 10,
+          "id": "marine-firstday",
+          "branch": "marine",
+          "title": "첫날 OJT 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 11,
+          "id": "marine-hall-round",
+          "branch": "marine",
+          "title": "홀케어 고객 안내·테이블 정리·이상 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 12,
+          "id": "marine-round-check",
+          "branch": "marine",
+          "title": "라운딩·서비스테이블·화장실 점검",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 13,
+          "id": "marine-welcome-hygiene",
+          "branch": "marine",
+          "title": "잔을 다루기 전 위생 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 14,
+          "id": "marine-hall-back",
+          "branch": "marine",
+          "title": "반납 식기 세척·정리와 비품·얼음 보충",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 15,
+          "id": "marine-materials-common",
+          "branch": "marine",
+          "title": "제조 준비·라벨·선입선출·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 16,
+          "id": "marine-material-7",
+          "branch": "marine",
+          "title": "주스 소분 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 17,
+          "id": "marine-material-8",
+          "branch": "marine",
+          "title": "설탕시럽 소분 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 18,
+          "id": "marine-material-1",
+          "branch": "marine",
+          "title": "밀크티 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 19,
+          "id": "marine-material-2",
+          "branch": "marine",
+          "title": "피스타치오 크림 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 20,
+          "id": "marine-material-3",
+          "branch": "marine",
+          "title": "바닐라 연유 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 21,
+          "id": "marine-material-4",
+          "branch": "marine",
+          "title": "모정우유 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 22,
+          "id": "marine-material-5",
+          "branch": "marine",
+          "title": "말차 베이스 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 23,
+          "id": "marine-material-6",
+          "branch": "marine",
+          "title": "얼그레이티 냉침·거르기 제조·소분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 24,
+          "id": "marine-materials-other",
+          "branch": "marine",
+          "title": "기타 시럽·베이스·부재료 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 25,
+          "id": "marine-bread",
+          "branch": "marine",
+          "title": "빵포장 위생·주문 유형·베이커리 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 26,
+          "id": "marine-bakery-showcase",
+          "branch": "marine",
+          "title": "쇼케이스·베이커리 재고 / 빵포장 지원",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 27,
+          "id": "marine-op2-restock",
+          "branch": "marine",
+          "title": "OP2 원두·재료·리테일 상품 보충",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 28,
+          "id": "marine-stock-count",
+          "branch": "marine",
+          "title": "재고조사·수량 인계·파손 기록",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 29,
+          "id": "marine-ordering",
+          "branch": "marine",
+          "title": "비품·재료 안전재고 확인과 발주 요청",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 30,
+          "id": "marine-floor-weekly-mon",
+          "branch": "marine",
+          "title": "월요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 31,
+          "id": "marine-floor-weekly-tue",
+          "branch": "marine",
+          "title": "화요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 32,
+          "id": "marine-floor-weekly-wed",
+          "branch": "marine",
+          "title": "수요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 33,
+          "id": "marine-floor-weekly-thu",
+          "branch": "marine",
+          "title": "목요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 34,
+          "id": "marine-floor-weekly-fri",
+          "branch": "marine",
+          "title": "금요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 35,
+          "id": "marine-floor-weekly-sat",
+          "branch": "marine",
+          "title": "토요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 36,
+          "id": "marine-floor-weekly-sun",
+          "branch": "marine",
+          "title": "일요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 37,
+          "id": "marine-cleaning",
+          "branch": "marine",
+          "title": "출입문·유리창·바닥·가구 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 38,
+          "id": "marine-furniture",
+          "branch": "marine",
+          "title": "라운지·바·야외 가구 관리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 39,
+          "id": "marine-facilities",
+          "branch": "marine",
+          "title": "정원·실내 조명 조작",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 40,
+          "id": "marine-automatic-door",
+          "branch": "marine",
+          "title": "정문 자동문 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 41,
+          "id": "marine-folding-door",
+          "branch": "marine",
+          "title": "폴딩도어 열기·닫기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 42,
+          "id": "marine-flood-barrier",
+          "branch": "marine",
+          "title": "차수막 설치·철거",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 43,
+          "id": "marine-open-rain",
+          "branch": "marine",
+          "title": "우천 대응과 오픈조 퇴근 전 인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 44,
+          "id": "marine-water",
+          "branch": "marine",
+          "title": "급수 시스템 운영·백업 전환·이상 보고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 45,
+          "id": "marine-sound",
+          "branch": "marine",
+          "title": "음향 장비 전원·설정·동기화 복구",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 46,
+          "id": "marine-phone",
+          "branch": "marine",
+          "title": "바리스타 전화기 통화 불량 조치",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 47,
+          "id": "marine-bar-supply",
+          "branch": "marine",
+          "title": "정리 ② 얼음·일회용품·향미카드 보충",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 48,
+          "id": "marine-op1",
+          "branch": "marine",
+          "title": "OP1 출근·오픈 업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 49,
+          "id": "marine-op-parttime",
+          "branch": "marine",
+          "title": "OP 파트타이머 업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 50,
+          "id": "marine-open-overview",
+          "branch": "marine",
+          "title": "오픈 담당 역할과 공통 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 51,
+          "id": "marine-op2",
+          "branch": "marine",
+          "title": "OP2 출근·오픈 업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 52,
+          "id": "marine-open-leave",
+          "branch": "marine",
+          "title": "OP2 퇴근 전 점검·보충·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 53,
+          "id": "marine-op3-role",
+          "branch": "marine",
+          "title": "OP3~OP6 포지션 투입",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 54,
+          "id": "marine-md-shift",
+          "branch": "marine",
+          "title": "MD 출근·포지션 교대·식후 라운딩",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 55,
+          "id": "marine-close-shift",
+          "branch": "marine",
+          "title": "CL 출근·영업 중 업무와 마감",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 56,
+          "id": "ice-machine",
+          "branch": "marine",
+          "title": "제빙기 주간 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 57,
+          "id": "water-filter",
+          "branch": "marine",
+          "title": "정수기 관리·필터 교체",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 58,
+          "id": "marine-facility-report",
+          "branch": "marine",
+          "title": "시설·기물 이상과 QA 보고·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 59,
+          "id": "marine-menu-recipe",
+          "branch": "marine",
+          "title": "메뉴·온도 구분과 메뉴 제한",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 60,
+          "id": "marine-menu-glass",
+          "branch": "marine",
+          "title": "매장·포장 고객 제공 차이",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 61,
+          "id": "marine-pickup",
+          "branch": "marine",
+          "title": "픽업 비품·트레이 세팅·최종 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 62,
+          "id": "customer-complaint",
+          "branch": "marine",
+          "title": "customer-complaint",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 63,
+          "id": "marine-customer-story",
+          "branch": "marine",
+          "title": "내 고객 만들기 첫 사례·피드백",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 64,
+          "id": "marine-pos",
+          "branch": "marine",
+          "title": "포스 주문·결제·베이커리 업무 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 65,
+          "id": "orders-payment",
+          "branch": "marine",
+          "title": "orders-payment",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 66,
+          "id": "marine-orders-smart",
+          "branch": "marine",
+          "title": "스마트오더 접수·확인·제조 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 67,
+          "id": "orders-courier",
+          "branch": "marine",
+          "title": "orders-courier",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 68,
+          "id": "orders-cake",
+          "branch": "marine",
+          "title": "orders-cake",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 69,
+          "id": "marine-orders-greeter",
+          "branch": "marine",
+          "title": "고객 안내·대기 안내",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 70,
+          "id": "marine-making",
+          "branch": "marine",
+          "title": "제조 순서·픽업 지원·KDS·스테이션 관리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 71,
+          "id": "marine-noncoffee-recipes",
+          "branch": "marine",
+          "title": "논커피 음료 계량·제조·제공",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 72,
+          "id": "marine-signature-recipes",
+          "branch": "marine",
+          "title": "시그니처 음료 계량·제조·제공",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 73,
+          "id": "marine-coffee-recipes",
+          "branch": "marine",
+          "title": "커피 음료 계량·제조·제공",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 74,
+          "id": "making-test",
+          "branch": "marine",
+          "title": "메이킹 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 75,
+          "id": "marine-steaming",
+          "branch": "marine",
+          "title": "스티밍과 메뉴별 밀크폼 이해",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 76,
+          "id": "latte-art",
+          "branch": "marine",
+          "title": "라떼아트",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 77,
+          "id": "marine-retail",
+          "branch": "marine",
+          "title": "리테일 진열·재고 보충·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 78,
+          "id": "marine-tasting",
+          "branch": "marine",
+          "title": "시음 커피 요청·확인·보관·제공",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 79,
+          "id": "marine-stock-beans",
+          "branch": "marine",
+          "title": "음료용 원두 전환·자가사용·이카운트 구분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 80,
+          "id": "marine-bean-flavor",
+          "branch": "marine",
+          "title": "원두별 특징·향미·레시피·브루잉 방향성",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 81,
+          "id": "marine-brewing-recipes",
+          "branch": "marine",
+          "title": "브루잉 계량·제공 기준",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 82,
+          "id": "refractometer",
+          "branch": "marine",
+          "title": "굴절계 측정·영점 교정·세척·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 83,
+          "id": "marine-brewing",
+          "branch": "marine",
+          "title": "메인·보조 브루어 역할과 레시피 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 84,
+          "id": "brewing-test",
+          "branch": "marine",
+          "title": "브루잉 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 85,
+          "id": "esp-theory",
+          "branch": "marine",
+          "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 86,
+          "id": "marine-espresso",
+          "branch": "marine",
+          "title": "에스프레소 추출·기물·협업·교대",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 87,
+          "id": "marine-esp-calibration",
+          "branch": "marine",
+          "title": "칼리브레이션·반복 추출·일관성 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 88,
+          "id": "marine-esp-shift",
+          "branch": "marine",
+          "title": "오픈 세팅·Daily Chart / 인계·칼리브레이션 / 마감",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 89,
+          "id": "marine-linea",
+          "branch": "marine",
+          "title": "리네아 PB 데일리 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 90,
+          "id": "marine-tamper",
+          "branch": "marine",
+          "title": "마노 자동 탬핑기 데일리 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 91,
+          "id": "esp-test",
+          "branch": "marine",
+          "title": "에스프레소 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 92,
+          "id": "grinder-blade",
+          "branch": "marine",
+          "title": "Mahlkönig EK43 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 93,
+          "id": "grinder-blade-robur-s",
+          "branch": "marine",
+          "title": "Mazzer Robur S 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 94,
+          "id": "marine-md-ecount",
+          "branch": "marine",
+          "title": "MD3 전산 처리·돈마감",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 95,
+          "id": "marine-ecount",
+          "branch": "marine",
+          "title": "구매입력·창고이동·자가사용·재고 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        }
+      ],
+      "rules": [],
+      "checks": [
+        "기존 마린시티점 교육 ID는 바꾸지 않아 체크·완료 기록이 그대로 유지됨. 새 교육 27개는 빈 기록으로 시작",
+        "marine-grinder-kold-s 는 교육과정에서 빠짐(교육 내용은 v1_lessons 에 남겨 기록 조회 가능)"
+      ],
+      "skipped": []
+    },
+    {
       "id": "2026-11-27-alpha-domoheon-restructure",
       "at": "2026-11-27",
       "approvedBy": "이재현·채수민",
