@@ -534,47 +534,47 @@
     {
       "id": "marine-doc-open",
       "folder": "ST-003_마린시티점/마린 근무조별 운영",
-      "file": "마린시티점_오픈조_근무_절차_SOP_261117.docx",
-      "revised": "2026-11-17",
-      "sha1": "bf85de1663191eadf15866f89c716649f2c144e3",
+      "file": "마린시티점_오픈조_근무_절차_SOP_261117(수정본).docx",
+      "revised": "2026-11-27",
+      "sha1": "e27fe1e4b58b59037ae029e703ff876dd4d244c1",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-md",
       "folder": "ST-003_마린시티점/마린 근무조별 운영",
-      "file": "마린시티점 MD 근무 절차.docx",
-      "revised": "2026-11-14",
-      "sha1": "384a1ffaa2c4e80af91a501be03a25c777d2da41",
+      "file": "마린시티점 MD 근무 절차(수정본).docx",
+      "revised": "2026-11-27",
+      "sha1": "89512850350e77f3882a636a6c776a574eedd999",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-close",
       "folder": "ST-003_마린시티점/마린 근무조별 운영",
-      "file": "마린시티점 마감조 근무 절차.docx",
-      "revised": "2026-11-14",
-      "sha1": "2099e637ea583c6a924b811e1a301823f5651a63",
+      "file": "마린시티점 마감조 근무 절차(수정본).docx",
+      "revised": "2026-11-27",
+      "sha1": "1c7fe1bfe071c109e037b4cd13a9e675e0ef51b4",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-round",
       "folder": "ST-003_마린시티점/마린 근무조별 운영",
-      "file": "마린시티점_라운딩_점검_기준_GUI_261109.docx",
-      "revised": "2026-11-09",
-      "sha1": "4725db0364ebfb106acf2d8bd683a55a40410cf0",
+      "file": "마린시티점_라운딩_점검_기준_GUI_261109(수정본).docx",
+      "revised": "2026-11-27",
+      "sha1": "4bdca7b860a4ff1dd8840b4cb213b52389ad00a9",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-restock",
       "folder": "ST-003_마린시티점/마린 근무조별 운영",
-      "file": "마린시티점_OP2_원두_음료_재료_리테일_상품_보충_기준_GUI_261109.docx",
-      "revised": "2026-11-09",
-      "sha1": "992f2f5aaa814ba6a04d1718a6e12017423bd964",
+      "file": "마린시티점_OP2_원두_음료_재료_리테일_상품_보충_기준_GUI_261127_현장반영.docx",
+      "revised": "2026-11-27",
+      "sha1": "060e39b29f1a99b50fb456b7877c5e7145cdb8a8",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-hall",
@@ -633,11 +633,11 @@
     {
       "id": "marine-doc-order",
       "folder": "ST-003_마린시티점/마린 재고·전산 관리",
-      "file": "마린시티점_비품_재료_발주_요청_및_안전재고_기준_GUI_261107.docx",
-      "revised": "2026-11-07",
-      "sha1": "b36f9f8bfdb80df68d5b13247d834fd9fdd40976",
+      "file": "마린시티점_비품_재료_발주_요청_및_안전재고_기준_GUI_261127.docx",
+      "revised": "2026-11-27",
+      "sha1": "61b6e943ebea210f11a3a5bfb71665bf233d6895",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc4NTMzNTMwNXxEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-materials",
@@ -660,11 +660,11 @@
     {
       "id": "marine-doc-pickup",
       "folder": "ST-003_마린시티점/포지션별 업무",
-      "file": "마린시티점_픽업_빵포장_업무_기준_GUI_261117.docx",
-      "revised": "2026-11-17",
-      "sha1": "a1242399b342cf9994ad6a8f347cfa5cc2638612",
+      "file": "마린시티점_픽업_빵포장_업무_기준_GUI_261127.docx",
+      "revised": "2026-11-27",
+      "sha1": "51723fcb7d819e44831923ac99e1c51c7780eb04",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc1NzExNzQ0OXxEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-bar",
@@ -678,20 +678,20 @@
     {
       "id": "marine-doc-recipes",
       "folder": "ST-003_마린시티점/마린 제품 제조 품질 관리",
-      "file": "마린시티점_음료_레시피_제공_기준_GUI_261117_적용범위_시즈널티_표폭수정.docx",
-      "revised": "2026-11-09",
-      "sha1": "5e2e0e4b12be96773d58ed690e3ec544095275c3",
+      "file": "마린시티점_음료_레시피_제공_기준_261127_GUI_수정본2.docx",
+      "revised": "2026-11-27",
+      "sha1": "7be3479ef2f470be9c1f34b7b11c8be396360ef0",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc4NDk1MjA3M3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-tasting",
       "folder": "ST-003_마린시티점/마린 제품 제조 품질 관리",
-      "file": "마린시티점_시음_커피_제조_SOP_261117_현장확인반영.docx",
-      "revised": "2026-11-17",
-      "sha1": "cc0bf7113bc308356873ef9d3f89f59bd179a073",
+      "file": "마린시티점_시음_커피_제조_SOP_261117.docx",
+      "revised": "2026-11-26",
+      "sha1": "3753b236917139833cd867a87802666f84106ca6",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc4NDk1MjA3M3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
+      "basis": "드라이브 sync 2026-11-27(알파 동기화 2026-11-27T06:56Z) · 이재현 반영 요청 2026-11-27"
     },
     {
       "id": "marine-doc-ecount",
