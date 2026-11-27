@@ -3424,56 +3424,98 @@
           "units": [
             {
               "no": "D1.1",
-              "title": "입사·현장 적응",
+              "title": "입사·근무 준비",
               "sessions": [
                 {
-                  "kind": "기존",
+                  "id": "domoheon-welcome-prep",
+                  "kind": "추가",
+                  "title": "첫 출근 준비"
+                },
+                {
+                  "id": "domoheon-welcome-orientation",
+                  "kind": "추가",
+                  "title": "입사 후 오리엔테이션 일정"
+                }
+              ]
+            },
+            {
+              "no": "D1.2",
+              "title": "공간·동선",
+              "sessions": [
+                {
+                  "id": "domoheon-space-walk",
+                  "kind": "추가",
+                  "title": "교육자와 매장을 둘러보기"
+                },
+                {
+                  "id": "domoheon-space-storage",
+                  "kind": "추가",
+                  "title": "직원 공간과 비품 위치 찾기"
+                }
+              ]
+            },
+            {
+              "no": "D1.3",
+              "title": "메뉴·상품 첫 소개",
+              "sessions": [
+                {
+                  "id": "domoheon-welcome-tasting",
+                  "kind": "추가",
+                  "title": "시음·향미카드·판매 상품 익히기"
+                }
+              ]
+            },
+            {
+              "no": "D1.4",
+              "title": "일하는 방식",
+              "sessions": [
+                {
                   "id": "welcome-culture",
-                  "from": [
-                    4
-                  ]
-                },
+                  "kind": "추가",
+                  "title": "모모스가 일하는 방식과 고객 관점"
+                }
+              ]
+            },
+            {
+              "no": "D1.5",
+              "title": "서비스·안전·협업",
+              "sessions": [
                 {
-                  "kind": "기존",
                   "id": "safety-greet",
-                  "from": [
-                    9
-                  ]
+                  "kind": "추가",
+                  "title": "safety-greet"
                 },
                 {
-                  "kind": "기존",
+                  "id": "domoheon-safety-call",
+                  "kind": "추가",
+                  "title": "바 이동·트레이 콜·동료 협업"
+                },
+                {
+                  "id": "domoheon-safety-report",
+                  "kind": "추가",
+                  "title": "설비·가구 이상과 고객 안전 보고"
+                }
+              ]
+            },
+            {
+              "no": "D1.6",
+              "title": "매뉴얼 이용",
+              "sessions": [
+                {
                   "id": "welcome-manual",
-                  "from": [
-                    3
-                  ]
-                },
-                {
-                  "id": "domoheon-orientation",
                   "kind": "추가",
-                  "title": "입사 후 오리엔테이션과 업무 자료 확인",
-                  "shift": [],
-                  "position": []
-                },
+                  "title": "SOP·GUI·FRM 구분하고 찾기"
+                }
+              ]
+            },
+            {
+              "no": "D1.7",
+              "title": "첫날 OJT",
+              "sessions": [
                 {
-                  "id": "domoheon-space",
+                  "id": "domoheon-welcome-ojt",
                   "kind": "추가",
-                  "title": "매장 공간·창고 위치와 시설 조작",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-hygiene",
-                  "kind": "추가",
-                  "title": "출근 준비와 복장·개인 위생",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-firstday",
-                  "kind": "추가",
-                  "title": "첫날 OJT 확인",
-                  "shift": [],
-                  "position": []
+                  "title": "첫날 OJT 체크 17항목"
                 }
               ]
             }
@@ -3486,200 +3528,424 @@
           "units": [
             {
               "no": "D2.1",
-              "title": "홀 케어 & 백존 준비",
+              "title": "홀 라운딩",
               "sessions": [
                 {
+                  "id": "domoheon-floor-round",
                   "kind": "추가",
-                  "id": "ice-machine",
-                  "title": "제빙기 주간 청소",
-                  "topics": [
-                    "청소 준비·장비 확인",
-                    "세척·건조·재조립",
-                    "청소 후 상태 확인"
+                  "title": "고객 관점의 라운딩·서비스테이블·화장실",
+                  "shift": [
+                    "OP"
                   ],
-                  "sources": "제빙기 주간 청소 SOP",
-                  "note": "지정 담당자 추가 과정에서 이동",
+                  "position": [
+                    "라운딩"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.2",
+              "title": "잔 취급 위생·반납 식기 정리",
+              "sessions": [
+                {
+                  "id": "domoheon-welcome-hygiene",
+                  "kind": "추가",
+                  "title": "잔을 다루기 전 위생 확인"
+                },
+                {
+                  "id": "domoheon-floor-tools",
+                  "kind": "추가",
+                  "title": "정리 ① 행주·린넨 구분과 반납 식기 정리",
+                  "position": [
+                    "정리",
+                    "라운딩"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.3",
+              "title": "재료 제조·보관 기본",
+              "sessions": [
+                {
+                  "id": "domoheon-materials-common",
+                  "kind": "추가",
+                  "title": "제조량·선입선출·라벨·기한 확인",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-materials-label",
+                  "kind": "추가",
+                  "title": "주스·시럽 소분·라벨·보관",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.4",
+              "title": "베이스 제조 실습",
+              "sessions": [
+                {
+                  "id": "domoheon-material-milk",
+                  "kind": "추가",
+                  "title": "냉동증류우유 준비",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-material-sujeonggwa",
+                  "kind": "추가",
+                  "title": "수정과 시럽 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-material-buckwheat",
+                  "kind": "추가",
+                  "title": "메밀 시럽·메밀 크림 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-material-matcha",
+                  "kind": "추가",
+                  "title": "말차 베이스 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-material-icetea",
+                  "kind": "추가",
+                  "title": "아이스티 시럽·베이스 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.5",
+              "title": "베이커리 준비·빵포장",
+              "sessions": [
+                {
+                  "id": "domoheon-pickup-bakery",
+                  "kind": "추가",
+                  "title": "빵포장·매장 제공·주문 유형 구분",
+                  "position": [
+                    "빵포장"
+                  ]
+                },
+                {
+                  "id": "domoheon-bakery-prep",
+                  "kind": "추가",
+                  "title": "작업 위생·베이커리 준비·포장·주문서 표시",
+                  "position": [
+                    "빵포장"
+                  ]
+                },
+                {
+                  "id": "domoheon-bakery-showcase",
+                  "kind": "추가",
+                  "title": "쇼케이스·베이커리 재고 / 빵 서포트",
+                  "position": [
+                    "빵포장"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.6",
+              "title": "비품·재료 보충",
+              "sessions": [
+                {
+                  "id": "domoheon-supplies-op2",
+                  "kind": "추가",
+                  "title": "OP2 비품 채우기",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-supplies-op3",
+                  "kind": "추가",
+                  "title": "OP3 비품 채우기",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": [
+                    "라운딩"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.7",
+              "title": "실물 재고 확인·부족 보고",
+              "sessions": [
+                {
+                  "id": "domoheon-stock-count",
+                  "kind": "추가",
+                  "title": "재고조사·수량 인계·파손 기록",
+                  "shift": [
+                    "MD",
+                    "CL"
+                  ],
+                  "position": [
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "domoheon-stock-order",
+                  "kind": "추가",
+                  "title": "창고·보관 위치·발주 요청·안전재고"
+                }
+              ]
+            },
+            {
+              "no": "D2.8",
+              "title": "청소·시설 기본 관리",
+              "sessions": [
+                {
+                  "id": "domoheon-floor-weekly-tue",
+                  "kind": "추가",
+                  "title": "화요일 주간위생업무",
                   "shift": [
                     "CL"
                   ]
                 },
                 {
+                  "id": "domoheon-floor-weekly-wed",
                   "kind": "추가",
-                  "id": "water-filter",
-                  "title": "정수기 관리·필터 교체",
-                  "topics": [
-                    "정수기 일상 관리",
-                    "필터 교체 절차",
-                    "교체 후 상태 확인"
-                  ],
-                  "sources": "정수기 관리 및 필터 교체 절차 SOP",
-                  "note": "지정 담당자 추가 과정에서 이동"
+                  "title": "수요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
                 },
+                {
+                  "id": "domoheon-floor-weekly-thu",
+                  "kind": "추가",
+                  "title": "목요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "domoheon-floor-weekly-fri",
+                  "kind": "추가",
+                  "title": "금요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "domoheon-floor-weekly-sat",
+                  "kind": "추가",
+                  "title": "토요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "domoheon-floor-weekly-sun",
+                  "kind": "추가",
+                  "title": "일요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "domoheon-floor-cleaning",
+                  "kind": "추가",
+                  "title": "청소 도구·가구·환경",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": [
+                    "라운딩"
+                  ]
+                },
+                {
+                  "id": "domoheon-floor-facility",
+                  "kind": "추가",
+                  "title": "시설 조작·이상 보고·전화 연결 이상"
+                }
+              ]
+            },
+            {
+              "no": "D2.9",
+              "title": "바 지원·보충",
+              "sessions": [
+                {
+                  "id": "domoheon-bar-supply",
+                  "kind": "추가",
+                  "title": "정리 ② 얼음·일회용품·향미카드 보충",
+                  "position": [
+                    "정리"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.10",
+              "title": "OP1 오픈 운영 실습",
+              "sessions": [
                 {
                   "id": "domoheon-roles",
                   "kind": "추가",
-                  "title": "근무조별 역할·배치와 인계 원칙",
-                  "shift": [],
-                  "position": []
+                  "title": "근무조별 배치와 인계 원칙",
+                  "shift": [
+                    "OP",
+                    "MD",
+                    "CL"
+                  ]
                 },
                 {
                   "id": "domoheon-open",
                   "kind": "추가",
-                  "title": "OP 출입·전원·수질 측정과 커피 세팅",
+                  "title": "OP1 출입·전원·수질 측정·배치브루·핸드드립 세팅",
                   "shift": [
                     "OP"
-                  ],
-                  "position": []
-                },
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.11",
+              "title": "OP2 홀·백존 운영 실습",
+              "sessions": [
                 {
-                  "id": "domoheon-open-prep",
+                  "id": "domoheon-daily-role",
                   "kind": "추가",
-                  "title": "OP 재료·밀크 디스펜서·기물 준비와 퇴근 준비",
+                  "title": "OP2 담당 구역과 오픈 준비",
                   "shift": [
                     "OP"
-                  ],
-                  "position": []
+                  ]
                 },
                 {
-                  "id": "domoheon-close",
+                  "id": "domoheon-daily-handover",
                   "kind": "추가",
-                  "title": "CL 출근·영업 중 업무와 마감",
+                  "title": "OP2 담당 구역 점검·이상 확인·OP1 전달",
                   "shift": [
-                    "CL"
-                  ],
-                  "position": []
+                    "OP"
+                  ]
                 },
                 {
-                  "id": "domoheon-md-shift",
+                  "id": "domoheon-daily-closing",
                   "kind": "추가",
-                  "title": "MD 출근·영업 지원·상품 정리·식후 루틴",
+                  "title": "OP2 퇴근 전 점검·보충·인계",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.12",
+              "title": "OP3 홀·야외 운영 실습",
+              "sessions": [
+                {
+                  "id": "domoheon-op3-role",
+                  "kind": "추가",
+                  "title": "OP3 담당 구역과 오픈 준비",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-daily-open-form",
+                  "kind": "추가",
+                  "title": "OP3 담당 구역 점검·이상 확인·OP1 전달",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "domoheon-daily-handover-full",
+                  "kind": "추가",
+                  "title": "OP3 퇴근 전 점검·보충·인계",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D2.13",
+              "title": "MD 출근·교대 운영 실습",
+              "sessions": [
+                {
+                  "id": "domoheon-md-start",
+                  "kind": "추가",
+                  "title": "MD 출근 직후 업무와 포지션 인계",
                   "shift": [
                     "MD"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-round-check",
-                  "kind": "추가",
-                  "title": "라운딩 점검·도구·가구 정렬·환경 기준",
-                  "shift": [],
-                  "position": [
-                    "라운딩"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D2.14",
+              "title": "CL 출근·마감 운영 실습",
+              "sessions": [
                 {
-                  "id": "domoheon-open-round",
+                  "id": "domoheon-cl-start",
                   "kind": "추가",
-                  "title": "오픈 라운딩 체크리스트 작성",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": [
-                    "라운딩"
-                  ]
-                },
-                {
-                  "id": "domoheon-restock",
-                  "kind": "추가",
-                  "title": "원두·재료·리테일·소모품 보충",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-breakage",
-                  "kind": "추가",
-                  "title": "기물 파손 기록과 재고실사일 처리",
+                  "title": "CL 출근 직후 업무",
                   "shift": [
                     "CL"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-weekly",
-                  "kind": "추가",
-                  "title": "요일별 주간 위생 업무",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-sub-round",
-                  "kind": "추가",
-                  "title": "서브포지션 라운딩 고객 응대·테이블 정리",
-                  "shift": [],
-                  "position": [
-                    "라운딩"
                   ]
                 },
                 {
-                  "id": "domoheon-wash",
+                  "id": "domoheon-cl4-close",
                   "kind": "추가",
-                  "title": "세척·보충: 반납 식기 세척과 얼음·비품 보충",
-                  "shift": [],
-                  "position": [
-                    "정리"
-                  ]
-                },
-                {
-                  "id": "domoheon-materials-common",
-                  "kind": "추가",
-                  "title": "재료 제조 준비·라벨·선입선출·보관",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-material-milk",
-                  "kind": "추가",
-                  "title": "냉동증류우유·카페오레 베이스 준비",
+                  "title": "CL1·CL4 마감·최종 확인·퇴실",
                   "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-material-syrups",
-                  "kind": "추가",
-                  "title": "수정과·메밀 시럽과 메밀 크림 제조",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-material-other",
-                  "kind": "추가",
-                  "title": "말차·아이스티 베이스와 주스·설탕시럽 소분",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-cleaning",
-                  "kind": "추가",
-                  "title": "유리·바닥·테이블·의자 청소",
-                  "shift": [],
-                  "position": [
-                    "라운딩"
+                    "CL"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D2.15",
+              "title": "제빙기 주간 청소",
+              "sessions": [
                 {
-                  "id": "domoheon-furniture",
+                  "id": "ice-machine",
                   "kind": "추가",
-                  "title": "실내·테라스 가구 관리",
-                  "shift": [],
-                  "position": [
-                    "라운딩"
+                  "title": "제빙기 주간 청소",
+                  "shift": [
+                    "CL"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D2.16",
+              "title": "정수기 관리·필터 교체",
+              "sessions": [
                 {
-                  "id": "domoheon-facility-report",
+                  "id": "water-filter",
                   "kind": "추가",
-                  "title": "시설·기물 이상과 QA 보고·인계",
-                  "shift": [],
-                  "position": []
-                },
+                  "title": "정수기 관리·필터 교체"
+                }
+              ]
+            },
+            {
+              "no": "D2.17",
+              "title": "QA 보고·처리 관리",
+              "sessions": [
                 {
-                  "id": "domoheon-ordering",
+                  "id": "domoheon-qa-report",
                   "kind": "추가",
-                  "title": "비품·재료 안전재고 확인과 발주 요청",
-                  "shift": [],
-                  "position": []
+                  "title": "QA 보고·처리 관리"
                 }
               ]
             }
@@ -3692,84 +3958,142 @@
           "units": [
             {
               "no": "D3.1",
-              "title": "POS 주문 & 픽업 서비스",
+              "title": "메뉴·제공 조건 이해",
               "sessions": [
                 {
-                  "kind": "기존",
-                  "id": "customer-complaint",
-                  "from": [
-                    54
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-payment",
-                  "from": [
-                    38
-                  ],
+                  "id": "domoheon-menu-recipe",
+                  "kind": "추가",
+                  "title": "메뉴·온도 구분과 메뉴 제한",
                   "position": [
                     "POS",
-                    "리테일"
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-courier",
-                  "from": [
-                    40
-                  ],
-                  "position": [
-                    "POS",
-                    "리테일"
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-cake",
-                  "from": [
-                    41
-                  ],
-                  "position": [
-                    "POS",
-                    "그리터",
-                    "리테일"
-                  ]
-                },
-                {
-                  "id": "domoheon-pos",
-                  "kind": "추가",
-                  "title": "포스 고객 안내·주문·결제",
-                  "shift": [],
-                  "position": [
-                    "POS"
-                  ]
-                },
-                {
-                  "id": "domoheon-bread",
-                  "kind": "추가",
-                  "title": "빵포장 위생·주문 유형·베이커리 준비",
-                  "shift": [],
-                  "position": [
-                    "POS"
-                  ]
-                },
-                {
-                  "id": "domoheon-noncoffee",
-                  "kind": "추가",
-                  "title": "픽업 논커피 제조와 요청 대응",
-                  "shift": [],
-                  "position": [
                     "픽업",
                     "메이킹"
                   ]
                 },
                 {
-                  "id": "domoheon-pickup",
+                  "id": "domoheon-menu-glass",
                   "kind": "추가",
-                  "title": "픽업 비품·트레이 세팅·최종 확인·주문 완료",
-                  "shift": [],
+                  "title": "매장·포장 고객 제공 차이",
+                  "position": [
+                    "POS",
+                    "픽업",
+                    "빵포장"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D3.2",
+              "title": "픽업·트레이 세팅",
+              "sessions": [
+                {
+                  "id": "domoheon-pickup-tools",
+                  "kind": "추가",
+                  "title": "준비물을 찾아 챙기기",
                   "position": [
                     "픽업"
+                  ]
+                },
+                {
+                  "id": "domoheon-pickup-layout",
+                  "kind": "추가",
+                  "title": "냅킨·커트러리 직접 배치하기",
+                  "position": [
+                    "픽업"
+                  ]
+                },
+                {
+                  "id": "domoheon-pickup-cup",
+                  "kind": "추가",
+                  "title": "잔·소서를 맞추고 상태 확인하기",
+                  "position": [
+                    "픽업"
+                  ]
+                },
+                {
+                  "id": "domoheon-pickup-final",
+                  "kind": "추가",
+                  "title": "완성 구성 설명·확인",
+                  "position": [
+                    "픽업"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D3.3",
+              "title": "픽업 최종 확인·전달",
+              "sessions": [
+                {
+                  "id": "domoheon-pickup-check",
+                  "kind": "추가",
+                  "title": "제공 전 최종 검수·메뉴 설명·주문 오류 대응",
+                  "position": [
+                    "픽업"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D3.4",
+              "title": "고객 응대·호스피탈리티",
+              "sessions": [
+                {
+                  "id": "customer-complaint",
+                  "kind": "추가",
+                  "title": "customer-complaint"
+                },
+                {
+                  "id": "domoheon-customer-story",
+                  "kind": "추가",
+                  "title": "내 고객 만들기 첫 사례·피드백"
+                }
+              ]
+            },
+            {
+              "no": "D3.5",
+              "title": "POS 주문·결제",
+              "sessions": [
+                {
+                  "id": "domoheon-orders-pos",
+                  "kind": "추가",
+                  "title": "포스 주문 조건 확인·제조 전달",
+                  "position": [
+                    "POS"
+                  ]
+                },
+                {
+                  "id": "orders-payment",
+                  "kind": "추가",
+                  "title": "orders-payment",
+                  "position": [
+                    "POS",
+                    "리테일"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D3.6",
+              "title": "주문 채널·예약 처리",
+              "sessions": [
+                {
+                  "id": "orders-courier",
+                  "kind": "추가",
+                  "title": "orders-courier",
+                  "position": [
+                    "POS",
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "orders-cake",
+                  "kind": "추가",
+                  "title": "orders-cake",
+                  "position": [
+                    "POS",
+                    "그리터",
+                    "리테일"
                   ]
                 }
               ]
@@ -3783,56 +4107,145 @@
           "units": [
             {
               "no": "D4.1",
-              "title": "그리터 & 메이킹(스팀)",
+              "title": "그리터·대기 안내",
               "sessions": [
                 {
+                  "id": "domoheon-orders-greeter",
                   "kind": "추가",
+                  "title": "고객 안내·대기 안내",
+                  "position": [
+                    "그리터"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.2",
+              "title": "제조 기본",
+              "sessions": [
+                {
+                  "id": "domoheon-making-basic",
+                  "kind": "추가",
+                  "title": "논커피 제조 기본",
+                  "position": [
+                    "메이킹",
+                    "브루잉",
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.3",
+              "title": "제조 협업·KDS",
+              "sessions": [
+                {
+                  "id": "domoheon-menu-sequence",
+                  "kind": "추가",
+                  "title": "제조 순서 공유와 페이히어 주문 완료",
+                  "position": [
+                    "메이킹",
+                    "브루잉",
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.4",
+              "title": "논커피 제조",
+              "sessions": [
+                {
+                  "id": "domoheon-menu-noncoffee",
+                  "kind": "추가",
+                  "title": "논커피 제조",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.5",
+              "title": "시그니처 제조",
+              "sessions": [
+                {
+                  "id": "domoheon-menu-signature",
+                  "kind": "추가",
+                  "title": "시그니처 제조 (메밀정과)",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.6",
+              "title": "커피 음료 메이킹",
+              "sessions": [
+                {
+                  "id": "domoheon-menu-coffee",
+                  "kind": "추가",
+                  "title": "배치커피·카페오레",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.7",
+              "title": "메이킹 실습·평가",
+              "sessions": [
+                {
                   "id": "making-test",
+                  "kind": "추가",
                   "title": "메이킹 실습·평가",
-                  "topics": [
-                    "평가 안내·연습 일정 조율",
-                    "연습 일지",
-                    "실기 확인"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
                   "position": [
                     "메이킹"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D4.8",
+              "title": "스티밍",
+              "sessions": [
                 {
+                  "id": "domoheon-steaming",
                   "kind": "추가",
+                  "title": "스티밍과 메뉴별 밀크폼 이해",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D4.9",
+              "title": "라떼아트",
+              "sessions": [
+                {
                   "id": "latte-art",
+                  "kind": "추가",
                   "title": "라떼아트",
-                  "topics": [
-                    "안정화·낙차",
-                    "면하트",
-                    "밀어넣기",
-                    "핸들링",
-                    "결하트 연습"
-                  ],
-                  "sources": "포지션 학습·실습·고객 경험 GUI",
                   "position": [
                     "메이킹"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D4.10",
+              "title": "요청 대응·스테이션 관리",
+              "sessions": [
                 {
-                  "id": "domoheon-signature-recipes",
+                  "id": "domoheon-making-station",
                   "kind": "추가",
-                  "title": "메밀정과 시그니처 제조",
-                  "shift": [],
+                  "title": "메뉴 변경·누락 / 픽업 지원 / 행주·얼음",
                   "position": [
-                    "픽업",
-                    "메이킹"
-                  ]
-                },
-                {
-                  "id": "domoheon-noncoffee-recipes",
-                  "kind": "추가",
-                  "title": "논커피 음료 계량·제조·제공",
-                  "shift": [],
-                  "position": [
-                    "픽업",
-                    "메이킹"
+                    "메이킹",
+                    "픽업"
                   ]
                 }
               ]
@@ -3846,14 +4259,105 @@
           "units": [
             {
               "no": "D5.1",
-              "title": "브루잉 & 리테일",
+              "title": "리테일 안내·추천",
               "sessions": [
                 {
+                  "id": "domoheon-orders-retail",
                   "kind": "추가",
+                  "title": "리테일 상품 안내·응대",
+                  "position": [
+                    "리테일",
+                    "POS"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.2",
+              "title": "리테일 진열·보충",
+              "sessions": [
+                {
+                  "id": "domoheon-retail-display",
+                  "kind": "추가",
+                  "title": "상품 진열·재고 보충·상태 확인",
+                  "position": [
+                    "POS",
+                    "그리터",
+                    "리테일"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.3",
+              "title": "시음 커피",
+              "sessions": [
+                {
+                  "id": "domoheon-tasting-coffee",
+                  "kind": "추가",
+                  "title": "시음 커피",
+                  "shift": [
+                    "OP",
+                    "MD",
+                    "CL"
+                  ],
+                  "position": [
+                    "리테일",
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.4",
+              "title": "원두 관리 흐름",
+              "sessions": [
+                {
+                  "id": "domoheon-stock-beans",
+                  "kind": "추가",
+                  "title": "음료용 원두 전환·자가사용·이카운트 구분",
+                  "shift": [
+                    "MD"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.5",
+              "title": "원두·향미 이해",
+              "sessions": [
+                {
+                  "id": "domoheon-bean-flavor",
+                  "kind": "추가",
+                  "title": "원두별 특징·향미·레시피·브루잉 방향성",
+                  "position": [
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.6",
+              "title": "브루잉 이론·실습",
+              "sessions": [
+                {
+                  "id": "domoheon-brewing-theory",
+                  "kind": "추가",
+                  "title": "브루잉 이론·실습",
+                  "position": [
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "D5.7",
+              "title": "측정 도구",
+              "sessions": [
+                {
                   "id": "refractometer",
+                  "kind": "추가",
                   "title": "굴절계 측정·영점 교정·세척·보관",
-                  "sources": "VST 커피 굴절계 관리 SOP",
-                  "note": "6단계에서도 재참조",
                   "shift": [
                     "CL"
                   ],
@@ -3861,62 +4365,53 @@
                     "브루잉",
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D5.8",
+              "title": "브루잉 협업",
+              "sessions": [
                 {
+                  "id": "domoheon-brewing-team",
                   "kind": "추가",
-                  "id": "brewing-test",
-                  "title": "브루잉 실습·평가",
-                  "topics": [
-                    "연습 일정·일지",
-                    "이론·실습 준비",
-                    "평가 진행"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
+                  "title": "브루잉 제조·제공 순서 / 지원",
                   "position": [
                     "브루잉"
                   ]
-                },
-                {
-                  "id": "domoheon-brewing",
-                  "kind": "추가",
-                  "title": "브루잉 핸드드립 제조·레시피·주문 완료",
-                  "shift": [],
-                  "position": [
-                    "브루잉"
-                  ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D5.9",
+              "title": "배치브루",
+              "sessions": [
                 {
                   "id": "domoheon-batch",
                   "kind": "추가",
                   "title": "배치브루 추출·품질·잔량 관리",
-                  "shift": [],
                   "position": [
-                    "브루잉"
+                    "배치브루"
                   ]
                 },
                 {
-                  "id": "domoheon-retail",
+                  "id": "domoheon-batch-support",
                   "kind": "추가",
-                  "title": "리테일 진열·재고 보충·홀 응대",
-                  "shift": [],
+                  "title": "배치브루 자리 이탈 인계·매장 운영 지원",
                   "position": [
-                    "리테일"
+                    "배치브루"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D5.10",
+              "title": "브루잉 실습·평가",
+              "sessions": [
                 {
-                  "id": "domoheon-coffee-recipes",
+                  "id": "brewing-test",
                   "kind": "추가",
-                  "title": "배치커피·카페오레 제공 기준",
-                  "shift": [],
-                  "position": [
-                    "브루잉"
-                  ]
-                },
-                {
-                  "id": "domoheon-brewing-recipes",
-                  "kind": "추가",
-                  "title": "핸드드립 HOT·ICED 제공 기준",
-                  "shift": [],
+                  "title": "브루잉 실습·평가",
                   "position": [
                     "브루잉"
                   ]
@@ -3932,67 +4427,46 @@
           "units": [
             {
               "no": "D6.1",
-              "title": "에스프레소",
+              "title": "추출 이론",
               "sessions": [
                 {
-                  "kind": "추가",
                   "id": "esp-theory",
+                  "kind": "추가",
                   "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
-                  "sources": "포지션 학습·실습·고객 경험 GUI 및 별도 참조 교재",
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D6.2",
+              "title": "에스프레소 실습·평가",
+              "sessions": [
                 {
-                  "kind": "추가",
                   "id": "esp-test",
+                  "kind": "추가",
                   "title": "에스프레소 실습·평가",
-                  "topics": [
-                    "연습 일정·일지",
-                    "이론·실습 준비",
-                    "평가 진행"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D6.3",
+              "title": "그라인더 날 분해·청소",
+              "sessions": [
                 {
-                  "kind": "추가",
                   "id": "grinder-blade",
+                  "kind": "추가",
                   "title": "Mahlkönig EK43 날 분해·청소",
-                  "topics": [
-                    "작업 대상·권한",
-                    "준비·안전",
-                    "날 분해·청소·재조립",
-                    "완료 확인·이상 대응"
-                  ],
-                  "sources": "그라인더-날-분해-및-청소",
-                  "note": "2026-11-24 기존 그라인더 교육을 기종별로 분리",
                   "shift": [
                     "CL"
                   ],
                   "position": [
                     "에스프레소"
                   ]
-                },
-                {
-                  "id": "domoheon-settlement",
-                  "kind": "추가",
-                  "title": "MD1 매출 정산과 전산 처리",
-                  "shift": [
-                    "MD"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-md-ecount",
-                  "kind": "추가",
-                  "title": "MD 상품 전산 처리와 매출 기록",
-                  "shift": [
-                    "MD"
-                  ],
-                  "position": []
                 },
                 {
                   "id": "domoheon-grinder-zm",
@@ -4002,24 +4476,22 @@
                     "CL"
                   ],
                   "position": [
-                    "브루잉"
+                    "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "D6.4",
+              "title": "재고 전산 처리",
+              "sessions": [
                 {
-                  "id": "domoheon-phone",
+                  "id": "domoheon-stock-ecount",
                   "kind": "추가",
-                  "title": "바리스타 전화기 통화 불량 조치",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "domoheon-ecount",
-                  "kind": "추가",
-                  "title": "구매입력·창고이동·자가사용·재고 확인",
+                  "title": "재고 전산 처리",
                   "shift": [
                     "MD"
-                  ],
-                  "position": []
+                  ]
                 }
               ]
             }

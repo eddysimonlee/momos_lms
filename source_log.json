@@ -11,6 +11,1199 @@
   ],
   "entries": [
     {
+      "id": "2026-11-27-alpha-domoheon-restructure",
+      "at": "2026-11-27",
+      "approvedBy": "이재현·채수민",
+      "tickets": [],
+      "title": "알파 작업 — 도모헌점 교육과정 본점 단원 틀로 재구성(90세션: 공통 16 + 지점 74)",
+      "basis": {
+        "kind": "알파 작업",
+        "origin": "채수민 피드백(지점 문항·세션 구분이 본점과 다름) → 이재현 결정: 본점 단원 구성을 틀로, 지점에 없는 업무는 빼고 지점 문서에만 있는 내용은 새 세션. 재구성안 문서 확인 답변 2026-11-27",
+        "copy": ".drive_sync_branches/ST_매장사업부 (2026-11-27 06:56Z 동기화, --folders ST-003·004·005)",
+        "range": "도모헌점 원본(입사·근무 준비 폴더, 옛 도모헌점_입사근무준비 폴더 제외). 스티밍은 공통 메이킹 학습·실습·평가 기준으로 연습, 공통 교육 전부 유지(채수민 답변). 스마트오더는 공통 문서 적용 범위에 없어 제외. 수질·배치브루 준비는 공통 오픈조 수질 문서(도모헌점 정수기 배수·배치브루 추출) 근거."
+      },
+      "work": "도모헌점 세션을 본점 6단계·단원 순서로 다시 배치하고, 지점 교육은 본점 세션 범위에 맞춰 지점 문서 근거로 다시 나눔·작성. 공통 교육은 같은 ID로 공유.",
+      "docs": [],
+      "removed": [],
+      "lessons": [
+        {
+          "no": 1,
+          "id": "domoheon-welcome-prep",
+          "branch": "domoheon",
+          "title": "첫 출근 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "id": "domoheon-welcome-orientation",
+          "branch": "domoheon",
+          "title": "입사 후 오리엔테이션 일정",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "id": "domoheon-space-walk",
+          "branch": "domoheon",
+          "title": "교육자와 매장을 둘러보기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "id": "domoheon-space-storage",
+          "branch": "domoheon",
+          "title": "직원 공간과 비품 위치 찾기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "id": "domoheon-welcome-tasting",
+          "branch": "domoheon",
+          "title": "시음·향미카드·판매 상품 익히기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "id": "welcome-culture",
+          "branch": "domoheon",
+          "title": "모모스가 일하는 방식과 고객 관점",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 7,
+          "id": "safety-greet",
+          "branch": "domoheon",
+          "title": "safety-greet",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 8,
+          "id": "domoheon-safety-call",
+          "branch": "domoheon",
+          "title": "바 이동·트레이 콜·동료 협업",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 9,
+          "id": "domoheon-safety-report",
+          "branch": "domoheon",
+          "title": "설비·가구 이상과 고객 안전 보고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 10,
+          "id": "welcome-manual",
+          "branch": "domoheon",
+          "title": "SOP·GUI·FRM 구분하고 찾기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 11,
+          "id": "domoheon-welcome-ojt",
+          "branch": "domoheon",
+          "title": "첫날 OJT 체크 17항목",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 12,
+          "id": "domoheon-floor-round",
+          "branch": "domoheon",
+          "title": "고객 관점의 라운딩·서비스테이블·화장실",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 13,
+          "id": "domoheon-welcome-hygiene",
+          "branch": "domoheon",
+          "title": "잔을 다루기 전 위생 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 14,
+          "id": "domoheon-floor-tools",
+          "branch": "domoheon",
+          "title": "정리 ① 행주·린넨 구분과 반납 식기 정리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 15,
+          "id": "domoheon-materials-common",
+          "branch": "domoheon",
+          "title": "제조량·선입선출·라벨·기한 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 16,
+          "id": "domoheon-materials-label",
+          "branch": "domoheon",
+          "title": "주스·시럽 소분·라벨·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 17,
+          "id": "domoheon-material-milk",
+          "branch": "domoheon",
+          "title": "냉동증류우유 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 18,
+          "id": "domoheon-material-sujeonggwa",
+          "branch": "domoheon",
+          "title": "수정과 시럽 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 19,
+          "id": "domoheon-material-buckwheat",
+          "branch": "domoheon",
+          "title": "메밀 시럽·메밀 크림 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 20,
+          "id": "domoheon-material-matcha",
+          "branch": "domoheon",
+          "title": "말차 베이스 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 21,
+          "id": "domoheon-material-icetea",
+          "branch": "domoheon",
+          "title": "아이스티 시럽·베이스 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 22,
+          "id": "domoheon-pickup-bakery",
+          "branch": "domoheon",
+          "title": "빵포장·매장 제공·주문 유형 구분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 23,
+          "id": "domoheon-bakery-prep",
+          "branch": "domoheon",
+          "title": "작업 위생·베이커리 준비·포장·주문서 표시",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 24,
+          "id": "domoheon-bakery-showcase",
+          "branch": "domoheon",
+          "title": "쇼케이스·베이커리 재고 / 빵 서포트",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 25,
+          "id": "domoheon-supplies-op2",
+          "branch": "domoheon",
+          "title": "OP2 비품 채우기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 26,
+          "id": "domoheon-supplies-op3",
+          "branch": "domoheon",
+          "title": "OP3 비품 채우기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 27,
+          "id": "domoheon-stock-count",
+          "branch": "domoheon",
+          "title": "재고조사·수량 인계·파손 기록",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 28,
+          "id": "domoheon-stock-order",
+          "branch": "domoheon",
+          "title": "창고·보관 위치·발주 요청·안전재고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 29,
+          "id": "domoheon-floor-weekly-tue",
+          "branch": "domoheon",
+          "title": "화요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 30,
+          "id": "domoheon-floor-weekly-wed",
+          "branch": "domoheon",
+          "title": "수요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 31,
+          "id": "domoheon-floor-weekly-thu",
+          "branch": "domoheon",
+          "title": "목요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 32,
+          "id": "domoheon-floor-weekly-fri",
+          "branch": "domoheon",
+          "title": "금요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 33,
+          "id": "domoheon-floor-weekly-sat",
+          "branch": "domoheon",
+          "title": "토요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 34,
+          "id": "domoheon-floor-weekly-sun",
+          "branch": "domoheon",
+          "title": "일요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 35,
+          "id": "domoheon-floor-cleaning",
+          "branch": "domoheon",
+          "title": "청소 도구·가구·환경",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 36,
+          "id": "domoheon-floor-facility",
+          "branch": "domoheon",
+          "title": "시설 조작·이상 보고·전화 연결 이상",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 37,
+          "id": "domoheon-bar-supply",
+          "branch": "domoheon",
+          "title": "정리 ② 얼음·일회용품·향미카드 보충",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 38,
+          "id": "domoheon-roles",
+          "branch": "domoheon",
+          "title": "근무조별 배치와 인계 원칙",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 39,
+          "id": "domoheon-open",
+          "branch": "domoheon",
+          "title": "OP1 출입·전원·수질 측정·배치브루·핸드드립 세팅",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 40,
+          "id": "domoheon-daily-role",
+          "branch": "domoheon",
+          "title": "OP2 담당 구역과 오픈 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 41,
+          "id": "domoheon-daily-handover",
+          "branch": "domoheon",
+          "title": "OP2 담당 구역 점검·이상 확인·OP1 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 42,
+          "id": "domoheon-daily-closing",
+          "branch": "domoheon",
+          "title": "OP2 퇴근 전 점검·보충·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 43,
+          "id": "domoheon-op3-role",
+          "branch": "domoheon",
+          "title": "OP3 담당 구역과 오픈 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 44,
+          "id": "domoheon-daily-open-form",
+          "branch": "domoheon",
+          "title": "OP3 담당 구역 점검·이상 확인·OP1 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 45,
+          "id": "domoheon-daily-handover-full",
+          "branch": "domoheon",
+          "title": "OP3 퇴근 전 점검·보충·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 46,
+          "id": "domoheon-md-start",
+          "branch": "domoheon",
+          "title": "MD 출근 직후 업무와 포지션 인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 47,
+          "id": "domoheon-cl-start",
+          "branch": "domoheon",
+          "title": "CL 출근 직후 업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 48,
+          "id": "domoheon-cl4-close",
+          "branch": "domoheon",
+          "title": "CL1·CL4 마감·최종 확인·퇴실",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 49,
+          "id": "ice-machine",
+          "branch": "domoheon",
+          "title": "제빙기 주간 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 50,
+          "id": "water-filter",
+          "branch": "domoheon",
+          "title": "정수기 관리·필터 교체",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 51,
+          "id": "domoheon-qa-report",
+          "branch": "domoheon",
+          "title": "QA 보고·처리 관리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 52,
+          "id": "domoheon-menu-recipe",
+          "branch": "domoheon",
+          "title": "메뉴·온도 구분과 메뉴 제한",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 53,
+          "id": "domoheon-menu-glass",
+          "branch": "domoheon",
+          "title": "매장·포장 고객 제공 차이",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 54,
+          "id": "domoheon-pickup-tools",
+          "branch": "domoheon",
+          "title": "준비물을 찾아 챙기기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 55,
+          "id": "domoheon-pickup-layout",
+          "branch": "domoheon",
+          "title": "냅킨·커트러리 직접 배치하기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 56,
+          "id": "domoheon-pickup-cup",
+          "branch": "domoheon",
+          "title": "잔·소서를 맞추고 상태 확인하기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 57,
+          "id": "domoheon-pickup-final",
+          "branch": "domoheon",
+          "title": "완성 구성 설명·확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 58,
+          "id": "domoheon-pickup-check",
+          "branch": "domoheon",
+          "title": "제공 전 최종 검수·메뉴 설명·주문 오류 대응",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 59,
+          "id": "customer-complaint",
+          "branch": "domoheon",
+          "title": "customer-complaint",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 60,
+          "id": "domoheon-customer-story",
+          "branch": "domoheon",
+          "title": "내 고객 만들기 첫 사례·피드백",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 61,
+          "id": "domoheon-orders-pos",
+          "branch": "domoheon",
+          "title": "포스 주문 조건 확인·제조 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 62,
+          "id": "orders-payment",
+          "branch": "domoheon",
+          "title": "orders-payment",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 63,
+          "id": "orders-courier",
+          "branch": "domoheon",
+          "title": "orders-courier",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 64,
+          "id": "orders-cake",
+          "branch": "domoheon",
+          "title": "orders-cake",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 65,
+          "id": "domoheon-orders-greeter",
+          "branch": "domoheon",
+          "title": "고객 안내·대기 안내",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 66,
+          "id": "domoheon-making-basic",
+          "branch": "domoheon",
+          "title": "논커피 제조 기본",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 67,
+          "id": "domoheon-menu-sequence",
+          "branch": "domoheon",
+          "title": "제조 순서 공유와 페이히어 주문 완료",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 68,
+          "id": "domoheon-menu-noncoffee",
+          "branch": "domoheon",
+          "title": "논커피 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 69,
+          "id": "domoheon-menu-signature",
+          "branch": "domoheon",
+          "title": "시그니처 제조 (메밀정과)",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 70,
+          "id": "domoheon-menu-coffee",
+          "branch": "domoheon",
+          "title": "배치커피·카페오레",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 71,
+          "id": "making-test",
+          "branch": "domoheon",
+          "title": "메이킹 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 72,
+          "id": "domoheon-steaming",
+          "branch": "domoheon",
+          "title": "스티밍과 메뉴별 밀크폼 이해",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 73,
+          "id": "latte-art",
+          "branch": "domoheon",
+          "title": "라떼아트",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 74,
+          "id": "domoheon-making-station",
+          "branch": "domoheon",
+          "title": "메뉴 변경·누락 / 픽업 지원 / 행주·얼음",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 75,
+          "id": "domoheon-orders-retail",
+          "branch": "domoheon",
+          "title": "리테일 상품 안내·응대",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 76,
+          "id": "domoheon-retail-display",
+          "branch": "domoheon",
+          "title": "상품 진열·재고 보충·상태 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 77,
+          "id": "domoheon-tasting-coffee",
+          "branch": "domoheon",
+          "title": "시음 커피",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 78,
+          "id": "domoheon-stock-beans",
+          "branch": "domoheon",
+          "title": "음료용 원두 전환·자가사용·이카운트 구분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 79,
+          "id": "domoheon-bean-flavor",
+          "branch": "domoheon",
+          "title": "원두별 특징·향미·레시피·브루잉 방향성",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 80,
+          "id": "domoheon-brewing-theory",
+          "branch": "domoheon",
+          "title": "브루잉 이론·실습",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 81,
+          "id": "refractometer",
+          "branch": "domoheon",
+          "title": "굴절계 측정·영점 교정·세척·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 82,
+          "id": "domoheon-brewing-team",
+          "branch": "domoheon",
+          "title": "브루잉 제조·제공 순서 / 지원",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 83,
+          "id": "domoheon-batch",
+          "branch": "domoheon",
+          "title": "배치브루 추출·품질·잔량 관리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 84,
+          "id": "domoheon-batch-support",
+          "branch": "domoheon",
+          "title": "배치브루 자리 이탈 인계·매장 운영 지원",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 85,
+          "id": "brewing-test",
+          "branch": "domoheon",
+          "title": "브루잉 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 86,
+          "id": "esp-theory",
+          "branch": "domoheon",
+          "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 87,
+          "id": "esp-test",
+          "branch": "domoheon",
+          "title": "에스프레소 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 88,
+          "id": "grinder-blade",
+          "branch": "domoheon",
+          "title": "Mahlkönig EK43 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 89,
+          "id": "domoheon-grinder-zm",
+          "branch": "domoheon",
+          "title": "Mazzer ZM 그라인더 버 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 90,
+          "id": "domoheon-stock-ecount",
+          "branch": "domoheon",
+          "title": "재고 전산 처리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        }
+      ],
+      "rules": [],
+      "checks": [
+        "지점 교육 ID가 바뀜(본점 세션 ID 기준). 영도점·도모헌점은 실서비스 전이라 알파 테스트 체크는 옮기지 않음"
+      ],
+      "skipped": []
+    },
+    {
       "id": "2026-11-27-alpha-yeongdo-restructure",
       "at": "2026-11-27",
       "approvedBy": "이재현·채수민",
