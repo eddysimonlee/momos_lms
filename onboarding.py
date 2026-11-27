@@ -1099,6 +1099,7 @@ class Service:
                 add('assign:'+target+':'+assigned['at'],name+' · 교육 배정',
                     '교육 시작 기준일과 담당자를 확인하세요.',assigned['date'],target=target,view='home')
             for ident,r in l['records'].items():
+                if ident not in STEPS:continue  # 11/27 교육과정에서 빠진 교육의 기록은 알림에서 뺀다(기록은 그대로 둔다)
                 title=STEPS[ident]['title'];attempt=str(r['attempt'])
                 if trainer and r['status']=='review':
                     add('review:'+target+':'+ident+':'+attempt,name+' · '+title+' 확인 요청',

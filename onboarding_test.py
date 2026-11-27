@@ -546,6 +546,18 @@ class EducationTests(unittest.TestCase):
         self.assertEqual(result['learner']['records'][monday], before[monday])
         self.assertEqual(result['learner']['records']['floor-cleaning'], before['floor-cleaning'])
 
+    def test_records_of_removed_sessions_do_not_break_loading(self):
+        # 11/27 지점 교육과정 재구성으로 빠진 교육(예: marine-grinder-kold-s)의 기록이 남아 있어도 화면을 불러온다
+        with self.store.connect() as db:
+            root=projects.Rooms.read(db,ob.ROOT)
+            entry=root['learners'][self.learner['id']]
+            doc=projects.Rooms.read(db,entry['key'])
+            doc['records']['removed-session-fixture']=dict(status='review',self=[True],teacher=[False],attempt=1,request='2026-11-27',feedback='',history=[],start=None,done=None)
+            projects.Rooms.write(db,entry['key'],doc)
+        for user in (self.learner,self.trainer):
+            self.service.get(user)
+        self.service.get(self.trainer,self.learner['id'])
+
     def test_open_roles_merge_original_checks_and_keep_retired_history(self):
         ident='marine-open-overview'
         retired=['marine-op3','marine-op4','marine-op5','marine-op6']
