@@ -730,15 +730,6 @@
       "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
     },
     {
-      "id": "marine-doc-kold",
-      "folder": "ST-003_마린시티점/장비·기기 관리",
-      "file": "본점_KoldS_그라인더_날_분해_및_청소_261118_SOP_사진반영.docx",
-      "revised": "2026-11-18",
-      "sha1": "e361b9be0242d931218526c71120a9766ca9ae10",
-      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTUwNzMzMjg3M3xEfDA",
-      "basis": "드라이브 원본·docs-check 확인 2026-11-25 · 채수민 마린시티점 교육 구성 승인 2026-11-26"
-    },
-    {
       "id": "yeongdo-doc-intro",
       "folder": "ST-004_영도점/입사·근무 준비",
       "file": "영도점_신입_교육_안내_261123_GUI.docx",
@@ -1196,6 +1187,33 @@
       "sha1": "c908aa2732d2bac1fac4f49ce10dfac5aa17f621",
       "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwODI3NDQ2MjcyOXxEfDA",
       "basis": "드라이브 원본·docs-check 확인 2026-11-26 · 이재현 도모헌점 근거 문서 승인 2026-11-26"
+    },
+    {
+      "id": "yeongdo-doc-open-round",
+      "folder": "ST-004_영도점/근무조별 운영",
+      "file": "영도점_오픈_라운딩_체크리스트_261127_FRM.docx",
+      "revised": "2026-11-27",
+      "sha1": "f074298fcaaafb6e78264d26ec6dd3c50056beb3",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwNTkwODYwMTA5N3xEfDA",
+      "basis": "드라이브 원본 2026-11-27(알파 동기화 06:56Z) · 채수민 영도점 오픈 업무 체크리스트 작성 답변 2026-11-27"
+    },
+    {
+      "id": "marine-doc-weekly",
+      "folder": "ST-003_마린시티점/마린 근무조별 운영",
+      "file": "마린시티점_주간_위생_업무_SOP_261126_v1.4_필수점검.docx",
+      "revised": "2026-11-26",
+      "sha1": "bd2f109245c38d30c575ed29e24a6116e5d21bce",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
+      "basis": "드라이브 원본 2026-11-27(알파 동기화 06:56Z) · 채수민 마린시티점 재구성 답변 2026-11-27"
+    },
+    {
+      "id": "marine-doc-open-leave",
+      "folder": "ST-003_마린시티점/마린 근무조별 운영",
+      "file": "마린시티점_오픈조_퇴근_준비_절차_SOP_261127_현장반영.docx",
+      "revised": "2026-11-27",
+      "sha1": "76e271a903dfa5444138ff0fa0f978c5967cd527",
+      "folderKey": "QDIwMDEwMDAwMDA1NDg5MDN8MzQ3MjYxMzgwMzc3MDg4MzMzN3xEfDA",
+      "basis": "드라이브 원본 2026-11-27(알파 동기화 06:56Z) · 채수민 마린시티점 재구성 답변 2026-11-27"
     }
   ]
 }
