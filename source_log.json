@@ -11,6 +11,1264 @@
   ],
   "entries": [
     {
+      "id": "2026-11-27-alpha-yeongdo-restructure",
+      "at": "2026-11-27",
+      "approvedBy": "이재현·채수민",
+      "tickets": [],
+      "title": "알파 작업 — 영도점 교육과정 본점 단원 틀로 재구성(95세션: 공통 18 + 지점 77)",
+      "basis": {
+        "kind": "알파 작업",
+        "origin": "채수민 피드백(지점 문항·세션 구분이 본점과 다름) → 이재현 결정: 본점 단원 구성을 틀로, 지점에 없는 업무는 빼고 지점 문서에만 있는 내용은 새 세션. 재구성안 문서 확인 답변 2026-11-27",
+        "copy": ".drive_sync_branches/ST_매장사업부 (2026-11-27 06:56Z 동기화, --folders ST-003·004·005)",
+        "range": "영도점 원본 26편(오픈 라운딩 체크리스트 261127 새로 등록). 마감조 근무 절차·라운딩 점검 기준은 작성 예정이라 해당 세션 제외. Robur S·Major VP는 본점 교육 공통 사용(채수민 답변)."
+      },
+      "work": "영도점 세션을 본점 6단계·단원 순서로 다시 배치하고, 지점 교육은 본점 세션 범위에 맞춰 지점 문서 근거로 다시 나눔·작성. 공통 교육은 같은 ID로 공유.",
+      "docs": [],
+      "removed": [],
+      "lessons": [
+        {
+          "no": 1,
+          "id": "yeongdo-welcome-prep",
+          "branch": "yeongdo",
+          "title": "첫 출근 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "id": "yeongdo-welcome-orientation",
+          "branch": "yeongdo",
+          "title": "입사 후 오리엔테이션 일정",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "id": "yeongdo-space-walk",
+          "branch": "yeongdo",
+          "title": "교육자와 매장을 둘러보기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "id": "yeongdo-space-storage",
+          "branch": "yeongdo",
+          "title": "직원 공간과 비품 위치 찾기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "id": "yeongdo-welcome-tasting",
+          "branch": "yeongdo",
+          "title": "시음·향미카드·판매 상품 익히기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "id": "welcome-culture",
+          "branch": "yeongdo",
+          "title": "모모스가 일하는 방식과 고객 관점",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 7,
+          "id": "safety-greet",
+          "branch": "yeongdo",
+          "title": "safety-greet",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 8,
+          "id": "yeongdo-safety-call",
+          "branch": "yeongdo",
+          "title": "바 이동·트레이 콜·동료 협업",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 9,
+          "id": "yeongdo-safety-report",
+          "branch": "yeongdo",
+          "title": "설비·가구 이상과 고객 안전 보고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 10,
+          "id": "welcome-manual",
+          "branch": "yeongdo",
+          "title": "SOP·GUI·FRM 구분하고 찾기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 11,
+          "id": "yeongdo-welcome-ojt",
+          "branch": "yeongdo",
+          "title": "첫날 OJT 체크 17항목",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 12,
+          "id": "yeongdo-floor-round",
+          "branch": "yeongdo",
+          "title": "고객 관점의 라운딩·서비스테이블·화장실",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 13,
+          "id": "yeongdo-welcome-hygiene",
+          "branch": "yeongdo",
+          "title": "잔을 다루기 전 위생 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 14,
+          "id": "yeongdo-floor-tools",
+          "branch": "yeongdo",
+          "title": "정리 ① 행주·린넨 구분과 반납 식기 정리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 15,
+          "id": "yeongdo-materials-common",
+          "branch": "yeongdo",
+          "title": "제조량·선입선출·라벨·기한 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 16,
+          "id": "yeongdo-materials-label",
+          "branch": "yeongdo",
+          "title": "주스·시럽 소분·라벨·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 17,
+          "id": "yeongdo-material-candy",
+          "branch": "yeongdo",
+          "title": "오렌지 맛사탕 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 18,
+          "id": "yeongdo-material-cooltime",
+          "branch": "yeongdo",
+          "title": "쿨타임 베이스·오트폼 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 19,
+          "id": "yeongdo-material-matcha",
+          "branch": "yeongdo",
+          "title": "말차 벌크 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 20,
+          "id": "yeongdo-material-tea",
+          "branch": "yeongdo",
+          "title": "냉침티 3종 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 21,
+          "id": "yeongdo-pickup-bakery",
+          "branch": "yeongdo",
+          "title": "빵포장·매장 제공·주문 유형 구분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 22,
+          "id": "yeongdo-bakery-prep",
+          "branch": "yeongdo",
+          "title": "작업 위생·베이커리 준비·포장·주문서 표시",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 23,
+          "id": "yeongdo-bakery-showcase",
+          "branch": "yeongdo",
+          "title": "쇼케이스·베이커리 재고 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 24,
+          "id": "yeongdo-supplies-op2",
+          "branch": "yeongdo",
+          "title": "OP2 비품 채우기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 25,
+          "id": "yeongdo-stock-count",
+          "branch": "yeongdo",
+          "title": "재고조사·수량 인계·파손 기록",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 26,
+          "id": "yeongdo-stock-order",
+          "branch": "yeongdo",
+          "title": "창고·보관 위치·발주 요청·안전재고",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 27,
+          "id": "yeongdo-floor-weekly-mon",
+          "branch": "yeongdo",
+          "title": "월요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 28,
+          "id": "yeongdo-floor-weekly-tue",
+          "branch": "yeongdo",
+          "title": "화요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 29,
+          "id": "yeongdo-floor-weekly-wed",
+          "branch": "yeongdo",
+          "title": "수요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 30,
+          "id": "yeongdo-floor-weekly-thu",
+          "branch": "yeongdo",
+          "title": "목요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 31,
+          "id": "yeongdo-floor-weekly-fri",
+          "branch": "yeongdo",
+          "title": "금요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 32,
+          "id": "yeongdo-floor-weekly-sat",
+          "branch": "yeongdo",
+          "title": "토요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 33,
+          "id": "yeongdo-floor-weekly-sun",
+          "branch": "yeongdo",
+          "title": "일요일 주간위생업무",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 34,
+          "id": "yeongdo-floor-cleaning",
+          "branch": "yeongdo",
+          "title": "청소 도구·가구·환경",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 35,
+          "id": "yeongdo-floor-facility",
+          "branch": "yeongdo",
+          "title": "시설 조작·이상 보고·전화 연결 이상",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 36,
+          "id": "yeongdo-open-rain",
+          "branch": "yeongdo",
+          "title": "우천용품 설치와 안전 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 37,
+          "id": "yeongdo-bar-supply",
+          "branch": "yeongdo",
+          "title": "정리 ② 얼음·일회용품·향미카드 보충",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 38,
+          "id": "yeongdo-op1",
+          "branch": "yeongdo",
+          "title": "OP1 출근·핸드드립 피드백·오픈 전 최종 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 39,
+          "id": "yeongdo-op-parttime",
+          "branch": "yeongdo",
+          "title": "OP 파트타이머 영업 전 준비·오전 업무·퇴근 전",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 40,
+          "id": "yeongdo-daily-role",
+          "branch": "yeongdo",
+          "title": "OP2 담당 구역과 오픈 준비",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 41,
+          "id": "yeongdo-daily-handover",
+          "branch": "yeongdo",
+          "title": "OP2 담당 구역 점검·이상 확인·OP1 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 42,
+          "id": "yeongdo-daily-closing",
+          "branch": "yeongdo",
+          "title": "OP2 퇴근 전 점검·보충·인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 43,
+          "id": "yeongdo-op3-role",
+          "branch": "yeongdo",
+          "title": "OP3~OP5 포지션 투입",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 44,
+          "id": "yeongdo-daily-open-form",
+          "branch": "yeongdo",
+          "title": "오픈 라운딩 체크리스트",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 45,
+          "id": "yeongdo-md-start",
+          "branch": "yeongdo",
+          "title": "MD 출근 직후 업무와 포지션 인계",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 46,
+          "id": "ice-machine",
+          "branch": "yeongdo",
+          "title": "제빙기 주간 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 47,
+          "id": "water-filter",
+          "branch": "yeongdo",
+          "title": "정수기 관리·필터 교체",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 48,
+          "id": "yeongdo-qa-report",
+          "branch": "yeongdo",
+          "title": "QA 보고·처리 관리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 49,
+          "id": "yeongdo-menu-recipe",
+          "branch": "yeongdo",
+          "title": "메뉴·온도 구분과 메뉴 제한",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 50,
+          "id": "yeongdo-menu-glass",
+          "branch": "yeongdo",
+          "title": "매장·포장 고객 제공 차이",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 51,
+          "id": "yeongdo-pickup-tools",
+          "branch": "yeongdo",
+          "title": "준비물을 찾아 챙기기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 52,
+          "id": "yeongdo-pickup-layout",
+          "branch": "yeongdo",
+          "title": "냅킨·커트러리 직접 배치하기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 53,
+          "id": "yeongdo-pickup-cup",
+          "branch": "yeongdo",
+          "title": "잔·소서를 맞추고 상태 확인하기",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 54,
+          "id": "yeongdo-pickup-final",
+          "branch": "yeongdo",
+          "title": "완성 구성 설명·확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 55,
+          "id": "yeongdo-pickup-check",
+          "branch": "yeongdo",
+          "title": "제공 전 최종 검수·메뉴 설명·주문 오류 대응",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 56,
+          "id": "customer-complaint",
+          "branch": "yeongdo",
+          "title": "customer-complaint",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 57,
+          "id": "yeongdo-customer-story",
+          "branch": "yeongdo",
+          "title": "내 고객 만들기 첫 사례·피드백",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 58,
+          "id": "yeongdo-orders-pos",
+          "branch": "yeongdo",
+          "title": "포스 주문 조건 확인·제조 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 59,
+          "id": "orders-payment",
+          "branch": "yeongdo",
+          "title": "orders-payment",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 60,
+          "id": "yeongdo-orders-smart",
+          "branch": "yeongdo",
+          "title": "스마트오더 접수·확인·제조 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 61,
+          "id": "orders-courier",
+          "branch": "yeongdo",
+          "title": "orders-courier",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 62,
+          "id": "orders-cake",
+          "branch": "yeongdo",
+          "title": "orders-cake",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 63,
+          "id": "yeongdo-orders-greeter",
+          "branch": "yeongdo",
+          "title": "그리터·대기 라인 안내",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 64,
+          "id": "yeongdo-making-basic",
+          "branch": "yeongdo",
+          "title": "제조 기본 (주문·레시피·투입 순서·계량)",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 65,
+          "id": "yeongdo-menu-sequence",
+          "branch": "yeongdo",
+          "title": "제조 순서 신호와 협업 / KDS 완료 처리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 66,
+          "id": "yeongdo-menu-noncoffee",
+          "branch": "yeongdo",
+          "title": "논커피 제조",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 67,
+          "id": "yeongdo-menu-signature",
+          "branch": "yeongdo",
+          "title": "시그니처 제조 (쿨타임·맛사탕)",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 68,
+          "id": "yeongdo-menu-coffee",
+          "branch": "yeongdo",
+          "title": "커피 음료 메이킹",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 69,
+          "id": "making-test",
+          "branch": "yeongdo",
+          "title": "메이킹 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 70,
+          "id": "yeongdo-steaming",
+          "branch": "yeongdo",
+          "title": "스티밍과 메뉴별 밀크폼 이해",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 71,
+          "id": "latte-art",
+          "branch": "yeongdo",
+          "title": "라떼아트",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 72,
+          "id": "yeongdo-making-station",
+          "branch": "yeongdo",
+          "title": "메뉴 변경·누락 / 픽업 지원 / 행주·얼음",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 73,
+          "id": "yeongdo-orders-retail",
+          "branch": "yeongdo",
+          "title": "리테일 상품·향미 정보·포장 안내 / 추천",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 74,
+          "id": "yeongdo-retail-display",
+          "branch": "yeongdo",
+          "title": "상품 진열·재고 보충·상태 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 75,
+          "id": "yeongdo-tasting-coffee",
+          "branch": "yeongdo",
+          "title": "시음 커피",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 76,
+          "id": "yeongdo-stock-beans",
+          "branch": "yeongdo",
+          "title": "음료용 원두 전환·자가사용·이카운트 구분",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 77,
+          "id": "yeongdo-bean-flavor",
+          "branch": "yeongdo",
+          "title": "원두별 특징·향미·레시피·브루잉 방향성",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 78,
+          "id": "yeongdo-brewing-theory",
+          "branch": "yeongdo",
+          "title": "브루잉 이론·실습",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 79,
+          "id": "refractometer",
+          "branch": "yeongdo",
+          "title": "굴절계 측정·영점 교정·세척·보관",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 80,
+          "id": "yeongdo-brewing-team",
+          "branch": "yeongdo",
+          "title": "메인·보조 브루어 / 제조·제공 순서 / 지원",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 81,
+          "id": "brewing-test",
+          "branch": "yeongdo",
+          "title": "브루잉 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 82,
+          "id": "esp-theory",
+          "branch": "yeongdo",
+          "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 83,
+          "id": "yeongdo-esp-shot",
+          "branch": "yeongdo",
+          "title": "에스프레소 추출과 메이킹 전달",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 84,
+          "id": "yeongdo-esp-calibration",
+          "branch": "yeongdo",
+          "title": "칼리브레이션·반복 추출·일관성 확인",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 85,
+          "id": "yeongdo-esp-tools",
+          "branch": "yeongdo",
+          "title": "호퍼 원두 수위 / 샷 글라스·포터필터 세척",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 86,
+          "id": "yeongdo-esp-team",
+          "branch": "yeongdo",
+          "title": "메이킹·브루잉 제조 순서 / 지원 요청",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 87,
+          "id": "yeongdo-esp-shift",
+          "branch": "yeongdo",
+          "title": "오픈 세팅·Daily Chart / 인계·칼리브레이션 / 마감",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 88,
+          "id": "yeongdo-moai",
+          "branch": "yeongdo",
+          "title": "모아이 머신 데일리 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 89,
+          "id": "yeongdo-puqpress",
+          "branch": "yeongdo",
+          "title": "푹프레스 Q 시리즈 데일리 청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 90,
+          "id": "esp-test",
+          "branch": "yeongdo",
+          "title": "에스프레소 실습·평가",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 91,
+          "id": "grinder-blade",
+          "branch": "yeongdo",
+          "title": "Mahlkönig EK43 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 92,
+          "id": "grinder-blade-robur-s",
+          "branch": "yeongdo",
+          "title": "Mazzer Robur S 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 93,
+          "id": "grinder-blade-major-vp",
+          "branch": "yeongdo",
+          "title": "Mazzer Major VP 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "공통 교육 재사용"
+            }
+          ]
+        },
+        {
+          "no": 94,
+          "id": "yeongdo-grinder-e80",
+          "branch": "yeongdo",
+          "title": "Mahlkönig E80 Supreme 날 분해·청소",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        },
+        {
+          "no": 95,
+          "id": "yeongdo-stock-ecount",
+          "branch": "yeongdo",
+          "title": "재고 전산 처리",
+          "changes": [
+            {
+              "item": "재구성",
+              "asis": "지점 교육(이전 구조)",
+              "tobe": "본점 단원 틀의 지점판"
+            }
+          ]
+        }
+      ],
+      "rules": [],
+      "checks": [
+        "지점 교육 ID가 바뀜(본점 세션 ID 기준). 영도점·도모헌점은 실서비스 전이라 알파 테스트 체크는 옮기지 않음"
+      ],
+      "skipped": []
+    },
+    {
       "id": "2026-11-27-drive-sync-alpha",
       "at": "2026-11-27",
       "approvedBy": "이재현",

@@ -2263,56 +2263,98 @@
           "units": [
             {
               "no": "Y1.1",
-              "title": "입사·현장 적응",
+              "title": "입사·근무 준비",
               "sessions": [
                 {
-                  "kind": "기존",
+                  "id": "yeongdo-welcome-prep",
+                  "kind": "추가",
+                  "title": "첫 출근 준비"
+                },
+                {
+                  "id": "yeongdo-welcome-orientation",
+                  "kind": "추가",
+                  "title": "입사 후 오리엔테이션 일정"
+                }
+              ]
+            },
+            {
+              "no": "Y1.2",
+              "title": "공간·동선",
+              "sessions": [
+                {
+                  "id": "yeongdo-space-walk",
+                  "kind": "추가",
+                  "title": "교육자와 매장을 둘러보기"
+                },
+                {
+                  "id": "yeongdo-space-storage",
+                  "kind": "추가",
+                  "title": "직원 공간과 비품 위치 찾기"
+                }
+              ]
+            },
+            {
+              "no": "Y1.3",
+              "title": "메뉴·상품 첫 소개",
+              "sessions": [
+                {
+                  "id": "yeongdo-welcome-tasting",
+                  "kind": "추가",
+                  "title": "시음·향미카드·판매 상품 익히기"
+                }
+              ]
+            },
+            {
+              "no": "Y1.4",
+              "title": "일하는 방식",
+              "sessions": [
+                {
                   "id": "welcome-culture",
-                  "from": [
-                    4
-                  ]
-                },
+                  "kind": "추가",
+                  "title": "모모스가 일하는 방식과 고객 관점"
+                }
+              ]
+            },
+            {
+              "no": "Y1.5",
+              "title": "서비스·안전·협업",
+              "sessions": [
                 {
-                  "kind": "기존",
                   "id": "safety-greet",
-                  "from": [
-                    9
-                  ]
+                  "kind": "추가",
+                  "title": "safety-greet"
                 },
                 {
-                  "kind": "기존",
+                  "id": "yeongdo-safety-call",
+                  "kind": "추가",
+                  "title": "바 이동·트레이 콜·동료 협업"
+                },
+                {
+                  "id": "yeongdo-safety-report",
+                  "kind": "추가",
+                  "title": "설비·가구 이상과 고객 안전 보고"
+                }
+              ]
+            },
+            {
+              "no": "Y1.6",
+              "title": "매뉴얼 이용",
+              "sessions": [
+                {
                   "id": "welcome-manual",
-                  "from": [
-                    3
-                  ]
-                },
-                {
-                  "id": "yeongdo-orientation",
                   "kind": "추가",
-                  "title": "입사 후 오리엔테이션과 업무 자료 확인",
-                  "shift": [],
-                  "position": []
-                },
+                  "title": "SOP·GUI·FRM 구분하고 찾기"
+                }
+              ]
+            },
+            {
+              "no": "Y1.7",
+              "title": "첫날 OJT",
+              "sessions": [
                 {
-                  "id": "yeongdo-space",
+                  "id": "yeongdo-welcome-ojt",
                   "kind": "추가",
-                  "title": "매장 공간·직원 공간·창고 위치 확인",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-hygiene",
-                  "kind": "추가",
-                  "title": "출근 준비와 복장·개인 위생",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-firstday",
-                  "kind": "추가",
-                  "title": "첫날 OJT 확인",
-                  "shift": [],
-                  "position": []
+                  "title": "첫날 OJT 체크 17항목"
                 }
               ]
             }
@@ -2325,196 +2367,395 @@
           "units": [
             {
               "no": "Y2.1",
-              "title": "홀 케어 & 백존 준비",
+              "title": "홀 라운딩",
               "sessions": [
                 {
+                  "id": "yeongdo-floor-round",
                   "kind": "추가",
-                  "id": "ice-machine",
-                  "title": "제빙기 주간 청소",
-                  "topics": [
-                    "청소 준비·장비 확인",
-                    "세척·건조·재조립",
-                    "청소 후 상태 확인"
-                  ],
-                  "sources": "제빙기 주간 청소 SOP",
-                  "note": "지정 담당자 추가 과정에서 이동",
-                  "shift": [
-                    "CL"
-                  ]
-                },
-                {
-                  "kind": "추가",
-                  "id": "water-filter",
-                  "title": "정수기 관리·필터 교체",
-                  "topics": [
-                    "정수기 일상 관리",
-                    "필터 교체 절차",
-                    "교체 후 상태 확인"
-                  ],
-                  "sources": "정수기 관리 및 필터 교체 절차 SOP",
-                  "note": "지정 담당자 추가 과정에서 이동"
-                },
-                {
-                  "id": "yeongdo-open-overview",
-                  "kind": "추가",
-                  "title": "오픈 담당 역할과 공통 준비",
+                  "title": "고객 관점의 라운딩·서비스테이블·화장실",
                   "shift": [
                     "OP"
                   ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-op-parttime",
-                  "kind": "추가",
-                  "title": "OP 파트타이머 영업 전 준비·오전 업무",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-op1",
-                  "kind": "추가",
-                  "title": "OP1 출근·핸드드립 피드백·오픈 전 확인",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-op1-water",
-                  "kind": "추가",
-                  "title": "OP1 수질 측정과 에스프레소 세팅",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": [
-                    "에스프레소"
-                  ]
-                },
-                {
-                  "id": "yeongdo-op2",
-                  "kind": "추가",
-                  "title": "OP2 주차·재료·베이커리·리테일 점검",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-open-rain",
-                  "kind": "추가",
-                  "title": "OP3~OP5 포지션 투입과 우천 대응",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-open-leave",
-                  "kind": "추가",
-                  "title": "오픈조 퇴근 준비와 인계",
-                  "shift": [
-                    "OP"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-md-shift",
-                  "kind": "추가",
-                  "title": "MD 출근·입고 확인·교대·식후 라운딩",
-                  "shift": [
-                    "MD"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-weekly",
-                  "kind": "추가",
-                  "title": "요일별 주간 위생 업무",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-breakage",
-                  "kind": "추가",
-                  "title": "잔·접시 파손 기록",
-                  "shift": [
-                    "CL"
-                  ],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-round",
-                  "kind": "추가",
-                  "title": "라운딩 고객 응대·테이블 정리·이상 전달",
-                  "shift": [],
                   "position": [
                     "라운딩"
                   ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.2",
+              "title": "잔 취급 위생·반납 식기 정리",
+              "sessions": [
+                {
+                  "id": "yeongdo-welcome-hygiene",
+                  "kind": "추가",
+                  "title": "잔을 다루기 전 위생 확인"
                 },
                 {
-                  "id": "yeongdo-back",
+                  "id": "yeongdo-floor-tools",
                   "kind": "추가",
-                  "title": "정리 포지션 반납 식기 세척·보충",
-                  "shift": [],
+                  "title": "정리 ① 행주·린넨 구분과 반납 식기 정리",
                   "position": [
-                    "정리"
+                    "정리",
+                    "라운딩"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y2.3",
+              "title": "재료 제조·보관 기본",
+              "sessions": [
                 {
                   "id": "yeongdo-materials-common",
                   "kind": "추가",
-                  "title": "재료 제조 준비·라벨·선입선출·보관",
-                  "shift": [],
-                  "position": []
+                  "title": "제조량·선입선출·라벨·기한 확인",
+                  "shift": [
+                    "OP"
+                  ]
                 },
+                {
+                  "id": "yeongdo-materials-label",
+                  "kind": "추가",
+                  "title": "주스·시럽 소분·라벨·보관",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.4",
+              "title": "베이스 제조 실습",
+              "sessions": [
                 {
                   "id": "yeongdo-material-candy",
                   "kind": "추가",
                   "title": "오렌지 맛사탕 제조",
                   "shift": [
                     "OP"
-                  ],
-                  "position": []
+                  ]
                 },
                 {
-                  "id": "yeongdo-material-bases",
+                  "id": "yeongdo-material-cooltime",
                   "kind": "추가",
-                  "title": "쿨타임 베이스·오트폼·말차 벌크 제조",
-                  "shift": [],
-                  "position": []
+                  "title": "쿨타임 베이스·오트폼 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "yeongdo-material-matcha",
+                  "kind": "추가",
+                  "title": "말차 벌크 제조",
+                  "shift": [
+                    "OP"
+                  ]
                 },
                 {
                   "id": "yeongdo-material-tea",
                   "kind": "추가",
-                  "title": "냉침티 제조와 설탕시럽 보충",
-                  "shift": [],
-                  "position": []
-                },
+                  "title": "냉침티 3종 제조",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.5",
+              "title": "베이커리 준비·빵포장",
+              "sessions": [
                 {
-                  "id": "yeongdo-cleaning",
+                  "id": "yeongdo-pickup-bakery",
                   "kind": "추가",
-                  "title": "유리·바닥·테이블·의자 청소",
-                  "shift": [],
+                  "title": "빵포장·매장 제공·주문 유형 구분",
                   "position": [
-                    "라운딩",
-                    "정리"
+                    "빵포장"
                   ]
                 },
                 {
-                  "id": "yeongdo-facility-report",
+                  "id": "yeongdo-bakery-prep",
                   "kind": "추가",
-                  "title": "시설·기물 이상과 QA 보고·인계",
-                  "shift": [],
-                  "position": []
+                  "title": "작업 위생·베이커리 준비·포장·주문서 표시",
+                  "position": [
+                    "빵포장"
+                  ]
                 },
                 {
-                  "id": "yeongdo-ordering",
+                  "id": "yeongdo-bakery-showcase",
                   "kind": "추가",
-                  "title": "비품·재료 안전재고 확인과 발주 요청",
-                  "shift": [],
-                  "position": []
+                  "title": "쇼케이스·베이커리 재고 확인",
+                  "position": [
+                    "빵포장"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.6",
+              "title": "비품·재료 보충",
+              "sessions": [
+                {
+                  "id": "yeongdo-supplies-op2",
+                  "kind": "추가",
+                  "title": "OP2 비품 채우기",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.7",
+              "title": "실물 재고 확인·부족 보고",
+              "sessions": [
+                {
+                  "id": "yeongdo-stock-count",
+                  "kind": "추가",
+                  "title": "재고조사·수량 인계·파손 기록",
+                  "shift": [
+                    "MD",
+                    "CL"
+                  ],
+                  "position": [
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "yeongdo-stock-order",
+                  "kind": "추가",
+                  "title": "창고·보관 위치·발주 요청·안전재고"
+                }
+              ]
+            },
+            {
+              "no": "Y2.8",
+              "title": "청소·시설 기본 관리",
+              "sessions": [
+                {
+                  "id": "yeongdo-floor-weekly-mon",
+                  "kind": "추가",
+                  "title": "월요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-tue",
+                  "kind": "추가",
+                  "title": "화요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-wed",
+                  "kind": "추가",
+                  "title": "수요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-thu",
+                  "kind": "추가",
+                  "title": "목요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-fri",
+                  "kind": "추가",
+                  "title": "금요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-sat",
+                  "kind": "추가",
+                  "title": "토요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-weekly-sun",
+                  "kind": "추가",
+                  "title": "일요일 주간위생업무",
+                  "shift": [
+                    "CL"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-cleaning",
+                  "kind": "추가",
+                  "title": "청소 도구·가구·환경",
+                  "shift": [
+                    "OP"
+                  ],
+                  "position": [
+                    "라운딩"
+                  ]
+                },
+                {
+                  "id": "yeongdo-floor-facility",
+                  "kind": "추가",
+                  "title": "시설 조작·이상 보고·전화 연결 이상"
+                },
+                {
+                  "id": "yeongdo-open-rain",
+                  "kind": "추가",
+                  "title": "우천용품 설치와 안전 확인",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.9",
+              "title": "바 지원·보충",
+              "sessions": [
+                {
+                  "id": "yeongdo-bar-supply",
+                  "kind": "추가",
+                  "title": "정리 ② 얼음·일회용품·향미카드 보충",
+                  "position": [
+                    "정리"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.10",
+              "title": "OP1 오픈 운영 실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-op1",
+                  "kind": "추가",
+                  "title": "OP1 출근·핸드드립 피드백·오픈 전 최종 확인",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.11",
+              "title": "OP 파트타이머 운영 실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-op-parttime",
+                  "kind": "추가",
+                  "title": "OP 파트타이머 영업 전 준비·오전 업무·퇴근 전",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.12",
+              "title": "OP2 홀·백존 운영 실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-daily-role",
+                  "kind": "추가",
+                  "title": "OP2 담당 구역과 오픈 준비",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "yeongdo-daily-handover",
+                  "kind": "추가",
+                  "title": "OP2 담당 구역 점검·이상 확인·OP1 전달",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "yeongdo-daily-closing",
+                  "kind": "추가",
+                  "title": "OP2 퇴근 전 점검·보충·인계",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.13",
+              "title": "OP3 홀·야외 운영 실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-op3-role",
+                  "kind": "추가",
+                  "title": "OP3~OP5 포지션 투입",
+                  "shift": [
+                    "OP"
+                  ]
+                },
+                {
+                  "id": "yeongdo-daily-open-form",
+                  "kind": "추가",
+                  "title": "오픈 라운딩 체크리스트",
+                  "shift": [
+                    "OP"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.14",
+              "title": "MD 출근·교대 운영 실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-md-start",
+                  "kind": "추가",
+                  "title": "MD 출근 직후 업무와 포지션 인계",
+                  "shift": [
+                    "MD"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.15",
+              "title": "제빙기 주간 청소",
+              "sessions": [
+                {
+                  "id": "ice-machine",
+                  "kind": "추가",
+                  "title": "제빙기 주간 청소",
+                  "shift": [
+                    "CL"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y2.16",
+              "title": "정수기 관리·필터 교체",
+              "sessions": [
+                {
+                  "id": "water-filter",
+                  "kind": "추가",
+                  "title": "정수기 관리·필터 교체"
+                }
+              ]
+            },
+            {
+              "no": "Y2.17",
+              "title": "QA 보고·처리 관리",
+              "sessions": [
+                {
+                  "id": "yeongdo-qa-report",
+                  "kind": "추가",
+                  "title": "QA 보고·처리 관리"
                 }
               ]
             }
@@ -2527,74 +2768,150 @@
           "units": [
             {
               "no": "Y3.1",
-              "title": "POS 주문 & 픽업 서비스",
+              "title": "메뉴·제공 조건 이해",
               "sessions": [
                 {
-                  "kind": "기존",
-                  "id": "customer-complaint",
-                  "from": [
-                    54
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-payment",
-                  "from": [
-                    38
-                  ],
-                  "position": [
-                    "POS",
-                    "리테일"
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-courier",
-                  "from": [
-                    40
-                  ],
-                  "position": [
-                    "POS",
-                    "리테일"
-                  ]
-                },
-                {
-                  "kind": "기존",
-                  "id": "orders-cake",
-                  "from": [
-                    41
-                  ],
-                  "position": [
-                    "POS",
-                    "그리터",
-                    "리테일"
-                  ]
-                },
-                {
-                  "id": "yeongdo-pos",
+                  "id": "yeongdo-menu-recipe",
                   "kind": "추가",
-                  "title": "포스 주문 입력·결제·제조 전달",
-                  "shift": [],
+                  "title": "메뉴·온도 구분과 메뉴 제한",
+                  "position": [
+                    "POS",
+                    "픽업",
+                    "메이킹"
+                  ]
+                },
+                {
+                  "id": "yeongdo-menu-glass",
+                  "kind": "추가",
+                  "title": "매장·포장 고객 제공 차이",
+                  "position": [
+                    "POS",
+                    "픽업",
+                    "빵포장"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y3.2",
+              "title": "픽업·트레이 세팅",
+              "sessions": [
+                {
+                  "id": "yeongdo-pickup-tools",
+                  "kind": "추가",
+                  "title": "준비물을 찾아 챙기기",
+                  "position": [
+                    "픽업"
+                  ]
+                },
+                {
+                  "id": "yeongdo-pickup-layout",
+                  "kind": "추가",
+                  "title": "냅킨·커트러리 직접 배치하기",
+                  "position": [
+                    "픽업"
+                  ]
+                },
+                {
+                  "id": "yeongdo-pickup-cup",
+                  "kind": "추가",
+                  "title": "잔·소서를 맞추고 상태 확인하기",
+                  "position": [
+                    "픽업"
+                  ]
+                },
+                {
+                  "id": "yeongdo-pickup-final",
+                  "kind": "추가",
+                  "title": "완성 구성 설명·확인",
+                  "position": [
+                    "픽업"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y3.3",
+              "title": "픽업 최종 확인·전달",
+              "sessions": [
+                {
+                  "id": "yeongdo-pickup-check",
+                  "kind": "추가",
+                  "title": "제공 전 최종 검수·메뉴 설명·주문 오류 대응",
+                  "position": [
+                    "픽업"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y3.4",
+              "title": "고객 응대·호스피탈리티",
+              "sessions": [
+                {
+                  "id": "customer-complaint",
+                  "kind": "추가",
+                  "title": "customer-complaint"
+                },
+                {
+                  "id": "yeongdo-customer-story",
+                  "kind": "추가",
+                  "title": "내 고객 만들기 첫 사례·피드백"
+                }
+              ]
+            },
+            {
+              "no": "Y3.5",
+              "title": "POS 주문·결제",
+              "sessions": [
+                {
+                  "id": "yeongdo-orders-pos",
+                  "kind": "추가",
+                  "title": "포스 주문 조건 확인·제조 전달",
                   "position": [
                     "POS"
                   ]
                 },
                 {
-                  "id": "yeongdo-bakery",
+                  "id": "orders-payment",
                   "kind": "추가",
-                  "title": "베이커리 위생·주문 유형별 제공·포장",
-                  "shift": [],
+                  "title": "orders-payment",
                   "position": [
-                    "픽업"
+                    "POS",
+                    "리테일"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y3.6",
+              "title": "주문 채널·예약 처리",
+              "sessions": [
+                {
+                  "id": "yeongdo-orders-smart",
+                  "kind": "추가",
+                  "title": "스마트오더 접수·확인·제조 전달",
+                  "position": [
+                    "POS"
                   ]
                 },
                 {
-                  "id": "yeongdo-pickup",
+                  "id": "orders-courier",
                   "kind": "추가",
-                  "title": "픽업 비품·트레이 세팅·최종 확인",
-                  "shift": [],
+                  "title": "orders-courier",
                   "position": [
-                    "픽업"
+                    "POS",
+                    "리테일"
+                  ]
+                },
+                {
+                  "id": "orders-cake",
+                  "kind": "추가",
+                  "title": "orders-cake",
+                  "position": [
+                    "POS",
+                    "그리터",
+                    "리테일"
                   ]
                 }
               ]
@@ -2608,81 +2925,145 @@
           "units": [
             {
               "no": "Y4.1",
-              "title": "그리터 & 메이킹(스팀)",
+              "title": "그리터·대기 안내",
               "sessions": [
                 {
+                  "id": "yeongdo-orders-greeter",
                   "kind": "추가",
-                  "id": "making-test",
-                  "title": "메이킹 실습·평가",
-                  "topics": [
-                    "평가 안내·연습 일정 조율",
-                    "연습 일지",
-                    "실기 확인"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
-                  "position": [
-                    "메이킹"
-                  ]
-                },
-                {
-                  "kind": "추가",
-                  "id": "latte-art",
-                  "title": "라떼아트",
-                  "topics": [
-                    "안정화·낙차",
-                    "면하트",
-                    "밀어넣기",
-                    "핸들링",
-                    "결하트 연습"
-                  ],
-                  "sources": "포지션 학습·실습·고객 경험 GUI",
-                  "position": [
-                    "메이킹"
-                  ]
-                },
-                {
-                  "id": "yeongdo-greeter",
-                  "kind": "추가",
-                  "title": "그리터 입장 안내·대기 운영",
-                  "shift": [],
+                  "title": "그리터·대기 라인 안내",
                   "position": [
                     "그리터"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y4.2",
+              "title": "제조 기본",
+              "sessions": [
                 {
-                  "id": "yeongdo-making",
+                  "id": "yeongdo-making-basic",
                   "kind": "추가",
-                  "title": "메이킹 제조 순서·픽업 지원·KDS·스테이션 관리",
-                  "shift": [],
+                  "title": "제조 기본 (주문·레시피·투입 순서·계량)",
+                  "position": [
+                    "메이킹",
+                    "브루잉",
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y4.3",
+              "title": "제조 협업·KDS",
+              "sessions": [
+                {
+                  "id": "yeongdo-menu-sequence",
+                  "kind": "추가",
+                  "title": "제조 순서 신호와 협업 / KDS 완료 처리",
+                  "position": [
+                    "메이킹",
+                    "브루잉",
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y4.4",
+              "title": "논커피 제조",
+              "sessions": [
+                {
+                  "id": "yeongdo-menu-noncoffee",
+                  "kind": "추가",
+                  "title": "논커피 제조",
                   "position": [
                     "메이킹"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y4.5",
+              "title": "시그니처 제조",
+              "sessions": [
                 {
-                  "id": "yeongdo-coffee-recipes",
+                  "id": "yeongdo-menu-signature",
                   "kind": "추가",
-                  "title": "커피 음료 계량·제조·제공",
-                  "shift": [],
+                  "title": "시그니처 제조 (쿨타임·맛사탕)",
                   "position": [
                     "메이킹"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y4.6",
+              "title": "커피 음료 메이킹",
+              "sessions": [
                 {
-                  "id": "yeongdo-signature-recipes",
+                  "id": "yeongdo-menu-coffee",
                   "kind": "추가",
-                  "title": "시그니처 음료 계량·제조·제공",
-                  "shift": [],
+                  "title": "커피 음료 메이킹",
                   "position": [
                     "메이킹"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y4.7",
+              "title": "메이킹 실습·평가",
+              "sessions": [
                 {
-                  "id": "yeongdo-noncoffee-recipes",
+                  "id": "making-test",
                   "kind": "추가",
-                  "title": "논커피 음료 계량·제조·제공",
-                  "shift": [],
+                  "title": "메이킹 실습·평가",
                   "position": [
                     "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y4.8",
+              "title": "스티밍",
+              "sessions": [
+                {
+                  "id": "yeongdo-steaming",
+                  "kind": "추가",
+                  "title": "스티밍과 메뉴별 밀크폼 이해",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y4.9",
+              "title": "라떼아트",
+              "sessions": [
+                {
+                  "id": "latte-art",
+                  "kind": "추가",
+                  "title": "라떼아트",
+                  "position": [
+                    "메이킹"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y4.10",
+              "title": "요청 대응·스테이션 관리",
+              "sessions": [
+                {
+                  "id": "yeongdo-making-station",
+                  "kind": "추가",
+                  "title": "메뉴 변경·누락 / 픽업 지원 / 행주·얼음",
+                  "position": [
+                    "메이킹",
+                    "픽업"
                   ]
                 }
               ]
@@ -2696,14 +3077,105 @@
           "units": [
             {
               "no": "Y5.1",
-              "title": "브루잉 & 리테일",
+              "title": "리테일 안내·추천",
               "sessions": [
                 {
+                  "id": "yeongdo-orders-retail",
                   "kind": "추가",
+                  "title": "리테일 상품·향미 정보·포장 안내 / 추천",
+                  "position": [
+                    "리테일",
+                    "POS"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.2",
+              "title": "리테일 진열·보충",
+              "sessions": [
+                {
+                  "id": "yeongdo-retail-display",
+                  "kind": "추가",
+                  "title": "상품 진열·재고 보충·상태 확인",
+                  "position": [
+                    "POS",
+                    "그리터",
+                    "리테일"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.3",
+              "title": "시음 커피",
+              "sessions": [
+                {
+                  "id": "yeongdo-tasting-coffee",
+                  "kind": "추가",
+                  "title": "시음 커피",
+                  "shift": [
+                    "OP",
+                    "MD",
+                    "CL"
+                  ],
+                  "position": [
+                    "리테일",
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.4",
+              "title": "원두 관리 흐름",
+              "sessions": [
+                {
+                  "id": "yeongdo-stock-beans",
+                  "kind": "추가",
+                  "title": "음료용 원두 전환·자가사용·이카운트 구분",
+                  "shift": [
+                    "MD"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.5",
+              "title": "원두·향미 이해",
+              "sessions": [
+                {
+                  "id": "yeongdo-bean-flavor",
+                  "kind": "추가",
+                  "title": "원두별 특징·향미·레시피·브루잉 방향성",
+                  "position": [
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.6",
+              "title": "브루잉 이론·실습",
+              "sessions": [
+                {
+                  "id": "yeongdo-brewing-theory",
+                  "kind": "추가",
+                  "title": "브루잉 이론·실습",
+                  "position": [
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.7",
+              "title": "측정 도구",
+              "sessions": [
+                {
                   "id": "refractometer",
+                  "kind": "추가",
                   "title": "굴절계 측정·영점 교정·세척·보관",
-                  "sources": "VST 커피 굴절계 관리 SOP",
-                  "note": "6단계에서도 재참조",
                   "shift": [
                     "CL"
                   ],
@@ -2711,55 +3183,32 @@
                     "브루잉",
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y5.8",
+              "title": "브루잉 협업",
+              "sessions": [
                 {
+                  "id": "yeongdo-brewing-team",
                   "kind": "추가",
+                  "title": "메인·보조 브루어 / 제조·제공 순서 / 지원",
+                  "position": [
+                    "브루잉"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y5.9",
+              "title": "브루잉 실습·평가",
+              "sessions": [
+                {
                   "id": "brewing-test",
+                  "kind": "추가",
                   "title": "브루잉 실습·평가",
-                  "topics": [
-                    "연습 일정·일지",
-                    "이론·실습 준비",
-                    "평가 진행"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
                   "position": [
-                    "브루잉"
-                  ]
-                },
-                {
-                  "id": "yeongdo-retail",
-                  "kind": "추가",
-                  "title": "리테일 진열·재고 보충·홀 응대",
-                  "shift": [],
-                  "position": [
-                    "리테일"
-                  ]
-                },
-                {
-                  "id": "yeongdo-brewing",
-                  "kind": "추가",
-                  "title": "메인·보조 브루어 역할과 레시피 확인",
-                  "shift": [],
-                  "position": [
-                    "브루잉"
-                  ]
-                },
-                {
-                  "id": "yeongdo-brewing-recipes",
-                  "kind": "추가",
-                  "title": "아이스 핸드드립 제공 기준",
-                  "shift": [],
-                  "position": [
-                    "브루잉"
-                  ]
-                },
-                {
-                  "id": "yeongdo-tasting",
-                  "kind": "추가",
-                  "title": "시음 커피 요청·확인·보관·제공",
-                  "shift": [],
-                  "position": [
-                    "리테일",
                     "브루잉"
                   ]
                 }
@@ -2774,63 +3223,96 @@
           "units": [
             {
               "no": "Y6.1",
-              "title": "에스프레소",
+              "title": "추출 이론",
               "sessions": [
                 {
-                  "kind": "추가",
                   "id": "esp-theory",
+                  "kind": "추가",
                   "title": "추출 변수·레시피·분쇄도·수율과 맛의 변화",
-                  "sources": "포지션 학습·실습·고객 경험 GUI 및 별도 참조 교재",
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y6.2",
+              "title": "샷 추출·제조 전달",
+              "sessions": [
                 {
+                  "id": "yeongdo-esp-shot",
                   "kind": "추가",
-                  "id": "esp-test",
-                  "title": "에스프레소 실습·평가",
-                  "topics": [
-                    "연습 일정·일지",
-                    "이론·실습 준비",
-                    "평가 진행"
-                  ],
-                  "sources": "평가 신청·결과 확인 SOP",
+                  "title": "에스프레소 추출과 메이킹 전달",
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y6.3",
+              "title": "품질 조정",
+              "sessions": [
                 {
+                  "id": "yeongdo-esp-calibration",
                   "kind": "추가",
-                  "id": "grinder-blade",
-                  "title": "Mahlkönig EK43 날 분해·청소",
-                  "topics": [
-                    "작업 대상·권한",
-                    "준비·안전",
-                    "날 분해·청소·재조립",
-                    "완료 확인·이상 대응"
-                  ],
-                  "sources": "그라인더-날-분해-및-청소",
-                  "note": "2026-11-24 기존 그라인더 교육을 기종별로 분리",
+                  "title": "칼리브레이션·반복 추출·일관성 확인",
+                  "position": [
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y6.4",
+              "title": "원두·기물 관리",
+              "sessions": [
+                {
+                  "id": "yeongdo-esp-tools",
+                  "kind": "추가",
+                  "title": "호퍼 원두 수위 / 샷 글라스·포터필터 세척",
+                  "position": [
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y6.5",
+              "title": "포지션 협업",
+              "sessions": [
+                {
+                  "id": "yeongdo-esp-team",
+                  "kind": "추가",
+                  "title": "메이킹·브루잉 제조 순서 / 지원 요청",
                   "shift": [
-                    "CL"
+                    "OP"
                   ],
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y6.6",
+              "title": "오픈·교대·마감",
+              "sessions": [
                 {
-                  "id": "yeongdo-md-ecount",
+                  "id": "yeongdo-esp-shift",
                   "kind": "추가",
-                  "title": "MD2 전산 처리와 매출·재고 확인",
+                  "title": "오픈 세팅·Daily Chart / 인계·칼리브레이션 / 마감",
                   "shift": [
-                    "MD"
+                    "OP"
                   ],
-                  "position": []
+                  "position": [
+                    "에스프레소"
+                  ]
                 },
                 {
                   "id": "yeongdo-moai",
                   "kind": "추가",
-                  "title": "모아이 에스프레소 머신 데일리 청소",
+                  "title": "모아이 머신 데일리 청소",
                   "shift": [
                     "CL"
                   ],
@@ -2839,10 +3321,62 @@
                   ]
                 },
                 {
-                  "id": "yeongdo-espresso",
+                  "id": "yeongdo-puqpress",
                   "kind": "추가",
-                  "title": "에스프레소 추출·기물·운영 관리·교대",
-                  "shift": [],
+                  "title": "푹프레스 Q 시리즈 데일리 청소",
+                  "position": [
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y6.7",
+              "title": "에스프레소 실습·평가",
+              "sessions": [
+                {
+                  "id": "esp-test",
+                  "kind": "추가",
+                  "title": "에스프레소 실습·평가",
+                  "position": [
+                    "에스프레소"
+                  ]
+                }
+              ]
+            },
+            {
+              "no": "Y6.8",
+              "title": "그라인더 날 분해·청소",
+              "sessions": [
+                {
+                  "id": "grinder-blade",
+                  "kind": "추가",
+                  "title": "Mahlkönig EK43 날 분해·청소",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "grinder-blade-robur-s",
+                  "kind": "추가",
+                  "title": "Mazzer Robur S 날 분해·청소",
+                  "shift": [
+                    "CL"
+                  ],
+                  "position": [
+                    "에스프레소"
+                  ]
+                },
+                {
+                  "id": "grinder-blade-major-vp",
+                  "kind": "추가",
+                  "title": "Mazzer Major VP 날 분해·청소",
+                  "shift": [
+                    "CL"
+                  ],
                   "position": [
                     "에스프레소"
                   ]
@@ -2857,33 +3391,20 @@
                   "position": [
                     "에스프레소"
                   ]
-                },
+                }
+              ]
+            },
+            {
+              "no": "Y6.9",
+              "title": "재고 전산 처리",
+              "sessions": [
                 {
-                  "id": "yeongdo-puqpress",
+                  "id": "yeongdo-stock-ecount",
                   "kind": "추가",
-                  "title": "푹프레스 Q 시리즈 데일리 청소",
-                  "shift": [
-                    "CL"
-                  ],
-                  "position": [
-                    "에스프레소"
-                  ]
-                },
-                {
-                  "id": "yeongdo-phone",
-                  "kind": "추가",
-                  "title": "바리스타 전화기 통화 불량 조치",
-                  "shift": [],
-                  "position": []
-                },
-                {
-                  "id": "yeongdo-ecount",
-                  "kind": "추가",
-                  "title": "구매입력·창고이동·자가사용·재고 확인",
+                  "title": "재고 전산 처리",
                   "shift": [
                     "MD"
-                  ],
-                  "position": []
+                  ]
                 }
               ]
             }

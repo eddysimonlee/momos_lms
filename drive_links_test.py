@@ -12,6 +12,10 @@ FOLDERS = [['재고·전산 관리', 'K1'], ['교육·평가', 'K2']]
 TREE = [dict(path='재고·전산 관리/a.docx'), dict(path='재고·전산 관리/b.docx'), dict(path='교육·평가/c.docx')]
 
 
+# 11/27 이재현·채수민 결정: 본점 문서로 만든 교육이지만 지점에서도 같은 교육으로 쓴다(근거 문서가 아직 공통 폴더가 아님)
+MAIN_SHARED = {'grinder-blade-robur-s', 'grinder-blade-major-vp'}
+
+
 class LinkReportTest(unittest.TestCase):
     def test_branch_courses_reuse_only_common_lessons_and_keep_sources_separate(self):
         app=Path(__file__).parent
@@ -25,7 +29,7 @@ class LinkReportTest(unittest.TestCase):
                 if ident in home:
                     for field in ('purpose','keyPoints','checks','sources'):
                         self.assertEqual(step[field],home[ident][field])
-                    for key in step['sources']:
+                    for key in step['sources'] if ident not in MAIN_SHARED else ():
                         self.assertTrue(manifest[course['sections'][key]['doc']]['folder'].startswith('매장사업부 공통/'))
                 else:
                     self.assertTrue(ident.startswith(branch+'-'))
